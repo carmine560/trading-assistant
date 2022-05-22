@@ -6,8 +6,15 @@ using Hyper SBI 2 -->
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
 -->
 
-A Python script that assists in day trading of stocks on margin using
-[Hyper SBI 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).
+A Python script that assists in discretionary day trading of stocks on
+margin using [Hyper SBI
+2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining
+a sequence of commands, this script executes:
+
+  * showing the required windows
+  * calculating the maximum share size for a market order in margin
+    trading
+  * manipulating the widgets to prepare your order
 
 ## Prerequisites ##
 
@@ -52,9 +59,11 @@ place-trades.py -g
 
 ### Configure Cash Balance and Price Limit Regions ###
 
-Configure cash balance and price limit regions on Hyper SBI 2 in order
-that Tesseract recognizes prices.  These configurations are saved in
-the configuration file `place-trades.ini`.
+Configure the cash balance and (optional) price limit regions on Hyper
+SBI 2 in order that Tesseract recognizes these prices.  A price limit
+is only referenced if the previous closing price does not exist.
+These configurations are saved in the configuration file
+`place-trades.ini`.
 
 ``` shell
 place-trades.py -C X Y WIDTH HEIGHT
