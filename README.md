@@ -80,7 +80,8 @@ place-trades.py -M ACTION
 
 Then insert, modify, or delete each command of the action.  An action
 is a list of commands, and a command is a tuple of itself and its
-arguments.  Possible commands are:
+arguments.  Commands are executed in order from the beginning of the
+list.  Possible commands are:
 
 ``` python
 ACTION = [
