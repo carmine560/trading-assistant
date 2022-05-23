@@ -23,7 +23,7 @@ Windows](https://www.python.org/downloads/windows/) and Hyper SBI 2
 and uses the following packages:
 
   * [pandas](https://pandas.pydata.org/) to retrieve customer margin
-    ratios and previous market data from websites
+    ratios and the previous market data from websites
   * [pywin32](https://github.com/mhammond/pywin32) to access to the
     Windows APIs
   * [Tesseract](https://tesseract-ocr.github.io/) to recognize prices
@@ -47,7 +47,7 @@ pip install pyautogui
 ### Generate Startup Script ###
 
 In order to calculate a maximum share size, save customer margin
-ratios and previous market data from [*SBI Securities Margin
+ratios and the previous market data from [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and [*Download Stock Market Data*](https://kabudata-dll.com/) in
 advance.  The following option generates the startup script
@@ -103,7 +103,6 @@ share size, and prepares the order.
 
 ``` python
 open_long_position = [
-    ('press_hotkeys', 'win, m'),     # minimize all windows
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show Chart
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show Summary
     ('click', '1157, 713'),          # select New Order
@@ -131,13 +130,13 @@ place-trades.py -e ACTION
 
   * `-g` generate the startup script
   * `-r` save customer margin ratios
-  * `-d` save previous market data
+  * `-d` save the previous market data
   * `-M [ACTION]` create or modify an action
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action
   * `-P` configure paths
   * `-R` configure customer margin ratios
-  * `-D` configure previous market data
+  * `-D` configure the previous market data
   * `-C X Y WIDTH HEIGHT` configure the cash balance region
   * `-L X Y WIDTH HEIGHT` configure the price limit region
 

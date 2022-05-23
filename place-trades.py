@@ -20,7 +20,7 @@ def main():
     parser.add_argument('-r', action='store_true',
                         help='save customer margin ratios')
     parser.add_argument('-d', action='store_true',
-                        help='save previous market data')
+                        help='save the previous market data')
     parser.add_argument('-M', nargs='?', const='list_actions',
                         help='create or modify an action')
     parser.add_argument('-e', nargs='?', const='list_actions',
@@ -32,7 +32,7 @@ def main():
     parser.add_argument('-R', action='store_true',
                         help='configure customer margin ratios')
     parser.add_argument('-D', action='store_true',
-                        help='configure previous market data')
+                        help='configure the previous market data')
     parser.add_argument('-C', nargs=4,
                         help='configure the cash balance region (x y width height)')
     parser.add_argument('-L', nargs=4,
