@@ -22,7 +22,7 @@ This script has been tested with [Python for
 Windows](https://www.python.org/downloads/windows/) and Hyper SBI 2
 and uses the following packages:
 
-  * [pandas](https://pandas.pydata.org/) to retrieve customer margin
+  * [pandas](https://pandas.pydata.org/) to save customer margin
     ratios and the previous market data from websites
   * [pywin32](https://github.com/mhammond/pywin32) to access to the
     Windows APIs

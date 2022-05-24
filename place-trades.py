@@ -155,13 +155,13 @@ def save_market_data(config):
 
     dfs = pd.read_html(calendar_url)
     calendar = pd.concat(dfs, ignore_index=True)
-    calendar[date_header].replace('/', '-', inplace=True, regex=True)
-    previous_day = pd.Timestamp.now() - pd.Timedelta(days=1)
-    while calendar[date_header].str.contains(previous_day.strftime('%Y-%m-%d')).any() \
-          or previous_day.weekday() == 5 or previous_day.weekday() == 6:
-        previous_day -= pd.Timedelta(days=1)
+    calendar[date_header].replace('/', '-', inplace=True)
+    previous_date = pd.Timestamp.now() - pd.Timedelta(days=1)
+    while calendar[date_header].str.contains(previous_date.strftime('%Y-%m-%d')).any() \
+          or previous_date.weekday() == 5 or previous_date.weekday() == 6:
+        previous_date -= pd.Timedelta(days=1)
 
-    df = pd.read_csv(previous_day.strftime(market_data_url), dtype=str,
+    df = pd.read_csv(previous_date.strftime(market_data_url), dtype=str,
                      encoding='cp932')
     df = df[[symbol_header, close_header]]
     df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
