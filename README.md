@@ -85,15 +85,15 @@ list.  Possible commands are:
 
 ``` python
 ACTION = [
-    ('back_to', None),               # back the cursor to the previous position
-    ('beep', 'FREQUENCY, DURATION'), # beep
-    ('calculate_share_size', None),  # calculate a share size and copy it
-    ('click', 'X, Y'),               # click
-    ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title
-    ('move_to', 'X, Y'),             # move the cursor to a position
-    ('press_hotkeys', 'KEY, ...'),   # press hotkeys
-    ('press_key', 'KEY, PRESSES'),   # press a key
-    ('show_window', 'TITLE_REGEX')   # show a window
+    ('back_to', None),               # back the cursor to the previous position.
+    ('beep', 'FREQUENCY, DURATION'), # beep.
+    ('calculate_share_size', None),  # calculate a share size and copy it.
+    ('click', 'X, Y'),               # click.
+    ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
+    ('move_to', 'X, Y'),             # move the cursor to a position.
+    ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
+    ('press_key', 'KEY, PRESSES'),   # press a key.
+    ('show_window', 'TITLE_REGEX')   # show a window.
 ]
 ```
 
@@ -103,18 +103,18 @@ share size, and prepares the order.
 
 ``` python
 open_long_position = [
-    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window
-    ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window
-    ('click', '1157, 713'),          # select the New Order tab
-    ('click', '1492, 785'),          # focus on the Share Size text box
-    ('press_hotkeys', 'ctrl, a'),    # select an existing value
-    ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window
-    ('calculate_share_size', None),  # calculate the share size and copy it
-    ('press_hotkeys', 'ctrl, v'),    # paste the share size
-    ('click', '1424, 808'),          # click the Market Order button
-    ('press_key', '\t, 3'),          # focus on the Buy Order button
-    ('beep', '1000, 100'),           # notify completion
-    ('back_to', None)                # back the cursor to the previous position
+    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
+    ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
+    ('click', '1157, 713'),          # select the New Order tab.
+    ('click', '1492, 785'),          # focus on the Share Size text box.
+    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
+    ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
+    ('calculate_share_size', None),  # calculate the share size and copy it.
+    ('press_hotkeys', 'ctrl, v'),    # paste the share size.
+    ('click', '1424, 808'),          # click the Market Order button.
+    ('press_key', '\t, 3'),          # focus on the Buy Order button.
+    ('beep', '1000, 100'),           # notify completion.
+    ('back_to', None)                # back the cursor to the previous position.
 ]
 ```
 
