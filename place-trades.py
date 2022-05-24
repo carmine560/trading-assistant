@@ -398,11 +398,10 @@ def get_price(x, y, width, height):
     while not price:
         try:
             image = pyautogui.screenshot(region=(x, y, width, height))
-            separated_price = pytesseract.image_to_string(
+            separated_prices = pytesseract.image_to_string(
                 image,
                 config='-c tessedit_char_whitelist=\ .,0123456789 --psm 7')
-            separated_price = separated_price.split(' ')[-1]
-            price = float(separated_price.replace(',', ''))
+            price = float(separated_prices.split(' ')[-1].replace(',', ''))
         except:
             pass
     return price
