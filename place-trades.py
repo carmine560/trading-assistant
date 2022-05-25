@@ -27,6 +27,8 @@ def main():
                         help='execute an action')
     parser.add_argument('-T', nargs='?', const='list_actions',
                         help='delete an action')
+    parser.add_argument('-S', nargs='?', const='list_actions',
+                        help='create a shell link to an action')
     parser.add_argument('-P', action='store_true',
                         help='configure paths')
     parser.add_argument('-R', action='store_true',
@@ -49,7 +51,7 @@ def main():
     elif args.d:
         save_market_data(config)
     elif args.M == 'list_actions' or args.e == 'list_actions' \
-         or args.T == 'list_actions':
+         or args.T == 'list_actions' or args.S == 'list_actions':
         list_actions(config)
     elif args.M:
         modify_action(config, args.M)
@@ -57,6 +59,8 @@ def main():
         execute_action(config, place_trades, args.e)
     elif args.T:
         delete_action(config, args.T)
+    elif args.S:
+        create_shell_link(config, args.S)
     elif args.P:
         configure_paths(config)
     elif args.R:
@@ -274,6 +278,15 @@ def delete_action(config, action):
     config.remove_option('Actions', action)
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
+
+def create_shell_link(config, action):
+    import winshell
+
+    title = action.replace('_', ' ').title()
+    shell_link = os.path.join(winshell.desktop(), title + '.lnk')
+    with winshell.shortcut(shell_link) as link:
+        link.path = 'py.exe'
+        link.arguments = os.path.abspath(__file__) + ' -e ' + action
 
 def configure_paths(config):
     section = config['Paths']

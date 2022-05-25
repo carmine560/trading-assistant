@@ -32,6 +32,8 @@ and uses the following packages:
     Tesseract
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html)
     to automate interactions with Hyper SBI 2
+  * (optional) [winshell](https://github.com/tjguk/winshell) to create
+    a shell link to an action
 
 Install each package as needed.  For example:
 
@@ -134,6 +136,7 @@ place-trades.py -e ACTION
   * `-M [ACTION]` create or modify an action
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action
+  * `-S [ACTION]` create a shell link to an action
   * `-P` configure paths
   * `-R` configure customer margin ratios
   * `-D` configure the previous market data
