@@ -4,7 +4,7 @@
 using Hyper SBI 2 -->
 
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
--->
+winshell -->
 
 A Python script that assists in discretionary day trading of stocks on
 margin using [Hyper SBI
@@ -92,10 +92,11 @@ ACTION = [
     ('calculate_share_size', None),  # calculate a share size and copy it.
     ('click', 'X, Y'),               # click.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
+    ('hide_window', 'TITLE_REGEX'),  # hide a window.
     ('move_to', 'X, Y'),             # move the cursor to a position.
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
-    ('show_window', 'TITLE_REGEX')   # show a window.
+    ('show_window', 'TITLE_REGEX'),  # show a window.
 ]
 ```
 
@@ -105,6 +106,7 @@ share size, and prepares the order.
 
 ``` python
 open_long_position = [
+    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
     ('click', '1157, 713'),          # select the New Order tab.
@@ -116,7 +118,7 @@ open_long_position = [
     ('click', '1424, 808'),          # click the Market Order button.
     ('press_key', '\t, 3'),          # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
-    ('back_to', None)                # back the cursor to the previous position.
+    ('back_to', None),               # back the cursor to the previous position.
 ]
 ```
 

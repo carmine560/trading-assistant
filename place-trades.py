@@ -262,6 +262,8 @@ def execute_action(config, place_trades, action):
                 pyautogui.click(coordinates)
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trades.get_symbol, arguments)
+        elif command == 'hide_window':
+            win32gui.EnumWindows(hide_window, arguments)
         elif command == 'move_to':
             pyautogui.moveTo(eval(arguments))
         elif command == 'press_hotkeys':
@@ -502,6 +504,12 @@ def get_price_limit(config, place_trades):
         region = config['OCR Regions']['price_limit_region'].split(', ')
         price_limit = float(get_price(*region))
     return price_limit
+
+def hide_window(hwnd, title_regex):
+    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+        if not win32gui.IsIconic(hwnd):
+            win32gui.ShowWindow(hwnd, 6)
+        return
 
 def show_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
