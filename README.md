@@ -6,15 +6,15 @@ using Hyper SBI 2 -->
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
 winshell -->
 
-A Python script that assists in discretionary day trading of stocks on
+`place-trades.py` assists in discretionary day trading of stocks on
 margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining
-a sequence of commands, this script executes:
+an action consisting of a sequence of commands, this script executes:
 
-  * showing the required windows
-  * calculating the maximum share size for a market order in margin
+  * showing required windows
+  * calculating the maximum share size for a market order on margin
     trading
-  * manipulating the widgets to prepare your order
+  * manipulating widgets to prepare your order
 
 ## Prerequisites ##
 
@@ -74,7 +74,7 @@ place-trades.py -L X Y WIDTH HEIGHT
 
 ### Create or Modify Action ###
 
-Create or modify actions to be processed by this script.
+Create or modify an action to be processed by this script.
 
 ``` shell
 place-trades.py -M ACTION
