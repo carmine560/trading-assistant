@@ -60,7 +60,7 @@ def main():
     elif args.T:
         delete_action(config, args.T)
     elif args.S:
-        create_shell_link(config, args.S)
+        create_shell_link(args.S)
     elif args.P:
         configure_paths(config)
     elif args.R:
@@ -281,7 +281,7 @@ def delete_action(config, action):
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
-def create_shell_link(config, action):
+def create_shell_link(action):
     import winshell
 
     title = action.replace('_', ' ').title()
