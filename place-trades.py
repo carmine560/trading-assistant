@@ -21,13 +21,13 @@ def main():
                         help='save customer margin ratios')
     parser.add_argument('-d', action='store_true',
                         help='save the previous market data')
-    parser.add_argument('-M', nargs='?', const='list_actions',
+    parser.add_argument('-M', nargs='?', const='LIST_ACTIONS',
                         help='create or modify an action')
-    parser.add_argument('-e', nargs='?', const='list_actions',
+    parser.add_argument('-e', nargs='?', const='LIST_ACTIONS',
                         help='execute an action')
-    parser.add_argument('-T', nargs='?', const='list_actions',
+    parser.add_argument('-T', nargs='?', const='LIST_ACTIONS',
                         help='delete an action')
-    parser.add_argument('-S', nargs='?', const='list_actions',
+    parser.add_argument('-S', nargs='?', const='LIST_ACTIONS',
                         help='create a shell link to an action')
     parser.add_argument('-P', action='store_true',
                         help='configure paths')
@@ -50,8 +50,8 @@ def main():
         save_customer_margin_ratios(config)
     elif args.d:
         save_market_data(config)
-    elif args.M == 'list_actions' or args.e == 'list_actions' \
-         or args.T == 'list_actions' or args.S == 'list_actions':
+    elif args.M == 'LIST_ACTIONS' or args.e == 'LIST_ACTIONS' \
+         or args.T == 'LIST_ACTIONS' or args.S == 'LIST_ACTIONS':
         list_actions(config)
     elif args.M:
         modify_action(config, args.M)
