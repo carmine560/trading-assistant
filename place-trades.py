@@ -289,6 +289,7 @@ def create_shell_link(action):
     with winshell.shortcut(shell_link) as link:
         link.path = 'py.exe'
         link.arguments = os.path.abspath(__file__) + ' -e ' + action
+        link.working_directory = os.path.dirname(__file__)
 
 def configure_paths(config):
     section = config['Paths']
