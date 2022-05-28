@@ -282,14 +282,17 @@ def delete_action(config, action):
         config.write(f)
 
 def create_shell_link(action):
-    import winshell
+    import win32com.client
 
+    shell = win32com.client.Dispatch('WScript.Shell')
+    desktop = shell.SpecialFolders('Desktop')
     title = action.replace('_', ' ').title()
-    shell_link = os.path.join(winshell.desktop(), title + '.lnk')
-    with winshell.shortcut(shell_link) as link:
-        link.path = 'py.exe'
-        link.arguments = os.path.abspath(__file__) + ' -e ' + action
-        link.working_directory = os.path.dirname(__file__)
+    shortcut = shell.CreateShortCut(os.path.join(desktop, title + '.lnk'))
+    shortcut.WindowStyle = 7
+    shortcut.TargetPath = 'py.exe'
+    shortcut.Arguments = os.path.abspath(__file__) + ' -e ' + action
+    shortcut.WorkingDirectory = os.path.dirname(__file__)
+    shortcut.save()
 
 def configure_paths(config):
     section = config['Paths']

@@ -4,7 +4,7 @@
 using Hyper SBI 2 -->
 
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
-winshell -->
+-->
 
 `place-trades.py` assists in discretionary day trading of stocks on
 margin using [Hyper SBI
@@ -32,8 +32,6 @@ and uses the following packages:
     Tesseract
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html)
     to automate interactions with Hyper SBI 2
-  * (optional) [winshell](https://github.com/tjguk/winshell) to create
-    a shell link to an action
 
 Install each package as needed.  For example:
 
