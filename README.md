@@ -1,7 +1,7 @@
 # place-trades #
 
-<!-- Python script that assists in day trading of stocks on margin
-using Hyper SBI 2 -->
+<!-- Python script that assists in discretionary day trading of stocks
+on margin using Hyper SBI 2 -->
 
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
 -->
