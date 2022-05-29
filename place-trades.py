@@ -80,11 +80,13 @@ def configure_default():
     config = configparser.ConfigParser(interpolation=None)
     config['Paths'] = {
         'customer_margin_ratios':
-        "os.path.expanduser('~') + '/Downloads/' + 'customer_margin_ratios.csv'",
+        os.path.normpath(os.path.join(os.path.expanduser('~'),
+                                      'Downloads/customer_margin_ratios.csv')),
         'symbol_close':
-        "os.path.expanduser('~') + '/Downloads/' + 'symbol_close_'",
+        os.path.normpath(os.path.join(os.path.expanduser('~'),
+                                      'Downloads/symbol_close_')),
         'trading_software':
-        '${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'}
+        r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'}
     config['Market Holidays'] = {
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
@@ -142,7 +144,7 @@ def save_customer_margin_ratios(config):
     header = eval(section['header'])
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
-    customer_margin_ratios = eval(config['Paths']['customer_margin_ratios'])
+    customer_margin_ratios = config['Paths']['customer_margin_ratios']
 
     if is_updated(config, update_time, time_zone, customer_margin_ratios):
         dfs = pd.read_html(customer_margin_ratio_url, match=regulation_header,
@@ -170,7 +172,7 @@ def save_market_data(config):
     market_data_url = section['market_data_url']
     symbol_header = section['symbol_header']
     close_header = section['close_header']
-    symbol_close = eval(config['Paths']['symbol_close'])
+    symbol_close = config['Paths']['symbol_close']
 
     if is_updated(config, update_time, time_zone, symbol_close + '1.csv'):
         df = pd.read_csv(last_update.strftime(market_data_url), dtype=str,
@@ -452,7 +454,7 @@ def calculate_share_size(config, place_trades):
     cash_balance = get_price(*region)
 
     customer_margin_ratio = 0.31
-    with open(eval(config['Paths']['customer_margin_ratios']), 'r') as f:
+    with open(config['Paths']['customer_margin_ratios'], 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             if row[0] == place_trades.symbol:
@@ -483,7 +485,7 @@ def get_price(x, y, width, height):
 
 def get_price_limit(config, place_trades):
     closing_price = 0.0
-    with open(eval(config['Paths']['symbol_close']) + place_trades.symbol[0]
+    with open(config['Paths']['symbol_close'] + place_trades.symbol[0]
               + '.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
