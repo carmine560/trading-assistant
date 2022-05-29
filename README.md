@@ -138,8 +138,9 @@ place-trades.py -e ACTION
   * `-T [ACTION]` delete an action
   * `-S [ACTION]` create a shell link to an action
   * `-P` configure paths
+  * `-H` configure market holidays
   * `-R` configure customer margin ratios
-  * `-D` configure the previous market data
+  * `-D` configure previous market data
   * `-C X Y WIDTH HEIGHT` configure the cash balance region
   * `-L X Y WIDTH HEIGHT` configure the price limit region
 

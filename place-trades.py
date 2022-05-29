@@ -31,10 +31,12 @@ def main():
                         help='create a shell link to an action')
     parser.add_argument('-P', action='store_true',
                         help='configure paths')
+    parser.add_argument('-H', action='store_true',
+                        help='configure market holidays')
     parser.add_argument('-R', action='store_true',
                         help='configure customer margin ratios')
     parser.add_argument('-D', action='store_true',
-                        help='configure the previous market data')
+                        help='configure previous market data')
     parser.add_argument('-C', nargs=4,
                         help='configure the cash balance region (x y width height)')
     parser.add_argument('-L', nargs=4,
@@ -63,6 +65,8 @@ def main():
         create_shell_link(args.S)
     elif args.P:
         configure_paths(config)
+    elif args.H:
+        configure_market_holidays(config)
     elif args.R:
         configure_customer_margin_ratios(config)
     elif args.D:
@@ -81,6 +85,10 @@ def configure_default():
         "os.path.expanduser('~') + '/Downloads/' + 'symbol_close_'",
         'trading_software':
         '${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'}
+    config['Market Holidays'] = {
+        'market_holiday_url':
+        'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
+        'date_header': '日付'}
     config['Customer Margin Ratios'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
@@ -98,10 +106,6 @@ def configure_default():
         'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
         'symbol_header': '銘柄コード',
         'close_header': '終値'}
-    config['Calendar'] = {
-        'calendar_url':
-        'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
-        'date_header': '日付'}
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0'}
@@ -181,13 +185,13 @@ def save_market_data(config):
                           index=False)
 
 def is_updated(config, update_time, time_zone, path):
-    section = config['Calendar']
-    calendar_url = section['calendar_url']
+    section = config['Market Holidays']
+    market_holiday_url = section['market_holiday_url']
     date_header = section['date_header']
 
-    dfs = pd.read_html(calendar_url)
-    calendar = pd.concat(dfs, ignore_index=True)
-    calendar[date_header].replace('/', '-', inplace=True)
+    dfs = pd.read_html(market_holiday_url)
+    market_holidays = pd.concat(dfs, ignore_index=True)
+    market_holidays[date_header].replace('/', '-', inplace=True)
 
     # Assume the web page is updated at update_time.
     now = pd.Timestamp.now(tz='UTC')
@@ -195,7 +199,7 @@ def is_updated(config, update_time, time_zone, path):
     if now < last_update:
         last_update -= pd.Timedelta(days=1)
 
-    while calendar[date_header].str.contains(last_update.strftime('%Y-%m-%d')).any() \
+    while market_holidays[date_header].str.contains(last_update.strftime('%Y-%m-%d')).any() \
           or last_update.weekday() == 5 or last_update.weekday() == 6:
         last_update -= pd.Timedelta(days=1)
 
@@ -342,6 +346,20 @@ def configure_paths(config):
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
+def configure_market_holidays(config):
+    section = config['Market Holidays']
+    market_holiday_url = section['market_holiday_url']
+    date_header = section['date_header']
+
+    section['market_holiday_url'] \
+        = input('market_holiday_url [' + market_holiday_url + '] ') \
+        or market_holiday_url
+    section['date_header'] \
+        = input('date_header [' + date_header + '] ') \
+        or date_header
+    with open(config.configuration, 'w', encoding='utf-8') as f:
+        config.write(f)
+
 def configure_customer_margin_ratios(config):
     section = config['Customer Margin Ratios']
     update_time = section['update_time']
@@ -406,6 +424,11 @@ def configure_market_data(config):
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
+def configure_ocr_region(config, key, region):
+    config['OCR Regions'][key] = ', '.join(region)
+    with open(config.configuration, 'w', encoding='utf-8') as f:
+        config.write(f)
+
 def configure_position():
     import time
 
@@ -423,11 +446,6 @@ def configure_position():
         time.sleep(0.001)
 
     return coordinates
-
-def configure_ocr_region(config, key, region):
-    config['OCR Regions'][key] = ', '.join(region)
-    with open(config.configuration, 'w', encoding='utf-8') as f:
-        config.write(f)
 
 def calculate_share_size(config, place_trades):
     region = config['OCR Regions']['cash_balance_region'].split(', ')
