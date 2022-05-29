@@ -92,13 +92,16 @@ def configure_default():
         'customer_margin_ratio': '委託保証金率',
         'suspended': '新規建停止'}
     config['Market Data'] = {
-        'calendar_url':
-        'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
-        'date_header': '日付',
+        'update_time': '20:00:00',
+        'time_zone': 'Asia/Tokyo',
         'market_data_url':
         'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
         'symbol_header': '銘柄コード',
         'close_header': '終値'}
+    config['Calendar'] = {
+        'calendar_url':
+        'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
+        'date_header': '日付'}
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0'}
@@ -123,6 +126,7 @@ def generate_startup_script(config):
                       start_trading_software])
 
 def save_customer_margin_ratios(config):
+    global pd
     import pandas as pd
 
     section = config['Customer Margin Ratios']
@@ -136,18 +140,7 @@ def save_customer_margin_ratios(config):
     suspended = section['suspended']
     customer_margin_ratios = eval(config['Paths']['customer_margin_ratios'])
 
-    # Assume the web page is updated at update_time.
-    now = pd.Timestamp.now(tz='UTC')
-    last_update = pd.Timestamp(update_time, tz=time_zone)
-    if now < last_update:
-        last_update = last_update - pd.Timedelta(days=1)
-
-    modified_time = pd.Timestamp(0, tz='UTC', unit='s')
-    if os.path.exists(customer_margin_ratios):
-        modified_time = pd.Timestamp(os.path.getmtime(customer_margin_ratios),
-                                     tz='UTC', unit='s')
-
-    if modified_time < last_update:
+    if is_updated(config, update_time, time_zone, customer_margin_ratios):
         dfs = pd.read_html(customer_margin_ratio_url, match=regulation_header,
                            header=0)
         for index, df in enumerate(dfs):
@@ -164,33 +157,54 @@ def save_customer_margin_ratios(config):
         df.to_csv(customer_margin_ratios, header=False, index=False)
 
 def save_market_data(config):
+    global pd
     import pandas as pd
 
     section = config['Market Data']
-    calendar_url = section['calendar_url']
-    date_header = section['date_header']
+    update_time = section['update_time']
+    time_zone = section['time_zone']
     market_data_url = section['market_data_url']
     symbol_header = section['symbol_header']
     close_header = section['close_header']
+    symbol_close = eval(config['Paths']['symbol_close'])
+
+    if is_updated(config, update_time, time_zone, symbol_close + '1.csv'):
+        df = pd.read_csv(last_update.strftime(market_data_url), dtype=str,
+                         encoding='cp932')
+        df = df[[symbol_header, close_header]]
+        df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
+        df.dropna(subset=[symbol_header, close_header], inplace=True)
+        df.sort_values(by=symbol_header, inplace=True)
+        for i in range(1, 10):
+            subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
+            subset.to_csv(symbol_close + str(i) + '.csv', header=False,
+                          index=False)
+
+def is_updated(config, update_time, time_zone, path):
+    section = config['Calendar']
+    calendar_url = section['calendar_url']
+    date_header = section['date_header']
 
     dfs = pd.read_html(calendar_url)
     calendar = pd.concat(dfs, ignore_index=True)
     calendar[date_header].replace('/', '-', inplace=True)
-    previous_date = pd.Timestamp.now() - pd.Timedelta(days=1)
-    while calendar[date_header].str.contains(previous_date.strftime('%Y-%m-%d')).any() \
-          or previous_date.weekday() == 5 or previous_date.weekday() == 6:
-        previous_date -= pd.Timedelta(days=1)
 
-    df = pd.read_csv(previous_date.strftime(market_data_url), dtype=str,
-                     encoding='cp932')
-    df = df[[symbol_header, close_header]]
-    df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
-    df.dropna(subset=[symbol_header, close_header], inplace=True)
-    df.sort_values(by=symbol_header, inplace=True)
-    for i in range(1, 10):
-        subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
-        subset.to_csv(eval(config['Paths']['symbol_close']) + str(i) + '.csv',
-                      header=False, index=False)
+    # Assume the web page is updated at update_time.
+    now = pd.Timestamp.now(tz='UTC')
+    last_update = pd.Timestamp(update_time, tz=time_zone)
+    if now < last_update:
+        last_update -= pd.Timedelta(days=1)
+
+    while calendar[date_header].str.contains(last_update.strftime('%Y-%m-%d')).any() \
+          or last_update.weekday() == 5 or last_update.weekday() == 6:
+        last_update -= pd.Timedelta(days=1)
+
+    modified_time = pd.Timestamp(0, tz='UTC', unit='s')
+    if os.path.exists(path):
+        modified_time = pd.Timestamp(os.path.getmtime(path), tz='UTC', unit='s')
+
+    if modified_time < last_update:
+        return True
 
 def list_actions(config):
     if config.has_section('Actions'):
@@ -368,18 +382,18 @@ def configure_customer_margin_ratios(config):
 
 def configure_market_data(config):
     section = config['Market Data']
-    calendar_url = section['calendar_url']
-    date_header = section['date_header']
+    update_time = section['update_time']
+    time_zone = section['time_zone']
     market_data_url = section['market_data_url']
     symbol_header = section['symbol_header']
     close_header = section['close_header']
 
-    section['calendar_url'] \
-        = input('calendar_url [' + calendar_url + '] ') \
-        or calendar_url
-    section['date_header'] \
-        = input('date_header [' + date_header + '] ') \
-        or date_header
+    section['update_time'] \
+        = input('update_time [' + update_time + '] ') \
+        or update_time
+    section['time_zone'] \
+        = input('time_zone [' + time_zone + '] ') \
+        or time_zone
     section['market_data_url'] \
         = input('market_data_url [' + market_data_url + '] ') \
         or market_data_url
