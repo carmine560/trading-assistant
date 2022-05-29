@@ -82,6 +82,8 @@ def configure_default():
         'trading_software':
         '${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'}
     config['Customer Margin Ratios'] = {
+        'update_time': '20:00:00',
+        'time_zone': 'Asia/Tokyo',
         'customer_margin_ratio_url':
         'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
@@ -124,28 +126,42 @@ def save_customer_margin_ratios(config):
     import pandas as pd
 
     section = config['Customer Margin Ratios']
+    update_time = section['update_time']
+    time_zone = section['time_zone']
     customer_margin_ratio_url = section['customer_margin_ratio_url']
     symbol_header = section['symbol_header']
     regulation_header = section['regulation_header']
     header = eval(section['header'])
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
+    customer_margin_ratios = eval(config['Paths']['customer_margin_ratios'])
 
-    dfs = pd.read_html(customer_margin_ratio_url, match=regulation_header,
-                       header=0)
-    for index, df in enumerate(dfs):
-        if tuple(df.columns.values) == header:
-            df = dfs[index][[symbol_header, regulation_header]]
-            break
+    # Assume the web page is updated at update_time.
+    now = pd.Timestamp.now(tz='UTC')
+    last_update = pd.Timestamp(update_time, tz=time_zone)
+    if now < last_update:
+        last_update = last_update - pd.Timedelta(days=1)
 
-    df = df[df[regulation_header].str.contains(suspended + '|'
-                                               + customer_margin_ratio)]
-    df[regulation_header].replace('.*' + suspended + '.*',
-                                  'suspended', inplace=True, regex=True)
-    df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
-                                  r'0.\1', inplace=True, regex=True)
-    df.to_csv(eval(config['Paths']['customer_margin_ratios']), header=False,
-              index=False)
+    modified_time = pd.Timestamp(0, tz='UTC', unit='s')
+    if os.path.exists(customer_margin_ratios):
+        modified_time = pd.Timestamp(os.path.getmtime(customer_margin_ratios),
+                                     tz='UTC', unit='s')
+
+    if modified_time < last_update:
+        dfs = pd.read_html(customer_margin_ratio_url, match=regulation_header,
+                           header=0)
+        for index, df in enumerate(dfs):
+            if tuple(df.columns.values) == header:
+                df = dfs[index][[symbol_header, regulation_header]]
+                break
+
+        df = df[df[regulation_header].str.contains(suspended + '|'
+                                                   + customer_margin_ratio)]
+        df[regulation_header].replace('.*' + suspended + '.*',
+                                      'suspended', inplace=True, regex=True)
+        df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
+                                      r'0.\1', inplace=True, regex=True)
+        df.to_csv(customer_margin_ratios, header=False, index=False)
 
 def save_market_data(config):
     import pandas as pd
@@ -314,6 +330,8 @@ def configure_paths(config):
 
 def configure_customer_margin_ratios(config):
     section = config['Customer Margin Ratios']
+    update_time = section['update_time']
+    time_zone = section['time_zone']
     customer_margin_ratio_url = section['customer_margin_ratio_url']
     symbol_header = section['symbol_header']
     regulation_header = section['regulation_header']
@@ -321,6 +339,12 @@ def configure_customer_margin_ratios(config):
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
 
+    section['update_time'] \
+        = input('update_time [' + update_time + '] ') \
+        or update_time
+    section['time_zone'] \
+        = input('time_zone [' + time_zone + '] ') \
+        or time_zone
     section['customer_margin_ratio_url'] \
         = input('customer_margin_ratio_url [' + customer_margin_ratio_url + '] ') \
         or customer_margin_ratio_url
