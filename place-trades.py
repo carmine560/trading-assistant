@@ -149,7 +149,7 @@ def save_customer_margin_ratios(config):
     suspended = section['suspended']
     customer_margin_ratios = config['Paths']['customer_margin_ratios']
 
-    if is_updated(config, update_time, time_zone, customer_margin_ratios):
+    if get_latest(config, update_time, time_zone, customer_margin_ratios):
         dfs = pd.read_html(customer_margin_ratio_url, match=regulation_header,
                            header=0)
         for index, df in enumerate(dfs):
@@ -177,10 +177,10 @@ def save_market_data(config):
     close_header = section['close_header']
     symbol_close = config['Paths']['symbol_close']
 
-    last_update = is_updated(config, update_time, time_zone,
-                             symbol_close + '1.csv')
-    if last_update:
-        df = pd.read_csv(last_update.strftime(market_data_url), dtype=str,
+    latest = get_latest(config, update_time, time_zone,
+                        symbol_close + '1.csv')
+    if latest:
+        df = pd.read_csv(latest.strftime(market_data_url), dtype=str,
                          encoding='cp932')
         df = df[[symbol_header, close_header]]
         df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
@@ -191,7 +191,7 @@ def save_market_data(config):
             subset.to_csv(symbol_close + str(i) + '.csv', header=False,
                           index=False)
 
-def is_updated(config, update_time, time_zone, path):
+def get_latest(config, update_time, time_zone, path):
     import requests
 
     section = config['Market Holidays']
@@ -221,19 +221,19 @@ def is_updated(config, update_time, time_zone, path):
 
     # Assume the web page is updated at update_time.
     now = pd.Timestamp.now(tz='UTC')
-    last_update = pd.Timestamp(update_time, tz=time_zone)
-    if now < last_update:
-        last_update -= pd.Timedelta(days=1)
+    latest = pd.Timestamp(update_time, tz=time_zone)
+    if now < latest:
+        latest -= pd.Timedelta(days=1)
 
-    while market_holidays[date_header].str.contains(last_update.strftime('%Y-%m-%d')).any() \
-          or last_update.weekday() == 5 or last_update.weekday() == 6:
-        last_update -= pd.Timedelta(days=1)
+    while market_holidays[date_header].str.contains(latest.strftime('%Y-%m-%d')).any() \
+          or latest.weekday() == 5 or latest.weekday() == 6:
+        latest -= pd.Timedelta(days=1)
 
     # FIXME
-    print(last_update)
+    print(latest)
 
-    if modified_time < last_update:
-        return last_update
+    if modified_time < latest:
+        return latest
 
 def list_actions(config):
     if config.has_section('Actions'):
