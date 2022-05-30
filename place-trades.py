@@ -101,7 +101,7 @@ def configure_default():
         'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
-        'header': "'銘柄', 'コード', '建玉', '信用取引区分', '規制内容'",
+        'header': '銘柄, コード, 建玉, 信用取引区分, 規制内容',
         'customer_margin_ratio': '委託保証金率',
         'suspended': '新規建停止'}
     config['Market Data'] = {
@@ -144,7 +144,7 @@ def save_customer_margin_ratios(config):
     customer_margin_ratio_url = section['customer_margin_ratio_url']
     symbol_header = section['symbol_header']
     regulation_header = section['regulation_header']
-    header = eval(section['header'])
+    header = section['header']
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
     customer_margin_ratios = config['Paths']['customer_margin_ratios']
@@ -152,6 +152,7 @@ def save_customer_margin_ratios(config):
     if get_latest(config, update_time, time_zone, customer_margin_ratios):
         dfs = pd.read_html(customer_margin_ratio_url, match=regulation_header,
                            header=0)
+        header = tuple(map(str.strip, header.split(',')))
         for index, df in enumerate(dfs):
             if tuple(df.columns.values) == header:
                 df = dfs[index][[symbol_header, regulation_header]]
