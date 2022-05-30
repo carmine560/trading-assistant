@@ -121,9 +121,9 @@ def generate_startup_script(config):
 
     with open(os.path.splitext(__file__)[0] + '.ps1', 'w') as f:
         save_customer_margin_ratios = \
-            'Start-Process -FilePath py -ArgumentList "' \
+            'Start-Process -FilePath py.exe -ArgumentList "' \
             + os.path.abspath(__file__) + ' -r" -NoNewWindow\n'
-        save_market_data = 'Start-Process -FilePath py -ArgumentList "' \
+        save_market_data = 'Start-Process -FilePath py.exe -ArgumentList "' \
             + os.path.abspath(__file__) + ' -d" -NoNewWindow\n'
         start_trading_software = 'Start-Process -FilePath "' \
             + trading_software + '" -NoNewWindow\n'
@@ -174,7 +174,9 @@ def save_market_data(config):
     close_header = section['close_header']
     symbol_close = config['Paths']['symbol_close']
 
-    if is_updated(config, update_time, time_zone, symbol_close + '1.csv'):
+    last_update = is_updated(config, update_time, time_zone,
+                             symbol_close + '1.csv')
+    if last_update:
         df = pd.read_csv(last_update.strftime(market_data_url), dtype=str,
                          encoding='cp932')
         df = df[[symbol_header, close_header]]
@@ -205,12 +207,15 @@ def is_updated(config, update_time, time_zone, path):
           or last_update.weekday() == 5 or last_update.weekday() == 6:
         last_update -= pd.Timedelta(days=1)
 
+    # FIXME
+    print(last_update)
+
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
     if os.path.exists(path):
         modified_time = pd.Timestamp(os.path.getmtime(path), tz='UTC', unit='s')
 
     if modified_time < last_update:
-        return True
+        return last_update
 
 def list_actions(config):
     if config.has_section('Actions'):
