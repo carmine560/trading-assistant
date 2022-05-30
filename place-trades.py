@@ -90,6 +90,9 @@ def configure_default():
     config['Market Holidays'] = {
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
+        'market_holidays':
+        os.path.normpath(os.path.join(os.path.expanduser('~'),
+                                      'Downloads/market_holidays.html')),
         'date_header': '日付'}
     config['Customer Margin Ratios'] = {
         'update_time': '20:00:00',
@@ -189,13 +192,32 @@ def save_market_data(config):
                           index=False)
 
 def is_updated(config, update_time, time_zone, path):
+    import requests
+
     section = config['Market Holidays']
     market_holiday_url = section['market_holiday_url']
+    market_holidays = section['market_holidays']
     date_header = section['date_header']
 
-    dfs = pd.read_html(market_holiday_url)
+    modified_time = pd.Timestamp(0, tz='UTC', unit='s')
+    if os.path.exists(market_holidays):
+        modified_time = pd.Timestamp(os.path.getmtime(market_holidays),
+                                     tz='UTC', unit='s')
+
+    head = requests.head(market_holiday_url)
+    last_modified = pd.Timestamp(head.headers['last-modified'])
+
+    if modified_time < last_modified:
+        get = requests.get(market_holiday_url)
+        open(market_holidays, 'wb').write(get.content)
+
+    dfs = pd.read_html(market_holidays)
     market_holidays = pd.concat(dfs, ignore_index=True)
     market_holidays[date_header].replace('/', '-', inplace=True)
+
+    modified_time = pd.Timestamp(0, tz='UTC', unit='s')
+    if os.path.exists(path):
+        modified_time = pd.Timestamp(os.path.getmtime(path), tz='UTC', unit='s')
 
     # Assume the web page is updated at update_time.
     now = pd.Timestamp.now(tz='UTC')
@@ -209,10 +231,6 @@ def is_updated(config, update_time, time_zone, path):
 
     # FIXME
     print(last_update)
-
-    modified_time = pd.Timestamp(0, tz='UTC', unit='s')
-    if os.path.exists(path):
-        modified_time = pd.Timestamp(os.path.getmtime(path), tz='UTC', unit='s')
 
     if modified_time < last_update:
         return last_update
@@ -356,11 +374,15 @@ def configure_paths(config):
 def configure_market_holidays(config):
     section = config['Market Holidays']
     market_holiday_url = section['market_holiday_url']
+    market_holidays = section['market_holidays']
     date_header = section['date_header']
 
     section['market_holiday_url'] \
         = input('market_holiday_url [' + market_holiday_url + '] ') \
         or market_holiday_url
+    section['market_holidays'] \
+        = input('market_holidays [' + market_holidays + '] ') \
+        or market_holidays
     section['date_header'] \
         = input('date_header [' + date_header + '] ') \
         or date_header
