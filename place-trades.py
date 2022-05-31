@@ -93,7 +93,8 @@ def configure_default():
         'market_holidays':
         os.path.normpath(os.path.join(os.path.expanduser('~'),
                                       'Downloads/market_holidays.html')),
-        'date_header': '日付'}
+        'date_header': '日付',
+        'date_format': '%Y/%m/%d'}
     config['Customer Margin Ratios'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
@@ -201,6 +202,7 @@ def get_latest(config, update_time, time_zone, path):
     market_holiday_url = section['market_holiday_url']
     market_holidays = section['market_holidays']
     date_header = section['date_header']
+    date_format = section['date_format']
 
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
     if os.path.exists(market_holidays):
@@ -216,7 +218,6 @@ def get_latest(config, update_time, time_zone, path):
 
     dfs = pd.read_html(market_holidays)
     market_holidays = pd.concat(dfs, ignore_index=True)
-    market_holidays[date_header].replace('/', '-', inplace=True)
 
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
     if os.path.exists(path):
@@ -228,8 +229,9 @@ def get_latest(config, update_time, time_zone, path):
     if now < latest:
         latest -= pd.Timedelta(days=1)
 
-    while market_holidays[date_header].str.contains(latest.strftime('%Y-%m-%d')).any() \
-          or latest.weekday() == 5 or latest.weekday() == 6:
+    while market_holidays[date_header].str.contains(
+            latest.strftime(date_format)).any() \
+            or latest.weekday() == 5 or latest.weekday() == 6:
         latest -= pd.Timedelta(days=1)
 
     # FIXME
@@ -379,6 +381,7 @@ def configure_market_holidays(config):
     market_holiday_url = section['market_holiday_url']
     market_holidays = section['market_holidays']
     date_header = section['date_header']
+    date_format = section['date_format']
 
     section['market_holiday_url'] \
         = input('market_holiday_url [' + market_holiday_url + '] ') \
@@ -389,6 +392,9 @@ def configure_market_holidays(config):
     section['date_header'] \
         = input('date_header [' + date_header + '] ') \
         or date_header
+    section['date_format'] \
+        = input('date_format [' + date_format + '] ') \
+        or date_format
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
