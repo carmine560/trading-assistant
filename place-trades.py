@@ -15,32 +15,45 @@ class PlaceTrades:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-g', action='store_true',
-                        help='generate the startup script')
-    parser.add_argument('-r', action='store_true',
-                        help='save customer margin ratios')
-    parser.add_argument('-d', action='store_true',
-                        help='save the previous market data')
-    parser.add_argument('-M', nargs='?', const='LIST_ACTIONS',
-                        help='create or modify an action')
-    parser.add_argument('-e', nargs='?', const='LIST_ACTIONS',
-                        help='execute an action')
-    parser.add_argument('-T', nargs='?', const='LIST_ACTIONS',
-                        help='delete an action')
-    parser.add_argument('-S', nargs='?', const='LIST_ACTIONS',
-                        help='create a shell link to an action')
-    parser.add_argument('-P', action='store_true',
-                        help='configure paths')
-    parser.add_argument('-H', action='store_true',
-                        help='configure market holidays')
-    parser.add_argument('-R', action='store_true',
-                        help='configure customer margin ratios')
-    parser.add_argument('-D', action='store_true',
-                        help='configure previous market data')
-    parser.add_argument('-C', nargs=4,
-                        help='configure the cash balance region (x y width height)')
-    parser.add_argument('-L', nargs=4,
-                        help='configure the price limit region (x y width height)')
+    parser.add_argument(
+        '-g', action='store_true',
+        help='generate the startup script')
+    parser.add_argument(
+        '-r', action='store_true',
+        help='save customer margin ratios')
+    parser.add_argument(
+        '-d', action='store_true',
+        help='save the previous market data')
+    parser.add_argument(
+        '-M', nargs='?', const='LIST_ACTIONS',
+        help='create or modify an action')
+    parser.add_argument(
+        '-e', nargs='?', const='LIST_ACTIONS',
+        help='execute an action')
+    parser.add_argument(
+        '-T', nargs='?', const='LIST_ACTIONS',
+        help='delete an action')
+    parser.add_argument(
+        '-S', nargs='?', const='LIST_ACTIONS',
+        help='create a shell link to an action')
+    parser.add_argument(
+        '-P', action='store_true',
+        help='configure paths')
+    parser.add_argument(
+        '-H', action='store_true',
+        help='configure market holidays')
+    parser.add_argument(
+        '-R', action='store_true',
+        help='configure customer margin ratios')
+    parser.add_argument(
+        '-D', action='store_true',
+        help='configure previous market data')
+    parser.add_argument(
+        '-C', nargs=4,
+        help='configure the cash balance region (x y width height)')
+    parser.add_argument(
+        '-L', nargs=4,
+        help='configure the price limit region (x y width height)')
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     config = configure_default()
@@ -132,8 +145,7 @@ def generate_startup_script(config):
             + os.path.abspath(__file__) + ' -d" -NoNewWindow\n'
         start_trading_software = 'Start-Process -FilePath "' \
             + trading_software + '" -NoNewWindow\n'
-        f.writelines([save_customer_margin_ratios,
-                      save_market_data,
+        f.writelines([save_customer_margin_ratios, save_market_data,
                       start_trading_software])
 
 def save_customer_margin_ratios(config):
@@ -160,8 +172,8 @@ def save_customer_margin_ratios(config):
                 df = dfs[index][[symbol_header, regulation_header]]
                 break
 
-        df = df[df[regulation_header].str.contains(suspended + '|'
-                                                   + customer_margin_ratio)]
+        df = df[df[regulation_header].str.contains(
+            suspended + '|' + customer_margin_ratio)]
         df[regulation_header].replace('.*' + suspended + '.*',
                                       'suspended', inplace=True, regex=True)
         df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
@@ -181,8 +193,7 @@ def save_market_data(config):
     close_header = section['close_header']
     symbol_close = config['Paths']['symbol_close']
 
-    latest = get_latest(config, update_time, time_zone,
-                        symbol_close + '1.csv')
+    latest = get_latest(config, update_time, time_zone, symbol_close + '1.csv')
     if latest:
         df = pd.read_csv(latest.strftime(market_data_url), dtype=str,
                          encoding=encoding)
@@ -364,14 +375,14 @@ def configure_paths(config):
     symbol_close = section['symbol_close']
     trading_software = section['trading_software']
 
-    section['customer_margin_ratios'] \
-        = input('customer_margin_ratios [' + customer_margin_ratios + '] ') \
+    section['customer_margin_ratios'] = \
+        input('customer_margin_ratios [' + customer_margin_ratios + '] ') \
         or customer_margin_ratios
-    section['symbol_close'] \
-        = input('symbol_close [' + symbol_close + '] ') \
+    section['symbol_close'] = \
+        input('symbol_close [' + symbol_close + '] ') \
         or symbol_close
-    section['trading_software'] \
-        = input('trading_software [' + trading_software + '] ') \
+    section['trading_software'] = \
+        input('trading_software [' + trading_software + '] ') \
         or trading_software
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
@@ -383,17 +394,17 @@ def configure_market_holidays(config):
     date_header = section['date_header']
     date_format = section['date_format']
 
-    section['market_holiday_url'] \
-        = input('market_holiday_url [' + market_holiday_url + '] ') \
+    section['market_holiday_url'] = \
+        input('market_holiday_url [' + market_holiday_url + '] ') \
         or market_holiday_url
-    section['market_holidays'] \
-        = input('market_holidays [' + market_holidays + '] ') \
+    section['market_holidays'] = \
+        input('market_holidays [' + market_holidays + '] ') \
         or market_holidays
-    section['date_header'] \
-        = input('date_header [' + date_header + '] ') \
+    section['date_header'] = \
+        input('date_header [' + date_header + '] ') \
         or date_header
-    section['date_format'] \
-        = input('date_format [' + date_format + '] ') \
+    section['date_format'] = \
+        input('date_format [' + date_format + '] ') \
         or date_format
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
@@ -409,29 +420,29 @@ def configure_customer_margin_ratios(config):
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
 
-    section['update_time'] \
-        = input('update_time [' + update_time + '] ') \
+    section['update_time'] = \
+        input('update_time [' + update_time + '] ') \
         or update_time
-    section['time_zone'] \
-        = input('time_zone [' + time_zone + '] ') \
+    section['time_zone'] = \
+        input('time_zone [' + time_zone + '] ') \
         or time_zone
-    section['customer_margin_ratio_url'] \
-        = input('customer_margin_ratio_url [' + customer_margin_ratio_url + '] ') \
+    section['customer_margin_ratio_url'] = \
+        input('customer_margin_ratio_url [' + customer_margin_ratio_url + '] ') \
         or customer_margin_ratio_url
-    section['symbol_header'] \
-        = input('symbol_header [' + symbol_header + '] ') \
+    section['symbol_header'] = \
+        input('symbol_header [' + symbol_header + '] ') \
         or symbol_header
-    section['regulation_header'] \
-        = input('regulation_header [' + regulation_header + '] ') \
+    section['regulation_header'] = \
+        input('regulation_header [' + regulation_header + '] ') \
         or regulation_header
-    section['header'] \
-        = input('header [' + header + '] ') \
+    section['header'] = \
+        input('header [' + header + '] ') \
         or header
-    section['customer_margin_ratio'] \
-        = input('customer_margin_ratio [' + customer_margin_ratio + '] ') \
+    section['customer_margin_ratio'] = \
+        input('customer_margin_ratio [' + customer_margin_ratio + '] ') \
         or customer_margin_ratio
-    section['suspended'] \
-        = input('suspended [' + suspended + '] ') \
+    section['suspended'] = \
+        input('suspended [' + suspended + '] ') \
         or suspended
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
@@ -445,23 +456,23 @@ def configure_market_data(config):
     symbol_header = section['symbol_header']
     close_header = section['close_header']
 
-    section['update_time'] \
-        = input('update_time [' + update_time + '] ') \
+    section['update_time'] = \
+        input('update_time [' + update_time + '] ') \
         or update_time
-    section['time_zone'] \
-        = input('time_zone [' + time_zone + '] ') \
+    section['time_zone'] = \
+        input('time_zone [' + time_zone + '] ') \
         or time_zone
-    section['market_data_url'] \
-        = input('market_data_url [' + market_data_url + '] ') \
+    section['market_data_url'] = \
+        input('market_data_url [' + market_data_url + '] ') \
         or market_data_url
-    section['encoding'] \
-        = input('encoding [' + encoding + '] ') \
+    section['encoding'] = \
+        input('encoding [' + encoding + '] ') \
         or encoding
-    section['symbol_header'] \
-        = input('symbol_header [' + symbol_header + '] ') \
+    section['symbol_header'] = \
+        input('symbol_header [' + symbol_header + '] ') \
         or symbol_header
-    section['close_header'] \
-        = input('close_header [' + close_header + '] ') \
+    section['close_header'] = \
+        input('close_header [' + close_header + '] ') \
         or close_header
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
