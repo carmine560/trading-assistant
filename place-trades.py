@@ -216,7 +216,7 @@ def get_latest(config, update_time, time_zone, path):
         get = requests.get(market_holiday_url)
         open(market_holidays, 'wb').write(get.content)
 
-    dfs = pd.read_html(market_holidays)
+    dfs = pd.read_html(market_holidays, match=date_header)
     market_holidays = pd.concat(dfs, ignore_index=True)
 
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
