@@ -109,6 +109,7 @@ def configure_default():
         'time_zone': 'Asia/Tokyo',
         'market_data_url':
         'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
+        'encoding': 'cp932',
         'symbol_header': '銘柄コード',
         'close_header': '終値'}
     config['OCR Regions'] = {
@@ -174,6 +175,7 @@ def save_market_data(config):
     update_time = section['update_time']
     time_zone = section['time_zone']
     market_data_url = section['market_data_url']
+    encoding = section['encoding']
     symbol_header = section['symbol_header']
     close_header = section['close_header']
     symbol_close = config['Paths']['symbol_close']
@@ -182,7 +184,7 @@ def save_market_data(config):
                         symbol_close + '1.csv')
     if latest:
         df = pd.read_csv(latest.strftime(market_data_url), dtype=str,
-                         encoding='cp932')
+                         encoding=encoding)
         df = df[[symbol_header, close_header]]
         df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
         df.dropna(subset=[symbol_header, close_header], inplace=True)
@@ -433,6 +435,7 @@ def configure_market_data(config):
     update_time = section['update_time']
     time_zone = section['time_zone']
     market_data_url = section['market_data_url']
+    encoding = section['encoding']
     symbol_header = section['symbol_header']
     close_header = section['close_header']
 
@@ -445,6 +448,9 @@ def configure_market_data(config):
     section['market_data_url'] \
         = input('market_data_url [' + market_data_url + '] ') \
         or market_data_url
+    section['encoding'] \
+        = input('encoding [' + encoding + '] ') \
+        or encoding
     section['symbol_header'] \
         = input('symbol_header [' + symbol_header + '] ') \
         or symbol_header
