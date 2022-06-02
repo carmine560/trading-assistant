@@ -134,10 +134,14 @@ def configure_default():
     return config
 
 def generate_startup_script(config):
+    import win32com.client
+
     section = config['Paths']
     trading_software = section['trading_software']
 
-    with open(os.path.splitext(__file__)[0] + '.ps1', 'w') as f:
+    startup_script = os.path.splitext(__file__)[0] + '.ps1'
+
+    with open(startup_script, 'w') as f:
         save_customer_margin_ratios = \
             'Start-Process -FilePath py.exe -ArgumentList "' \
             + os.path.abspath(__file__) + ' -r" -NoNewWindow\n'
@@ -147,6 +151,17 @@ def generate_startup_script(config):
             + trading_software + '" -NoNewWindow\n'
         f.writelines([save_customer_margin_ratios, save_market_data,
                       start_trading_software])
+
+    shell = win32com.client.Dispatch('WScript.Shell')
+    desktop = shell.SpecialFolders('Desktop')
+    basename = os.path.basename(__file__)
+    title = os.path.splitext(basename)[0].replace('-', ' ').title()
+    shortcut = shell.CreateShortCut(os.path.join(desktop, title + '.lnk'))
+    shortcut.WindowStyle = 7
+    shortcut.TargetPath = 'powershell.exe'
+    shortcut.Arguments = '-WindowStyle Hidden -File "' + startup_script + '"'
+    shortcut.WorkingDirectory = os.path.dirname(__file__)
+    shortcut.save()
 
 def save_customer_margin_ratios(config):
     global pd
