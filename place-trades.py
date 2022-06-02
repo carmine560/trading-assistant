@@ -164,8 +164,14 @@ def save_customer_margin_ratios(config):
     customer_margin_ratios = config['Paths']['customer_margin_ratios']
 
     if get_latest(config, update_time, time_zone, customer_margin_ratios):
-        dfs = pd.read_html(customer_margin_ratio_url, match=regulation_header,
-                           header=0)
+        dfs = pd.DataFrame()
+        try:
+            dfs = pd.read_html(customer_margin_ratio_url,
+                               match=regulation_header, header=0)
+        except Exception as e:
+            print(e)
+            sys.exit(1)
+
         header = tuple(map(str.strip, header.split(',')))
         for index, df in enumerate(dfs):
             if tuple(df.columns.values) == header:
@@ -195,8 +201,14 @@ def save_market_data(config):
 
     latest = get_latest(config, update_time, time_zone, symbol_close + '1.csv')
     if latest:
-        df = pd.read_csv(latest.strftime(market_data_url), dtype=str,
-                         encoding=encoding)
+        df = pd.DataFrame()
+        try:
+            df = pd.read_csv(latest.strftime(market_data_url), dtype=str,
+                             encoding=encoding)
+        except Exception as e:
+            print(e)
+            sys.exit(1)
+
         df = df[[symbol_header, close_header]]
         df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
         df.dropna(subset=[symbol_header, close_header], inplace=True)
@@ -221,6 +233,12 @@ def get_latest(config, update_time, time_zone, path):
                                      tz='UTC', unit='s')
 
     head = requests.head(market_holiday_url)
+    try:
+        head.raise_for_status()
+    except Exception as e:
+        print(e)
+        sys.exit(1)
+
     last_modified = pd.Timestamp(head.headers['last-modified'])
 
     if modified_time < last_modified:
@@ -244,9 +262,6 @@ def get_latest(config, update_time, time_zone, path):
             latest.strftime(date_format)).any() \
             or latest.weekday() == 5 or latest.weekday() == 6:
         latest -= pd.Timedelta(days=1)
-
-    # FIXME
-    print(latest)
 
     if modified_time < latest:
         return latest
