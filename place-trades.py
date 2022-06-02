@@ -520,15 +520,18 @@ def calculate_share_size(config, place_trades):
     cash_balance = get_price(*region)
 
     customer_margin_ratio = 0.31
-    with open(config['Paths']['customer_margin_ratios'], 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if row[0] == place_trades.symbol:
-                if row[1] == 'suspended':
-                    sys.exit()
-                else:
-                    customer_margin_ratio = float(row[1])
-                break
+    try:
+        with open(config['Paths']['customer_margin_ratios'], 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if row[0] == place_trades.symbol:
+                    if row[1] == 'suspended':
+                        sys.exit()
+                    else:
+                        customer_margin_ratio = float(row[1])
+                    break
+    except OSError as e:
+        print(e)
 
     price_limit = get_price_limit(config, place_trades)
     share_size = int(cash_balance / customer_margin_ratio / price_limit
@@ -551,13 +554,16 @@ def get_price(x, y, width, height):
 
 def get_price_limit(config, place_trades):
     closing_price = 0.0
-    with open(config['Paths']['symbol_close'] + place_trades.symbol[0]
-              + '.csv', 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if row[0] == place_trades.symbol:
-                closing_price = float(row[1])
-                break
+    try:
+        with open(config['Paths']['symbol_close'] + place_trades.symbol[0]
+                  + '.csv', 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if row[0] == place_trades.symbol:
+                    closing_price = float(row[1])
+                    break
+    except OSError as e:
+        print(e)
 
     if closing_price:
         if closing_price < 100:
