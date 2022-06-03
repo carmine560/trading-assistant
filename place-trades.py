@@ -17,7 +17,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-g', action='store_true',
-        help='generate the startup script')
+        help='generate a startup script and a shell link to it')
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -35,7 +35,7 @@ def main():
         help='delete an action')
     parser.add_argument(
         '-S', nargs='?', const='LIST_ACTIONS',
-        help='create a shell link to an action')
+        help='generate a shell link to an action')
     parser.add_argument(
         '-P', action='store_true',
         help='configure paths')
