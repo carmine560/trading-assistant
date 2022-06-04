@@ -130,13 +130,13 @@ place-trades.py -e ACTION
 
 ### Options ###
 
-  * `-g` generate a startup script and a shell link to it
+  * `-g` generate a startup script and a shortcut to it
   * `-r` save customer margin ratios
   * `-d` save the previous market data
   * `-M [ACTION]` create or modify an action
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action
-  * `-S [ACTION]` generate a shell link to an action
+  * `-S [ACTION]` generate a shortcut to an action
   * `-P` configure paths
   * `-H` configure market holidays
   * `-R` configure customer margin ratios

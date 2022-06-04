@@ -17,7 +17,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-g', action='store_true',
-        help='generate a startup script and a shell link to it')
+        help='generate a startup script and a shortcut to it')
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -35,7 +35,7 @@ def main():
         help='delete an action')
     parser.add_argument(
         '-S', nargs='?', const='LIST_ACTIONS',
-        help='generate a shell link to an action')
+        help='generate a shortcut to an action')
     parser.add_argument(
         '-P', action='store_true',
         help='configure paths')
@@ -75,7 +75,8 @@ def main():
     elif args.T:
         delete_action(config, args.T)
     elif args.S:
-        create_shell_link(args.S)
+        create_shortcut(args.S, 'py.exe',
+                        '"' + os.path.abspath(__file__) + '"' + ' -e ' + args.S)
     elif args.P:
         configure_paths(config)
     elif args.H:
@@ -134,8 +135,6 @@ def configure_default():
     return config
 
 def generate_startup_script(config):
-    import win32com.client
-
     section = config['Paths']
     trading_software = section['trading_software']
 
@@ -152,16 +151,9 @@ def generate_startup_script(config):
         f.writelines([save_customer_margin_ratios, save_market_data,
                       start_trading_software])
 
-    shell = win32com.client.Dispatch('WScript.Shell')
-    desktop = shell.SpecialFolders('Desktop')
-    basename = os.path.basename(__file__)
-    title = os.path.splitext(basename)[0].replace('-', ' ').title()
-    shortcut = shell.CreateShortCut(os.path.join(desktop, title + '.lnk'))
-    shortcut.WindowStyle = 7
-    shortcut.TargetPath = 'powershell.exe'
-    shortcut.Arguments = '-WindowStyle Hidden -File "' + startup_script + '"'
-    shortcut.WorkingDirectory = os.path.dirname(__file__)
-    shortcut.save()
+    title = os.path.splitext(os.path.basename(startup_script))[0]
+    create_shortcut(title, 'powershell.exe',
+                    '-WindowStyle Hidden -File "' + startup_script + '"')
 
 def save_customer_margin_ratios(config):
     global pd
@@ -386,16 +378,16 @@ def delete_action(config, action):
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
-def create_shell_link(action):
+def create_shortcut(title, target_path, arguments):
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
     desktop = shell.SpecialFolders('Desktop')
-    title = action.replace('_', ' ').title()
+    title = re.sub('[-_]', ' ', title).title()
     shortcut = shell.CreateShortCut(os.path.join(desktop, title + '.lnk'))
     shortcut.WindowStyle = 7
-    shortcut.TargetPath = 'py.exe'
-    shortcut.Arguments = os.path.abspath(__file__) + ' -e ' + action
+    shortcut.TargetPath = target_path
+    shortcut.Arguments = arguments
     shortcut.WorkingDirectory = os.path.dirname(__file__)
     shortcut.save()
 
