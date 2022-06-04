@@ -142,10 +142,11 @@ def generate_startup_script(config):
 
     with open(startup_script, 'w') as f:
         save_customer_margin_ratios = \
-            'Start-Process -FilePath py.exe -ArgumentList "' \
-            + os.path.abspath(__file__) + ' -r" -NoNewWindow\n'
-        save_market_data = 'Start-Process -FilePath py.exe -ArgumentList "' \
-            + os.path.abspath(__file__) + ' -d" -NoNewWindow\n'
+            'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
+            + os.path.abspath(__file__) + '`" -r" -NoNewWindow\n'
+        save_market_data = \
+            'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
+            + os.path.abspath(__file__) + '`" -d" -NoNewWindow\n'
         start_trading_software = 'Start-Process -FilePath "' \
             + trading_software + '" -NoNewWindow\n'
         f.writelines([save_customer_margin_ratios, save_market_data,
