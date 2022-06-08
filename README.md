@@ -50,7 +50,7 @@ In order to calculate a maximum share size, save customer margin
 ratios and the previous market data from [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and [*Download Stock Market Data*](https://kabudata-dll.com/) in
-advance.  The following option generates the startup script
+advance.  The following option generates a startup script
 `place-trades.ps1` that processes them and starts Hyper SBI 2.
 
 ``` shell
