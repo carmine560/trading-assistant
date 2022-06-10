@@ -525,7 +525,7 @@ def configure_position():
 
 def calculate_share_size(config, place_trades):
     region = config['OCR Regions']['cash_balance_region'].split(', ')
-    cash_balance = get_price(*region)
+    cash_balance = get_prices(*region)[0]
 
     customer_margin_ratio = 0.31
     try:
@@ -547,18 +547,19 @@ def calculate_share_size(config, place_trades):
 
     os.system('echo ' + str(share_size) + ' | clip.exe')
 
-def get_price(x, y, width, height):
-    price = 0
-    while not price:
+def get_prices(x, y, width, height):
+    prices = []
+    while not len(prices):
         try:
             image = pyautogui.screenshot(region=(x, y, width, height))
             separated_prices = pytesseract.image_to_string(
                 image,
                 config='-c tessedit_char_whitelist=\ .,0123456789 --psm 7')
-            price = float(separated_prices.split(' ')[-1].replace(',', ''))
+            prices = list(map(lambda price: float(price.replace(',', '')),
+                              separated_prices.split(' ')))
         except:
             pass
-    return price
+    return prices
 
 def get_price_limit(config, place_trades):
     closing_price = 0.0
@@ -644,7 +645,7 @@ def get_price_limit(config, place_trades):
             price_limit = closing_price + 10000000
     else:
         region = config['OCR Regions']['price_limit_region'].split(', ')
-        price_limit = float(get_price(*region))
+        price_limit = get_prices(*region)[-1]
     return price_limit
 
 def hide_window(hwnd, title_regex):
