@@ -141,8 +141,10 @@ place-trades.py -e ACTION
   * `-H` configure market holidays
   * `-R` configure customer margin ratios
   * `-D` configure previous market data
-  * `-C X Y WIDTH HEIGHT` configure the cash balance region
-  * `-L X Y WIDTH HEIGHT` configure the price limit region
+  * `-C X Y WIDTH HEIGHT INDEX` configure the cash balance region and
+    the index of the price
+  * `-L X Y WIDTH HEIGHT INDEX` configure the price limit region and
+    the index of the price
 
 ## License ##
 

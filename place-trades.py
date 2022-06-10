@@ -49,11 +49,11 @@ def main():
         '-D', action='store_true',
         help='configure previous market data')
     parser.add_argument(
-        '-C', nargs=4,
-        help='configure the cash balance region (x y width height)')
+        '-C', nargs=5,
+        help='configure the cash balance region and the index of the price (x y width height index)')
     parser.add_argument(
-        '-L', nargs=4,
-        help='configure the price limit region (x y width height)')
+        '-L', nargs=5,
+        help='configure the price limit region and the index of the price (x y width height index)')
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     config = configure_default()
@@ -128,8 +128,8 @@ def configure_default():
         'symbol_header': '銘柄コード',
         'close_header': '終値'}
     config['OCR Regions'] = {
-        'cash_balance_region': '0, 0, 0, 0',
-        'price_limit_region': '0, 0, 0, 0'}
+        'cash_balance_region': '0, 0, 0, 0, 0',
+        'price_limit_region': '0, 0, 0, 0, 0'}
     config.configuration = os.path.splitext(__file__)[0] + '.ini'
     config.read(config.configuration, encoding='utf-8')
     return config
@@ -525,7 +525,7 @@ def configure_position():
 
 def calculate_share_size(config, place_trades):
     region = config['OCR Regions']['cash_balance_region'].split(', ')
-    cash_balance = get_prices(*region)[0]
+    cash_balance = get_prices(*region)
 
     customer_margin_ratio = 0.31
     try:
@@ -547,7 +547,7 @@ def calculate_share_size(config, place_trades):
 
     os.system('echo ' + str(share_size) + ' | clip.exe')
 
-def get_prices(x, y, width, height):
+def get_prices(x, y, width, height, index):
     prices = []
     while not len(prices):
         try:
@@ -559,7 +559,7 @@ def get_prices(x, y, width, height):
                               separated_prices.split(' ')))
         except:
             pass
-    return prices
+    return prices[int(index)]
 
 def get_price_limit(config, place_trades):
     closing_price = 0.0
@@ -645,7 +645,7 @@ def get_price_limit(config, place_trades):
             price_limit = closing_price + 10000000
     else:
         region = config['OCR Regions']['price_limit_region'].split(', ')
-        price_limit = get_prices(*region)[-1]
+        price_limit = get_prices(*region)
     return price_limit
 
 def hide_window(hwnd, title_regex):
