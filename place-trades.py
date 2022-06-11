@@ -143,7 +143,8 @@ def configure_default():
     config['ETF Trading Units'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
-        'etf_urls': 'https://www.jpx.co.jp/equities/products/etfs/issues/tvdivq000001j45s-att/nlsgeu000003shfn.pdf, https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/nlsgeu0000060yh9-att/nlsgeu0000060yja.pdf',
+        'etf_urls':
+        'https://www.jpx.co.jp/equities/products/etfs/issues/tvdivq000001j45s-att/nlsgeu000003shfn.pdf, https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/nlsgeu0000060yh9-att/nlsgeu0000060yja.pdf',
         'trading_unit_header': '売買',
         'symbol_relative_position': '-1'}
     config['OCR Regions'] = {
@@ -279,7 +280,6 @@ def save_etf_trading_units(config):
         concatenated.sort_values(by='symbol', inplace=True)
         concatenated.to_csv(etf_trading_units, header=False, index=False)
 
-# FIXME
 def get_latest(config, update_time, time_zone, path):
     import requests
 
@@ -626,8 +626,20 @@ def calculate_share_size(config, place_trades):
         print(e)
 
     price_limit = get_price_limit(config, place_trades)
+
+    trading_unit = 100
+    try:
+        with open(config['Paths']['etf_trading_units'], 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if row[0] == place_trades.symbol:
+                    trading_unit = int(row[1])
+                    break
+    except OSError as e:
+        print(e)
+
     share_size = int(cash_balance / customer_margin_ratio / price_limit
-                     / 100) * 100
+                     / trading_unit) * trading_unit
 
     os.system('echo ' + str(share_size) + ' | clip.exe')
 
