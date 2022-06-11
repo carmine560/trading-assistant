@@ -104,6 +104,9 @@ def configure_default():
         'symbol_close':
         os.path.normpath(os.path.join(os.path.expanduser('~'),
                                       'Downloads/symbol_close_')),
+        'etf_trading_units':
+        os.path.normpath(os.path.join(os.path.expanduser('~'),
+                                      'Downloads/etf_trading_units.csv')),
         'trading_software':
         r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'}
     config['Market Holidays'] = {
@@ -241,7 +244,7 @@ def save_etf_trading_units(config):
     etf_urls = ['https://www.jpx.co.jp/equities/products/etfs/issues/tvdivq000001j45s-att/nlsgeu000003shfn.pdf', 'https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/nlsgeu0000060yh9-att/nlsgeu0000060yja.pdf']
     trading_unit_header = '売買'
     symbol_relative_position = -1
-    etf_trading_units = os.path.normpath(os.path.join(os.path.expanduser('~'), 'Downloads/etf_trading_units.csv'))
+    etf_trading_units = config['Paths']['etf_trading_units']
 
     if get_latest(config, update_time, time_zone, etf_trading_units):
         dfs = []
@@ -435,6 +438,7 @@ def configure_paths(config):
     section = config['Paths']
     customer_margin_ratios = section['customer_margin_ratios']
     symbol_close = section['symbol_close']
+    etf_trading_units = section['etf_trading_units']
     trading_software = section['trading_software']
 
     section['customer_margin_ratios'] = \
@@ -443,6 +447,9 @@ def configure_paths(config):
     section['symbol_close'] = \
         input('symbol_close [' + symbol_close + '] ') \
         or symbol_close
+    section['etf_trading_units'] = \
+        input('etf_trading_units [' + etf_trading_units + '] ') \
+        or etf_trading_units
     section['trading_software'] = \
         input('trading_software [' + trading_software + '] ') \
         or trading_software
