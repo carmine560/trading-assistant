@@ -25,6 +25,9 @@ def main():
         '-d', action='store_true',
         help='save the previous market data')
     parser.add_argument(
+        '-u', action='store_true',
+        help='save ETF trading units')
+    parser.add_argument(
         '-M', nargs='?', const='LIST_ACTIONS',
         help='create or modify an action')
     parser.add_argument(
@@ -65,6 +68,8 @@ def main():
         save_customer_margin_ratios(config)
     elif args.d:
         save_market_data(config)
+    elif args.u:
+        save_etf_trading_units(config)
     elif args.M == 'LIST_ACTIONS' or args.e == 'LIST_ACTIONS' \
          or args.T == 'LIST_ACTIONS' or args.S == 'LIST_ACTIONS':
         list_actions(config)
@@ -226,6 +231,40 @@ def save_market_data(config):
             subset.to_csv(symbol_close + str(i) + '.csv', header=False,
                           index=False)
 
+def save_etf_trading_units(config):
+    import tabula
+    global pd
+    import pandas as pd
+
+    update_time = '20:00:00'
+    time_zone = 'Asia/Tokyo'
+    etf_urls = ['https://www.jpx.co.jp/equities/products/etfs/issues/tvdivq000001j45s-att/nlsgeu000003shfn.pdf', 'https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/nlsgeu0000060yh9-att/nlsgeu0000060yja.pdf']
+    trading_unit_header = '売買'
+    symbol_relative_position = -1
+    etf_trading_units = os.path.normpath(os.path.join(os.path.expanduser('~'), 'Downloads/etf_trading_units.csv'))
+
+    if get_latest(config, update_time, time_zone, etf_trading_units):
+        dfs = []
+        for i in range(len(etf_urls)):
+            dfs += tabula.read_pdf(etf_urls[i], pages='all')
+
+        concatenated = pd.DataFrame()
+        for i in range(len(dfs)):
+            trading_unit = dfs[i].columns.get_loc(trading_unit_header)
+            df = dfs[i].iloc[:, [trading_unit + symbol_relative_position,
+                                 trading_unit]].dropna()
+            df.columns = ['symbol', 'trading_unit']
+            df['trading_unit'] = \
+                df['trading_unit'].str.replace(',', '').astype(int)
+            df = df[df['symbol'].apply(lambda value: str(value).isdigit())]
+            df = df[df['trading_unit'].apply(lambda value:
+                                             str(value).isdigit())]
+            concatenated = pd.concat([concatenated, df])
+
+        concatenated.sort_values(by='symbol', inplace=True)
+        concatenated.to_csv(etf_trading_units, header=False, index=False)
+
+# FIXME
 def get_latest(config, update_time, time_zone, path):
     import requests
 

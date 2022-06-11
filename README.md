@@ -32,6 +32,9 @@ and uses the following packages:
     Tesseract
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html)
     to automate interactions with Hyper SBI 2
+  * (optional)
+    [tabula-py](https://tabula-py.readthedocs.io/en/latest/index.html)
+    to save ETF trading units from a website
 
 Install each package as needed.  For example:
 
@@ -133,6 +136,7 @@ place-trades.py -e ACTION
   * `-g` generate a startup script and a shortcut to it
   * `-r` save customer margin ratios
   * `-d` save the previous market data
+  * `-u` save ETF trading units
   * `-M [ACTION]` create or modify an action
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action
