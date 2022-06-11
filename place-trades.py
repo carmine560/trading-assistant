@@ -50,7 +50,10 @@ def main():
         help='configure customer margin ratios')
     parser.add_argument(
         '-D', action='store_true',
-        help='configure previous market data')
+        help='configure market data')
+    parser.add_argument(
+        '-U', action='store_true',
+        help='configure ETF trading units')
     parser.add_argument(
         '-C', nargs=5,
         help='configure the cash balance region and the index of the price (x y width height index)')
@@ -90,6 +93,8 @@ def main():
         configure_customer_margin_ratios(config)
     elif args.D:
         configure_market_data(config)
+    elif args.U:
+        configure_etf_trading_units(config)
     elif args.C:
         configure_ocr_region(config, 'cash_balance_region', args.C)
     elif args.L:
@@ -135,6 +140,12 @@ def configure_default():
         'encoding': 'cp932',
         'symbol_header': '銘柄コード',
         'close_header': '終値'}
+    config['ETF Trading Units'] = {
+        'update_time': '20:00:00',
+        'time_zone': 'Asia/Tokyo',
+        'etf_urls': 'https://www.jpx.co.jp/equities/products/etfs/issues/tvdivq000001j45s-att/nlsgeu000003shfn.pdf, https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/nlsgeu0000060yh9-att/nlsgeu0000060yja.pdf',
+        'trading_unit_header': '売買',
+        'symbol_relative_position': '-1'}
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0'}
@@ -239,11 +250,12 @@ def save_etf_trading_units(config):
     global pd
     import pandas as pd
 
-    update_time = '20:00:00'
-    time_zone = 'Asia/Tokyo'
-    etf_urls = ['https://www.jpx.co.jp/equities/products/etfs/issues/tvdivq000001j45s-att/nlsgeu000003shfn.pdf', 'https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/nlsgeu0000060yh9-att/nlsgeu0000060yja.pdf']
-    trading_unit_header = '売買'
-    symbol_relative_position = -1
+    section = config['ETF Trading Units']
+    update_time = section['update_time']
+    time_zone = section['time_zone']
+    etf_urls = list(map(str.strip, section['etf_urls'].split(',')))
+    trading_unit_header = section['trading_unit_header']
+    symbol_relative_position = int(section['symbol_relative_position'])
     etf_trading_units = config['Paths']['etf_trading_units']
 
     if get_latest(config, update_time, time_zone, etf_trading_units):
@@ -543,6 +555,32 @@ def configure_market_data(config):
     section['close_header'] = \
         input('close_header [' + close_header + '] ') \
         or close_header
+    with open(config.configuration, 'w', encoding='utf-8') as f:
+        config.write(f)
+
+def configure_etf_trading_units(config):
+    section = config['ETF Trading Units']
+    update_time = section['update_time']
+    time_zone = section['time_zone']
+    etf_urls = section['etf_urls']
+    trading_unit_header = section['trading_unit_header']
+    symbol_relative_position = section['symbol_relative_position']
+
+    section['update_time'] = \
+        input('update_time [' + update_time + '] ') \
+        or update_time
+    section['time_zone'] = \
+        input('time_zone [' + time_zone + '] ') \
+        or time_zone
+    section['etf_urls'] = \
+        input('etf_urls [' + etf_urls + '] ') \
+        or etf_urls
+    section['trading_unit_header'] = \
+        input('trading_unit_header [' + trading_unit_header + '] ') \
+        or trading_unit_header
+    section['symbol_relative_position'] = \
+        input('symbol_relative_position [' + symbol_relative_position + '] ') \
+        or symbol_relative_position
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
