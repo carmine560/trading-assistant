@@ -65,12 +65,13 @@ place-trades.py -g
 Configure the cash balance and (optional) price limit regions on Hyper
 SBI 2 in order that Tesseract recognizes these prices.  A price limit
 is only referenced if the previous closing price does not exist.
-These configurations are saved in the configuration file
+Because there can be multiple prices in a region, specify the index of
+the price.  These configurations are saved in the configuration file
 `place-trades.ini`.
 
 ``` shell
-place-trades.py -C X Y WIDTH HEIGHT
-place-trades.py -L X Y WIDTH HEIGHT
+place-trades.py -C X Y WIDTH HEIGHT INDEX
+place-trades.py -L X Y WIDTH HEIGHT INDEX
 ```
 
 ### Create or Modify Action ###
@@ -84,8 +85,8 @@ place-trades.py -M ACTION
 Then insert, modify, or delete each command of the action.  An action
 is a list of commands, and a command is a tuple of itself and its
 arguments.  Commands are executed in order from the beginning of the
-list.  These are saved in the configuration file.  Possible commands
-are:
+list.  These actions are saved in the configuration file.  Possible
+commands are:
 
 ``` python
 ACTION = [
