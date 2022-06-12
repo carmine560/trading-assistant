@@ -148,7 +148,7 @@ place-trades.py -e ACTION
 
 ### Options ###
 
-  * `-g` generate a startup script and a shortcut to it
+  * `-i` generate a startup script and a shortcut to it
   * `-r` save customer margin ratios
   * `-d` save the previous market data
   * `-u` save ETF trading units

@@ -170,6 +170,7 @@ def generate_startup_script(config):
 
     startup_script = os.path.splitext(__file__)[0] + '.ps1'
 
+    # FIXME
     with open(startup_script, 'w') as f:
         save_customer_margin_ratios = \
             'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
@@ -412,7 +413,6 @@ def modify_action(config, action):
 def execute_action(config, place_trades, action):
     commands = eval(config['Actions'][action])
     for i in range(len(commands)):
-        # FIXME: split
         command = commands[i][0]
         arguments = commands[i][1]
         if command == 'back_to':
@@ -437,17 +437,18 @@ def execute_action(config, place_trades, action):
         elif command == 'move_to':
             pyautogui.moveTo(eval(arguments))
         elif command == 'press_hotkeys':
-            keys = arguments.split(', ')
+            keys = list(map(str.strip, arguments.split(',')))
             pyautogui.hotkey(*keys)
         elif command == 'press_key':
-            key = arguments.split(', ')[0]
-            presses = int(arguments.split(', ')[1])
+            arguments = list(map(str.strip, arguments.split(',')))
+            key = arguments[0]
+            presses = int(arguments[1])
             pyautogui.press(key, presses=presses)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
         elif command == 'wait_for_window':
-            title_regex = arguments.split(', ')[0]
-            additional_period = float(arguments.split(', ')[1])
+            title_regex = ','.join(arguments.split(',')[:-1])
+            additional_period = float(arguments.split(',')[-1])
             wait_for_window(place_trades, title_regex, additional_period)
 
 def delete_action(config, action):
