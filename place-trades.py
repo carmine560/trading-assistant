@@ -363,15 +363,15 @@ def modify_action(config, action):
 
     commands = eval(config['Actions'][action])
     while i < len(commands):
-        # FIXME: add append
         if create:
             answer = input('[i]nsert/[q]uit: ').lower()
         else:
             print(commands[i])
-            answer = input('[i]nsert/[m]odify/[d]elete: ').lower()
+            answer = \
+                input('[i]nsert/[m]odify/[a]ppend/[d]elete/[q]uit: ').lower()
 
         if len(answer):
-            if answer[0] == 'i':
+            if answer[0] == 'i' or answer[0] == 'a':
                 command = input('command: ')
                 if command == 'click' or command == 'move_to':
                     arguments = input('input/[c]lick: ')
@@ -381,6 +381,8 @@ def modify_action(config, action):
                     arguments = input('arguments: ')
                 if len(arguments) == 0 or arguments == 'None':
                     arguments = None
+                if answer[0] == 'a':
+                    i += 1
 
                 commands.insert(i, (command, arguments))
             elif answer[0] == 'm':
@@ -402,8 +404,8 @@ def modify_action(config, action):
             elif answer[0] == 'd':
                 del commands[i]
                 i -= 1
-            elif create and answer[0] == 'q':
-                i += 1
+            elif answer[0] == 'q':
+                i = len(commands)
 
         i += 1
 
