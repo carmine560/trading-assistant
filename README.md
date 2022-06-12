@@ -84,13 +84,14 @@ place-trades.py -M ACTION
 Then insert, modify, or delete each command of the action.  An action
 is a list of commands, and a command is a tuple of itself and its
 arguments.  Commands are executed in order from the beginning of the
-list.  Possible commands are:
+list.  These are saved in the configuration file.  Possible commands
+are:
 
 ``` python
 ACTION = [
     ('back_to', None),               # back the cursor to the previous position.
     ('beep', 'FREQUENCY, DURATION'), # beep.
-    ('calculate_share_size', None),  # calculate a share size and copy it.
+    ('calculate_share_size', 'POSITION'), # calculate a share size and copy it.
     ('click', 'X, Y'),               # click.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_window', 'TITLE_REGEX'),  # hide a window.
@@ -101,9 +102,11 @@ ACTION = [
 ]
 ```
 
-Actions are saved in the configuration file.  The following example
-`open_long_position` shows the required windows, enters the maximum
-share size, and prepares the order.
+#### Example 1: Open Long Position ####
+
+<!-- Actions are saved in the configuration file. -->
+The following example `open_long_position` shows the required windows,
+enters the maximum share size, and prepares the order.
 
 ``` python
 open_long_position = [
@@ -114,12 +117,22 @@ open_long_position = [
     ('click', '1492, 785'),          # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
-    ('calculate_share_size', None),  # calculate the share size and copy it.
+    ('calculate_share_size', 'short'), # calculate the share size and copy it.
     ('press_hotkeys', 'ctrl, v'),    # paste the share size.
     ('click', '1424, 808'),          # click the Market Order button.
     ('press_key', '\t, 3'),          # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
+]
+```
+
+#### Example 2: Login ####
+
+``` python
+login = [
+    ('wait_for_window', '^HYPER SBI 2$'),
+    ('sleep_for', '0.8'),
+    ('click', '960, 527'),
 ]
 ```
 

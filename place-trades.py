@@ -405,7 +405,7 @@ def execute_action(config, place_trades, action):
             frequency, duration = eval(arguments)
             winsound.Beep(frequency, duration)
         elif command == 'calculate_share_size':
-            calculate_share_size(config, place_trades)
+            calculate_share_size(config, place_trades, arguments)
         elif command == 'click':
             coordinates = eval(arguments)
             if place_trades.swapped:
@@ -607,7 +607,7 @@ def configure_position():
 
     return coordinates
 
-def calculate_share_size(config, place_trades):
+def calculate_share_size(config, place_trades, position):
     region = config['OCR Regions']['cash_balance_region'].split(', ')
     cash_balance = get_prices(*region)
 
@@ -640,6 +640,8 @@ def calculate_share_size(config, place_trades):
 
     share_size = int(cash_balance / customer_margin_ratio / price_limit
                      / trading_unit) * trading_unit
+    if position == 'short' and share_size > 50 * trading_unit:
+        share_size = 50 * trading_unit
 
     os.system('echo ' + str(share_size) + ' | clip.exe')
 
