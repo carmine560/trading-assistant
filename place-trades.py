@@ -6,6 +6,7 @@ class PlaceTrades:
         self.swapped = win32api.GetSystemMetrics(23)
         self.previous_position = pyautogui.position()
         self.symbol = ''
+        self.exist = []
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.search(title_regex, str(win32gui.GetWindowText(hwnd)))
@@ -13,10 +14,19 @@ class PlaceTrades:
             self.symbol = matched.group(1)
             return
 
+    def check_for_window(self, hwnd, title_regex):
+        if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+            if win32gui.IsIconic(hwnd):
+                win32gui.ShowWindow(hwnd, 1)
+
+            win32gui.SetForegroundWindow(hwnd)
+            self.exist.append((hwnd, title_regex))
+            return
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-g', action='store_true',
+        '-i', action='store_true',
         help='generate a startup script and a shortcut to it')
     parser.add_argument(
         '-r', action='store_true',
@@ -65,7 +75,7 @@ def main():
     config = configure_default()
     place_trades = PlaceTrades()
 
-    if args.g:
+    if args.i:
         generate_startup_script(config)
     elif args.r:
         save_customer_margin_ratios(config)
@@ -167,10 +177,16 @@ def generate_startup_script(config):
         save_market_data = \
             'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
             + os.path.abspath(__file__) + '`" -d" -NoNewWindow\n'
+        save_etf_trading_units = \
+            'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
+            + os.path.abspath(__file__) + '`" -u" -NoNewWindow\n'
         start_trading_software = 'Start-Process -FilePath "' \
             + trading_software + '" -NoNewWindow\n'
+        login = \
+            'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
+            + os.path.abspath(__file__) + '`" -e login" -NoNewWindow\n'
         f.writelines([save_customer_margin_ratios, save_market_data,
-                      start_trading_software])
+                      save_etf_trading_units, start_trading_software, login])
 
     title = os.path.splitext(os.path.basename(startup_script))[0]
     create_shortcut(title, 'powershell.exe',
@@ -346,6 +362,7 @@ def modify_action(config, action):
 
     commands = eval(config['Actions'][action])
     while i < len(commands):
+        # FIXME: add append
         if create:
             answer = input('[i]nsert/[q]uit: ').lower()
         else:
@@ -395,6 +412,7 @@ def modify_action(config, action):
 def execute_action(config, place_trades, action):
     commands = eval(config['Actions'][action])
     for i in range(len(commands)):
+        # FIXME: split
         command = commands[i][0]
         arguments = commands[i][1]
         if command == 'back_to':
@@ -427,6 +445,10 @@ def execute_action(config, place_trades, action):
             pyautogui.press(key, presses=presses)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
+        elif command == 'wait_for_window':
+            title_regex = arguments.split(', ')[0]
+            additional_period = float(arguments.split(', ')[1])
+            wait_for_window(place_trades, title_regex, additional_period)
 
 def delete_action(config, action):
     config.remove_option('Actions', action)
@@ -759,6 +781,16 @@ def show_window(hwnd, title_regex):
 
         win32gui.SetForegroundWindow(hwnd)
         return
+
+def wait_for_window(place_trades, title_regex, additional_period):
+    import time
+
+    while next((False for i in range(len(place_trades.exist))
+                if place_trades.exist[i][1] == title_regex), True):
+        win32gui.EnumWindows(place_trades.check_for_window, title_regex)
+        time.sleep(0.001)
+
+    time.sleep(additional_period)
 
 if __name__ == '__main__':
     main()

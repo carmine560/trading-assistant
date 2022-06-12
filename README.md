@@ -99,12 +99,24 @@ ACTION = [
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
     ('show_window', 'TITLE_REGEX'),  # show a window.
+    ('wait_for_window', 'ADDITIONAL_PERIOD'), # wait for a window and an additional period.
 ]
 ```
 
-#### Example 1: Open Long Position ####
+#### Example 1: Login ####
 
-<!-- Actions are saved in the configuration file. -->
+The following example `login` waits for the Login window showing, and
+then clicks the Login button.
+
+``` python
+login = [
+    ('wait_for_window', '^HYPER SBI 2$, 1.0'), # wait for the Login window showing.
+    ('click', '960, 527'),           # click the Login button.
+]
+```
+
+#### Example 2: Open Long Position ####
+
 The following example `open_long_position` shows the required windows,
 enters the maximum share size, and prepares the order.
 
@@ -123,16 +135,6 @@ open_long_position = [
     ('press_key', '\t, 3'),          # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
-]
-```
-
-#### Example 2: Login ####
-
-``` python
-login = [
-    ('wait_for_window', '^HYPER SBI 2$'),
-    ('sleep_for', '0.8'),
-    ('click', '960, 527'),
 ]
 ```
 
