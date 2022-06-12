@@ -374,11 +374,13 @@ def modify_action(config, action):
             if answer[0] == 'i':
                 command = input('command: ')
                 if command == 'click' or command == 'move_to':
-                    arguments = input('input/[c]lick: ').lower()
-                    if arguments[0] == 'c':
+                    arguments = input('input/[c]lick: ')
+                    if len(arguments) and arguments[0].lower() == 'c':
                         arguments = configure_position()
                 else:
                     arguments = input('arguments: ')
+                if len(arguments) == 0 or arguments == 'None':
+                    arguments = None
 
                 commands.insert(i, (command, arguments))
             elif answer[0] == 'm':
@@ -387,12 +389,14 @@ def modify_action(config, action):
                 command = input('command [' + str(command) + '] ') or command
                 if command == 'click' or command == 'move_to':
                     arguments = input('input/[c]lick [' + str(arguments)
-                                      + '] ').lower()
-                    if arguments[0] == 'c':
+                                      + '] ') or arguments
+                    if len(arguments) and arguments[0].lower() == 'c':
                         arguments = configure_position()
                 else:
                     arguments = input('arguments [' + str(arguments) + '] ') \
                         or arguments
+                if len(arguments) == 0 or arguments == 'None':
+                    arguments = None
 
                 commands[i] = command, arguments
             elif answer[0] == 'd':
