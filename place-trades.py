@@ -446,7 +446,7 @@ def execute_action(config, place_trades, action):
             keys = list(map(str.strip, arguments.split(',')))
             pyautogui.hotkey(*keys)
         elif command == 'press_key':
-            arguments = list(map(str.strip, arguments.split(',')))
+            arguments = arguments.split(',')
             key = arguments[0]
             presses = int(arguments[1])
             pyautogui.press(key, presses=presses)
