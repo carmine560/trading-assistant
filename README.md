@@ -111,7 +111,7 @@ then clicks the Login button.
 
 ``` python
 login = [
-    ('wait_for_window', '^HYPER SBI 2$, 1.0'), # wait for the Login window showing.
+    ('wait_for_window', '^HYPER SBI 2$, 1.4'), # wait for the Login window showing.
     ('click', '960, 527'),           # click the Login button.
 ]
 ```
