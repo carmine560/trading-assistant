@@ -133,7 +133,7 @@ open_long_position = [
     ('calculate_share_size', 'short'), # calculate the share size and copy it.
     ('press_hotkeys', 'ctrl, v'),    # paste the share size.
     ('click', '1424, 808'),          # click the Market Order button.
-    ('press_key', '\t, 3'),          # focus on the Buy Order button.
+    ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
 ]
