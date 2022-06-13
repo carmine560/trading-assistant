@@ -53,6 +53,9 @@ def main():
         '-P', action='store_true',
         help='configure paths')
     parser.add_argument(
+        '-I', action='store_true',
+        help='configure a startup script')
+    parser.add_argument(
         '-H', action='store_true',
         help='configure market holidays')
     parser.add_argument(
@@ -97,6 +100,8 @@ def main():
                         '"' + os.path.abspath(__file__) + '"' + ' -e ' + args.S)
     elif args.P:
         configure_paths(config)
+    elif args.I:
+        configure_startup_script(config)
     elif args.H:
         configure_market_holidays(config)
     elif args.R:
@@ -124,6 +129,9 @@ def configure_default():
                                       'Downloads/etf_trading_units.csv')),
         'trading_software':
         r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'}
+    config['Startup Script'] = {
+        'pre_start': '-r, -d',
+        'post_start': ''}
     config['Market Holidays'] = {
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
@@ -494,6 +502,20 @@ def configure_paths(config):
     section['trading_software'] = \
         input('trading_software [' + trading_software + '] ') \
         or trading_software
+    with open(config.configuration, 'w', encoding='utf-8') as f:
+        config.write(f)
+
+def configure_startup_script(config):
+    section = config['Startup Script']
+    pre_start = section['pre_start']
+    post_start = section['post_start']
+
+    section['pre_start'] = \
+        input('pre_start [' + pre_start + '] ') \
+        or pre_start
+    section['post_start'] = \
+        input('post_start [' + post_start + '] ') \
+        or post_start
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 

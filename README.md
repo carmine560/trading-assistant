@@ -158,6 +158,7 @@ place-trades.py -e ACTION
   * `-T [ACTION]` delete an action
   * `-S [ACTION]` generate a shortcut to an action
   * `-P` configure paths
+  * `-I` configure a startup script
   * `-H` configure market holidays
   * `-R` configure customer margin ratios
   * `-D` configure market data
