@@ -173,29 +173,32 @@ def configure_default():
     return config
 
 def generate_startup_script(config):
-    section = config['Paths']
-    trading_software = section['trading_software']
+    section = config['Startup Script']
+    pre_start = section['pre_start']
+    post_start = section['post_start']
+    trading_software = config['Paths']['trading_software']
 
     startup_script = os.path.splitext(__file__)[0] + '.ps1'
+    if len(pre_start):
+        pre_start = list(map(str.strip, section['pre_start'].split(',')))
+    if len(post_start):
+        post_start = list(map(str.strip, section['post_start'].split(',')))
 
-    # FIXME
     with open(startup_script, 'w') as f:
-        save_customer_margin_ratios = \
-            'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
-            + os.path.abspath(__file__) + '`" -r" -NoNewWindow\n'
-        save_market_data = \
-            'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
-            + os.path.abspath(__file__) + '`" -d" -NoNewWindow\n'
-        save_etf_trading_units = \
-            'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
-            + os.path.abspath(__file__) + '`" -u" -NoNewWindow\n'
-        start_trading_software = 'Start-Process -FilePath "' \
-            + trading_software + '" -NoNewWindow\n'
-        login = \
-            'Start-Process -FilePath "py.exe" -ArgumentList "`"' \
-            + os.path.abspath(__file__) + '`" -e login" -NoNewWindow\n'
-        f.writelines([save_customer_margin_ratios, save_market_data,
-                      save_etf_trading_units, start_trading_software, login])
+        lines = []
+        for i in range(len(pre_start)):
+            lines.append('Start-Process -FilePath "py.exe" -ArgumentList "`"'
+                         + os.path.abspath(__file__) + '`" ' + pre_start[i]
+                         + '" -NoNewWindow\n')
+
+        lines.append('Start-Process -FilePath "' + trading_software
+                     + '" -NoNewWindow\n')
+        for i in range(len(post_start)):
+            lines.append('Start-Process -FilePath "py.exe" -ArgumentList "`"'
+                         + os.path.abspath(__file__) + '`" ' + post_start[i]
+                         + '" -NoNewWindow\n')
+
+        f.writelines(lines)
 
     title = os.path.splitext(os.path.basename(startup_script))[0]
     create_shortcut(title, 'powershell.exe',
