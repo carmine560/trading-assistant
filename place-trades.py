@@ -157,7 +157,9 @@ def configure_default():
         'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
         'encoding': 'cp932',
         'symbol_header': '銘柄コード',
-        'close_header': '終値'}
+        'close_header': '終値',
+        'additional_symbols': '',
+        'additional_source': 'yahoo'}
     config['ETF Trading Units'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
@@ -273,6 +275,24 @@ def save_market_data(config):
             subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
             subset.to_csv(symbol_close + str(i) + '.csv', header=False,
                           index=False)
+
+        # FIXME
+        import pandas_datareader.data as web
+
+        additional_symbols = [
+            '1360.T',
+            '1570.T',
+        ]
+        additional_source = 'yahoo'
+
+        start = end = latest.strftime('%Y-%m-%d')
+        df = web.DataReader(additional_symbols, additional_source, start=start,
+                            end=end)
+        df_transposed = df.Close.T
+        for index, row in df_transposed.iterrows():
+            index = index.replace('.T', '')
+            with open(symbol_close + index[0] + '.csv', 'a') as f:
+                f.write(index + ',' + str(row[0]) + '\n')
 
 def save_etf_trading_units(config):
     import tabula

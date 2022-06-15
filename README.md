@@ -35,6 +35,9 @@ and uses the following packages:
   * (optional)
     [tabula-py](https://tabula-py.readthedocs.io/en/latest/index.html)
     to save ETF trading units from a website
+  * (optional)
+    [pandas-datareader](https://pydata.github.io/pandas-datareader/stable/index.html)
+    to save ETF closing prices from Yahoo Finance
 
 Install each package as needed.  For example:
 
