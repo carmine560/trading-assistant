@@ -158,8 +158,7 @@ def configure_default():
         'encoding': 'cp932',
         'symbol_header': '銘柄コード',
         'close_header': '終値',
-        'additional_symbols': '',
-        'additional_source': 'yahoo'}
+        'additional_symbols': ''}
     config['ETF Trading Units'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
@@ -255,6 +254,8 @@ def save_market_data(config):
     encoding = section['encoding']
     symbol_header = section['symbol_header']
     close_header = section['close_header']
+    additional_symbols = list(map(str.strip,
+                                  section['additional_symbols'].split(',')))
     symbol_close = config['Paths']['symbol_close']
 
     latest = get_latest(config, update_time, time_zone, symbol_close + '1.csv')
@@ -276,23 +277,19 @@ def save_market_data(config):
             subset.to_csv(symbol_close + str(i) + '.csv', header=False,
                           index=False)
 
-        # FIXME
-        import pandas_datareader.data as web
+        if additional_symbols:
+            import pandas_datareader.data as web
 
-        additional_symbols = [
-            '1360.T',
-            '1570.T',
-        ]
-        additional_source = 'yahoo'
-
-        start = end = latest.strftime('%Y-%m-%d')
-        df = web.DataReader(additional_symbols, additional_source, start=start,
-                            end=end)
-        df_transposed = df.Close.T
-        for index, row in df_transposed.iterrows():
-            index = index.replace('.T', '')
-            with open(symbol_close + index[0] + '.csv', 'a') as f:
-                f.write(index + ',' + str(row[0]) + '\n')
+            start = end = latest.strftime('%Y-%m-%d')
+            df = web.DataReader(additional_symbols[::-1], 'yahoo', start=start,
+                                end=end)
+            df_transposed = df.Close.T
+            for index, row in df_transposed.iterrows():
+                index = index.replace('.T', '')
+                with open(symbol_close + index[0] + '.csv', 'r+') as f:
+                    current = f.read()
+                    f.seek(0)
+                    f.write(index + ',' + str(row[0]) + '\n' + current)
 
 def save_etf_trading_units(config):
     import tabula
@@ -610,6 +607,7 @@ def configure_market_data(config):
     encoding = section['encoding']
     symbol_header = section['symbol_header']
     close_header = section['close_header']
+    additional_symbols = section['additional_symbols']
 
     section['update_time'] = \
         input('update_time [' + update_time + '] ') \
@@ -629,6 +627,9 @@ def configure_market_data(config):
     section['close_header'] = \
         input('close_header [' + close_header + '] ') \
         or close_header
+    section['additional_symbols'] = \
+        input('additional_symbols [' + additional_symbols + '] ') \
+        or additional_symbols
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
