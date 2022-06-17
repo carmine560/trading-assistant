@@ -122,6 +122,9 @@ login = [
 
 #### Example 2: Toggle between Stocks ####
 
+The following example `toggle_between_stocks` toggles between the
+stocks.
+
 ``` python
 toggle_between_stocks = [
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
