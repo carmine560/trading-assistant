@@ -130,7 +130,7 @@ toggle_between_stocks = [
     ('click', '54, 45'),             # focus on the Symbol text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
-    ('write_alt_symbol', '1570, 1360'), # toggle between the stocks.
+    ('write_alt_symbol', '1570, 1360'), # write the alternative symbol.
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to', None),               # back the cursor to the previous position.
 ]
