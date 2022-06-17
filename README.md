@@ -114,12 +114,29 @@ then clicks the Login button.
 
 ``` python
 login = [
-    ('wait_for_window', '^HYPER SBI 2$, 1.4'), # wait for the Login window showing.
+    ('wait_for_window', '^HYPER SBI 2$, 2.0'), # wait for the Login window showing.
     ('click', '960, 527'),           # click the Login button.
+    ('back_to', None),               # back the cursor to the previous position.
 ]
 ```
 
-#### Example 2: Open Long Position ####
+#### Example 2: Toggle between Stocks ####
+
+``` python
+toggle_between_stocks = [
+    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
+    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
+    ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
+    ('click', '54, 45'),             # focus on the Symbol text box.
+    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
+    ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
+    ('write_alt_symbol', '1570, 1360'), # toggle between the stocks.
+    ('press_key', 'enter'),          # press the Enter key.
+    ('back_to', None),               # back the cursor to the previous position.
+]
+```
+
+#### Example 3: Open Long Position ####
 
 The following example `open_long_position` shows the required windows,
 enters the maximum share size, and prepares the order.

@@ -474,9 +474,13 @@ def execute_action(config, place_trades, action):
             keys = list(map(str.strip, arguments.split(',')))
             pyautogui.hotkey(*keys)
         elif command == 'press_key':
-            arguments = arguments.split(',')
+            arguments = list(map(str.strip, arguments.split(',')))
             key = arguments[0]
-            presses = int(arguments[1])
+            if len(arguments) >= 2:
+                presses = int(arguments[1])
+            else:
+                presses = 1
+
             pyautogui.press(key, presses=presses)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
@@ -484,6 +488,14 @@ def execute_action(config, place_trades, action):
             title_regex = ','.join(arguments.split(',')[:-1])
             additional_period = float(arguments.split(',')[-1])
             wait_for_window(place_trades, title_regex, additional_period)
+        elif command == 'write_alt_symbol':
+            symbols = list(map(str.strip, arguments.split(',')))
+            if symbols[0] == place_trades.symbol:
+                alt_symbol = symbols[1]
+            else:
+                alt_symbol = symbols[0]
+
+            pyautogui.write(alt_symbol)
 
 def delete_action(config, action):
     config.remove_option('Actions', action)
