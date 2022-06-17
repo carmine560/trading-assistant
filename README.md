@@ -67,10 +67,10 @@ place-trades.py -g
 
 Configure the cash balance and (optional) price limit regions on Hyper
 SBI 2 in order that Tesseract recognizes these prices.  A price limit
-is only referenced if the previous closing price does not exist.
-Because there can be multiple prices in a region, specify the index of
-the price.  These configurations are saved in the configuration file
-`place-trades.ini`.
+is only referenced if the previous closing price does not exist in the
+market data above.  Because there can be multiple prices in a region,
+specify the index of the price.  These configurations are saved in the
+configuration file `place-trades.ini`.
 
 ``` shell
 place-trades.py -C X Y WIDTH HEIGHT INDEX
