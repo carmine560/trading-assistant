@@ -60,7 +60,7 @@ advance.  The following option creates a startup script
 `place-trades.ps1` that processes them and starts Hyper SBI 2.
 
 ``` shell
-place-trades.py -g
+place-trades.py -i
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
