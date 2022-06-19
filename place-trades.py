@@ -510,56 +510,49 @@ def create_shortcut(title, target_path, arguments):
     title = re.sub('[-_]', ' ', title).title()
     shortcut = shell.CreateShortCut(os.path.join(desktop, title + '.lnk'))
     shortcut.WindowStyle = 7
+    shortcut.IconLocation = create_icon(title)
     shortcut.TargetPath = target_path
     shortcut.Arguments = arguments
     shortcut.WorkingDirectory = os.path.dirname(__file__)
     shortcut.save()
 
-def create_icon(acronym):
+def create_icon(title):
     from PIL import Image, ImageDraw, ImageFont
 
+    acronym = create_acronym(title)
     image_width = image_height = 256
     image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
 
     if len(acronym) == 0:
-        # FIXME
-        return
+        return False
     elif len(acronym) == 1:
-        font = ImageFont.truetype('segoeuib.ttf', 365)
-        font = ImageFont.truetype('consolab.ttf', 401) #
-        # font = ImageFont.truetype('segoeuib.ttf', 160)
+        font = ImageFont.truetype('consolab.ttf', 401)
         ascent, descent = font.getmetrics()
         (width, baseline), (offset_x, offset_y) = font.font.getsize(acronym)
         cap_height = ascent - offset_y
-        print(cap_height)
 
         text_width, text_height = font.getsize(acronym)
         draw.text(((image_width - text_width) / 2, 0 - offset_y), acronym,
                   font=font, fill='white')
     elif len(acronym) == 2:
-        font = ImageFont.truetype('segoeuib.ttf', 160)
-        font = ImageFont.truetype('consolab.ttf', 180) #
+        font = ImageFont.truetype('consolab.ttf', 180)
         ascent, descent = font.getmetrics()
         (width, baseline), (offset_x, offset_y) = font.font.getsize(acronym)
         cap_height = ascent - offset_y
 
         text_width, text_height = font.getsize(acronym)
-        # draw.text(((image_width - text_width) / 2,
-        #            (image_height - text_height) / 2 - offset_y), acronym,
-        #           font=font, fill='white')
         draw.text(((image_width - text_width) / 2,
                    (image_height - cap_height) / 2 - offset_y), acronym,
                   font=font, fill='white')
     elif len(acronym) >= 3:
-        font = ImageFont.truetype('segoeuib.ttf', 160)
-        font = ImageFont.truetype('consolab.ttf', 180) #
+        font = ImageFont.truetype('consolab.ttf', 180)
         ascent, descent = font.getmetrics()
-        upper = acronym[0:2]
-        lower = acronym[2:4]
-        (width, baseline), (offset_x, offset_y) = font.font.getsize(upper)
+        (width, baseline), (offset_x, offset_y) = font.font.getsize(acronym)
         cap_height = ascent - offset_y
 
+        upper = acronym[0:2]
+        lower = acronym[2:4]
         text_width, text_height = font.getsize(upper)
         draw.text(((image_width - text_width) / 2, 0 - offset_y), upper,
                   font=font, fill='white')
@@ -568,7 +561,18 @@ def create_icon(acronym):
                    image_height - (offset_y + cap_height)), lower, font=font,
                   fill='white')
 
-    image.save('../Desktop/pil_text_font.ico', sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
+    icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                         title + '.ico'))
+    image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
+    return icon
+
+def create_acronym(phrase):
+    if isinstance(phrase, str):
+        acronym = ''
+        for word in re.split('\s+|_', phrase):
+            acronym = acronym + word[0].upper()
+
+        return acronym
 
 def configure_paths(config):
     section = config['Paths']
