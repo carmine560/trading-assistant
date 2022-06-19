@@ -542,37 +542,33 @@ def create_icon(basename):
         return False
     elif len(acronym) == 1:
         font = ImageFont.truetype('consolab.ttf', 401)
-        ascent, descent = font.getmetrics()
-        (width, baseline), (offset_x, offset_y) = font.font.getsize(acronym)
-        cap_height = ascent - offset_y
 
-        text_width, text_height = font.getsize(acronym)
-        draw.text(((image_width - text_width) / 2, 0 - offset_y), acronym,
+        offset_x, offset_y, text_width, text_height = \
+            draw.textbbox((0, 0), acronym, font=font)
+        draw.text(((image_width - text_width) / 2, -offset_y), acronym,
                   font=font, fill='white')
     elif len(acronym) == 2:
         font = ImageFont.truetype('consolab.ttf', 180)
-        ascent, descent = font.getmetrics()
-        (width, baseline), (offset_x, offset_y) = font.font.getsize(acronym)
-        cap_height = ascent - offset_y
 
-        text_width, text_height = font.getsize(acronym)
+        offset_x, offset_y, text_width, text_height = \
+            draw.textbbox((0, 0), acronym, font=font)
         draw.text(((image_width - text_width) / 2,
-                   (image_height - cap_height) / 2 - offset_y), acronym,
+                   (image_height - text_height) / 2 - offset_y), acronym,
                   font=font, fill='white')
     elif len(acronym) >= 3:
         font = ImageFont.truetype('consolab.ttf', 180)
-        ascent, descent = font.getmetrics()
-        (width, baseline), (offset_x, offset_y) = font.font.getsize(acronym)
-        cap_height = ascent - offset_y
 
         upper = acronym[0:2]
-        lower = acronym[2:4]
-        text_width, text_height = font.getsize(upper)
-        draw.text(((image_width - text_width) / 2, 0 - offset_y), upper,
+        offset_x, offset_y, text_width, text_height = \
+            draw.textbbox((0, 0), upper, font=font)
+        draw.text(((image_width - text_width) / 2, -offset_y), upper,
                   font=font, fill='white')
-        text_width, text_height = font.getsize(lower)
+
+        lower = acronym[2:4]
+        offset_x, offset_y, text_width, text_height = \
+            draw.textbbox((0, 0), lower, font=font)
         draw.text(((image_width - text_width) / 2,
-                   image_height - (offset_y + cap_height)), lower, font=font,
+                   image_height - text_height), lower, font=font,
                   fill='white')
 
     icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
