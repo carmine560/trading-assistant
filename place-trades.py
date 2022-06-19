@@ -201,8 +201,8 @@ def create_startup_script(config):
 
         f.writelines(lines)
 
-    title = os.path.splitext(os.path.basename(startup_script))[0]
-    create_shortcut(title, 'powershell.exe',
+    basename = os.path.splitext(os.path.basename(startup_script))[0]
+    create_shortcut(basename, 'powershell.exe',
                     '-WindowStyle Hidden -File "' + startup_script + '"')
 
 def save_customer_margin_ratios(config):
@@ -498,28 +498,42 @@ def execute_action(config, place_trades, action):
             pyautogui.write(alt_symbol)
 
 def delete_action(config, action):
+    import win32com.client
+
     config.remove_option('Actions', action)
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
-def create_shortcut(title, target_path, arguments):
+    icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                         action + '.ico'))
+    if os.path.exists(icon):
+        os.remove(icon)
+
+    shell = win32com.client.Dispatch('WScript.Shell')
+    desktop = shell.SpecialFolders('Desktop')
+    title = re.sub('[-_]', ' ', action).title()
+    shortcut = os.path.join(desktop, title + '.lnk')
+    if os.path.exists(shortcut):
+        os.remove(shortcut)
+
+def create_shortcut(basename, target_path, arguments):
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
     desktop = shell.SpecialFolders('Desktop')
-    title = re.sub('[-_]', ' ', title).title()
+    title = re.sub('[-_]', ' ', basename).title()
     shortcut = shell.CreateShortCut(os.path.join(desktop, title + '.lnk'))
     shortcut.WindowStyle = 7
-    shortcut.IconLocation = create_icon(title)
+    shortcut.IconLocation = create_icon(basename)
     shortcut.TargetPath = target_path
     shortcut.Arguments = arguments
     shortcut.WorkingDirectory = os.path.dirname(__file__)
     shortcut.save()
 
-def create_icon(title):
+def create_icon(basename):
     from PIL import Image, ImageDraw, ImageFont
 
-    acronym = create_acronym(title)
+    acronym = create_acronym(basename)
     image_width = image_height = 256
     image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -562,14 +576,14 @@ def create_icon(title):
                   fill='white')
 
     icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                         title + '.ico'))
+                                         basename + '.ico'))
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
 
-def create_acronym(phrase):
-    if isinstance(phrase, str):
+def create_acronym(basename):
+    if isinstance(basename, str):
         acronym = ''
-        for word in re.split('\s+|_', phrase):
+        for word in re.split('\s+|[-_]', basename):
             acronym = acronym + word[0].upper()
 
         return acronym
