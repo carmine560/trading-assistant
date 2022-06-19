@@ -34,7 +34,7 @@ and uses the following packages:
     to automate interactions with Hyper SBI 2
   * (optional)
     [tabula-py](https://tabula-py.readthedocs.io/en/latest/index.html)
-    to save ETF trading units from a website
+    to save ETF trading units from JPX
   * (optional)
     [pandas-datareader](https://pydata.github.io/pandas-datareader/stable/index.html)
     to save ETF closing prices from Yahoo Finance
@@ -114,7 +114,7 @@ then clicks the Login button.
 
 ``` python
 login = [
-    ('wait_for_window', '^HYPER SBI 2$, 2.0'), # wait for the Login window showing.
+    ('wait_for_window', '^HYPER SBI 2$, 2.2'), # wait for the Login window showing.
     ('click', '960, 527'),           # click the Login button.
     ('back_to', None),               # back the cursor to the previous position.
 ]
