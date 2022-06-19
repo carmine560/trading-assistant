@@ -511,7 +511,7 @@ def delete_action(config, action):
 
     shell = win32com.client.Dispatch('WScript.Shell')
     desktop = shell.SpecialFolders('Desktop')
-    title = re.sub('[-_]', ' ', action).title()
+    title = re.sub('[\W_]+', ' ', action).rstrip().title()
     shortcut = os.path.join(desktop, title + '.lnk')
     if os.path.exists(shortcut):
         os.remove(shortcut)
@@ -521,7 +521,7 @@ def create_shortcut(basename, target_path, arguments):
 
     shell = win32com.client.Dispatch('WScript.Shell')
     desktop = shell.SpecialFolders('Desktop')
-    title = re.sub('[-_]', ' ', basename).title()
+    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
     shortcut = shell.CreateShortCut(os.path.join(desktop, title + '.lnk'))
     shortcut.WindowStyle = 7
     shortcut.IconLocation = create_icon(basename)
@@ -533,7 +533,11 @@ def create_shortcut(basename, target_path, arguments):
 def create_icon(basename):
     from PIL import Image, ImageDraw, ImageFont
 
-    acronym = create_acronym(basename)
+    acronym = ''
+    for word in re.split('[\W_]+', basename):
+        if len(word):
+            acronym = acronym + word[0].upper()
+
     image_width = image_height = 256
     image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -575,14 +579,6 @@ def create_icon(basename):
                                          basename + '.ico'))
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
-
-def create_acronym(basename):
-    if isinstance(basename, str):
-        acronym = ''
-        for word in re.split('\s+|[-_]', basename):
-            acronym = acronym + word[0].upper()
-
-        return acronym
 
 def configure_paths(config):
     section = config['Paths']
