@@ -27,7 +27,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-i', action='store_true',
-        help='generate a startup script and a shortcut to it')
+        help='create a startup script and a shortcut to it')
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -48,7 +48,7 @@ def main():
         help='delete an action')
     parser.add_argument(
         '-S', nargs='?', const='LIST_ACTIONS',
-        help='generate a shortcut to an action')
+        help='create a shortcut to an action')
     parser.add_argument(
         '-P', action='store_true',
         help='configure paths')
@@ -79,7 +79,7 @@ def main():
     place_trades = PlaceTrades()
 
     if args.i:
-        generate_startup_script(config)
+        create_startup_script(config)
     elif args.r:
         save_customer_margin_ratios(config)
     elif args.d:
@@ -173,7 +173,7 @@ def configure_default():
     config.read(config.configuration, encoding='utf-8')
     return config
 
-def generate_startup_script(config):
+def create_startup_script(config):
     section = config['Startup Script']
     pre_start = section['pre_start']
     post_start = section['post_start']
@@ -514,6 +514,61 @@ def create_shortcut(title, target_path, arguments):
     shortcut.Arguments = arguments
     shortcut.WorkingDirectory = os.path.dirname(__file__)
     shortcut.save()
+
+def create_icon(acronym):
+    from PIL import Image, ImageDraw, ImageFont
+
+    image_width = image_height = 256
+    image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+
+    if len(acronym) == 0:
+        # FIXME
+        return
+    elif len(acronym) == 1:
+        font = ImageFont.truetype('segoeuib.ttf', 365)
+        font = ImageFont.truetype('consolab.ttf', 401) #
+        # font = ImageFont.truetype('segoeuib.ttf', 160)
+        ascent, descent = font.getmetrics()
+        (width, baseline), (offset_x, offset_y) = font.font.getsize(acronym)
+        cap_height = ascent - offset_y
+        print(cap_height)
+
+        text_width, text_height = font.getsize(acronym)
+        draw.text(((image_width - text_width) / 2, 0 - offset_y), acronym,
+                  font=font, fill='white')
+    elif len(acronym) == 2:
+        font = ImageFont.truetype('segoeuib.ttf', 160)
+        font = ImageFont.truetype('consolab.ttf', 180) #
+        ascent, descent = font.getmetrics()
+        (width, baseline), (offset_x, offset_y) = font.font.getsize(acronym)
+        cap_height = ascent - offset_y
+
+        text_width, text_height = font.getsize(acronym)
+        # draw.text(((image_width - text_width) / 2,
+        #            (image_height - text_height) / 2 - offset_y), acronym,
+        #           font=font, fill='white')
+        draw.text(((image_width - text_width) / 2,
+                   (image_height - cap_height) / 2 - offset_y), acronym,
+                  font=font, fill='white')
+    elif len(acronym) >= 3:
+        font = ImageFont.truetype('segoeuib.ttf', 160)
+        font = ImageFont.truetype('consolab.ttf', 180) #
+        ascent, descent = font.getmetrics()
+        upper = acronym[0:2]
+        lower = acronym[2:4]
+        (width, baseline), (offset_x, offset_y) = font.font.getsize(upper)
+        cap_height = ascent - offset_y
+
+        text_width, text_height = font.getsize(upper)
+        draw.text(((image_width - text_width) / 2, 0 - offset_y), upper,
+                  font=font, fill='white')
+        text_width, text_height = font.getsize(lower)
+        draw.text(((image_width - text_width) / 2,
+                   image_height - (offset_y + cap_height)), lower, font=font,
+                  fill='white')
+
+    image.save('../Desktop/pil_text_font.ico', sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
 
 def configure_paths(config):
     section = config['Paths']

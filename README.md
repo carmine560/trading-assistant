@@ -50,13 +50,13 @@ pip install pyautogui
 
 ## Usage ##
 
-### Generate Startup Script ###
+### Create Startup Script ###
 
 In order to calculate a maximum share size, save customer margin
 ratios and the previous market data from [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and [*Download Stock Market Data*](https://kabudata-dll.com/) in
-advance.  The following option generates a startup script
+advance.  The following option creates a startup script
 `place-trades.ps1` that processes them and starts Hyper SBI 2.
 
 ``` shell
@@ -172,14 +172,14 @@ place-trades.py -e ACTION
 
 ### Options ###
 
-  * `-i` generate a startup script and a shortcut to it
+  * `-i` create a startup script and a shortcut to it
   * `-r` save customer margin ratios
   * `-d` save the previous market data
   * `-u` save ETF trading units
   * `-M [ACTION]` create or modify an action
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action
-  * `-S [ACTION]` generate a shortcut to an action
+  * `-S [ACTION]` create a shortcut to an action
   * `-P` configure paths
   * `-I` configure a startup script
   * `-H` configure market holidays
