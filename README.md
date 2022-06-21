@@ -41,7 +41,7 @@ and uses the following packages:
 
 Install each package as needed.  For example:
 
-``` dos
+``` batchfile
 pip install pandas
 pip install pywin32
 pip install pytesseract
@@ -59,7 +59,7 @@ and [*Download Stock Market Data*](https://kabudata-dll.com/) in
 advance.  The following option creates a startup script
 `place-trades.ps1` that processes them and starts Hyper SBI 2.
 
-``` dos
+``` batchfile
 py place-trades.py -i
 ```
 
@@ -72,7 +72,7 @@ market data above.  Because there can be multiple prices in a region,
 specify the index of the price.  These configurations are saved in the
 configuration file `place-trades.ini`.
 
-``` dos
+``` batchfile
 py place-trades.py -C X Y WIDTH HEIGHT INDEX
 py place-trades.py -L X Y WIDTH HEIGHT INDEX
 ```
@@ -81,7 +81,7 @@ py place-trades.py -L X Y WIDTH HEIGHT INDEX
 
 Create or modify an action to be processed by this script.
 
-``` dos
+``` batchfile
 py place-trades.py -M ACTION
 ```
 
@@ -166,7 +166,7 @@ open_long_position = [
 
 Execute an action saved in the configuration file.
 
-``` dos
+``` batchfile
 py place-trades.py -e ACTION
 ```
 
