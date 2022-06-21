@@ -41,7 +41,7 @@ and uses the following packages:
 
 Install each package as needed.  For example:
 
-``` shell
+``` dos
 pip install pandas
 pip install pywin32
 pip install pytesseract
