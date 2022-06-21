@@ -59,8 +59,8 @@ and [*Download Stock Market Data*](https://kabudata-dll.com/) in
 advance.  The following option creates a startup script
 `place-trades.ps1` that processes them and starts Hyper SBI 2.
 
-``` shell
-place-trades.py -i
+``` dos
+py place-trades.py -i
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
@@ -72,17 +72,17 @@ market data above.  Because there can be multiple prices in a region,
 specify the index of the price.  These configurations are saved in the
 configuration file `place-trades.ini`.
 
-``` shell
-place-trades.py -C X Y WIDTH HEIGHT INDEX
-place-trades.py -L X Y WIDTH HEIGHT INDEX
+``` dos
+py place-trades.py -C X Y WIDTH HEIGHT INDEX
+py place-trades.py -L X Y WIDTH HEIGHT INDEX
 ```
 
 ### Create or Modify Action ###
 
 Create or modify an action to be processed by this script.
 
-``` shell
-place-trades.py -M ACTION
+``` dos
+py place-trades.py -M ACTION
 ```
 
 Then insert, modify, or delete each command of the action.  An action
@@ -166,8 +166,8 @@ open_long_position = [
 
 Execute an action saved in the configuration file.
 
-``` shell
-place-trades.py -e ACTION
+``` dos
+py place-trades.py -e ACTION
 ```
 
 ### Options ###
