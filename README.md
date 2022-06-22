@@ -138,7 +138,7 @@ toggle_between_stocks = [
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to', None),               # back the cursor to the previous position.
     ('wait_for_period', '1.0'),      # wait for one second.
-    ('press_key', 'esc'),            # press the Esc key.
+    ('press_key', 'esc'),            # close the symbol suggest drop-down list.
 ]
 ```
 
