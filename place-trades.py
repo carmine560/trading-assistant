@@ -534,6 +534,7 @@ def create_shortcut(basename, target_path, arguments):
 
 def create_icon(basename):
     from PIL import Image, ImageDraw, ImageFont
+    import winreg
 
     acronym = ''
     for word in re.split('[\W_]+', basename):
@@ -544,6 +545,17 @@ def create_icon(basename):
     image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
 
+    sub_key = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize'
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
+        try:
+            is_light_theme, _ = winreg.QueryValueEx(key, 'AppsUseLightTheme')
+        except OSError:
+            is_light_theme = True
+    if is_light_theme:
+        fill = 'black'
+    else:
+        fill = 'white'
+
     if len(acronym) == 0:
         return False
     elif len(acronym) == 1:
@@ -552,7 +564,7 @@ def create_icon(basename):
         offset_x, offset_y, text_width, text_height = \
             draw.textbbox((0, 0), acronym, font=font)
         draw.text(((image_width - text_width) / 2, -offset_y), acronym,
-                  font=font, fill='white')
+                  font=font, fill=fill)
     elif len(acronym) == 2:
         font = ImageFont.truetype('consolab.ttf', 180)
 
@@ -560,7 +572,7 @@ def create_icon(basename):
             draw.textbbox((0, 0), acronym, font=font)
         draw.text(((image_width - text_width) / 2,
                    (image_height - text_height) / 2 - offset_y), acronym,
-                  font=font, fill='white')
+                  font=font, fill=fill)
     elif len(acronym) >= 3:
         font = ImageFont.truetype('consolab.ttf', 180)
 
@@ -568,14 +580,14 @@ def create_icon(basename):
         offset_x, offset_y, text_width, text_height = \
             draw.textbbox((0, 0), upper, font=font)
         draw.text(((image_width - text_width) / 2, -offset_y), upper,
-                  font=font, fill='white')
+                  font=font, fill=fill)
 
         lower = acronym[2:4]
         offset_x, offset_y, text_width, text_height = \
             draw.textbbox((0, 0), lower, font=font)
         draw.text(((image_width - text_width) / 2,
                    image_height - text_height), lower, font=font,
-                  fill='white')
+                  fill=fill)
 
     icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
                                          basename + '.ico'))
