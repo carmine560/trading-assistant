@@ -103,7 +103,8 @@ ACTION = [
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
     ('show_window', 'TITLE_REGEX'),  # show a window.
-    ('wait_for_window', 'ADDITIONAL_PERIOD'), # wait for a window and an additional period.
+    ('wait_for_period', 'PERIOD'),   # wait for a period.
+    ('wait_for_window', 'TITLE_REGEX, ADDITIONAL_PERIOD'), # wait for a window and an additional period.
 ]
 ```
 
@@ -127,8 +128,8 @@ specified stocks.
 
 ``` python
 toggle_between_stocks = [
-    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
+    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
     ('click', '54, 45'),             # focus on the Symbol text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
@@ -136,6 +137,8 @@ toggle_between_stocks = [
     ('write_alt_symbol', '1570, 1360'), # write the alternative symbol.
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to', None),               # back the cursor to the previous position.
+    ('wait_for_period', '1.0'),      # wait for one second.
+    ('press_key', 'esc'),            # press the Esc key.
 ]
 ```
 
@@ -146,8 +149,9 @@ enters the maximum share size, and prepares the order.
 
 ``` python
 open_long_position = [
-    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
+    ('hide_window', '^ランキング$'), # hide the Ranking window.
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
+    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
     ('click', '1157, 713'),          # select the New Order tab.
     ('click', '1492, 785'),          # focus on the Share Size text box.

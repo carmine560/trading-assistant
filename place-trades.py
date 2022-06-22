@@ -1,5 +1,5 @@
 import os, argparse, sys, win32gui, csv, pyautogui, pytesseract, win32api, \
-    configparser, re
+    configparser, re, time
 
 class PlaceTrades:
     def __init__(self):
@@ -484,6 +484,8 @@ def execute_action(config, place_trades, action):
             pyautogui.press(key, presses=presses)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
+        elif command == 'wait_for_period':
+            time.sleep(float(arguments))
         elif command == 'wait_for_window':
             title_regex = ','.join(arguments.split(',')[:-1])
             additional_period = float(arguments.split(',')[-1])
@@ -742,8 +744,6 @@ def configure_ocr_region(config, key, region):
         config.write(f)
 
 def configure_position():
-    import time
-
     previous_key_state = win32api.GetKeyState(0x01)
     current_number = 0
     coordinates = ''
@@ -913,8 +913,6 @@ def show_window(hwnd, title_regex):
         return
 
 def wait_for_window(place_trades, title_regex, additional_period):
-    import time
-
     while next((False for i in range(len(place_trades.exist))
                 if place_trades.exist[i][1] == title_regex), True):
         win32gui.EnumWindows(place_trades.check_for_window, title_regex)
