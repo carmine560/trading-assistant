@@ -163,8 +163,8 @@ def configure_default():
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
         'etf_urls':
-        'https://www.jpx.co.jp/equities/products/etfs/issues/tvdivq000001j45s-att/nlsgeu000003shfn.pdf, https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/nlsgeu0000060yh9-att/nlsgeu0000060yja.pdf',
-        'trading_unit_header': '売買',
+        'https://www.jpx.co.jp/english/equities/products/etfs/issues/tvdivq000001j45s-att/b5b4pj000002nyru.pdf, https://www.jpx.co.jp/english/equities/products/etfs/leveraged-inverse/b5b4pj000004jncy-att/b5b4pj000004jnei.pdf',
+        'trading_unit_header': 'Trading',
         'symbol_relative_position': '-1'}
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0, 0',
