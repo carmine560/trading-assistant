@@ -201,5 +201,5 @@ py place-trades.py -e ACTION
 
 ## Links ##
 
-  * [*Python Scripting to Assist in Day Trading on Margin using Hyper
+  * [*Python Scripting to Assist in Day Trading on Margin Using Hyper
     SBI 2*](): a blog post for more details.
