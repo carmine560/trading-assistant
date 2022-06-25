@@ -152,7 +152,7 @@ toggle_between_stocks = [
 #### Example 3: Open Long Position ####
 
 The following example `open_long_position` shows the required windows,
-enters the maximum share size, and prepares the order.
+enters the maximum share size, and prepares the buy order.
 
 ``` python
 open_long_position = [
@@ -177,7 +177,7 @@ open_long_position = [
 
 The following example `open_close_long_position` shows the required
 windows, enters the maximum share size, and prepares the buy order.
-If the order is placed, it prepares the sell order for repayment.
+If the order is placed, then it prepares the sell order for repayment.
 
 ``` python
 open_close_long_position = [
@@ -190,18 +190,18 @@ open_close_long_position = [
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
     ('calculate_share_size', 'short'), # calculate the share size and copy it.
-    # FIXME
+    <!-- FIXME -->
     ('write_share_size', None),      # write the calculated share size.
     ('click', '1424, 808'),          # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
-    # FIXME
+    <!-- FIXME -->
     ('wait_for_key', 'space'),       # wait for space input.
     ('click', '284, 757'),           # select the Repayment tab.
     ('click', '606, 861'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    # FIXME
+    <!-- FIXME -->
     ('write_share_size', None),      # write the calculated share size.
     ('click', '446, 944'),           # click the Market Order button.
     ('press_key', 'tab, 5'),         # focus on the Sell Order button.

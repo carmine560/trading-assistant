@@ -3,16 +3,11 @@ import os, argparse, sys, win32gui, csv, pyautogui, pytesseract, win32api, \
 
 class PlaceTrades:
     def __init__(self):
+        self.exist = []
         self.swapped = win32api.GetSystemMetrics(23)
         self.previous_position = pyautogui.position()
         self.symbol = ''
-        self.exist = []
-
-    def get_symbol(self, hwnd, title_regex):
-        matched = re.search(title_regex, str(win32gui.GetWindowText(hwnd)))
-        if matched:
-            self.symbol = matched.group(1)
-            return
+        self.share_size = 0
 
     def check_for_window(self, hwnd, title_regex):
         if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
@@ -21,6 +16,12 @@ class PlaceTrades:
 
             win32gui.SetForegroundWindow(hwnd)
             self.exist.append((hwnd, title_regex))
+            return
+
+    def get_symbol(self, hwnd, title_regex):
+        matched = re.search(title_regex, str(win32gui.GetWindowText(hwnd)))
+        if matched:
+            self.symbol = matched.group(1)
             return
 
 def main():
@@ -498,6 +499,8 @@ def execute_action(config, place_trades, action):
                 alt_symbol = symbols[0]
 
             pyautogui.write(alt_symbol)
+        elif command == 'write_share_size':
+            pyautogui.write(str(place_trades.share_size))
 
 def delete_action(config, action):
     import win32com.client
@@ -807,7 +810,7 @@ def calculate_share_size(config, place_trades, position):
     if position == 'short' and share_size > 50 * trading_unit:
         share_size = 50 * trading_unit
 
-    os.system('echo ' + str(share_size) + ' | clip.exe')
+    place_trades.share_size = share_size
 
 def get_prices(x, y, width, height, index):
     prices = []
