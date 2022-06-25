@@ -4,7 +4,7 @@
 on margin using Hyper SBI 2 -->
 
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
-tabula-py pandas-datareader -->
+tabula-py pandas-datareader pynput -->
 
 `place-trades.py` assists in discretionary day trading of stocks on
 margin using [Hyper SBI
@@ -30,8 +30,11 @@ and uses the following packages:
     on Hyper SBI 2
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
     Tesseract
+    <!-- FIXME: screenshot -->
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html)
     to automate interactions with Hyper SBI 2
+  * [pynput](https://github.com/moses-palmer/pynput) to monitor
+    keyboard input
   * (optional)
     [tabula-py](https://tabula-py.readthedocs.io/en/latest/index.html)
     to save ETF trading units from JPX
@@ -46,6 +49,7 @@ pip install pandas
 pip install pywin32
 pip install pytesseract
 pip install pyautogui
+pip install pynput
 ```
 
 ## Usage ##
@@ -103,8 +107,11 @@ ACTION = [
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
     ('show_window', 'TITLE_REGEX'),  # show a window.
+    ('wait_for_key', 'space'),       # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
     ('wait_for_window', 'TITLE_REGEX, ADDITIONAL_PERIOD'), # wait for a window and an additional period.
+    ('write_alt_symbol', 'SYMBOL_1, SYMBOL_2'), # write the alternative symbol.
+    ('write_share_size', None),      # write the calculated share size.
 ]
 ```
 
@@ -161,6 +168,43 @@ open_long_position = [
     ('press_hotkeys', 'ctrl, v'),    # paste the share size.
     ('click', '1424, 808'),          # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
+    ('beep', '1000, 100'),           # notify completion.
+    ('back_to', None),               # back the cursor to the previous position.
+]
+```
+
+#### Example 4: Open and Close Long Position ####
+
+The following example `open_close_long_position` shows the required
+windows, enters the maximum share size, and prepares the buy order.
+If the order is placed, it prepares the sell order for repayment.
+
+``` python
+open_close_long_position = [
+    ('hide_window', '^ランキング$'), # hide the Ranking window.
+    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
+    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
+    ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
+    ('click', '1157, 713'),          # select the New Order tab.
+    ('click', '1492, 785'),          # focus on the Share Size text box.
+    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
+    ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
+    ('calculate_share_size', 'short'), # calculate the share size and copy it.
+    # FIXME
+    ('write_share_size', None),      # write the calculated share size.
+    ('click', '1424, 808'),          # click the Market Order button.
+    ('press_key', 'tab, 3'),         # focus on the Buy Order button.
+    ('beep', '1000, 100'),           # notify completion.
+    ('back_to', None),               # back the cursor to the previous position.
+    # FIXME
+    ('wait_for_key', 'space'),       # wait for space input.
+    ('click', '284, 757'),           # select the Repayment tab.
+    ('click', '606, 861'),           # focus on the Share Size text box.
+    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
+    # FIXME
+    ('write_share_size', None),      # write the calculated share size.
+    ('click', '446, 944'),           # click the Market Order button.
+    ('press_key', 'tab, 5'),         # focus on the Sell Order button.
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
 ]
