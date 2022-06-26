@@ -825,6 +825,8 @@ def calculate_share_size(config, place_trades, position):
     if position == 'short' and share_size > 50 * trading_unit:
         share_size = 50 * trading_unit
 
+    # FIXME
+    os.system('echo ' + str(share_size) + ' | clip.exe')
     place_trades.share_size = share_size
 
 def get_prices(x, y, width, height, index):
