@@ -160,13 +160,13 @@ open_long_position = [
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
-    ('click', '1157, 713'),          # select the New Order tab.
-    ('click', '1492, 785'),          # focus on the Share Size text box.
+    ('click', '201, 757'),           # select the New Order tab.
+    ('click', '531, 823'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
-    ('calculate_share_size', 'short'), # calculate the share size and copy it.
+    ('calculate_share_size', 'long'), # calculate the share size and copy it.
     ('press_hotkeys', 'ctrl, v'),    # paste the share size.
-    ('click', '1424, 808'),          # click the Market Order button.
+    ('click', '466, 843'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
@@ -185,13 +185,13 @@ open_close_long_position = [
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
-    ('click', '1157, 713'),          # select the New Order tab.
-    ('click', '1492, 785'),          # focus on the Share Size text box.
+    ('click', '201, 757'),           # select the New Order tab.
+    ('click', '531, 823'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
-    ('calculate_share_size', 'short'), # calculate the share size and copy it.
+    ('calculate_share_size', 'long'), # calculate the share size and copy it.
     ('write_share_size', None),      # write the calculated share size.
-    ('click', '1424, 808'),          # click the Market Order button.
+    ('click', '466, 843'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
