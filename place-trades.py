@@ -1,5 +1,6 @@
 import os, argparse, sys, win32gui, csv, pyautogui, pytesseract, win32api, \
     configparser, re, time
+from pynput import keyboard
 
 class PlaceTrades:
     def __init__(self):
@@ -8,6 +9,8 @@ class PlaceTrades:
         self.previous_position = pyautogui.position()
         self.symbol = ''
         self.share_size = 0
+        self.key = None
+        self.released = False
 
     def check_for_window(self, hwnd, title_regex):
         if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
@@ -23,6 +26,16 @@ class PlaceTrades:
         if matched:
             self.symbol = matched.group(1)
             return
+
+    def on_release(self, key):
+        if hasattr(key, 'char') and key.char == self.key:
+            self.released = True
+            return False
+        elif key == self.key:
+            self.released = True
+            return False
+        elif key == keyboard.Key.esc:
+            return False
 
 def main():
     parser = argparse.ArgumentParser()
@@ -485,6 +498,8 @@ def execute_action(config, place_trades, action):
             pyautogui.press(key, presses=presses)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
+        elif command == 'wait_for_key':
+            wait_for_key(place_trades, arguments)
         elif command == 'wait_for_period':
             time.sleep(float(arguments))
         elif command == 'wait_for_window':
@@ -926,6 +941,16 @@ def show_window(hwnd, title_regex):
 
         win32gui.SetForegroundWindow(hwnd)
         return
+
+def wait_for_key(place_trades, key):
+    if len(key) == 1:
+        place_trades.key = key
+    else:
+        place_trades.key = keyboard.Key[key]
+    with keyboard.Listener(on_release=place_trades.on_release) as listener:
+        listener.join()
+    if not place_trades.released:
+        sys.exit()
 
 def wait_for_window(place_trades, title_regex, additional_period):
     while next((False for i in range(len(place_trades.exist))
