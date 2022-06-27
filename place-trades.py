@@ -514,9 +514,7 @@ def execute_action(config, place_trades, action):
         elif command == 'wait_for_period':
             time.sleep(float(arguments))
         elif command == 'wait_for_window':
-            title_regex = ','.join(arguments.split(',')[:-1])
-            additional_period = float(arguments.split(',')[-1])
-            wait_for_window(place_trades, title_regex, additional_period)
+            wait_for_window(place_trades, arguments)
         elif command == 'write_alt_symbol':
             symbols = list(map(str.strip, arguments.split(',')))
             if symbols[0] == place_trades.symbol:
@@ -969,13 +967,11 @@ def wait_for_key(place_trades, key):
     if not place_trades.released:
         sys.exit()
 
-def wait_for_window(place_trades, title_regex, additional_period):
+def wait_for_window(place_trades, title_regex):
     while next((False for i in range(len(place_trades.exist))
                 if place_trades.exist[i][1] == title_regex), True):
         win32gui.EnumWindows(place_trades.check_for_window, title_regex)
         time.sleep(0.001)
-
-    time.sleep(additional_period)
 
 if __name__ == '__main__':
     main()

@@ -112,8 +112,7 @@ ACTION = [
     ('show_window', 'TITLE_REGEX'),  # show a window.
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
-    # FIXME
-    ('wait_for_window', 'TITLE_REGEX, ADDITIONAL_PERIOD'), # wait for a window and an additional period.
+    ('wait_for_window', 'TITLE_REGEX'), # wait for a window.
     ('write_alt_symbol', 'SYMBOL_1, SYMBOL_2'), # write the alternative symbol.
     ('write_share_size', None),      # write the calculated share size.
 ]
@@ -126,7 +125,8 @@ then clicks the Login button.
 
 ``` python
 login = [
-    ('wait_for_window', '^HYPER SBI 2$, 2.2'), # wait for the Login window showing.
+    ('wait_for_window', '^HYPER SBI 2$'), # wait for the Login window showing.
+    ('wait_for_period', '2.2'),      # wait for an additional period.
     ('click', '960, 527'),           # click the Login button.
     ('back_to', None),               # back the cursor to the previous position.
 ]
