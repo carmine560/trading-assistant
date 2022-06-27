@@ -26,11 +26,13 @@ and uses the following packages:
     ratios and the previous market data from websites
   * [pywin32](https://github.com/mhammond/pywin32) to access to the
     Windows APIs
+  * [Pillow](https://python-pillow.org/) to take screenshots and to
+    create shortcut icons.
   * [Tesseract](https://tesseract-ocr.github.io/) to recognize prices
     on Hyper SBI 2
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
     Tesseract
-    <!-- FIXME: screenshot -->
+    <!-- FIXME -->
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html)
     to automate interactions with Hyper SBI 2
   * [pynput](https://github.com/moses-palmer/pynput) to monitor
@@ -47,6 +49,7 @@ Install each package as needed.  For example:
 ``` batchfile
 pip install pandas
 pip install pywin32
+pip install Pillow
 pip install pytesseract
 pip install pyautogui
 pip install pynput
@@ -109,6 +112,7 @@ ACTION = [
     ('show_window', 'TITLE_REGEX'),  # show a window.
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
+    # FIXME
     ('wait_for_window', 'TITLE_REGEX, ADDITIONAL_PERIOD'), # wait for a window and an additional period.
     ('write_alt_symbol', 'SYMBOL_1, SYMBOL_2'), # write the alternative symbol.
     ('write_share_size', None),      # write the calculated share size.
@@ -196,6 +200,7 @@ open_close_long_position = [
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
     ('wait_for_key', 'space'),       # wait for space input.
+    ('wait_for_period', '1.0'),      # wait for an additional period.
     ('click', '284, 757'),           # select the Repayment tab.
     ('click', '606, 861'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.

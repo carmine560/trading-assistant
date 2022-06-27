@@ -841,10 +841,14 @@ def calculate_share_size(config, place_trades, position):
     place_trades.share_size = share_size
 
 def get_prices(x, y, width, height, index):
+    from PIL import ImageGrab
+
+    # FIXME
+    bbox = int(x), int(y), int(x) + int(width), int(y) + int(height)
     prices = []
     while not len(prices):
         try:
-            image = pyautogui.screenshot(region=(x, y, width, height))
+            image = ImageGrab.grab(bbox)
             separated_prices = pytesseract.image_to_string(
                 image,
                 config='-c tessedit_char_whitelist=\ .,0123456789 --psm 7')
