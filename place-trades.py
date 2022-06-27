@@ -272,7 +272,11 @@ def save_market_data(config):
                                   section['additional_symbols'].split(',')))
     symbol_close = config['Paths']['symbol_close']
 
-    latest = get_latest(config, update_time, time_zone, symbol_close + '1.csv')
+    paths = []
+    for i in range(1, 10):
+        paths.append(symbol_close + str(i) + '.csv')
+
+    latest = get_latest(config, update_time, time_zone, *paths)
     if latest:
         df = pd.DataFrame()
         try:
@@ -339,7 +343,7 @@ def save_etf_trading_units(config):
         concatenated.sort_values(by='symbol', inplace=True)
         concatenated.to_csv(etf_trading_units, header=False, index=False)
 
-def get_latest(config, update_time, time_zone, path):
+def get_latest(config, update_time, time_zone, *paths):
     import requests
 
     section = config['Market Holidays']
@@ -369,9 +373,16 @@ def get_latest(config, update_time, time_zone, path):
     dfs = pd.read_html(market_holidays, match=date_header)
     market_holidays = pd.concat(dfs, ignore_index=True)
 
-    modified_time = pd.Timestamp(0, tz='UTC', unit='s')
-    if os.path.exists(path):
-        modified_time = pd.Timestamp(os.path.getmtime(path), tz='UTC', unit='s')
+    oldest_modified_time = pd.Timestamp.now(tz='UTC')
+    for i in range(len(paths)):
+        if os.path.exists(paths[i]):
+            modified_time = pd.Timestamp(os.path.getmtime(paths[i]), tz='UTC',
+                                         unit='s')
+            if modified_time < oldest_modified_time:
+                oldest_modified_time = modified_time
+        else:
+            modified_time = pd.Timestamp(0, tz='UTC', unit='s')
+            break
 
     # Assume the web page is updated at update_time.
     now = pd.Timestamp.now(tz='UTC')
