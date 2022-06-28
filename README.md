@@ -107,6 +107,7 @@ ACTION = [
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
     ('show_window', 'TITLE_REGEX'),  # show a window.
+    ('wait_for_execution', None),    # wait for an execution.
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
     ('wait_for_window', 'TITLE_REGEX'), # wait for a window.
@@ -197,8 +198,8 @@ open_close_long_position = [
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
     ('wait_for_key', 'space'),       # wait for space input.
-    ('wait_for_period', '1.0'),      # wait for an additional period.
-    # Close a Long Position
+    ('wait_for_execution', None),    # wait for the execution.
+    # Close the Long Position
     ('click', '284, 757'),           # select the Repayment tab.
     ('click', '606, 861'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.

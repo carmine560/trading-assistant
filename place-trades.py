@@ -7,6 +7,7 @@ class PlaceTrades:
         self.exist = []
         self.swapped = win32api.GetSystemMetrics(23)
         self.previous_position = pyautogui.position()
+        self.cash_balance = 0
         self.symbol = ''
         self.share_size = 0
         self.key = None
@@ -512,6 +513,8 @@ def execute_action(config, place_trades, action):
             pyautogui.press(key, presses=presses)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
+        elif command == 'wait_for_execution':
+            wait_for_execution(config, place_trades)
         elif command == 'wait_for_key':
             wait_for_key(place_trades, arguments)
         elif command == 'wait_for_period':
@@ -803,7 +806,7 @@ def configure_position():
 
 def calculate_share_size(config, place_trades, position):
     region = config['OCR Regions']['cash_balance_region'].split(', ')
-    cash_balance = get_prices(*region)
+    place_trades.cash_balance = get_prices(*region)
 
     customer_margin_ratio = 0.31
     try:
@@ -832,8 +835,8 @@ def calculate_share_size(config, place_trades, position):
     except OSError as e:
         print(e)
 
-    share_size = int(cash_balance / customer_margin_ratio / price_limit
-                     / trading_unit) * trading_unit
+    share_size = int(place_trades.cash_balance / customer_margin_ratio
+                     / price_limit / trading_unit) * trading_unit
     if position == 'short' and share_size > 50 * trading_unit:
         share_size = 50 * trading_unit
 
@@ -968,6 +971,14 @@ def show_window(hwnd, title_regex):
 
         win32gui.SetForegroundWindow(hwnd)
         return
+
+def wait_for_execution(config, place_trades):
+    # FIXME
+    previous_cash_balance = place_trades.cash_balance
+    region = config['OCR Regions']['cash_balance_region'].split(', ')
+    while place_trades.cash_balance == previous_cash_balance:
+        time.sleep(0.001)
+        place_trades.cash_balance = get_prices(*region)
 
 def wait_for_key(place_trades, key):
     if len(key) == 1:
