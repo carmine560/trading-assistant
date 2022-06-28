@@ -100,7 +100,7 @@ ACTION = [
     ('beep', 'FREQUENCY, DURATION'), # beep.
     ('calculate_share_size', 'POSITION'), # calculate a share size and copy it.
     ('click', 'X, Y'),               # click.
-    ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT), # locate a widget image in a region and click it.
+    ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'), # locate a widget image in a region and click it.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_window', 'TITLE_REGEX'),  # hide a window.
     ('move_to', 'X, Y'),             # move the cursor to a position.
@@ -122,7 +122,8 @@ then clicks the Login button.
 
 ``` python
 login = [
-    ('click_widget', 'C:\\Users\\carmine\\Projects\\place-trades\\login.png, 890, 510, 140, 31'), # locate the Login button and click it.
+    # locate the Login button and click it.
+    ('click_widget', 'C:\\Users\\carmine\\Projects\\place-trades\\login.png, 890, 510, 140, 31'),
     ('back_to', None),               # back the cursor to the previous position.
 ]
 ```
