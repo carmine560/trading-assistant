@@ -98,9 +98,9 @@ commands are:
 ACTION = [
     ('back_to', None),               # back the cursor to the previous position.
     ('beep', 'FREQUENCY, DURATION'), # beep.
-    ('calculate_share_size', 'POSITION'), # calculate a share size and copy it.
+    ('calculate_share_size', 'POSITION'), # calculate a share size.
     ('click', 'X, Y'),               # click.
-    ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'), # locate a widget image in a region and click it.
+    ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'), # locate a widget image in a region, and click it.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_window', 'TITLE_REGEX'),  # hide a window.
     ('move_to', 'X, Y'),             # move the cursor to a position.
@@ -122,7 +122,7 @@ then clicks the Login button.
 
 ``` python
 login = [
-    # locate the Login button and click it.
+    # locate the Login button in the region, and click it.
     ('click_widget', 'C:\\Users\\carmine\\Projects\\place-trades\\login.png, 890, 510, 140, 31'),
     ('back_to', None),               # back the cursor to the previous position.
 ]
@@ -164,7 +164,7 @@ open_long_position = [
     ('click', '531, 823'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
-    ('calculate_share_size', 'long'), # calculate the share size and copy it.
+    ('calculate_share_size', 'long'), # calculate the share size.
     ('press_hotkeys', 'ctrl, v'),    # paste the share size.
     ('click', '466, 843'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
@@ -189,7 +189,7 @@ open_close_long_position = [
     ('click', '531, 823'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
-    ('calculate_share_size', 'long'), # calculate the share size and copy it.
+    ('calculate_share_size', 'long'), # calculate the share size.
     ('write_share_size', None),      # write the calculated share size.
     ('click', '466, 843'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
