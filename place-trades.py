@@ -88,6 +88,9 @@ def main():
     parser.add_argument(
         '-L', nargs=5,
         help='configure the price limit region and the index of the price (x y width height index)')
+    parser.add_argument(
+        '-V', nargs=5,
+        help='configure the valuation region and the index of the price (x y width height index)')
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     config = configure_default()
@@ -129,6 +132,8 @@ def main():
         configure_ocr_region(config, 'cash_balance_region', args.C)
     elif args.L:
         configure_ocr_region(config, 'price_limit_region', args.L)
+    elif args.V:
+        configure_ocr_region(config, 'valuation_region', args.V)
 
 def configure_default():
     config = configparser.ConfigParser(interpolation=None)
@@ -183,7 +188,8 @@ def configure_default():
         'symbol_relative_position': '-1'}
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0, 0',
-        'price_limit_region': '0, 0, 0, 0, 0'}
+        'price_limit_region': '0, 0, 0, 0, 0',
+        'valuation_region': '0, 0, 0, 0, 0'}
     config.configuration = os.path.splitext(__file__)[0] + '.ini'
     config.read(config.configuration, encoding='utf-8')
     return config
@@ -974,11 +980,8 @@ def show_window(hwnd, title_regex):
 
 def wait_for_execution(config, place_trades):
     # FIXME
-    previous_cash_balance = place_trades.cash_balance
-    region = config['OCR Regions']['cash_balance_region'].split(', ')
-    while place_trades.cash_balance == previous_cash_balance:
-        time.sleep(0.001)
-        place_trades.cash_balance = get_prices(*region)
+    region = config['OCR Regions']['valuation_region'].split(', ')
+    get_prices(*region)
 
 def wait_for_key(place_trades, key):
     if len(key) == 1:
