@@ -489,6 +489,9 @@ def execute_action(config, place_trades, action):
                 pyautogui.rightClick(coordinates)
             else:
                 pyautogui.click(coordinates)
+        elif command == 'click_widget':
+            arguments = list(map(str.strip, arguments.split(',')))
+            click_widget(place_trades, *arguments)
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trades.get_symbol, arguments)
         elif command == 'hide_window':
@@ -839,14 +842,10 @@ def calculate_share_size(config, place_trades, position):
     place_trades.share_size = share_size
 
 def get_prices(x, y, width, height, index):
-    from PIL import ImageGrab
-
-    # FIXME
-    bbox = int(x), int(y), int(x) + int(width), int(y) + int(height)
     prices = []
     while not len(prices):
         try:
-            image = ImageGrab.grab(bbox)
+            image = pyautogui.screenshot(region=(x, y, width, height))
             separated_prices = pytesseract.image_to_string(
                 image,
                 config='-c tessedit_char_whitelist=\ .,0123456789 --psm 7')
@@ -942,6 +941,19 @@ def get_price_limit(config, place_trades):
         region = config['OCR Regions']['price_limit_region'].split(', ')
         price_limit = get_prices(*region)
     return price_limit
+
+def click_widget(place_trades, image, x, y, width, height):
+    location = None
+    while not location:
+        location = pyautogui.locateOnScreen(image,
+                                            region=(int(x), int(y),
+                                                    int(width), int(height)))
+        time.sleep(0.001)
+
+    if place_trades.swapped:
+        pyautogui.rightClick(pyautogui.center(location))
+    else:
+        pyautogui.click(pyautogui.center(location))
 
 def hide_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):

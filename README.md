@@ -26,13 +26,10 @@ and uses the following packages:
     ratios and the previous market data from websites
   * [pywin32](https://github.com/mhammond/pywin32) to access to the
     Windows APIs
-  * [Pillow](https://python-pillow.org/) to take screenshots and to
-    create shortcut icons.
   * [Tesseract](https://tesseract-ocr.github.io/) to recognize prices
     on Hyper SBI 2
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
     Tesseract
-    <!-- FIXME -->
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html)
     to automate interactions with Hyper SBI 2
   * [pynput](https://github.com/moses-palmer/pynput) to monitor
@@ -49,7 +46,6 @@ Install each package as needed.  For example:
 ``` batchfile
 pip install pandas
 pip install pywin32
-pip install Pillow
 pip install pytesseract
 pip install pyautogui
 pip install pynput
@@ -104,6 +100,7 @@ ACTION = [
     ('beep', 'FREQUENCY, DURATION'), # beep.
     ('calculate_share_size', 'POSITION'), # calculate a share size and copy it.
     ('click', 'X, Y'),               # click.
+    ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT), # locate a widget image in a region and click it.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_window', 'TITLE_REGEX'),  # hide a window.
     ('move_to', 'X, Y'),             # move the cursor to a position.
@@ -125,9 +122,7 @@ then clicks the Login button.
 
 ``` python
 login = [
-    ('wait_for_window', '^HYPER SBI 2$'), # wait for the Login window showing.
-    ('wait_for_period', '2.2'),      # wait for an additional period.
-    ('click', '960, 527'),           # click the Login button.
+    ('click_widget', 'C:\\Users\\carmine\\Projects\\place-trades\\login.png, 890, 510, 140, 31'), # locate the Login button and click it.
     ('back_to', None),               # back the cursor to the previous position.
 ]
 ```
