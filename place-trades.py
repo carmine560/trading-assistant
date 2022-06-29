@@ -843,6 +843,8 @@ def calculate_share_size(config, place_trades, position):
 
     share_size = int(place_trades.cash_balance / customer_margin_ratio
                      / price_limit / trading_unit) * trading_unit
+    if share_size == 0:
+        sys.exit()
     if position == 'short' and share_size > 50 * trading_unit:
         share_size = 50 * trading_unit
 
