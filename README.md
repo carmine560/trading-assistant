@@ -150,31 +150,7 @@ toggle_between_stocks = [
 ]
 ```
 
-#### Example 3: Open Long Position ####
-
-The following example `open_long_position` shows required windows,
-enters the maximum share size, and prepares a buy order.
-
-``` python
-open_long_position = [
-    ('hide_window', '^ランキング$'), # hide the Ranking window.
-    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
-    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
-    ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
-    ('click', '201, 757'),           # select the New Order tab.
-    ('click', '531, 823'),           # focus on the Share Size text box.
-    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
-    ('calculate_share_size', 'long'), # calculate the share size.
-    ('press_hotkeys', 'ctrl, v'),    # paste the share size.
-    ('click', '466, 843'),           # click the Market Order button.
-    ('press_key', 'tab, 3'),         # focus on the Buy Order button.
-    ('beep', '1000, 100'),           # notify completion.
-    ('back_to', None),               # back the cursor to the previous position.
-]
-```
-
-#### Example 4: Open and Close Long Position ####
+#### Example 3: Open and Close Long Position ####
 
 The following example `open_close_long_position` shows required
 windows, enters the maximum share size, and prepares a buy order.  If
