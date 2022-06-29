@@ -107,9 +107,9 @@ ACTION = [
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
     ('show_window', 'TITLE_REGEX'),  # show a window.
-    ('wait_for_execution', None),    # wait for an execution.
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
+    ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'), # wait for prices to be displayed in a region.
     ('wait_for_window', 'TITLE_REGEX'), # wait for a window.
     ('write_alt_symbol', 'SYMBOL_1, SYMBOL_2'), # write the alternative symbol.
     ('write_share_size', None),      # write the calculated share size.
@@ -145,7 +145,7 @@ toggle_between_stocks = [
     ('write_alt_symbol', '1570, 1360'), # write the alternative symbol.
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to', None),               # back the cursor to the previous position.
-    ('wait_for_period', '1.0'),      # wait for one second.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('press_key', 'esc'),            # close the symbol suggest drop-down list.
 ]
 ```
@@ -174,7 +174,7 @@ open_close_long_position = [
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
     ('wait_for_key', 'space'),       # wait for space input.
-    ('wait_for_execution', None),    # wait for the execution.
+    ('wait_for_prices', '193, 964, 467, 19, 0'), # wait for the execution.
     # Close the Long Position
     ('click', '284, 757'),           # select the Repayment tab.
     ('click', '606, 861'),           # focus on the Share Size text box.

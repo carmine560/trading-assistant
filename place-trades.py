@@ -88,9 +88,6 @@ def main():
     parser.add_argument(
         '-L', nargs=5,
         help='configure the price limit region and the index of the price (x y width height index)')
-    parser.add_argument(
-        '-V', nargs=5,
-        help='configure the valuation region and the index of the price (x y width height index)')
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     config = configure_default()
@@ -132,8 +129,6 @@ def main():
         configure_ocr_region(config, 'cash_balance_region', args.C)
     elif args.L:
         configure_ocr_region(config, 'price_limit_region', args.L)
-    elif args.V:
-        configure_ocr_region(config, 'valuation_region', args.V)
 
 def configure_default():
     config = configparser.ConfigParser(interpolation=None)
@@ -188,8 +183,7 @@ def configure_default():
         'symbol_relative_position': '-1'}
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0, 0',
-        'price_limit_region': '0, 0, 0, 0, 0',
-        'valuation_region': '0, 0, 0, 0, 0'}
+        'price_limit_region': '0, 0, 0, 0, 0'}
     config.configuration = os.path.splitext(__file__)[0] + '.ini'
     config.read(config.configuration, encoding='utf-8')
     return config
@@ -519,12 +513,13 @@ def execute_action(config, place_trades, action):
             pyautogui.press(key, presses=presses)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
-        elif command == 'wait_for_execution':
-            wait_for_execution(config, place_trades)
         elif command == 'wait_for_key':
             wait_for_key(place_trades, arguments)
         elif command == 'wait_for_period':
             time.sleep(float(arguments))
+        elif command == 'wait_for_prices':
+            arguments = list(map(str.strip, arguments.split(',')))
+            get_prices(*arguments)
         elif command == 'wait_for_window':
             wait_for_window(place_trades, arguments)
         elif command == 'write_alt_symbol':
@@ -977,11 +972,6 @@ def show_window(hwnd, title_regex):
 
         win32gui.SetForegroundWindow(hwnd)
         return
-
-def wait_for_execution(config, place_trades):
-    # FIXME
-    region = config['OCR Regions']['valuation_region'].split(', ')
-    get_prices(*region)
 
 def wait_for_key(place_trades, key):
     if len(key) == 1:
