@@ -124,7 +124,7 @@ then clicks the Login button.
 ``` python
 login = [
     # locate the Login button in the region, and click it.
-    ('click_widget', 'C:\\Users\\carmine\\Projects\\place-trades\\login.png, 890, 510, 140, 31'),
+    ('click_widget', 'path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to', None),               # back the cursor to the previous position.
 ]
 ```
