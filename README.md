@@ -175,6 +175,7 @@ open_close_long_position = [
     ('back_to', None),               # back the cursor to the previous position.
     ('wait_for_key', 'space'),       # wait for space input.
     ('wait_for_prices', '193, 964, 467, 19, 0'), # wait for the execution.
+
     # Close the Long Position
     ('click', '284, 757'),           # select the Repayment tab.
     ('click', '606, 861'),           # focus on the Share Size text box.
