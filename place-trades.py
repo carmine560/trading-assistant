@@ -491,8 +491,10 @@ def execute_action(config, place_trades, action):
             else:
                 pyautogui.click(coordinates)
         elif command == 'click_widget':
-            arguments = list(map(str.strip, arguments.split(',')))
-            click_widget(place_trades, *arguments)
+            arguments = arguments.split(',')
+            image = ','.join(arguments[0:-4])
+            region = arguments[-4:len(arguments)]
+            click_widget(place_trades, image, *region)
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trades.get_symbol, arguments)
         elif command == 'hide_window':
@@ -948,10 +950,13 @@ def get_price_limit(config, place_trades):
 
 def click_widget(place_trades, image, x, y, width, height):
     location = None
+    x = int(x)
+    y = int(y)
+    width = int(width)
+    height = int(height)
     while not location:
         location = pyautogui.locateOnScreen(image,
-                                            region=(int(x), int(y),
-                                                    int(width), int(height)))
+                                            region=(x, y, width, height))
         time.sleep(0.001)
 
     if place_trades.swapped:
