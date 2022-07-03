@@ -134,14 +134,14 @@ def configure_default():
     config = configparser.ConfigParser(interpolation=None)
     config['Paths'] = {
         'customer_margin_ratios':
-        os.path.normpath(os.path.join(os.path.expanduser('~'),
-                                      'Downloads/customer_margin_ratios.csv')),
+        os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                      'customer_margin_ratios.csv')),
         'symbol_close':
-        os.path.normpath(os.path.join(os.path.expanduser('~'),
-                                      'Downloads/symbol_close_')),
+        os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                      'symbol_close_')),
         'etf_trading_units':
-        os.path.normpath(os.path.join(os.path.expanduser('~'),
-                                      'Downloads/etf_trading_units.csv')),
+        os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                      'etf_trading_units.csv')),
         'trading_software':
         r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'}
     config['Startup Script'] = {
@@ -151,8 +151,8 @@ def configure_default():
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'market_holidays':
-        os.path.normpath(os.path.join(os.path.expanduser('~'),
-                                      'Downloads/market_holidays.csv')),
+        os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                      'market_holidays.csv')),
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Customer Margin Ratios'] = {
