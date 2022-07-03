@@ -152,7 +152,7 @@ def configure_default():
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'market_holidays':
         os.path.normpath(os.path.join(os.path.expanduser('~'),
-                                      'Downloads/market_holidays.html')),
+                                      'Downloads/market_holidays.csv')),
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Customer Margin Ratios'] = {
@@ -368,11 +368,10 @@ def get_latest(config, update_time, time_zone, *paths):
     last_modified = pd.Timestamp(head.headers['last-modified'])
 
     if modified_time < last_modified:
-        get = requests.get(market_holiday_url)
-        open(market_holidays, 'wb').write(get.content)
-
-    dfs = pd.read_html(market_holidays, match=date_header)
-    market_holidays = pd.concat(dfs, ignore_index=True)
+        dfs = pd.read_html(market_holiday_url, match=date_header)
+        df = pd.concat(dfs)[date_header]
+        df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
+        df.to_csv(market_holidays, header=False, index=False)
 
     oldest_modified_time = pd.Timestamp.now(tz='UTC')
     for i in range(len(paths)):
@@ -391,9 +390,9 @@ def get_latest(config, update_time, time_zone, *paths):
     if now < latest:
         latest -= pd.Timedelta(days=1)
 
-    while market_holidays[date_header].str.contains(
-            latest.strftime(date_format)).any() \
-            or latest.weekday() == 5 or latest.weekday() == 6:
+    df = pd.read_csv(market_holidays, names=[date_header])
+    while df[date_header].str.contains(latest.strftime(date_format)).any() \
+          or latest.weekday() == 5 or latest.weekday() == 6:
         latest -= pd.Timedelta(days=1)
 
     if modified_time < latest:
