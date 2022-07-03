@@ -390,8 +390,8 @@ def get_latest(config, update_time, time_zone, *paths):
     if now < latest:
         latest -= pd.Timedelta(days=1)
 
-    df = pd.read_csv(market_holidays, names=[date_header])
-    while df[date_header].str.contains(latest.strftime(date_format)).any() \
+    df = pd.read_csv(market_holidays, header=None)
+    while df[0].str.contains(latest.strftime(date_format)).any() \
           or latest.weekday() == 5 or latest.weekday() == 6:
         latest -= pd.Timedelta(days=1)
 
