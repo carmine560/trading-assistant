@@ -212,6 +212,7 @@ py place-trades.py -e ACTION
   * `-R` configure customer margin ratios
   * `-D` configure market data
   * `-U` configure ETF trading units
+  * `-B` configure a cash balance
   * `-C X Y WIDTH HEIGHT INDEX` configure the cash balance region and
     the index of the price
   * `-L X Y WIDTH HEIGHT INDEX` configure the price limit region and

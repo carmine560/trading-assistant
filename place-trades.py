@@ -83,6 +83,9 @@ def main():
         '-U', action='store_true',
         help='configure ETF trading units')
     parser.add_argument(
+        '-B', action='store_true',
+        help='configure a cash balance')
+    parser.add_argument(
         '-C', nargs=5,
         help='configure the cash balance region and the index of the price (x y width height index)')
     parser.add_argument(
@@ -125,6 +128,8 @@ def main():
         configure_market_data(config)
     elif args.U:
         configure_etf_trading_units(config)
+    elif args.B:
+        configure_cash_balance(config)
     elif args.C:
         configure_ocr_region(config, 'cash_balance_region', args.C)
     elif args.L:
@@ -164,9 +169,7 @@ def configure_default():
         'regulation_header': '規制内容',
         'header': '銘柄, コード, 建玉, 信用取引区分, 規制内容',
         'customer_margin_ratio': '委託保証金率',
-        'suspended': '新規建停止',
-        # FIXME
-        'utilization_ratio': '1.0'}
+        'suspended': '新規建停止'}
     config['Market Data'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
@@ -183,6 +186,8 @@ def configure_default():
         'https://www.jpx.co.jp/english/equities/products/etfs/issues/tvdivq000001j45s-att/b5b4pj000002nyru.pdf, https://www.jpx.co.jp/english/equities/products/etfs/leveraged-inverse/b5b4pj000004jncy-att/b5b4pj000004jnei.pdf',
         'trading_unit_header': 'Trading',
         'symbol_relative_position': '-1'}
+    config['Cash Balance'] = {
+        'utilization_ratio': '1.0'}
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0'}
@@ -699,7 +704,6 @@ def configure_customer_margin_ratios(config):
     header = section['header']
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
-    utilization_ratio = section['utilization_ratio']
 
     section['update_time'] = \
         input('update_time [' + update_time + '] ') \
@@ -725,9 +729,6 @@ def configure_customer_margin_ratios(config):
     section['suspended'] = \
         input('suspended [' + suspended + '] ') \
         or suspended
-    section['utilization_ratio'] = \
-        input('utilization_ratio [' + utilization_ratio + '] ') \
-        or utilization_ratio
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
@@ -791,6 +792,20 @@ def configure_etf_trading_units(config):
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
+def configure_cash_balance(config):
+    section = config['Cash Balance']
+    utilization_ratio = section['utilization_ratio']
+
+    section['utilization_ratio'] = \
+        input('utilization_ratio [' + utilization_ratio + '] ') \
+        or utilization_ratio
+    if float(section['utilization_ratio']) > 1.0:
+        section['utilization_ratio'] = '1.0'
+    elif float(section['utilization_ratio']) < 0.0:
+        section['utilization_ratio'] = '0.0'
+    with open(config.configuration, 'w', encoding='utf-8') as f:
+        config.write(f)
+
 def configure_ocr_region(config, key, region):
     config['OCR Regions'][key] = ', '.join(region)
     with open(config.configuration, 'w', encoding='utf-8') as f:
@@ -843,9 +858,8 @@ def calculate_share_size(config, place_trades, position):
     except OSError as e:
         print(e)
 
-    utilization_ratio = \
-        float(config['Customer Margin Ratios']['utilization_ratio'])
-    share_size = int(utilization_ratio * place_trades.cash_balance
+    utilization_ratio = float(config['Cash Balance']['utilization_ratio'])
+    share_size = int(place_trades.cash_balance * utilization_ratio
                      / customer_margin_ratio / price_limit / trading_unit) \
                      * trading_unit
     if share_size == 0:
