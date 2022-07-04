@@ -164,7 +164,9 @@ def configure_default():
         'regulation_header': '規制内容',
         'header': '銘柄, コード, 建玉, 信用取引区分, 規制内容',
         'customer_margin_ratio': '委託保証金率',
-        'suspended': '新規建停止'}
+        'suspended': '新規建停止',
+        # FIXME
+        'utilization_ratio': '1.0'}
     config['Market Data'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
@@ -697,6 +699,7 @@ def configure_customer_margin_ratios(config):
     header = section['header']
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
+    utilization_ratio = section['utilization_ratio']
 
     section['update_time'] = \
         input('update_time [' + update_time + '] ') \
@@ -722,6 +725,9 @@ def configure_customer_margin_ratios(config):
     section['suspended'] = \
         input('suspended [' + suspended + '] ') \
         or suspended
+    section['utilization_ratio'] = \
+        input('utilization_ratio [' + utilization_ratio + '] ') \
+        or utilization_ratio
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
@@ -837,8 +843,11 @@ def calculate_share_size(config, place_trades, position):
     except OSError as e:
         print(e)
 
-    share_size = int(place_trades.cash_balance / customer_margin_ratio
-                     / price_limit / trading_unit) * trading_unit
+    utilization_ratio = \
+        float(config['Customer Margin Ratios']['utilization_ratio'])
+    share_size = int(utilization_ratio * place_trades.cash_balance
+                     / customer_margin_ratio / price_limit / trading_unit) \
+                     * trading_unit
     if share_size == 0:
         sys.exit()
     if position == 'short' and share_size > 50 * trading_unit:
