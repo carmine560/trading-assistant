@@ -187,6 +187,7 @@ def configure_default():
         'trading_unit_header': 'Trading',
         'symbol_relative_position': '-1'}
     config['Cash Balance'] = {
+        'cash_balance': '0',
         'utilization_ratio': '1.0'}
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0, 0',
@@ -794,15 +795,15 @@ def configure_etf_trading_units(config):
 
 def configure_cash_balance(config):
     section = config['Cash Balance']
+    cash_balance = section['cash_balance']
     utilization_ratio = section['utilization_ratio']
 
+    section['cash_balance'] = \
+        input('cash_balance [' + cash_balance + '] ') \
+        or cash_balance
     section['utilization_ratio'] = \
         input('utilization_ratio [' + utilization_ratio + '] ') \
         or utilization_ratio
-    if float(section['utilization_ratio']) > 1.0:
-        section['utilization_ratio'] = '1.0'
-    elif float(section['utilization_ratio']) < 0.0:
-        section['utilization_ratio'] = '0.0'
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
@@ -828,8 +829,12 @@ def configure_position():
     return coordinates
 
 def calculate_share_size(config, place_trades, position):
-    region = config['OCR Regions']['cash_balance_region'].split(', ')
-    place_trades.cash_balance = get_prices(*region)
+    cash_balance = int(config['Cash Balance']['cash_balance'])
+    if cash_balance > 0:
+        place_trades.cash_balance = cash_balance
+    else:
+        region = config['OCR Regions']['cash_balance_region'].split(', ')
+        place_trades.cash_balance = get_prices(*region)
 
     customer_margin_ratio = 0.31
     try:
