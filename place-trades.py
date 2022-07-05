@@ -801,9 +801,23 @@ def configure_cash_balance(config):
     section['cash_balance'] = \
         input('cash_balance [' + cash_balance + '] ') \
         or cash_balance
+    cash_balance = int(float(section['cash_balance'].replace(',', '')))
+    if cash_balance < 0:
+        section['cash_balance'] = '0'
+    else:
+        section['cash_balance'] = str(cash_balance)
+
     section['utilization_ratio'] = \
         input('utilization_ratio [' + utilization_ratio + '] ') \
         or utilization_ratio
+    utilization_ratio = float(section['utilization_ratio'].replace(',', ''))
+    if utilization_ratio < 0.0:
+        section['utilization_ratio'] = '0.0'
+    elif utilization_ratio > 1.0:
+        section['utilization_ratio'] = '1.0'
+    else:
+        section['utilization_ratio'] = str(utilization_ratio)
+
     with open(config.configuration, 'w', encoding='utf-8') as f:
         config.write(f)
 
