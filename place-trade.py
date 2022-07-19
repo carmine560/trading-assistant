@@ -2,7 +2,7 @@ import os, argparse, sys, win32gui, csv, pyautogui, pytesseract, win32api, \
     configparser, re, time
 from pynput import keyboard
 
-class PlaceTrades:
+class PlaceTrade:
     def __init__(self):
         self.exist = []
         self.swapped = win32api.GetSystemMetrics(23)
@@ -94,7 +94,7 @@ def main():
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     config = configure_default()
-    place_trades = PlaceTrades()
+    place_trade = PlaceTrade()
 
     if args.i:
         create_startup_script(config)
@@ -110,7 +110,7 @@ def main():
     elif args.M:
         modify_action(config, args.M)
     elif args.e:
-        execute_action(config, place_trades, args.e)
+        execute_action(config, place_trade, args.e)
     elif args.T:
         delete_action(config, args.T)
     elif args.S:
@@ -477,23 +477,23 @@ def modify_action(config, action):
     else:
         delete_action(config, action)
 
-def execute_action(config, place_trades, action):
+def execute_action(config, place_trade, action):
     commands = eval(config['Actions'][action])
     for i in range(len(commands)):
         command = commands[i][0]
         arguments = commands[i][1]
         if command == 'back_to':
-            pyautogui.moveTo(place_trades.previous_position)
+            pyautogui.moveTo(place_trade.previous_position)
         elif command == 'beep':
             import winsound
 
             frequency, duration = eval(arguments)
             winsound.Beep(frequency, duration)
         elif command == 'calculate_share_size':
-            calculate_share_size(config, place_trades, arguments)
+            calculate_share_size(config, place_trade, arguments)
         elif command == 'click':
             coordinates = eval(arguments)
-            if place_trades.swapped:
+            if place_trade.swapped:
                 pyautogui.rightClick(coordinates)
             else:
                 pyautogui.click(coordinates)
@@ -501,9 +501,9 @@ def execute_action(config, place_trades, action):
             arguments = arguments.split(',')
             image = ','.join(arguments[0:-4])
             region = arguments[-4:len(arguments)]
-            click_widget(place_trades, image, *region)
+            click_widget(place_trade, image, *region)
         elif command == 'get_symbol':
-            win32gui.EnumWindows(place_trades.get_symbol, arguments)
+            win32gui.EnumWindows(place_trade.get_symbol, arguments)
         elif command == 'hide_window':
             win32gui.EnumWindows(hide_window, arguments)
         elif command == 'move_to':
@@ -523,24 +523,24 @@ def execute_action(config, place_trades, action):
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
         elif command == 'wait_for_key':
-            wait_for_key(place_trades, arguments)
+            wait_for_key(place_trade, arguments)
         elif command == 'wait_for_period':
             time.sleep(float(arguments))
         elif command == 'wait_for_prices':
             arguments = list(map(str.strip, arguments.split(',')))
             get_prices(*arguments)
         elif command == 'wait_for_window':
-            wait_for_window(place_trades, arguments)
+            wait_for_window(place_trade, arguments)
         elif command == 'write_alt_symbol':
             symbols = list(map(str.strip, arguments.split(',')))
-            if symbols[0] == place_trades.symbol:
+            if symbols[0] == place_trade.symbol:
                 alt_symbol = symbols[1]
             else:
                 alt_symbol = symbols[0]
 
             pyautogui.write(alt_symbol)
         elif command == 'write_share_size':
-            pyautogui.write(str(place_trades.share_size))
+            pyautogui.write(str(place_trade.share_size))
 
 def delete_action(config, action):
     import win32com.client
@@ -843,20 +843,20 @@ def configure_position():
 
     return coordinates
 
-def calculate_share_size(config, place_trades, position):
+def calculate_share_size(config, place_trade, position):
     fixed_cash_balance = int(config['Cash Balance']['fixed_cash_balance'])
     if fixed_cash_balance > 0:
-        place_trades.cash_balance = fixed_cash_balance
+        place_trade.cash_balance = fixed_cash_balance
     else:
         region = config['OCR Regions']['cash_balance_region'].split(', ')
-        place_trades.cash_balance = get_prices(*region)
+        place_trade.cash_balance = get_prices(*region)
 
     customer_margin_ratio = 0.31
     try:
         with open(config['Paths']['customer_margin_ratios'], 'r') as f:
             reader = csv.reader(f)
             for row in reader:
-                if row[0] == place_trades.symbol:
+                if row[0] == place_trade.symbol:
                     if row[1] == 'suspended':
                         sys.exit()
                     else:
@@ -865,21 +865,21 @@ def calculate_share_size(config, place_trades, position):
     except OSError as e:
         print(e)
 
-    price_limit = get_price_limit(config, place_trades)
+    price_limit = get_price_limit(config, place_trade)
 
     trading_unit = 100
     try:
         with open(config['Paths']['etf_trading_units'], 'r') as f:
             reader = csv.reader(f)
             for row in reader:
-                if row[0] == place_trades.symbol:
+                if row[0] == place_trade.symbol:
                     trading_unit = int(row[1])
                     break
     except OSError as e:
         print(e)
 
     utilization_ratio = float(config['Cash Balance']['utilization_ratio'])
-    share_size = int(place_trades.cash_balance * utilization_ratio
+    share_size = int(place_trade.cash_balance * utilization_ratio
                      / customer_margin_ratio / price_limit / trading_unit) \
                      * trading_unit
     if share_size == 0:
@@ -887,7 +887,7 @@ def calculate_share_size(config, place_trades, position):
     if position == 'short' and share_size > 50 * trading_unit:
         share_size = 50 * trading_unit
 
-    place_trades.share_size = share_size
+    place_trade.share_size = share_size
 
 def get_prices(x, y, width, height, index):
     prices = []
@@ -903,14 +903,14 @@ def get_prices(x, y, width, height, index):
             pass
     return prices[int(index)]
 
-def get_price_limit(config, place_trades):
+def get_price_limit(config, place_trade):
     closing_price = 0.0
     try:
-        with open(config['Paths']['symbol_close'] + place_trades.symbol[0]
+        with open(config['Paths']['symbol_close'] + place_trade.symbol[0]
                   + '.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
-                if row[0] == place_trades.symbol:
+                if row[0] == place_trade.symbol:
                     closing_price = float(row[1])
                     break
     except OSError as e:
@@ -990,7 +990,7 @@ def get_price_limit(config, place_trades):
         price_limit = get_prices(*region)
     return price_limit
 
-def click_widget(place_trades, image, x, y, width, height):
+def click_widget(place_trade, image, x, y, width, height):
     location = None
     x = int(x)
     y = int(y)
@@ -1001,7 +1001,7 @@ def click_widget(place_trades, image, x, y, width, height):
                                             region=(x, y, width, height))
         time.sleep(0.001)
 
-    if place_trades.swapped:
+    if place_trade.swapped:
         pyautogui.rightClick(pyautogui.center(location))
     else:
         pyautogui.click(pyautogui.center(location))
@@ -1020,20 +1020,20 @@ def show_window(hwnd, title_regex):
         win32gui.SetForegroundWindow(hwnd)
         return
 
-def wait_for_key(place_trades, key):
+def wait_for_key(place_trade, key):
     if len(key) == 1:
-        place_trades.key = key
+        place_trade.key = key
     else:
-        place_trades.key = keyboard.Key[key]
-    with keyboard.Listener(on_release=place_trades.on_release) as listener:
+        place_trade.key = keyboard.Key[key]
+    with keyboard.Listener(on_release=place_trade.on_release) as listener:
         listener.join()
-    if not place_trades.released:
+    if not place_trade.released:
         sys.exit()
 
-def wait_for_window(place_trades, title_regex):
-    while next((False for i in range(len(place_trades.exist))
-                if place_trades.exist[i][1] == title_regex), True):
-        win32gui.EnumWindows(place_trades.check_for_window, title_regex)
+def wait_for_window(place_trade, title_regex):
+    while next((False for i in range(len(place_trade.exist))
+                if place_trade.exist[i][1] == title_regex), True):
+        win32gui.EnumWindows(place_trade.check_for_window, title_regex)
         time.sleep(0.001)
 
 if __name__ == '__main__':
