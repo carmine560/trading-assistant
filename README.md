@@ -26,10 +26,9 @@ and uses the following packages:
     ratios and the previous market data from websites
   * [pywin32](https://github.com/mhammond/pywin32) to access to the
     Windows APIs
-  * [Tesseract](https://tesseract-ocr.github.io/) to recognize prices
-    on Hyper SBI 2
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
-    Tesseract
+    [Tesseract](https://tesseract-ocr.github.io/) to recognize prices
+    on Hyper SBI 2
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html)
     to automate interactions with Hyper SBI 2
   * [pynput](https://github.com/moses-palmer/pynput) to monitor
