@@ -1,4 +1,4 @@
-# place-trades #
+# place-trade #
 
 <!-- Python script that assists in discretionary day trading of stocks
 on margin using Hyper SBI 2 -->
@@ -6,7 +6,7 @@ on margin using Hyper SBI 2 -->
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
 tabula-py pandas-datareader pynput -->
 
-`place-trades.py` assists in discretionary day trading of stocks on
+`place-trade.py` assists in discretionary day trading of stocks on
 margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining
 an action consisting of a sequence of commands, this script executes:
@@ -59,10 +59,10 @@ ratios and the previous market data from [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and [*Download Stock Market Data*](https://kabudata-dll.com/) in
 advance.  The following option creates a startup script
-`place-trades.ps1` that processes them and starts Hyper SBI 2.
+`place-trade.ps1` that processes them and starts Hyper SBI 2.
 
 ``` batchfile
-py place-trades.py -i
+py place-trade.py -i
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
@@ -72,11 +72,11 @@ SBI 2 in order that Tesseract recognizes these prices.  A price limit
 is only referenced if the previous closing price does not exist in the
 market data above.  Because there can be multiple prices in a region,
 specify the index of the price.  These configurations are saved in the
-configuration file `place-trades.ini`.
+configuration file `place-trade.ini`.
 
 ``` batchfile
-py place-trades.py -C X Y WIDTH HEIGHT INDEX
-py place-trades.py -L X Y WIDTH HEIGHT INDEX
+py place-trade.py -C X Y WIDTH HEIGHT INDEX
+py place-trade.py -L X Y WIDTH HEIGHT INDEX
 ```
 
 ### Create or Modify Action ###
@@ -84,7 +84,7 @@ py place-trades.py -L X Y WIDTH HEIGHT INDEX
 Create or modify an action to be processed by this script.
 
 ``` batchfile
-py place-trades.py -M ACTION
+py place-trade.py -M ACTION
 ```
 
 Then insert, modify, or delete each command of the action.  An action
@@ -192,7 +192,7 @@ open_close_long_position = [
 Execute an action saved in the configuration file.
 
 ``` batchfile
-py place-trades.py -e ACTION
+py place-trade.py -e ACTION
 ```
 
 ### Options ###
