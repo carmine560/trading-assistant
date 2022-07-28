@@ -331,6 +331,7 @@ def save_etf_trading_units(config):
     symbol_relative_position = int(section['symbol_relative_position'])
     etf_trading_units = config['Paths']['etf_trading_units']
 
+    # FIXME
     if get_latest(config, update_time, time_zone, etf_trading_units):
         dfs = []
         for i in range(len(etf_urls)):
@@ -889,14 +890,18 @@ def calculate_share_size(config, place_trade, position):
 
     place_trade.share_size = share_size
 
-def get_prices(x, y, width, height, index):
+def get_prices(x, y, width, height, index, integer=True):
+    if integer:
+        config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
+    else:
+        config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
+
     prices = []
     while not len(prices):
         try:
             image = pyautogui.screenshot(region=(x, y, width, height))
-            separated_prices = pytesseract.image_to_string(
-                image,
-                config='-c tessedit_char_whitelist=\ .,0123456789 --psm 7')
+            separated_prices = pytesseract.image_to_string(image,
+                                                           config=config)
             prices = list(map(lambda price: float(price.replace(',', '')),
                               separated_prices.split(' ')))
         except:
@@ -987,7 +992,7 @@ def get_price_limit(config, place_trade):
             price_limit = closing_price + 10000000
     else:
         region = config['OCR Regions']['price_limit_region'].split(', ')
-        price_limit = get_prices(*region)
+        price_limit = get_prices(*region, False)
     return price_limit
 
 def click_widget(place_trade, image, x, y, width, height):
