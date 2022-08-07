@@ -1,6 +1,7 @@
+from datetime import date
+from pynput import keyboard
 import os, argparse, sys, win32gui, csv, pyautogui, pytesseract, win32api, \
     configparser, re, time
-from pynput import keyboard
 
 class PlaceTrade:
     def __init__(self):
@@ -192,6 +193,9 @@ def configure_default():
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0'}
+    config['Trading'] = {
+        'date': str(date.today()),
+        'number_of_trades': '0'}
     config.configuration = os.path.splitext(__file__)[0] + '.ini'
     config.read(config.configuration, encoding='utf-8')
     return config
@@ -503,6 +507,19 @@ def execute_action(config, place_trade, action):
             image = ','.join(arguments[0:-4])
             region = arguments[-4:len(arguments)]
             click_widget(place_trade, image, *region)
+        elif command == 'count_trades':
+            section = config['Trading']
+            previous_date = date.fromisoformat(section['date'])
+            current_date = date.today()
+            if previous_date == current_date:
+                section['number_of_trades'] = \
+                    str(int(section['number_of_trades']) + 1)
+            else:
+                section['date'] = str(date.today())
+                section['number_of_trades'] = '1'
+
+            with open(config.configuration, 'w', encoding='utf-8') as f:
+                config.write(f)
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trade.get_symbol, arguments)
         elif command == 'hide_window':

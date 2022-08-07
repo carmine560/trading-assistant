@@ -100,6 +100,7 @@ ACTION = [
     ('calculate_share_size', 'POSITION'), # calculate a share size.
     ('click', 'X, Y'),               # click.
     ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'), # locate a widget image in a region, and click it.
+    ('count_trades', None),          # count the number of trades for the day.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_window', 'TITLE_REGEX'),  # hide a window.
     ('move_to', 'X, Y'),             # move the cursor to a position.
@@ -184,6 +185,7 @@ open_close_long_position = [
     ('press_key', 'tab, 5'),         # focus on the Sell Order button.
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
+    ('count_trades', None),          # count the number of trades for the day.
 ]
 ```
 
