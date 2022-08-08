@@ -24,7 +24,7 @@ and uses the following packages:
 
   * [pandas](https://pandas.pydata.org/) to save customer margin
     ratios and the previous market data from websites
-  * [pywin32](https://github.com/mhammond/pywin32) to access to the
+  * [pywin32](https://github.com/mhammond/pywin32) to access the
     Windows APIs
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
     [Tesseract](https://tesseract-ocr.github.io/) to recognize prices
@@ -56,8 +56,8 @@ pip install pynput
 
 ### Create Startup Script ###
 
-In order to calculate a maximum share size, save customer margin
-ratios and the previous market data from [*SBI Securities Margin
+To calculate a maximum share size, save customer margin ratios and the
+previous market data from [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and [*Download Stock Market Data*](https://kabudata-dll.com/) in
 advance.  The following option creates a startup script
@@ -70,8 +70,8 @@ py place-trade.py -i
 ### Configure Cash Balance and Price Limit Regions ###
 
 Configure the cash balance and (optional) price limit regions on Hyper
-SBI 2 in order that Tesseract recognizes these prices.  A price limit
-is only referenced if the previous closing price does not exist in the
+SBI 2 so that Tesseract recognizes these prices.  A price limit is
+only referenced if the previous closing price does not exist in the
 market data above.  Because there can be multiple prices in a region,
 specify the index of the price.  These configurations are saved in the
 configuration file `place-trade.ini`.
@@ -123,7 +123,7 @@ ACTION = [
 
 #### Example 1: Login ####
 
-The following example `login` waits for the Login window showing, and
+The following example `login` waits for the Login window to show and
 then clicks the Login button.
 
 ``` python
