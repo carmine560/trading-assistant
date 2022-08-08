@@ -109,13 +109,15 @@ ACTION = [
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
     ('show_window', 'TITLE_REGEX'),  # show a window.
-    ('speak_config, 'SECTION, KEY'), # speak a configuration.
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
     ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'), # wait for prices to be displayed in a region.
     ('wait_for_window', 'TITLE_REGEX'), # wait for a window.
     ('write_alt_symbol', 'SYMBOL_1, SYMBOL_2'), # write the alternative symbol.
     ('write_share_size', None),      # write the calculated share size.
+
+    # Optional commands
+    ('speak_config', 'SECTION, KEY'), # speak a configuration.
 ]
 ```
 
@@ -189,7 +191,7 @@ open_close_long_position = [
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
     ('count_trades', None),          # count the number of trades for the day.
-    ('speak_config, 'Trading, number_of_trades'), # speak the number above.
+    ('speak_config', 'Trading, number_of_trades'), # speak the number above.
 ]
 ```
 
