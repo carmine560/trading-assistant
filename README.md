@@ -116,7 +116,7 @@ ACTION = [
     ('write_alt_symbol', 'SYMBOL_1, SYMBOL_2'), # write the alternative symbol.
     ('write_share_size', None),      # write the calculated share size.
 
-    # Optional commands
+    # Optional command
     ('speak_config', 'SECTION, KEY'), # speak a configuration.
 ]
 ```
@@ -150,7 +150,7 @@ toggle_between_stocks = [
     ('write_alt_symbol', '1570, 1360'), # write the alternative symbol.
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to', None),               # back the cursor to the previous position.
-    ('wait_for_period', '0.8'),      # wait for 0.8 seconds.
+    ('wait_for_period', '1'),        # wait for 1 second.
     ('press_key', 'esc'),            # close the symbol suggest drop-down list.
 ]
 ```
