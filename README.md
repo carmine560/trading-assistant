@@ -39,6 +39,8 @@ and uses the following packages:
   * (optional)
     [pandas-datareader](https://pydata.github.io/pandas-datareader/stable/index.html)
     to save ETF closing prices from Yahoo Finance
+  * (optional) [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to
+    speak a configuration
 
 Install each package as needed.  For example:
 
@@ -107,6 +109,7 @@ ACTION = [
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
     ('show_window', 'TITLE_REGEX'),  # show a window.
+    ('speak_config, 'SECTION, KEY'), # speak a configuration.
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
     ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'), # wait for prices to be displayed in a region.
@@ -186,6 +189,7 @@ open_close_long_position = [
     ('beep', '1000, 100'),           # notify completion.
     ('back_to', None),               # back the cursor to the previous position.
     ('count_trades', None),          # count the number of trades for the day.
+    ('speak_config, 'Trading, number_of_trades'), # speak the number above.
 ]
 ```
 

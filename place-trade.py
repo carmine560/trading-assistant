@@ -540,6 +540,15 @@ def execute_action(config, place_trade, action):
             pyautogui.press(key, presses=presses)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
+        elif command == 'speak_config':
+            import pyttsx3
+
+            engine = pyttsx3.init()
+            voices = engine.getProperty('voices')
+            engine.setProperty('voice', voices[1].id)
+            arguments = list(map(str.strip, arguments.split(',')))
+            engine.say(config[arguments[0]][arguments[1]])
+            engine.runAndWait()
         elif command == 'wait_for_key':
             wait_for_key(place_trade, arguments)
         elif command == 'wait_for_period':
