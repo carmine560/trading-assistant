@@ -196,8 +196,8 @@ def configure_default():
     config['Trading'] = {
         'date': str(date.today()),
         'number_of_trades': '0'}
-    config.configuration = os.path.splitext(__file__)[0] + '.ini'
-    config.read(config.configuration, encoding='utf-8')
+    config.path = os.path.splitext(__file__)[0] + '.ini'
+    config.read(config.path, encoding='utf-8')
     return config
 
 def create_startup_script(config):
@@ -477,7 +477,7 @@ def modify_action(config, action):
 
     if len(commands):
         config['Actions'][action] = str(commands)
-        with open(config.configuration, 'w', encoding='utf-8') as f:
+        with open(config.path, 'w', encoding='utf-8') as f:
             config.write(f)
     else:
         delete_action(config, action)
@@ -518,7 +518,7 @@ def execute_action(config, place_trade, action):
                 section['date'] = str(date.today())
                 section['number_of_trades'] = '1'
 
-            with open(config.configuration, 'w', encoding='utf-8') as f:
+            with open(config.path, 'w', encoding='utf-8') as f:
                 config.write(f)
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trade.get_symbol, arguments)
@@ -573,7 +573,7 @@ def delete_action(config, action):
     import win32com.client
 
     config.remove_option('Actions', action)
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
     icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
@@ -683,7 +683,7 @@ def configure_paths(config):
     section['trading_software'] = \
         input('trading_software [' + trading_software + '] ') \
         or trading_software
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_startup_script(config):
@@ -697,7 +697,7 @@ def configure_startup_script(config):
     section['post_start'] = \
         input('post_start [' + post_start + '] ') \
         or post_start
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_market_holidays(config):
@@ -719,7 +719,7 @@ def configure_market_holidays(config):
     section['date_format'] = \
         input('date_format [' + date_format + '] ') \
         or date_format
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_customer_margin_ratios(config):
@@ -757,7 +757,7 @@ def configure_customer_margin_ratios(config):
     section['suspended'] = \
         input('suspended [' + suspended + '] ') \
         or suspended
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_market_data(config):
@@ -791,7 +791,7 @@ def configure_market_data(config):
     section['additional_symbols'] = \
         input('additional_symbols [' + additional_symbols + '] ') \
         or additional_symbols
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_etf_trading_units(config):
@@ -817,7 +817,7 @@ def configure_etf_trading_units(config):
     section['symbol_relative_position'] = \
         input('symbol_relative_position [' + symbol_relative_position + '] ') \
         or symbol_relative_position
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_cash_balance(config):
@@ -846,12 +846,12 @@ def configure_cash_balance(config):
     else:
         section['utilization_ratio'] = str(utilization_ratio)
 
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_ocr_region(config, key, region):
     config['OCR Regions'][key] = ', '.join(region)
-    with open(config.configuration, 'w', encoding='utf-8') as f:
+    with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_position():
