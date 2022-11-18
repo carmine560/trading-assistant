@@ -281,8 +281,11 @@ def save_market_data(config):
     encoding = section['encoding']
     symbol_header = section['symbol_header']
     close_header = section['close_header']
-    additional_symbols = list(map(str.strip,
-                                  section['additional_symbols'].split(',')))
+    additional_symbols = []
+    if section['additional_symbols']:
+        additional_symbols = \
+            list(map(str.strip, section['additional_symbols'].split(',')))
+
     symbol_close = config['Paths']['symbol_close']
 
     paths = []
