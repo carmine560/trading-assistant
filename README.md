@@ -141,8 +141,8 @@ specified stocks.
 
 ``` python
 toggle_between_stocks = [
-    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
+    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
     ('click', '54, 45'),             # focus on the Symbol text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
@@ -165,8 +165,8 @@ the order is placed, then it prepares a sell order for repayment.
 open_close_long_position = [
     # Open a Long Position
     ('hide_window', '^ランキング$'), # hide the Ranking window.
-    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
+    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
     ('click', '201, 757'),           # select the New Order tab.
     ('click', '531, 823'),           # focus on the Share Size text box.

@@ -898,6 +898,7 @@ def calculate_share_size(config, place_trade, position):
     price_limit = get_price_limit(config, place_trade)
 
     trading_unit = 100
+    # FIXME
     try:
         with open(config['Paths']['etf_trading_units'], 'r') as f:
             reader = csv.reader(f)
