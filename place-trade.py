@@ -898,16 +898,17 @@ def calculate_share_size(config, place_trade, position):
     price_limit = get_price_limit(config, place_trade)
 
     trading_unit = 100
-    # FIXME
-    try:
-        with open(config['Paths']['etf_trading_units'], 'r') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if row[0] == place_trade.symbol:
-                    trading_unit = int(row[1])
-                    break
-    except OSError as e:
-        print(e)
+    etf_trading_units = config['Paths']['etf_trading_units']
+    if os.path.exists(etf_trading_units):
+        try:
+            with open(etf_trading_units, 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if row[0] == place_trade.symbol:
+                        trading_unit = int(row[1])
+                        break
+        except OSError as e:
+            print(e)
 
     utilization_ratio = float(config['Cash Balance']['utilization_ratio'])
     share_size = int(place_trade.cash_balance * utilization_ratio
