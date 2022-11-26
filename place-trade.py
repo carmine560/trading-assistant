@@ -147,12 +147,14 @@ def configure_default():
                                       'symbol_close_')),
         'etf_trading_units':
         os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                      'etf_trading_units.csv')),
-        'trading_software':
-        r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'}
+                                      'etf_trading_units.csv'))}
     config['Startup Script'] = {
-        'pre_start': '-r, -d',
-        'post_start': ''}
+        'pre_start_options': '-r, -d',
+        'trading_software':
+        r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
+        'post_start_options': '',
+        'post_start_path': '',
+        'post_start_arguments': ''}
     config['Market Holidays'] = {
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
@@ -202,29 +204,41 @@ def configure_default():
 
 def create_startup_script(config):
     section = config['Startup Script']
-    pre_start = section['pre_start']
-    post_start = section['post_start']
-    trading_software = config['Paths']['trading_software']
+    pre_start_options = section['pre_start_options']
+    trading_software = section['trading_software']
+    post_start_options = section['post_start_options']
+    post_start_path = section['post_start_path']
+    post_start_arguments = section['post_start_arguments']
 
     startup_script = os.path.splitext(__file__)[0] + '.ps1'
-    if len(pre_start):
-        pre_start = list(map(str.strip, section['pre_start'].split(',')))
-    if len(post_start):
-        post_start = list(map(str.strip, section['post_start'].split(',')))
+    if len(pre_start_options):
+        pre_start_options = \
+            list(map(str.strip, section['pre_start_options'].split(',')))
+    if len(post_start_options):
+        post_start_options = \
+            list(map(str.strip, section['post_start_options'].split(',')))
 
     with open(startup_script, 'w') as f:
         lines = []
-        for i in range(len(pre_start)):
+        for i in range(len(pre_start_options)):
             lines.append('Start-Process -FilePath "py.exe" -ArgumentList "`"'
-                         + os.path.abspath(__file__) + '`" ' + pre_start[i]
-                         + '" -NoNewWindow\n')
+                         + os.path.abspath(__file__) + '`" '
+                         + pre_start_options[i] + '" -NoNewWindow\n')
 
         lines.append('Start-Process -FilePath "' + trading_software
                      + '" -NoNewWindow\n')
-        for i in range(len(post_start)):
+        for i in range(len(post_start_options)):
             lines.append('Start-Process -FilePath "py.exe" -ArgumentList "`"'
-                         + os.path.abspath(__file__) + '`" ' + post_start[i]
-                         + '" -NoNewWindow\n')
+                         + os.path.abspath(__file__) + '`" '
+                         + post_start_options[i] + '" -NoNewWindow\n')
+        if len(post_start_path):
+            if len(post_start_arguments):
+                lines.append('Start-Process -FilePath "' + post_start_path
+                             + '" -ArgumentList "' + post_start_arguments
+                             + '" -NoNewWindow\n')
+            else:
+                lines.append('Start-Process -FilePath "' + post_start_path
+                             + '" -NoNewWindow\n')
 
         f.writelines(lines)
 
@@ -672,7 +686,6 @@ def configure_paths(config):
     customer_margin_ratios = section['customer_margin_ratios']
     symbol_close = section['symbol_close']
     etf_trading_units = section['etf_trading_units']
-    trading_software = section['trading_software']
 
     section['customer_margin_ratios'] = \
         input('customer_margin_ratios [' + customer_margin_ratios + '] ') \
@@ -683,23 +696,32 @@ def configure_paths(config):
     section['etf_trading_units'] = \
         input('etf_trading_units [' + etf_trading_units + '] ') \
         or etf_trading_units
-    section['trading_software'] = \
-        input('trading_software [' + trading_software + '] ') \
-        or trading_software
     with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def configure_startup_script(config):
     section = config['Startup Script']
-    pre_start = section['pre_start']
-    post_start = section['post_start']
+    pre_start_options = section['pre_start_options']
+    trading_software = section['trading_software']
+    post_start_options = section['post_start_options']
+    post_start_path = section['post_start_path']
+    post_start_arguments = section['post_start_arguments']
 
-    section['pre_start'] = \
-        input('pre_start [' + pre_start + '] ') \
-        or pre_start
-    section['post_start'] = \
-        input('post_start [' + post_start + '] ') \
-        or post_start
+    section['pre_start_options'] = \
+        input('pre_start_options [' + pre_start_options + '] ') \
+        or pre_start_options
+    section['trading_software'] = \
+        input('trading_software [' + trading_software + '] ') \
+        or trading_software
+    section['post_start_options'] = \
+        input('post_start_options [' + post_start_options + '] ') \
+        or post_start_options
+    section['post_start_path'] = \
+        input('post_start_path [' + post_start_path + '] ') \
+        or post_start_path
+    section['post_start_arguments'] = \
+        input('post_start_arguments [' + post_start_arguments + '] ') \
+        or post_start_arguments
     with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
