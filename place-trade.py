@@ -539,6 +539,8 @@ def execute_action(config, place_trade, action):
                 config.write(f)
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trade.get_symbol, arguments)
+        elif command == 'hide_parent_window':
+            win32gui.EnumWindows(hide_parent_window, arguments)
         elif command == 'hide_window':
             win32gui.EnumWindows(hide_window, arguments)
         elif command == 'move_to':
@@ -1063,6 +1065,13 @@ def click_widget(place_trade, image, x, y, width, height):
         pyautogui.rightClick(pyautogui.center(location))
     else:
         pyautogui.click(pyautogui.center(location))
+
+def hide_parent_window(hwnd, title_regex):
+    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+        parent = win32gui.GetParent(hwnd)
+        if parent and not win32gui.IsIconic(parent):
+            win32gui.ShowWindow(parent, 6)
+            return
 
 def hide_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):

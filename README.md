@@ -104,6 +104,7 @@ ACTION = [
     ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'), # locate a widget image in a region, and click it.
     ('count_trades', None),          # count the number of trades for the day.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
+    ('hide_parent_window', 'TITLE_REGEX'), # hide a parent window.
     ('hide_window', 'TITLE_REGEX'),  # hide a window.
     ('move_to', 'X, Y'),             # move the cursor to a position.
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
@@ -141,6 +142,7 @@ specified stocks.
 
 ``` python
 toggle_between_stocks = [
+    ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
@@ -164,6 +166,7 @@ the order is placed, then it prepares a sell order for repayment.
 ``` python
 open_close_long_position = [
     # Open a Long Position
+    ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
