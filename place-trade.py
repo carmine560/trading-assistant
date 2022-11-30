@@ -1095,6 +1095,8 @@ def wait_for_key(place_trade, key):
     with keyboard.Listener(on_release=place_trade.on_release) as listener:
         listener.join()
     if not place_trade.released:
+        # FIXME
+        pyautogui.hotkey('shift', 'tab')
         sys.exit()
 
 def wait_for_window(place_trade, title_regex):
