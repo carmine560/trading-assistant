@@ -13,6 +13,7 @@ class PlaceTrade:
         self.share_size = 0
         self.key = None
         self.released = False
+        self.moved_focus = False
 
     def check_for_window(self, hwnd, title_regex):
         if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
@@ -557,6 +558,8 @@ def execute_action(config, place_trade, action):
                 presses = 1
 
             pyautogui.press(key, presses=presses)
+            if key == 'tab':
+                place_trade.moved_focus = True
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
         elif command == 'speak_config':
@@ -1095,8 +1098,9 @@ def wait_for_key(place_trade, key):
     with keyboard.Listener(on_release=place_trade.on_release) as listener:
         listener.join()
     if not place_trade.released:
-        # FIXME
-        pyautogui.hotkey('shift', 'tab')
+        if place_trade.moved_focus:
+            pyautogui.hotkey('shift', 'tab')
+
         sys.exit()
 
 def wait_for_window(place_trade, title_regex):
