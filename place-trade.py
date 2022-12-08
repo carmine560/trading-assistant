@@ -143,9 +143,9 @@ def configure_default():
         'customer_margin_ratios':
         os.path.normpath(os.path.join(os.path.dirname(__file__),
                                       'customer_margin_ratios.csv')),
-        'symbol_close':
+        'closing_prices':
         os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                      'symbol_close_')),
+                                      'closing_prices_')),
         'etf_trading_units':
         os.path.normpath(os.path.join(os.path.dirname(__file__),
                                       'etf_trading_units.csv'))}
@@ -181,7 +181,7 @@ def configure_default():
         'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
         'encoding': 'cp932',
         'symbol_header': '銘柄コード',
-        'close_header': '終値',
+        'closing_price_header': '終値',
         'additional_symbols': ''}
     config['ETF Trading Units'] = {
         'update_time': '20:00:00',
@@ -295,17 +295,17 @@ def save_market_data(config):
     market_data_url = section['market_data_url']
     encoding = section['encoding']
     symbol_header = section['symbol_header']
-    close_header = section['close_header']
+    closing_price_header = section['closing_price_header']
     additional_symbols = []
     if section['additional_symbols']:
         additional_symbols = \
             list(map(str.strip, section['additional_symbols'].split(',')))
 
-    symbol_close = config['Paths']['symbol_close']
+    closing_prices = config['Paths']['closing_prices']
 
     paths = []
     for i in range(1, 10):
-        paths.append(symbol_close + str(i) + '.csv')
+        paths.append(closing_prices + str(i) + '.csv')
 
     latest = get_latest(config, update_time, time_zone, *paths)
     if latest:
@@ -317,13 +317,13 @@ def save_market_data(config):
             print(e)
             sys.exit(1)
 
-        df = df[[symbol_header, close_header]]
+        df = df[[symbol_header, closing_price_header]]
         df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
-        df.dropna(subset=[symbol_header, close_header], inplace=True)
+        df.dropna(subset=[symbol_header, closing_price_header], inplace=True)
         df.sort_values(by=symbol_header, inplace=True)
         for i in range(1, 10):
             subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
-            subset.to_csv(symbol_close + str(i) + '.csv', header=False,
+            subset.to_csv(closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
         if additional_symbols:
@@ -335,7 +335,7 @@ def save_market_data(config):
             df_transposed = df.Close.T
             for index, row in df_transposed.iterrows():
                 index = index.replace('.T', '')
-                with open(symbol_close + index[0] + '.csv', 'r+') as f:
+                with open(closing_prices + index[0] + '.csv', 'r+') as f:
                     current = f.read()
                     f.seek(0)
                     f.write(index + ',' + str(row[0]) + '\n' + current)
@@ -689,15 +689,15 @@ def create_icon(basename):
 def configure_paths(config):
     section = config['Paths']
     customer_margin_ratios = section['customer_margin_ratios']
-    symbol_close = section['symbol_close']
+    closing_prices = section['closing_prices']
     etf_trading_units = section['etf_trading_units']
 
     section['customer_margin_ratios'] = \
         input('customer_margin_ratios [' + customer_margin_ratios + '] ') \
         or customer_margin_ratios
-    section['symbol_close'] = \
-        input('symbol_close [' + symbol_close + '] ') \
-        or symbol_close
+    section['closing_prices'] = \
+        input('closing_prices [' + closing_prices + '] ') \
+        or closing_prices
     section['etf_trading_units'] = \
         input('etf_trading_units [' + etf_trading_units + '] ') \
         or etf_trading_units
@@ -797,7 +797,7 @@ def configure_market_data(config):
     market_data_url = section['market_data_url']
     encoding = section['encoding']
     symbol_header = section['symbol_header']
-    close_header = section['close_header']
+    closing_price_header = section['closing_price_header']
     additional_symbols = section['additional_symbols']
 
     section['update_time'] = \
@@ -815,9 +815,9 @@ def configure_market_data(config):
     section['symbol_header'] = \
         input('symbol_header [' + symbol_header + '] ') \
         or symbol_header
-    section['close_header'] = \
-        input('close_header [' + close_header + '] ') \
-        or close_header
+    section['closing_price_header'] = \
+        input('closing_price_header [' + closing_price_header + '] ') \
+        or closing_price_header
     section['additional_symbols'] = \
         input('additional_symbols [' + additional_symbols + '] ') \
         or additional_symbols
@@ -969,7 +969,7 @@ def get_prices(x, y, width, height, index, integer=True):
 def get_price_limit(config, place_trade):
     closing_price = 0.0
     try:
-        with open(config['Paths']['symbol_close'] + place_trade.symbol[0]
+        with open(config['Paths']['closing_prices'] + place_trade.symbol[0]
                   + '.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
