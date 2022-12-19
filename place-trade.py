@@ -107,7 +107,7 @@ def main():
     elif args.u:
         save_etf_trading_units(config)
     elif args.M == 'LIST_ACTIONS' or args.e == 'LIST_ACTIONS' \
-         or args.T == 'LIST_ACTIONS' or len(args.S) == 0:
+         or args.T == 'LIST_ACTIONS':
         list_actions(config)
     elif args.M:
         modify_action(config, args.M)
@@ -115,14 +115,17 @@ def main():
         execute_action(config, place_trade, args.e)
     elif args.T:
         delete_action(config, args.T)
-    elif len(args.S) == 1:
-        create_shortcut(args.S[0], 'py.exe',
-                        '"' + os.path.abspath(__file__) + '"' + ' -e '
-                        + args.S[0])
-    elif len(args.S) == 2:
-        create_shortcut(args.S[0], 'py.exe',
-                        '"' + os.path.abspath(__file__) + '"' + ' -e '
-                        + args.S[0], args.S[1])
+    elif args.S is not None:
+        if len(args.S) == 0:
+            list_actions(config)
+        elif len(args.S) == 1:
+            create_shortcut(args.S[0], 'py.exe',
+                            '"' + os.path.abspath(__file__) + '"' + ' -e '
+                            + args.S[0])
+        elif len(args.S) == 2:
+            create_shortcut(args.S[0], 'py.exe',
+                            '"' + os.path.abspath(__file__) + '"' + ' -e '
+                            + args.S[0], args.S[1])
     elif args.P:
         configure_paths(config)
     elif args.I:
