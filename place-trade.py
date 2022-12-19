@@ -64,8 +64,8 @@ def main():
         '-T', nargs='?', const='LIST_ACTIONS',
         help='delete an action')
     parser.add_argument(
-        '-S', nargs='?', const='LIST_ACTIONS',
-        help='create a shortcut to an action')
+        '-S', nargs='*',
+        help='create a shortcut to an action ([action [hotkey]])')
     parser.add_argument(
         '-P', action='store_true',
         help='configure paths')
@@ -107,7 +107,7 @@ def main():
     elif args.u:
         save_etf_trading_units(config)
     elif args.M == 'LIST_ACTIONS' or args.e == 'LIST_ACTIONS' \
-         or args.T == 'LIST_ACTIONS' or args.S == 'LIST_ACTIONS':
+         or args.T == 'LIST_ACTIONS' or len(args.S) == 0:
         list_actions(config)
     elif args.M:
         modify_action(config, args.M)
@@ -115,9 +115,14 @@ def main():
         execute_action(config, place_trade, args.e)
     elif args.T:
         delete_action(config, args.T)
-    elif args.S:
-        create_shortcut(args.S, 'py.exe',
-                        '"' + os.path.abspath(__file__) + '"' + ' -e ' + args.S)
+    elif len(args.S) == 1:
+        create_shortcut(args.S[0], 'py.exe',
+                        '"' + os.path.abspath(__file__) + '"' + ' -e '
+                        + args.S[0])
+    elif len(args.S) == 2:
+        create_shortcut(args.S[0], 'py.exe',
+                        '"' + os.path.abspath(__file__) + '"' + ' -e '
+                        + args.S[0], args.S[1])
     elif args.P:
         configure_paths(config)
     elif args.I:
@@ -610,7 +615,7 @@ def delete_action(config, action):
     if os.path.exists(shortcut):
         os.remove(shortcut)
 
-def create_shortcut(basename, target_path, arguments):
+def create_shortcut(basename, target_path, arguments, hotkey=None):
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
@@ -622,6 +627,9 @@ def create_shortcut(basename, target_path, arguments):
     shortcut.TargetPath = target_path
     shortcut.Arguments = arguments
     shortcut.WorkingDirectory = os.path.dirname(__file__)
+    if hotkey:
+        shortcut.Hotkey = 'CTRL+ALT+' + hotkey
+
     shortcut.save()
 
 def create_icon(basename):

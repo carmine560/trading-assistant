@@ -214,7 +214,7 @@ py place-trade.py -e ACTION
   * `-M [ACTION]` create or modify an action
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action
-  * `-S [ACTION]` create a shortcut to an action
+  * `-S [ACTION [HOTKEY]]` create a shortcut to an action
   * `-P` configure paths
   * `-I` configure a startup script
   * `-H` configure market holidays
