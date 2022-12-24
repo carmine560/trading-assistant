@@ -43,8 +43,8 @@ class PlaceTrade:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-i', action='store_true',
-        help='create a startup script and a shortcut to it')
+        '-i', nargs='?', const='WITHOUT_HOTKEY',
+        help='create a startup script and a shortcut to it ([hotkey])')
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -99,7 +99,10 @@ def main():
     place_trade = PlaceTrade()
 
     if args.i:
-        create_startup_script(config)
+        if args.i == 'WITHOUT_HOTKEY':
+            create_startup_script(config)
+        else:
+            create_startup_script(config, args.i)
     elif args.r:
         save_customer_margin_ratios(config)
     elif args.d:
@@ -211,7 +214,7 @@ def configure_default():
     config.read(config.path, encoding='utf-8')
     return config
 
-def create_startup_script(config):
+def create_startup_script(config, hotkey=None):
     section = config['Startup Script']
     pre_start_options = section['pre_start_options']
     trading_software = section['trading_software']
@@ -252,8 +255,13 @@ def create_startup_script(config):
         f.writelines(lines)
 
     basename = os.path.splitext(os.path.basename(startup_script))[0]
-    create_shortcut(basename, 'powershell.exe',
-                    '-WindowStyle Hidden -File "' + startup_script + '"')
+    if hotkey:
+        create_shortcut(basename, 'powershell.exe',
+                        '-WindowStyle Hidden -File "' + startup_script + '"',
+                        hotkey)
+    else:
+        create_shortcut(basename, 'powershell.exe',
+                        '-WindowStyle Hidden -File "' + startup_script + '"')
 
 def save_customer_margin_ratios(config):
     global pd
