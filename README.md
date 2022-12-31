@@ -33,12 +33,6 @@ and uses the following packages:
     to automate interactions with Hyper SBI 2
   * [pynput](https://github.com/moses-palmer/pynput) to monitor
     keyboard input
-  * (optional)
-    [tabula-py](https://tabula-py.readthedocs.io/en/latest/index.html)
-    to save ETF trading units from JPX
-  * (optional)
-    [pandas-datareader](https://pydata.github.io/pandas-datareader/stable/index.html)
-    to save ETF closing prices from Yahoo Finance
   * (optional) [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to
     speak a configuration
 
@@ -210,7 +204,6 @@ py place-trade.py -e ACTION
   * `-i [HOTKEY]` create a startup script and a shortcut to it
   * `-r` save customer margin ratios
   * `-d` save the previous market data
-  * `-u` save ETF trading units
   * `-M [ACTION]` create or modify an action
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action
@@ -220,7 +213,6 @@ py place-trade.py -e ACTION
   * `-H` configure market holidays
   * `-R` configure customer margin ratios
   * `-D` configure market data
-  * `-U` configure ETF trading units
   * `-B` configure a cash balance
   * `-C X Y WIDTH HEIGHT INDEX` configure the cash balance region and
     the index of the price

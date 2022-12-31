@@ -1,7 +1,17 @@
 from datetime import date
+import argparse
+import configparser
+import csv
+import os
+import pyautogui
+import pytesseract
+import re
+import sys
+import time
+import win32api
+import win32gui
+
 from pynput import keyboard
-import os, argparse, sys, win32gui, csv, pyautogui, pytesseract, win32api, \
-    configparser, re, time
 
 class PlaceTrade:
     def __init__(self):
@@ -52,9 +62,6 @@ def main():
         '-d', action='store_true',
         help='save the previous market data')
     parser.add_argument(
-        '-u', action='store_true',
-        help='save ETF trading units')
-    parser.add_argument(
         '-M', nargs='?', const='LIST_ACTIONS',
         help='create or modify an action')
     parser.add_argument(
@@ -82,9 +89,6 @@ def main():
         '-D', action='store_true',
         help='configure market data')
     parser.add_argument(
-        '-U', action='store_true',
-        help='configure ETF trading units')
-    parser.add_argument(
         '-B', action='store_true',
         help='configure a cash balance')
     parser.add_argument(
@@ -107,8 +111,6 @@ def main():
         save_customer_margin_ratios(config)
     elif args.d:
         save_market_data(config)
-    elif args.u:
-        save_etf_trading_units(config)
     elif args.M == 'LIST_ACTIONS' or args.e == 'LIST_ACTIONS' \
          or args.T == 'LIST_ACTIONS':
         list_actions(config)
@@ -139,8 +141,6 @@ def main():
         configure_customer_margin_ratios(config)
     elif args.D:
         configure_market_data(config)
-    elif args.U:
-        configure_etf_trading_units(config)
     elif args.B:
         configure_cash_balance(config)
     elif args.C:
@@ -156,10 +156,7 @@ def configure_default():
                                       'customer_margin_ratios.csv')),
         'closing_prices':
         os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                      'closing_prices_')),
-        'etf_trading_units':
-        os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                      'etf_trading_units.csv'))}
+                                      'closing_prices_'))}
     config['Startup Script'] = {
         'pre_start_options': '-r, -d',
         'trading_software':
@@ -192,15 +189,7 @@ def configure_default():
         'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
         'encoding': 'cp932',
         'symbol_header': '銘柄コード',
-        'closing_price_header': '終値',
-        'additional_symbols': ''}
-    config['ETF Trading Units'] = {
-        'update_time': '20:00:00',
-        'time_zone': 'Asia/Tokyo',
-        'etf_urls':
-        'https://www.jpx.co.jp/english/equities/products/etfs/issues/tvdivq000001j45s-att/b5b4pj000002nyru.pdf, https://www.jpx.co.jp/english/equities/products/etfs/leveraged-inverse/b5b4pj000004jncy-att/b5b4pj000004jnei.pdf',
-        'trading_unit_header': 'Trading',
-        'symbol_relative_position': '-1'}
+        'closing_price_header': '終値'}
     config['Cash Balance'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0'}
@@ -312,11 +301,6 @@ def save_market_data(config):
     encoding = section['encoding']
     symbol_header = section['symbol_header']
     closing_price_header = section['closing_price_header']
-    additional_symbols = []
-    if section['additional_symbols']:
-        additional_symbols = \
-            list(map(str.strip, section['additional_symbols'].split(',')))
-
     closing_prices = config['Paths']['closing_prices']
 
     paths = []
@@ -341,55 +325,6 @@ def save_market_data(config):
             subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
             subset.to_csv(closing_prices + str(i) + '.csv', header=False,
                           index=False)
-
-        if additional_symbols:
-            import pandas_datareader.data as web
-
-            start = end = latest.strftime('%Y-%m-%d')
-            df = web.DataReader(additional_symbols[::-1], 'yahoo', start=start,
-                                end=end)
-            df_transposed = df.Close.T
-            for index, row in df_transposed.iterrows():
-                index = index.replace('.T', '')
-                with open(closing_prices + index[0] + '.csv', 'r+') as f:
-                    current = f.read()
-                    f.seek(0)
-                    f.write(index + ',' + str(row[0]) + '\n' + current)
-
-def save_etf_trading_units(config):
-    import tabula
-    global pd
-    import pandas as pd
-
-    section = config['ETF Trading Units']
-    update_time = section['update_time']
-    time_zone = section['time_zone']
-    etf_urls = list(map(str.strip, section['etf_urls'].split(',')))
-    trading_unit_header = section['trading_unit_header']
-    symbol_relative_position = int(section['symbol_relative_position'])
-    etf_trading_units = config['Paths']['etf_trading_units']
-
-    # FIXME
-    if get_latest(config, update_time, time_zone, etf_trading_units):
-        dfs = []
-        for i in range(len(etf_urls)):
-            dfs += tabula.read_pdf(etf_urls[i], pages='all')
-
-        concatenated = pd.DataFrame()
-        for i in range(len(dfs)):
-            trading_unit = dfs[i].columns.get_loc(trading_unit_header)
-            df = dfs[i].iloc[:, [trading_unit + symbol_relative_position,
-                                 trading_unit]].dropna()
-            df.columns = ['symbol', 'trading_unit']
-            df['trading_unit'] = \
-                df['trading_unit'].str.replace(',', '').astype(int)
-            df = df[df['symbol'].apply(lambda value: str(value).isdigit())]
-            df = df[df['trading_unit'].apply(lambda value:
-                                             str(value).isdigit())]
-            concatenated = pd.concat([concatenated, df])
-
-        concatenated.sort_values(by='symbol', inplace=True)
-        concatenated.to_csv(etf_trading_units, header=False, index=False)
 
 def get_latest(config, update_time, time_zone, *paths):
     import requests
@@ -709,7 +644,6 @@ def configure_paths(config):
     section = config['Paths']
     customer_margin_ratios = section['customer_margin_ratios']
     closing_prices = section['closing_prices']
-    etf_trading_units = section['etf_trading_units']
 
     section['customer_margin_ratios'] = \
         input('customer_margin_ratios [' + customer_margin_ratios + '] ') \
@@ -717,9 +651,6 @@ def configure_paths(config):
     section['closing_prices'] = \
         input('closing_prices [' + closing_prices + '] ') \
         or closing_prices
-    section['etf_trading_units'] = \
-        input('etf_trading_units [' + etf_trading_units + '] ') \
-        or etf_trading_units
     with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
@@ -817,7 +748,6 @@ def configure_market_data(config):
     encoding = section['encoding']
     symbol_header = section['symbol_header']
     closing_price_header = section['closing_price_header']
-    additional_symbols = section['additional_symbols']
 
     section['update_time'] = \
         input('update_time [' + update_time + '] ') \
@@ -837,35 +767,6 @@ def configure_market_data(config):
     section['closing_price_header'] = \
         input('closing_price_header [' + closing_price_header + '] ') \
         or closing_price_header
-    section['additional_symbols'] = \
-        input('additional_symbols [' + additional_symbols + '] ') \
-        or additional_symbols
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
-
-def configure_etf_trading_units(config):
-    section = config['ETF Trading Units']
-    update_time = section['update_time']
-    time_zone = section['time_zone']
-    etf_urls = section['etf_urls']
-    trading_unit_header = section['trading_unit_header']
-    symbol_relative_position = section['symbol_relative_position']
-
-    section['update_time'] = \
-        input('update_time [' + update_time + '] ') \
-        or update_time
-    section['time_zone'] = \
-        input('time_zone [' + time_zone + '] ') \
-        or time_zone
-    section['etf_urls'] = \
-        input('etf_urls [' + etf_urls + '] ') \
-        or etf_urls
-    section['trading_unit_header'] = \
-        input('trading_unit_header [' + trading_unit_header + '] ') \
-        or trading_unit_header
-    section['symbol_relative_position'] = \
-        input('symbol_relative_position [' + symbol_relative_position + '] ') \
-        or symbol_relative_position
     with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
@@ -944,18 +845,6 @@ def calculate_share_size(config, place_trade, position):
     price_limit = get_price_limit(config, place_trade)
 
     trading_unit = 100
-    etf_trading_units = config['Paths']['etf_trading_units']
-    if os.path.exists(etf_trading_units):
-        try:
-            with open(etf_trading_units, 'r') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if row[0] == place_trade.symbol:
-                        trading_unit = int(row[1])
-                        break
-        except OSError as e:
-            print(e)
-
     utilization_ratio = float(config['Cash Balance']['utilization_ratio'])
     share_size = int(place_trade.cash_balance * utilization_ratio
                      / customer_margin_ratio / price_limit / trading_unit) \
