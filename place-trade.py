@@ -3,15 +3,15 @@ import argparse
 import configparser
 import csv
 import os
-import pyautogui
-import pytesseract
 import re
 import sys
 import time
-import win32api
-import win32gui
 
 from pynput import keyboard
+import pyautogui
+import pytesseract
+import win32api
+import win32gui
 
 class PlaceTrade:
     def __init__(self):
@@ -579,8 +579,9 @@ def create_shortcut(basename, target_path, arguments, hotkey=None):
     shortcut.save()
 
 def create_icon(basename):
-    from PIL import Image, ImageDraw, ImageFont
     import winreg
+
+    from PIL import Image, ImageDraw, ImageFont
 
     acronym = ''
     for word in re.split('[\W_]+', basename):
