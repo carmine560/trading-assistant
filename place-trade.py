@@ -552,22 +552,44 @@ def delete_action(config, action):
     icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
                                          action + '.ico'))
     if os.path.exists(icon):
-        os.remove(icon)
+        try:
+            os.remove(icon)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
 
     shell = win32com.client.Dispatch('WScript.Shell')
-    desktop = shell.SpecialFolders('Desktop')
+    program_group = get_program_group()
     title = re.sub('[\W_]+', ' ', action).rstrip().title()
-    shortcut = os.path.join(desktop, title + '.lnk')
+    shortcut = os.path.join(program_group, title + '.lnk')
     if os.path.exists(shortcut):
-        os.remove(shortcut)
+        try:
+            os.remove(shortcut)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+    if not os.listdir(program_group):
+        try:
+            os.rmdir(program_group)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
 
 def create_shortcut(basename, target_path, arguments, hotkey=None):
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
-    desktop = shell.SpecialFolders('Desktop')
+    program_group = get_program_group()
+    if not os.path.isdir(program_group):
+        try:
+            os.mkdir(program_group)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
     title = re.sub('[\W_]+', ' ', basename).rstrip().title()
-    shortcut = shell.CreateShortCut(os.path.join(desktop, title + '.lnk'))
+    shortcut = shell.CreateShortCut(os.path.join(program_group,
+                                                 title + '.lnk'))
     shortcut.WindowStyle = 7
     shortcut.IconLocation = create_icon(basename)
     shortcut.TargetPath = target_path
@@ -577,6 +599,15 @@ def create_shortcut(basename, target_path, arguments, hotkey=None):
         shortcut.Hotkey = 'CTRL+ALT+' + hotkey
 
     shortcut.save()
+
+def get_program_group():
+    import win32com.client
+
+    shell = win32com.client.Dispatch('WScript.Shell')
+    basename = os.path.splitext(os.path.basename(__file__))[0]
+    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+    program_group = os.path.join(shell.SpecialFolders('Programs'), title)
+    return program_group
 
 def create_icon(basename):
     import winreg
