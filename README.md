@@ -4,7 +4,7 @@
 on margin using Hyper SBI 2 -->
 
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
-tabula-py pandas-datareader pynput -->
+ pynput -->
 
 `place-trade.py` assists in discretionary day trading of stocks on
 margin using [Hyper SBI
