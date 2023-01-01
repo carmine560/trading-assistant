@@ -28,7 +28,7 @@ class PlaceTrade:
     def check_for_window(self, hwnd, title_regex):
         if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
             if win32gui.IsIconic(hwnd):
-                win32gui.ShowWindow(hwnd, 1)
+                win32gui.ShowWindow(hwnd, 9)
 
             win32gui.SetForegroundWindow(hwnd)
             self.exist.append((hwnd, title_regex))
@@ -1034,7 +1034,7 @@ def hide_window(hwnd, title_regex):
 def show_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
         if win32gui.IsIconic(hwnd):
-            win32gui.ShowWindow(hwnd, 1)
+            win32gui.ShowWindow(hwnd, 9)
 
         win32gui.SetForegroundWindow(hwnd)
         return
