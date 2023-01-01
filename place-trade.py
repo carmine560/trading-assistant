@@ -511,6 +511,8 @@ def execute_action(config, place_trade, action):
             pyautogui.press(key, presses=presses)
             if key == 'tab':
                 place_trade.moved_focus = presses
+        elif command == 'show_hide_window':
+            win32gui.EnumWindows(show_hide_window, arguments)
         elif command == 'show_window':
             win32gui.EnumWindows(show_window, arguments)
         elif command == 'speak_config':
@@ -1028,6 +1030,15 @@ def hide_parent_window(hwnd, title_regex):
 def hide_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
         if not win32gui.IsIconic(hwnd):
+            win32gui.ShowWindow(hwnd, 6)
+        return
+
+def show_hide_window(hwnd, title_regex):
+    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+        if win32gui.IsIconic(hwnd):
+            win32gui.ShowWindow(hwnd, 9)
+            win32gui.SetForegroundWindow(hwnd)
+        else:
             win32gui.ShowWindow(hwnd, 6)
         return
 

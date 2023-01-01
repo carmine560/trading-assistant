@@ -103,6 +103,7 @@ ACTION = [
     ('move_to', 'X, Y'),             # move the cursor to a position.
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
+    ('show_hide_window', 'TITLE_REGEX'), # show or hide a window.
     ('show_window', 'TITLE_REGEX'),  # show a window.
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
@@ -126,6 +127,9 @@ login = [
     # locate the Login button in the region, and click it.
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to', None),               # back the cursor to the previous position.
+    ('wait_for_period', '10'),       # wait for 10 seconds.
+    ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
+    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
 ]
 ```
 
@@ -136,6 +140,8 @@ specified stocks.
 
 ``` python
 toggle_between_stocks = [
+    ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
+    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
     ('click', '54, 45'),             # focus on the Symbol text box.
@@ -158,6 +164,8 @@ the order is placed, then it prepares a sell order for repayment.
 ``` python
 open_close_long_position = [
     # Open a Long Position
+    ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
+    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
     ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
     ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
     ('click', '201, 757'),           # select the New Order tab.
