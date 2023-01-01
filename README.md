@@ -206,7 +206,7 @@ py place-trade.py -e ACTION
   * `-d` save the previous market data
   * `-M [ACTION]` create or modify an action
   * `-e [ACTION]` execute an action
-  * `-T [ACTION]` delete an action
+  * `-T [ACTION]` delete an action and a shortcut to it
   * `-S [ACTION [HOTKEY]]` create a shortcut to an action
   * `-P` configure paths
   * `-I` configure a startup script

@@ -69,7 +69,7 @@ def main():
         help='execute an action')
     parser.add_argument(
         '-T', nargs='?', const='LIST_ACTIONS',
-        help='delete an action')
+        help='delete an action and a shortcut to it')
     parser.add_argument(
         '-S', nargs='*',
         help='create a shortcut to an action ([action [hotkey]])')
@@ -111,9 +111,10 @@ def main():
         save_customer_margin_ratios(config)
     elif args.d:
         save_market_data(config)
-    elif args.M == 'LIST_ACTIONS' or args.e == 'LIST_ACTIONS' \
-         or args.T == 'LIST_ACTIONS':
+    elif args.M == 'LIST_ACTIONS' or args.e == 'LIST_ACTIONS':
         list_actions(config)
+    elif args.T == 'LIST_ACTIONS':
+        list_actions(config, True)
     elif args.M:
         modify_action(config, args.M)
     elif args.e:
@@ -152,11 +153,9 @@ def configure_default():
     config = configparser.ConfigParser(interpolation=None)
     config['Paths'] = {
         'customer_margin_ratios':
-        os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                      'customer_margin_ratios.csv')),
+        os.path.join(os.path.dirname(__file__), 'customer_margin_ratios.csv'),
         'closing_prices':
-        os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                      'closing_prices_'))}
+        os.path.join(os.path.dirname(__file__), 'closing_prices_')}
     config['Startup Script'] = {
         'pre_start_options': '-r, -d',
         'trading_software':
@@ -168,8 +167,7 @@ def configure_default():
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'market_holidays':
-        os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                      'market_holidays.csv')),
+        os.path.join(os.path.dirname(__file__), 'market_holidays.csv'),
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Customer Margin Ratios'] = {
@@ -380,7 +378,9 @@ def get_latest(config, update_time, time_zone, *paths):
     if modified_time < latest:
         return latest
 
-def list_actions(config):
+def list_actions(config, startup_script=False):
+    if startup_script:
+        print(os.path.splitext(os.path.basename(__file__))[0])
     if config.has_section('Actions'):
         for key in config['Actions']:
             print(key)
@@ -545,12 +545,12 @@ def execute_action(config, place_trade, action):
 def delete_action(config, action):
     import win32com.client
 
-    config.remove_option('Actions', action)
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
+    if config.has_option('Actions', action):
+        config.remove_option('Actions', action)
+        with open(config.path, 'w', encoding='utf-8') as f:
+            config.write(f)
 
-    icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                         action + '.ico'))
+    icon = os.path.join(os.path.dirname(__file__), action + '.ico')
     if os.path.exists(icon):
         try:
             os.remove(icon)
@@ -571,6 +571,16 @@ def delete_action(config, action):
     if not os.listdir(program_group):
         try:
             os.rmdir(program_group)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+    # FIXME
+    taskbar = os.path.expandvars('$APPDATA\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar')
+    pinned_shortcut = os.path.join(taskbar, title + '.lnk')
+    if os.path.exists(pinned_shortcut):
+        try:
+            os.remove(pinned_shortcut)
         except OSError as e:
             print(e)
             sys.exit(1)
@@ -667,8 +677,7 @@ def create_icon(basename):
                    image_height - text_height), lower, font=font,
                   fill=fill)
 
-    icon = os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                         basename + '.ico'))
+    icon = os.path.join(os.path.dirname(__file__), basename + '.ico')
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
 
