@@ -127,7 +127,7 @@ login = [
     # locate the Login button in the region, and click it.
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to', None),               # back the cursor to the previous position.
-    ('wait_for_period', '10'),       # wait for 10 seconds.
+    ('wait_for_period', '15'),       # wait for 15 seconds.
     ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
 ]

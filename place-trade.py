@@ -162,7 +162,8 @@ def configure_default():
         r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
         'post_start_options': '',
         'post_start_path': '',
-        'post_start_arguments': ''}
+        'post_start_arguments': '',
+        'running_options': ''}
     config['Market Holidays'] = {
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
@@ -208,6 +209,7 @@ def create_startup_script(config, hotkey=None):
     post_start_options = section['post_start_options']
     post_start_path = section['post_start_path']
     post_start_arguments = section['post_start_arguments']
+    running_options = section['running_options']
 
     startup_script = os.path.splitext(__file__)[0] + '.ps1'
     if len(pre_start_options):
@@ -216,29 +218,41 @@ def create_startup_script(config, hotkey=None):
     if len(post_start_options):
         post_start_options = \
             list(map(str.strip, section['post_start_options'].split(',')))
+    if len(running_options):
+        running_options = \
+            list(map(str.strip, section['running_options'].split(',')))
 
     with open(startup_script, 'w') as f:
         lines = []
+        lines.append('if (Get-Process '
+                     + os.path.splitext(os.path.basename(trading_software))[0]
+                     + ' -ErrorAction SilentlyContinue)\n{\n')
+        for i in range(len(running_options)):
+            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
+                         + os.path.abspath(__file__) + '`" '
+                         + running_options[i] + '" -NoNewWindow\n')
+            lines.append('}\nelse\n{\n')
         for i in range(len(pre_start_options)):
-            lines.append('Start-Process -FilePath "py.exe" -ArgumentList "`"'
+            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
                          + os.path.abspath(__file__) + '`" '
                          + pre_start_options[i] + '" -NoNewWindow\n')
 
-        lines.append('Start-Process -FilePath "' + trading_software
+        lines.append('    Start-Process "' + trading_software
                      + '" -NoNewWindow\n')
         for i in range(len(post_start_options)):
-            lines.append('Start-Process -FilePath "py.exe" -ArgumentList "`"'
+            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
                          + os.path.abspath(__file__) + '`" '
                          + post_start_options[i] + '" -NoNewWindow\n')
         if len(post_start_path):
             if len(post_start_arguments):
-                lines.append('Start-Process -FilePath "' + post_start_path
+                lines.append('    Start-Process "' + post_start_path
                              + '" -ArgumentList "' + post_start_arguments
                              + '" -NoNewWindow\n')
             else:
-                lines.append('Start-Process -FilePath "' + post_start_path
+                lines.append('    Start-Process "' + post_start_path
                              + '" -NoNewWindow\n')
 
+        lines.append('}\n')
         f.writelines(lines)
 
     basename = os.path.splitext(os.path.basename(startup_script))[0]
@@ -704,6 +718,7 @@ def configure_startup_script(config):
     post_start_options = section['post_start_options']
     post_start_path = section['post_start_path']
     post_start_arguments = section['post_start_arguments']
+    running_options = section['running_options']
 
     section['pre_start_options'] = \
         input('pre_start_options [' + pre_start_options + '] ') \
@@ -720,6 +735,9 @@ def configure_startup_script(config):
     section['post_start_arguments'] = \
         input('post_start_arguments [' + post_start_arguments + '] ') \
         or post_start_arguments
+    section['running_options'] = \
+        input('running_options [' + running_options + '] ') \
+        or running_options
     with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
