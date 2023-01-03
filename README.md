@@ -6,7 +6,7 @@ on margin using Hyper SBI 2 -->
 <!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
  pynput -->
 
-`place-trade.py` assists in discretionary day trading of stocks on
+`place_trade.py` assists in discretionary day trading of stocks on
 margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining
 an action consisting of a sequence of commands, this script executes:
@@ -58,7 +58,7 @@ advance.  The following option creates a startup script
 `place-trade.ps1` that processes them and starts Hyper SBI 2.
 
 ``` batchfile
-py place-trade.py -i
+py place_trade.py -i
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
@@ -71,8 +71,8 @@ specify the index of the price.  These configurations are saved in the
 configuration file `place-trade.ini`.
 
 ``` batchfile
-py place-trade.py -C X Y WIDTH HEIGHT INDEX
-py place-trade.py -L X Y WIDTH HEIGHT INDEX
+py place_trade.py -C X Y WIDTH HEIGHT INDEX
+py place_trade.py -L X Y WIDTH HEIGHT INDEX
 ```
 
 ### Create or Modify Action ###
@@ -80,7 +80,7 @@ py place-trade.py -L X Y WIDTH HEIGHT INDEX
 Create or modify an action to be processed by this script.
 
 ``` batchfile
-py place-trade.py -M ACTION
+py place_trade.py -M ACTION
 ```
 
 Then insert, modify, or delete each command of the action.  An action
@@ -128,10 +128,10 @@ login = [
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to', None),               # back the cursor to the previous position.
     ('wait_for_window', '^HYPER SBI 2$'), # wait for the Toolbar.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
     ('wait_for_window', '^登録銘柄$'), # wait for the Watchlists window.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
 ]
 ```
@@ -203,7 +203,7 @@ open_close_long_position = [
 Execute an action saved in the configuration file.
 
 ``` batchfile
-py place-trade.py -e ACTION
+py place_trade.py -e ACTION
 ```
 
 ### Options ###

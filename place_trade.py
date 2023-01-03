@@ -13,6 +13,8 @@ import pytesseract
 import win32api
 import win32gui
 
+import file_utilities
+
 class PlaceTrade:
     def __init__(self):
         self.exist = []
@@ -116,10 +118,12 @@ def main():
     elif args.T == 'LIST_ACTIONS':
         list_actions(config, True)
     elif args.M:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         modify_action(config, args.M)
     elif args.e:
         execute_action(config, place_trade, args.e)
     elif args.T:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         delete_action(config, args.T)
     elif args.S is not None:
         if len(args.S) == 0:
@@ -133,20 +137,28 @@ def main():
                             '"' + os.path.abspath(__file__) + '"' + ' -e '
                             + args.S[0], args.S[1])
     elif args.P:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         configure_paths(config)
     elif args.I:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         configure_startup_script(config)
     elif args.H:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         configure_market_holidays(config)
     elif args.R:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         configure_customer_margin_ratios(config)
     elif args.D:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         configure_market_data(config)
     elif args.B:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         configure_cash_balance(config)
     elif args.C:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         configure_ocr_region(config, 'cash_balance_region', args.C)
     elif args.L:
+        file_utilities.backup_file(config.path, number_of_backups=8)
         configure_ocr_region(config, 'price_limit_region', args.L)
 
 def configure_default():

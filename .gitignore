@@ -4,3 +4,5 @@
 /*.png
 /*.ps1
 /TAGS
+/backups/
+__pycache__/
