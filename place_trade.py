@@ -55,9 +55,6 @@ class PlaceTrade:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-i', nargs='?', const='WITHOUT_HOTKEY',
-        help='create a startup script and a shortcut to it ([hotkey])')
-    parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
     parser.add_argument(
@@ -65,7 +62,7 @@ def main():
         help='save the previous market data')
     parser.add_argument(
         '-M', nargs='*',
-        help='create or modify an action and a shortcut to it ([action [hotkey]])')
+        help='create or modify an action and create a shortcut to it ([action [hotkey]])')
     parser.add_argument(
         '-e', nargs='?', const='LIST_ACTIONS',
         help='execute an action')
@@ -76,8 +73,8 @@ def main():
         '-P', action='store_true',
         help='configure paths')
     parser.add_argument(
-        '-I', action='store_true',
-        help='configure a startup script')
+        '-I', nargs='?', const='WITHOUT_HOTKEY',
+        help='configure and create a startup script and create a shortcut to it ([hotkey])')
     parser.add_argument(
         '-H', action='store_true',
         help='configure market holidays')
@@ -101,20 +98,7 @@ def main():
     config = configure_default()
     place_trade = PlaceTrade()
 
-    if args.i:
-        create_startup_script(config)
-
-        basename = os.path.splitext(os.path.basename(__file__))[0]
-        startup_script = os.path.splitext(__file__)[0] + '.ps1'
-        if args.i == 'WITHOUT_HOTKEY':
-            create_shortcut(basename, 'powershell.exe',
-                            '-WindowStyle Hidden -File "' + startup_script
-                            + '"')
-        else:
-            create_shortcut(basename, 'powershell.exe',
-                            '-WindowStyle Hidden -File "' + startup_script
-                            + '"', args.i)
-    elif args.r:
+    if args.r:
         save_customer_margin_ratios(config)
     elif args.d:
         save_market_data(config)
@@ -147,6 +131,18 @@ def main():
     elif args.I:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_startup_script(config)
+        create_startup_script(config)
+
+        basename = os.path.splitext(os.path.basename(__file__))[0]
+        startup_script = os.path.splitext(__file__)[0] + '.ps1'
+        if args.I == 'WITHOUT_HOTKEY':
+            create_shortcut(basename, 'powershell.exe',
+                            '-WindowStyle Hidden -File "' + startup_script
+                            + '"')
+        else:
+            create_shortcut(basename, 'powershell.exe',
+                            '-WindowStyle Hidden -File "' + startup_script
+                            + '"', args.I)
     elif args.H:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_market_holidays(config)

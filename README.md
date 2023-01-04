@@ -58,7 +58,7 @@ advance.  The following option creates a startup script
 `place_trade.ps1` that processes them and starts Hyper SBI 2.
 
 ``` batchfile
-py place_trade.py -i
+py place_trade.py -I [HOTKEY]
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
@@ -208,15 +208,15 @@ py place_trade.py -e [ACTION]
 
 ### Options ###
 
-  * `-i [HOTKEY]` create a startup script and a shortcut to it
   * `-r` save customer margin ratios
   * `-d` save the previous market data
-  * `-M [ACTION [HOTKEY]]` create or modify an action and a shortcut
-    to it
+  * `-M [ACTION [HOTKEY]]` create or modify an action and create a
+    shortcut to it
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action and a shortcut to it
   * `-P` configure paths
-  * `-I` configure a startup script
+  * `-I [HOTKEY]` configure and create a startup script and create a
+    shortcut to it
   * `-H` configure market holidays
   * `-R` configure customer margin ratios
   * `-D` configure market data
