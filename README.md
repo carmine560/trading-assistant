@@ -3,8 +3,8 @@
 <!-- Python script that assists in discretionary day trading of stocks
 on margin using Hyper SBI 2 -->
 
-<!-- hypersbi2 pandas pyautogui pynput pytesseract python pyttsx3
-pywin32 tesseract -->
+<!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui
+pynput pyttsx3 -->
 
 `place_trade.py` assists in discretionary day trading of stocks on
 margin using [Hyper SBI
@@ -80,7 +80,7 @@ py place_trade.py -L X Y WIDTH HEIGHT INDEX
 Create or modify an action to be processed by this script.
 
 ``` batchfile
-py place_trade.py -M ACTION
+py place_trade.py -M [ACTION [HOTKEY]]
 ```
 
 Then insert, modify, or delete each command of the action.  An action
