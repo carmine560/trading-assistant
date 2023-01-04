@@ -64,17 +64,14 @@ def main():
         '-d', action='store_true',
         help='save the previous market data')
     parser.add_argument(
-        '-M', nargs='?', const='LIST_ACTIONS',
-        help='create or modify an action')
+        '-M', nargs='*',
+        help='create or modify an action and a shortcut to it ([action [hotkey]])')
     parser.add_argument(
         '-e', nargs='?', const='LIST_ACTIONS',
         help='execute an action')
     parser.add_argument(
         '-T', nargs='?', const='LIST_ACTIONS',
         help='delete an action and a shortcut to it')
-    parser.add_argument(
-        '-S', nargs='*',
-        help='create a shortcut to an action ([action [hotkey]])')
     parser.add_argument(
         '-P', action='store_true',
         help='configure paths')
@@ -113,29 +110,29 @@ def main():
         save_customer_margin_ratios(config)
     elif args.d:
         save_market_data(config)
-    elif args.M == 'LIST_ACTIONS' or args.e == 'LIST_ACTIONS':
+    elif args.M is not None:
+        if len(args.M) == 0:
+            list_actions(config)
+        else:
+            file_utilities.backup_file(config.path, number_of_backups=8)
+            modify_action(config, args.M[0])
+            if len(args.M) == 1:
+                create_shortcut(args.M[0], 'py.exe',
+                                '"' + os.path.abspath(__file__) + '"' + ' -e '
+                                + args.M[0])
+            elif len(args.M) == 2:
+                create_shortcut(args.M[0], 'py.exe',
+                                '"' + os.path.abspath(__file__) + '"' + ' -e '
+                                + args.M[0], args.M[1])
+    elif args.e == 'LIST_ACTIONS':
         list_actions(config)
-    elif args.T == 'LIST_ACTIONS':
-        list_actions(config, True)
-    elif args.M:
-        file_utilities.backup_file(config.path, number_of_backups=8)
-        modify_action(config, args.M)
     elif args.e:
         execute_action(config, place_trade, args.e)
+    elif args.T == 'LIST_ACTIONS':
+        list_actions(config, True)
     elif args.T:
         file_utilities.backup_file(config.path, number_of_backups=8)
         delete_action(config, args.T)
-    elif args.S is not None:
-        if len(args.S) == 0:
-            list_actions(config)
-        elif len(args.S) == 1:
-            create_shortcut(args.S[0], 'py.exe',
-                            '"' + os.path.abspath(__file__) + '"' + ' -e '
-                            + args.S[0])
-        elif len(args.S) == 2:
-            create_shortcut(args.S[0], 'py.exe',
-                            '"' + os.path.abspath(__file__) + '"' + ' -e '
-                            + args.S[0], args.S[1])
     elif args.P:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_paths(config)

@@ -211,10 +211,10 @@ py place_trade.py -e ACTION
   * `-i [HOTKEY]` create a startup script and a shortcut to it
   * `-r` save customer margin ratios
   * `-d` save the previous market data
-  * `-M [ACTION]` create or modify an action
+  * `-M [ACTION [HOTKEY]]` create or modify an action and a shortcut
+    to it
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action and a shortcut to it
-  * `-S [ACTION [HOTKEY]]` create a shortcut to an action
   * `-P` configure paths
   * `-I` configure a startup script
   * `-H` configure market holidays
