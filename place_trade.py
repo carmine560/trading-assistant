@@ -107,15 +107,17 @@ def main():
             list_actions(config)
         else:
             file_utilities.backup_file(config.path, number_of_backups=8)
-            modify_action(config, args.M[0])
-            if len(args.M) == 1:
-                create_shortcut(args.M[0], 'py.exe',
-                                '"' + os.path.abspath(__file__) + '"' + ' -e '
-                                + args.M[0])
-            elif len(args.M) == 2:
-                create_shortcut(args.M[0], 'py.exe',
-                                '"' + os.path.abspath(__file__) + '"' + ' -e '
-                                + args.M[0], args.M[1])
+            if modify_action(config, args.M[0]):
+                if len(args.M) == 1:
+                    create_shortcut(args.M[0], 'py.exe',
+                                    '"' + os.path.abspath(__file__) + '"'
+                                    + ' -e ' + args.M[0])
+                elif len(args.M) == 2:
+                    create_shortcut(args.M[0], 'py.exe',
+                                    '"' + os.path.abspath(__file__) + '"'
+                                    + ' -e ' + args.M[0], args.M[1])
+            else:
+                delete_shortcut(args.M[0])
     elif args.e == 'LIST_ACTIONS':
         list_actions(config)
     elif args.e:
@@ -125,6 +127,7 @@ def main():
     elif args.T:
         file_utilities.backup_file(config.path, number_of_backups=8)
         delete_action(config, args.T)
+        delete_shortcut(args.T)
     elif args.P:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_paths(config)
@@ -435,6 +438,7 @@ def modify_action(config, action):
                 if len(arguments) == 0 or arguments == 'None':
                     arguments = None
                 if answer[0] == 'a':
+                    # FIXME
                     i += 1
 
                 commands.insert(i, (command, arguments))
@@ -466,6 +470,7 @@ def modify_action(config, action):
         config['Actions'][action] = str(commands)
         with open(config.path, 'w', encoding='utf-8') as f:
             config.write(f)
+        return True
     else:
         delete_action(config, action)
 
@@ -563,47 +568,10 @@ def execute_action(config, place_trade, action):
             pyautogui.write(str(place_trade.share_size))
 
 def delete_action(config, action):
-    import win32com.client
-
     if config.has_option('Actions', action):
         config.remove_option('Actions', action)
         with open(config.path, 'w', encoding='utf-8') as f:
             config.write(f)
-
-    icon = os.path.join(os.path.dirname(__file__), action + '.ico')
-    if os.path.exists(icon):
-        try:
-            os.remove(icon)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
-    shell = win32com.client.Dispatch('WScript.Shell')
-    program_group = get_program_group()
-    title = re.sub('[\W_]+', ' ', action).rstrip().title()
-    shortcut = os.path.join(program_group, title + '.lnk')
-    if os.path.exists(shortcut):
-        try:
-            os.remove(shortcut)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-    if not os.listdir(program_group):
-        try:
-            os.rmdir(program_group)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
-    # FIXME
-    taskbar = os.path.expandvars('$APPDATA\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar')
-    pinned_shortcut = os.path.join(taskbar, title + '.lnk')
-    if os.path.exists(pinned_shortcut):
-        try:
-            os.remove(pinned_shortcut)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
 
 def create_shortcut(basename, target_path, arguments, hotkey=None):
     import win32com.client
@@ -629,6 +597,44 @@ def create_shortcut(basename, target_path, arguments, hotkey=None):
         shortcut.Hotkey = 'CTRL+ALT+' + hotkey
 
     shortcut.save()
+
+def delete_shortcut(basename):
+    import win32com.client
+
+    icon = os.path.join(os.path.dirname(__file__), basename + '.ico')
+    if os.path.exists(icon):
+        try:
+            os.remove(icon)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+    shell = win32com.client.Dispatch('WScript.Shell')
+    program_group = get_program_group()
+    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+    shortcut = os.path.join(program_group, title + '.lnk')
+    if os.path.exists(shortcut):
+        try:
+            os.remove(shortcut)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+    if not os.listdir(program_group):
+        try:
+            os.rmdir(program_group)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+    # FIXME
+    taskbar = os.path.expandvars('$APPDATA\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar')
+    pinned_shortcut = os.path.join(taskbar, title + '.lnk')
+    if os.path.exists(pinned_shortcut):
+        try:
+            os.remove(pinned_shortcut)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
 
 def get_program_group():
     import win32com.client
