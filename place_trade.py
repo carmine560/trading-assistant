@@ -599,8 +599,6 @@ def create_shortcut(basename, target_path, arguments, hotkey=None):
     shortcut.save()
 
 def delete_shortcut(basename):
-    import win32com.client
-
     icon = os.path.join(os.path.dirname(__file__), basename + '.ico')
     if os.path.exists(icon):
         try:
@@ -609,7 +607,6 @@ def delete_shortcut(basename):
             print(e)
             sys.exit(1)
 
-    shell = win32com.client.Dispatch('WScript.Shell')
     program_group = get_program_group()
     title = re.sub('[\W_]+', ' ', basename).rstrip().title()
     shortcut = os.path.join(program_group, title + '.lnk')

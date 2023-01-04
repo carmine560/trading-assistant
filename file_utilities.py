@@ -31,12 +31,14 @@ def backup_file(source, backup_root=None, number_of_backups=-1):
 
             if number_of_backups > 0:
                 backups = os.listdir(backup_root)
-                for f in backups[:len(backups) - number_of_backups]:
-                    try:
-                        os.remove(os.path.join(backup_root, f))
-                    except OSError as e:
-                        print(e)
-                        sys.exit(1)
+                excess = len(backups) - number_of_backups
+                if excess > 0:
+                    for f in backups[:excess]:
+                        try:
+                            os.remove(os.path.join(backup_root, f))
+                        except OSError as e:
+                            print(e)
+                            sys.exit(1)
         else:
             if os.path.isdir(backup_root):
                 try:
