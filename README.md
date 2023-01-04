@@ -203,7 +203,7 @@ open_close_long_position = [
 Execute an action saved in the configuration file.
 
 ``` batchfile
-py place_trade.py -e ACTION
+py place_trade.py -e [ACTION]
 ```
 
 ### Options ###
