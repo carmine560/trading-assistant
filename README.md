@@ -55,7 +55,7 @@ previous market data from [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and [*Download Stock Market Data*](https://kabudata-dll.com/) in
 advance.  The following option creates a startup script
-`place-trade.ps1` that processes them and starts Hyper SBI 2.
+`place_trade.ps1` that processes them and starts Hyper SBI 2.
 
 ``` batchfile
 py place_trade.py -i
@@ -68,7 +68,7 @@ SBI 2 so that Tesseract recognizes these prices.  A price limit is
 only referenced if the previous closing price does not exist in the
 market data above.  Because there can be multiple prices in a region,
 specify the index of the price.  These configurations are saved in the
-configuration file `place-trade.ini`.
+configuration file `place_trade.ini`.
 
 ``` batchfile
 py place_trade.py -C X Y WIDTH HEIGHT INDEX
