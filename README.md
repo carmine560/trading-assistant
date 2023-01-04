@@ -3,8 +3,8 @@
 <!-- Python script that assists in discretionary day trading of stocks
 on margin using Hyper SBI 2 -->
 
-<!-- hypersbi2 pandas pyautogui pytesseract python pywin32 tesseract
- pynput -->
+<!-- hypersbi2 pandas pyautogui pynput pytesseract python pyttsx3
+pywin32 tesseract -->
 
 `place_trade.py` assists in discretionary day trading of stocks on
 margin using [Hyper SBI
