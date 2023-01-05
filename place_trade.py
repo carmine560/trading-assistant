@@ -242,15 +242,15 @@ def create_startup_script(config):
 
     with open(startup_script, 'w') as f:
         lines = []
-        lines.append('if (Get-Process '
+        lines.append('if (Get-Process "'
                      + os.path.splitext(os.path.basename(trading_software))[0]
-                     + ' -ErrorAction SilentlyContinue)\n{\n')
+                     + '" -ErrorAction SilentlyContinue)\n{\n')
         for i in range(len(running_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
                          + __file__ + '`" ' + running_options[i]
                          + '" -NoNewWindow\n')
 
-            lines.append('}\nelse\n{\n')
+        lines.append('}\nelse\n{\n')
         for i in range(len(pre_start_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
                          + __file__ + '`" ' + pre_start_options[i]
