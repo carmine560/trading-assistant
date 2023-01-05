@@ -108,15 +108,16 @@ def main():
         else:
             file_utilities.backup_file(config.path, number_of_backups=8)
             if modify_action(config, args.M[0]):
+                # To pin the shortcut to the Taskbar, specify an
+                # executable file as the argument target_path.
                 if len(args.M) == 1:
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
-                        '"' + os.path.abspath(__file__) + '" -e ' + args.M[0])
+                        '"' + __file__ + '" -e ' + args.M[0])
                 elif len(args.M) == 2:
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
-                        '"' + os.path.abspath(__file__) + '" -e ' + args.M[0],
-                        args.M[1])
+                        '"' + __file__ + '" -e ' + args.M[0], args.M[1])
             else:
                 file_utilities.delete_shortcut(args.M[0])
     elif args.e == 'LIST_ACTIONS':
@@ -142,11 +143,11 @@ def main():
         if args.I == 'WITHOUT_HOTKEY':
             file_utilities.create_shortcut(
                 basename, 'powershell.exe',
-                '-WindowStyle Hidden "' + startup_script + '"')
+                '-WindowStyle Hidden -File "' + startup_script + '"')
         else:
             file_utilities.create_shortcut(
                 basename, 'powershell.exe',
-                '-WindowStyle Hidden "' + startup_script + '"', args.I)
+                '-WindowStyle Hidden -File "' + startup_script + '"', args.I)
     elif args.H:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_market_holidays(config)
@@ -246,20 +247,21 @@ def create_startup_script(config):
                      + ' -ErrorAction SilentlyContinue)\n{\n')
         for i in range(len(running_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + os.path.abspath(__file__) + '`" '
-                         + running_options[i] + '" -NoNewWindow\n')
+                         + __file__ + '`" ' + running_options[i]
+                         + '" -NoNewWindow\n')
+
             lines.append('}\nelse\n{\n')
         for i in range(len(pre_start_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + os.path.abspath(__file__) + '`" '
-                         + pre_start_options[i] + '" -NoNewWindow\n')
+                         + __file__ + '`" ' + pre_start_options[i]
+                         + '" -NoNewWindow\n')
 
         lines.append('    Start-Process "' + trading_software
                      + '" -NoNewWindow\n')
         for i in range(len(post_start_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + os.path.abspath(__file__) + '`" '
-                         + post_start_options[i] + '" -NoNewWindow\n')
+                         + __file__ + '`" ' + post_start_options[i]
+                         + '" -NoNewWindow\n')
         if len(post_start_path):
             if len(post_start_arguments):
                 lines.append('    Start-Process "' + post_start_path

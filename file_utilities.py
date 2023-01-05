@@ -8,7 +8,9 @@ def backup_file(source, backup_root=None, number_of_backups=-1):
 
     if os.path.exists(source):
         if not backup_root:
-            backup_root = os.path.join(os.path.dirname(sys.argv[0]), 'backups')
+            backup_root = \
+                os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                             'backups')
 
         if number_of_backups:
             if not os.path.isdir(backup_root):
@@ -68,14 +70,15 @@ def create_shortcut(basename, target_path, arguments, hotkey=None):
     shortcut.IconLocation = create_icon(basename)
     shortcut.TargetPath = target_path
     shortcut.Arguments = arguments
-    shortcut.WorkingDirectory = os.path.dirname(sys.argv[0])
+    shortcut.WorkingDirectory = os.path.dirname(os.path.abspath(sys.argv[0]))
     if hotkey:
         shortcut.Hotkey = 'CTRL+ALT+' + hotkey
 
     shortcut.save()
 
 def delete_shortcut(basename):
-    icon = os.path.join(os.path.dirname(sys.argv[0]), basename + '.ico')
+    icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                        basename + '.ico')
     if os.path.exists(icon):
         try:
             os.remove(icon)
@@ -176,6 +179,7 @@ def create_icon(basename):
                    image_height - text_height), lower, font=font,
                   fill=fill)
 
-    icon = os.path.join(os.path.dirname(sys.argv[0]), basename + '.ico')
+    icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                        basename + '.ico')
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
