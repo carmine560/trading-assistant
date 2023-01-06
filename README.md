@@ -226,6 +226,26 @@ py place_trade.py -e [ACTION]
   * `-L X Y WIDTH HEIGHT INDEX` configure the price limit region and
     the index of the price
 
+## Appendix ##
+
+### Hyper SBI 2 Window Titles ###
+
+| Window        | Regular Expression for Title    | Shortcut     |
+|---------------|---------------------------------|--------------|
+| Announcements | `^お知らせ$`                    | `Ctrl` + `I` |
+| Summary       | `^個別銘柄\s.*\((\d{4})\)$`     | `Ctrl` + `1` |
+| Watchlists    | `^登録銘柄$`                    | `Ctrl` + `2` |
+| Holdings      | `^保有証券$`                    | `Ctrl` + `3` |
+| Order Status  | `^注文一覧$`                    | `Ctrl` + `4` |
+| Chart         | `^個別チャート\s.*\((\d{4})\)$` | `Ctrl` + `5` |
+| Markets       | `^マーケット$`                  | `Ctrl` + `6` |
+| Rankings      | `^ランキング$`                  | `Ctrl` + `7` |
+| Stock Lists   | `^銘柄一覧$`                    | `Ctrl` + `8` |
+| Account       | `^口座情報$`                    | `Ctrl` + `9` |
+| News          | `^ニュース$`                    | `Ctrl` + `N` |
+| Trading       | `^取引ポップアップ$`            | `Ctrl` + `T` |
+| Notifications | `^通知設定$`                    | `Ctrl` + `G` |
+
 ## License ##
 
 [MIT](LICENSE.md)
