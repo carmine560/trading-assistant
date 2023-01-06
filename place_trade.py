@@ -14,6 +14,7 @@ import win32api
 import win32gui
 
 import file_utilities
+import gui_interactions
 
 class PlaceTrade:
     def __init__(self):
@@ -501,7 +502,7 @@ def execute_action(config, place_trade, action):
             arguments = arguments.split(',')
             image = ','.join(arguments[0:-4])
             region = arguments[-4:len(arguments)]
-            click_widget(place_trade, image, *region)
+            gui_interactions.click_widget(place_trade, image, *region)
         elif command == 'count_trades':
             section = config['Trading']
             previous_date = date.fromisoformat(section['date'])
@@ -518,9 +519,10 @@ def execute_action(config, place_trade, action):
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trade.get_symbol, arguments)
         elif command == 'hide_parent_window':
-            win32gui.EnumWindows(hide_parent_window, arguments)
+            win32gui.EnumWindows(gui_interactions.hide_parent_window,
+                                 arguments)
         elif command == 'hide_window':
-            win32gui.EnumWindows(hide_window, arguments)
+            win32gui.EnumWindows(gui_interactions.hide_window, arguments)
         elif command == 'move_to':
             pyautogui.moveTo(eval(arguments))
         elif command == 'press_hotkeys':
@@ -538,9 +540,9 @@ def execute_action(config, place_trade, action):
             if key == 'tab':
                 place_trade.moved_focus = presses
         elif command == 'show_hide_window':
-            win32gui.EnumWindows(show_hide_window, arguments)
+            win32gui.EnumWindows(gui_interactions.show_hide_window, arguments)
         elif command == 'show_window':
-            win32gui.EnumWindows(show_window, arguments)
+            win32gui.EnumWindows(gui_interactions.show_window, arguments)
         elif command == 'speak_config':
             import pyttsx3
 
@@ -551,14 +553,14 @@ def execute_action(config, place_trade, action):
             engine.say(config[arguments[0]][arguments[1]])
             engine.runAndWait()
         elif command == 'wait_for_key':
-            wait_for_key(place_trade, arguments)
+            gui_interactions.wait_for_key(place_trade, arguments)
         elif command == 'wait_for_period':
             time.sleep(float(arguments))
         elif command == 'wait_for_prices':
             arguments = list(map(str.strip, arguments.split(',')))
             get_prices(*arguments)
         elif command == 'wait_for_window':
-            wait_for_window(place_trade, arguments)
+            gui_interactions.wait_for_window(place_trade, arguments)
         elif command == 'write_alt_symbol':
             symbols = list(map(str.strip, arguments.split(',')))
             if symbols[0] == place_trade.symbol:
@@ -900,71 +902,6 @@ def get_price_limit(config, place_trade):
         region = config['OCR Regions']['price_limit_region'].split(', ')
         price_limit = get_prices(*region, False)
     return price_limit
-
-def click_widget(place_trade, image, x, y, width, height):
-    location = None
-    x = int(x)
-    y = int(y)
-    width = int(width)
-    height = int(height)
-    while not location:
-        location = pyautogui.locateOnScreen(image,
-                                            region=(x, y, width, height))
-        time.sleep(0.001)
-
-    if place_trade.swapped:
-        pyautogui.rightClick(pyautogui.center(location))
-    else:
-        pyautogui.click(pyautogui.center(location))
-
-def hide_parent_window(hwnd, title_regex):
-    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
-        parent = win32gui.GetParent(hwnd)
-        if parent and not win32gui.IsIconic(parent):
-            win32gui.ShowWindow(parent, 6)
-            return
-
-def hide_window(hwnd, title_regex):
-    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
-        if not win32gui.IsIconic(hwnd):
-            win32gui.ShowWindow(hwnd, 6)
-        return
-
-def show_hide_window(hwnd, title_regex):
-    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
-        if win32gui.IsIconic(hwnd):
-            win32gui.ShowWindow(hwnd, 9)
-            win32gui.SetForegroundWindow(hwnd)
-        else:
-            win32gui.ShowWindow(hwnd, 6)
-        return
-
-def show_window(hwnd, title_regex):
-    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
-        if win32gui.IsIconic(hwnd):
-            win32gui.ShowWindow(hwnd, 9)
-
-        win32gui.SetForegroundWindow(hwnd)
-        return
-
-def wait_for_key(place_trade, key):
-    if len(key) == 1:
-        place_trade.key = key
-    else:
-        place_trade.key = keyboard.Key[key]
-    with keyboard.Listener(on_release=place_trade.on_release) as listener:
-        listener.join()
-    if not place_trade.released:
-        for _ in range(place_trade.moved_focus):
-            pyautogui.hotkey('shift', 'tab')
-
-        sys.exit()
-
-def wait_for_window(place_trade, title_regex):
-    while next((False for i in range(len(place_trade.exist))
-                if place_trade.exist[i][1] == title_regex), True):
-        win32gui.EnumWindows(place_trade.check_for_window, title_regex)
-        time.sleep(0.001)
 
 if __name__ == '__main__':
     main()
