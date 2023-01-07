@@ -103,7 +103,7 @@ def delete_shortcut(basename):
             sys.exit(1)
 
     # FIXME
-    taskbar = os.path.expandvars('$APPDATA\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar')
+    taskbar = os.path.expandvars(r'$APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar')
     pinned_shortcut = os.path.join(taskbar, title + '.lnk')
     if os.path.exists(pinned_shortcut):
         try:
