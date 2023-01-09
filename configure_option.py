@@ -3,8 +3,7 @@ def list_section(config, section):
         for key in config[section]:
             print(key)
 
-# FIXME
-def modify_tuple_list(config, section, option):
+def modify_tuple_list(config, section, option, positioning_keys=[]):
     create = False
     if not config.has_section(section):
         config[section] = {}
@@ -27,8 +26,7 @@ def modify_tuple_list(config, section, option):
         if len(answer):
             if answer[0] == 'i' or answer[0] == 'a':
                 key = input('key: ')
-                # FIXME
-                if key == 'click' or key == 'move_to':
+                if any(i == key for i in positioning_keys):
                     value = input('input/[c]lick: ')
                     if len(value) and value[0].lower() == 'c':
                         value = configure_position()
@@ -45,15 +43,13 @@ def modify_tuple_list(config, section, option):
                 key = tuple_list[i][0]
                 value = tuple_list[i][1]
                 key = input('key [' + str(key) + '] ') or key
-                # FIXME
-                if key == 'click' or key == 'move_to':
+                if any(i == key for i in positioning_keys):
                     value = input('input/[c]lick [' + str(value) + '] ') \
                         or value
                     if len(value) and value[0].lower() == 'c':
                         value = configure_position()
                 else:
-                    value = input('value [' + str(value) + '] ') \
-                        or value
+                    value = input('value [' + str(value) + '] ') or value
                 if len(value) == 0 or value == 'None':
                     value = None
 
@@ -79,3 +75,24 @@ def delete_option(config, section, option):
         config.remove_option(section, option)
         with open(config.path, 'w', encoding='utf-8') as f:
             config.write(f)
+
+def configure_position():
+    import time
+
+    import pyautogui
+    import win32api
+
+    previous_key_state = win32api.GetKeyState(0x01)
+    current_number = 0
+    coordinates = ''
+    while True:
+        key_state = win32api.GetKeyState(0x01)
+        if key_state != previous_key_state:
+            if key_state not in [0, 1]:
+                x, y = pyautogui.position()
+                coordinates = str(x) + ', ' + str(y)
+                break
+
+        time.sleep(0.001)
+
+    return coordinates

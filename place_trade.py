@@ -5,7 +5,6 @@ import csv
 import os
 import re
 import sys
-import time
 
 from pynput import keyboard
 import pyautogui
@@ -109,8 +108,8 @@ def main():
             configure_option.list_section(config, 'Actions')
         else:
             file_utilities.backup_file(config.path, number_of_backups=8)
-            if configure_option.modify_tuple_list(config, 'Actions',
-                                                  args.M[0]):
+            if configure_option.modify_tuple_list(config, 'Actions', args.M[0],
+                                                  ['click', 'move_to']):
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the argument target_path.
                 if len(args.M) == 1:
@@ -483,6 +482,8 @@ def execute_action(config, place_trade, action):
         elif command == 'wait_for_key':
             gui_interactions.wait_for_key(place_trade, arguments)
         elif command == 'wait_for_period':
+            import time
+
             time.sleep(float(arguments))
         elif command == 'wait_for_prices':
             arguments = list(map(str.strip, arguments.split(',')))
@@ -667,22 +668,6 @@ def configure_ocr_region(config, key, region):
     config['OCR Regions'][key] = ', '.join(region)
     with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
-
-def configure_position():
-    previous_key_state = win32api.GetKeyState(0x01)
-    current_number = 0
-    coordinates = ''
-    while True:
-        key_state = win32api.GetKeyState(0x01)
-        if key_state != previous_key_state:
-            if key_state not in [0, 1]:
-                x, y = pyautogui.position()
-                coordinates = str(x) + ', ' + str(y)
-                break
-
-        time.sleep(0.001)
-
-    return coordinates
 
 def calculate_share_size(config, place_trade, position):
     fixed_cash_balance = int(config['Cash Balance']['fixed_cash_balance'])
