@@ -109,7 +109,8 @@ def main():
             configure_option.list_section(config, 'Actions')
         else:
             file_utilities.backup_file(config.path, number_of_backups=8)
-            if configure_option.modify_option(config, 'Actions', args.M[0]):
+            if configure_option.modify_tuple_list(config, 'Actions',
+                                                  args.M[0]):
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the argument target_path.
                 if len(args.M) == 1:

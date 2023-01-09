@@ -3,7 +3,8 @@ def list_section(config, section):
         for key in config[section]:
             print(key)
 
-def modify_option(config, section, option):
+# FIXME
+def modify_tuple_list(config, section, option):
     create = False
     if not config.has_section(section):
         config[section] = {}
@@ -14,57 +15,59 @@ def modify_option(config, section, option):
     else:
         i = 0
 
-    commands = eval(config[section][option])
-    while i < len(commands):
+    tuple_list = eval(config[section][option])
+    while i < len(tuple_list):
         if create:
             answer = input('[i]nsert/[q]uit: ').lower()
         else:
-            print(commands[i])
+            print(tuple_list[i])
             answer = \
                 input('[i]nsert/[m]odify/[a]ppend/[d]elete/[q]uit: ').lower()
 
         if len(answer):
             if answer[0] == 'i' or answer[0] == 'a':
-                command = input('command: ')
-                if command == 'click' or command == 'move_to':
-                    arguments = input('input/[c]lick: ')
-                    if len(arguments) and arguments[0].lower() == 'c':
-                        arguments = configure_position()
+                key = input('key: ')
+                # FIXME
+                if key == 'click' or key == 'move_to':
+                    value = input('input/[c]lick: ')
+                    if len(value) and value[0].lower() == 'c':
+                        value = configure_position()
                 else:
-                    arguments = input('arguments: ')
-                if len(arguments) == 0 or arguments == 'None':
-                    arguments = None
+                    value = input('value: ')
+                if len(value) == 0 or value == 'None':
+                    value = None
                 if answer[0] == 'a':
                     # FIXME
                     i += 1
 
-                commands.insert(i, (command, arguments))
+                tuple_list.insert(i, (key, value))
             elif answer[0] == 'm':
-                command = commands[i][0]
-                arguments = commands[i][1]
-                command = input('command [' + str(command) + '] ') or command
-                if command == 'click' or command == 'move_to':
-                    arguments = input('input/[c]lick [' + str(arguments)
-                                      + '] ') or arguments
-                    if len(arguments) and arguments[0].lower() == 'c':
-                        arguments = configure_position()
+                key = tuple_list[i][0]
+                value = tuple_list[i][1]
+                key = input('key [' + str(key) + '] ') or key
+                # FIXME
+                if key == 'click' or key == 'move_to':
+                    value = input('input/[c]lick [' + str(value) + '] ') \
+                        or value
+                    if len(value) and value[0].lower() == 'c':
+                        value = configure_position()
                 else:
-                    arguments = input('arguments [' + str(arguments) + '] ') \
-                        or arguments
-                if len(arguments) == 0 or arguments == 'None':
-                    arguments = None
+                    value = input('value [' + str(value) + '] ') \
+                        or value
+                if len(value) == 0 or value == 'None':
+                    value = None
 
-                commands[i] = command, arguments
+                tuple_list[i] = key, value
             elif answer[0] == 'd':
-                del commands[i]
+                del tuple_list[i]
                 i -= 1
             elif answer[0] == 'q':
-                i = len(commands)
+                i = len(tuple_list)
 
         i += 1
 
-    if len(commands):
-        config[section][option] = str(commands)
+    if len(tuple_list):
+        config[section][option] = str(tuple_list)
         with open(config.path, 'w', encoding='utf-8') as f:
             config.write(f)
         return True
