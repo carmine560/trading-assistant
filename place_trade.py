@@ -13,6 +13,7 @@ import pytesseract
 import win32api
 import win32gui
 
+import configure_option
 import file_utilities
 import gui_interactions
 
@@ -105,10 +106,10 @@ def main():
         save_market_data(config)
     elif args.M is not None:
         if len(args.M) == 0:
-            list_actions(config)
+            configure_option.list_section(config, 'Actions')
         else:
             file_utilities.backup_file(config.path, number_of_backups=8)
-            if modify_action(config, args.M[0]):
+            if configure_option.modify_option(config, 'Actions', args.M[0]):
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the argument target_path.
                 if len(args.M) == 1:
@@ -122,14 +123,15 @@ def main():
             else:
                 file_utilities.delete_shortcut(args.M[0])
     elif args.e == 'LIST_ACTIONS':
-        list_actions(config)
+        configure_option.list_section(config, 'Actions')
     elif args.e:
         execute_action(config, place_trade, args.e)
     elif args.T == 'LIST_ACTIONS':
-        list_actions(config, True)
+        print(os.path.splitext(os.path.basename(__file__))[0])
+        configure_option.list_section(config, 'Actions')
     elif args.T:
         file_utilities.backup_file(config.path, number_of_backups=8)
-        delete_action(config, args.T)
+        configure_option.delete_option(config, 'Actions', args.T)
         file_utilities.delete_shortcut(args.T)
     elif args.P:
         file_utilities.backup_file(config.path, number_of_backups=8)
@@ -403,81 +405,6 @@ def get_latest(config, update_time, time_zone, *paths):
     if modified_time < latest:
         return latest
 
-def list_actions(config, startup_script=False):
-    if startup_script:
-        print(os.path.splitext(os.path.basename(__file__))[0])
-    if config.has_section('Actions'):
-        for key in config['Actions']:
-            print(key)
-
-def modify_action(config, action):
-    create = False
-    if not config.has_section('Actions'):
-        config['Actions'] = {}
-    if not config.has_option('Actions', action):
-        create = True
-        config['Actions'][action] = '[]'
-        i = -1
-    else:
-        i = 0
-
-    commands = eval(config['Actions'][action])
-    while i < len(commands):
-        if create:
-            answer = input('[i]nsert/[q]uit: ').lower()
-        else:
-            print(commands[i])
-            answer = \
-                input('[i]nsert/[m]odify/[a]ppend/[d]elete/[q]uit: ').lower()
-
-        if len(answer):
-            if answer[0] == 'i' or answer[0] == 'a':
-                command = input('command: ')
-                if command == 'click' or command == 'move_to':
-                    arguments = input('input/[c]lick: ')
-                    if len(arguments) and arguments[0].lower() == 'c':
-                        arguments = configure_position()
-                else:
-                    arguments = input('arguments: ')
-                if len(arguments) == 0 or arguments == 'None':
-                    arguments = None
-                if answer[0] == 'a':
-                    # FIXME
-                    i += 1
-
-                commands.insert(i, (command, arguments))
-            elif answer[0] == 'm':
-                command = commands[i][0]
-                arguments = commands[i][1]
-                command = input('command [' + str(command) + '] ') or command
-                if command == 'click' or command == 'move_to':
-                    arguments = input('input/[c]lick [' + str(arguments)
-                                      + '] ') or arguments
-                    if len(arguments) and arguments[0].lower() == 'c':
-                        arguments = configure_position()
-                else:
-                    arguments = input('arguments [' + str(arguments) + '] ') \
-                        or arguments
-                if len(arguments) == 0 or arguments == 'None':
-                    arguments = None
-
-                commands[i] = command, arguments
-            elif answer[0] == 'd':
-                del commands[i]
-                i -= 1
-            elif answer[0] == 'q':
-                i = len(commands)
-
-        i += 1
-
-    if len(commands):
-        config['Actions'][action] = str(commands)
-        with open(config.path, 'w', encoding='utf-8') as f:
-            config.write(f)
-        return True
-    else:
-        delete_action(config, action)
-
 def execute_action(config, place_trade, action):
     commands = eval(config['Actions'][action])
     for i in range(len(commands)):
@@ -571,12 +498,6 @@ def execute_action(config, place_trade, action):
             pyautogui.write(alt_symbol)
         elif command == 'write_share_size':
             pyautogui.write(str(place_trade.share_size))
-
-def delete_action(config, action):
-    if config.has_option('Actions', action):
-        config.remove_option('Actions', action)
-        with open(config.path, 'w', encoding='utf-8') as f:
-            config.write(f)
 
 def configure_paths(config):
     section = config['Paths']
