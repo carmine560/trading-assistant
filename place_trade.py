@@ -27,6 +27,10 @@ class PlaceTrade:
         self.key = None
         self.released = False
         self.moved_focus = 0
+        self.enumerate_button = None
+        self.enumerate_cancel_button = None
+        self.enumerate_callback = None
+        self.enumerate_extra = ''
 
     def check_for_window(self, hwnd, title_regex):
         if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
@@ -51,6 +55,14 @@ class PlaceTrade:
             self.released = True
             return False
         elif key == keyboard.Key.esc:
+            return False
+
+    def enumerate_on_click(self, x, y, button, pressed):
+        if button == self.enumerate_button:
+            if not pressed:
+                win32gui.EnumWindows(self.enumerate_callback,
+                                     self.enumerate_extra)
+        elif button == self.enumerate_cancel_button:
             return False
 
 def main():
@@ -466,6 +478,8 @@ def execute_action(config, place_trade, action):
             pyautogui.press(key, presses=presses)
             if key == 'tab':
                 place_trade.moved_focus = presses
+        elif command == 'show_hide_on_click':
+            gui_interactions.show_hide_on_click(place_trade, arguments)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, arguments)
         elif command == 'show_window':

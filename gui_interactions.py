@@ -3,6 +3,7 @@ import sys
 import time
 
 from pynput import keyboard
+from pynput import mouse
 import pyautogui
 import win32gui
 
@@ -34,6 +35,15 @@ def hide_window(hwnd, title_regex):
         if not win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 6)
         return
+
+def show_hide_on_click(place_trade, title_regex):
+    # FIXME
+    place_trade.enumerate_button = mouse.Button.middle
+    place_trade.enumerate_cancel_button = mouse.Button.right
+    place_trade.enumerate_callback = show_hide_window
+    place_trade.enumerate_extra = title_regex
+    with mouse.Listener(on_click=place_trade.enumerate_on_click) as listener:
+        listener.join()
 
 def show_hide_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):

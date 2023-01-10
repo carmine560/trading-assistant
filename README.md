@@ -103,6 +103,7 @@ ACTION = [
     ('move_to', 'X, Y'),             # move the cursor to a position.
     ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
     ('press_key', 'KEY, PRESSES'),   # press a key.
+    ('show_hide_on_click', 'TITLE_REGEX') # show or hide a window on the middle click.
     ('show_hide_window', 'TITLE_REGEX'), # show or hide a window.
     ('show_window', 'TITLE_REGEX'),  # show a window.
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
