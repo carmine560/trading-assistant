@@ -1,4 +1,6 @@
+from threading import Thread
 import re
+import subprocess
 import sys
 import time
 
@@ -6,6 +8,19 @@ from pynput import keyboard
 from pynput import mouse
 import pyautogui
 import win32gui
+
+class GuiCallbacks:
+    def __init__(self):
+        self.enumerate_button = None
+        self.enumerate_cancel_button = None
+        self.enumerate_callback = None
+        self.enumerate_extra = ''
+
+    def enumerate_on_click(self, x, y, button, pressed):
+        if button == self.enumerate_button:
+            if not pressed:
+                win32gui.EnumWindows(self.enumerate_callback,
+                                     self.enumerate_extra)
 
 def click_widget(place_trade, image, x, y, width, height):
     location = None
@@ -36,15 +51,6 @@ def hide_window(hwnd, title_regex):
             win32gui.ShowWindow(hwnd, 6)
         return
 
-def show_hide_on_click(place_trade, title_regex):
-    # FIXME
-    place_trade.enumerate_button = mouse.Button.middle
-    place_trade.enumerate_cancel_button = mouse.Button.right
-    place_trade.enumerate_callback = show_hide_window
-    place_trade.enumerate_extra = title_regex
-    with mouse.Listener(on_click=place_trade.enumerate_on_click) as listener:
-        listener.join()
-
 def show_hide_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
         if win32gui.IsIconic(hwnd):
@@ -53,6 +59,21 @@ def show_hide_window(hwnd, title_regex):
         else:
             win32gui.ShowWindow(hwnd, 6)
         return
+
+# FIXME
+def show_hide_window_on_click(gui_callbacks, title_regex,
+                              enumerate_button=mouse.Button.middle,
+                              enumerate_cancel_button=mouse.Button.right,
+                              enumerate_callback=show_hide_window):
+    gui_callbacks.enumerate_button = enumerate_button
+    gui_callbacks.enumerate_cancel_button = enumerate_cancel_button
+    gui_callbacks.enumerate_callback = enumerate_callback
+    gui_callbacks.enumerate_extra = title_regex
+    with mouse.Listener(on_click=gui_callbacks.enumerate_on_click) \
+         as listener:
+        thread = Thread(target=check_process, args=('HYPERSBI2.exe', listener))
+        thread.start()
+        listener.join()
 
 def show_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
@@ -80,3 +101,13 @@ def wait_for_window(place_trade, title_regex):
                 if place_trade.exist[i][1] == title_regex), True):
         win32gui.EnumWindows(place_trade.check_for_window, title_regex)
         time.sleep(0.001)
+
+def check_process(process, listener):
+    while True:
+        output = subprocess.check_output(['tasklist', '/fi',
+                                          'imagename eq ' + process])
+        if re.search(process, str(output)):
+            time.sleep(1)
+        else:
+            listener.stop()
+            break
