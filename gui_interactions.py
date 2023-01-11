@@ -12,7 +12,6 @@ import win32gui
 class GuiCallbacks:
     def __init__(self):
         self.enumerate_button = None
-        self.enumerate_cancel_button = None
         self.enumerate_callback = None
         self.enumerate_extra = ''
 
@@ -61,17 +60,15 @@ def show_hide_window(hwnd, title_regex):
         return
 
 # FIXME
-def show_hide_window_on_click(gui_callbacks, title_regex,
+def show_hide_window_on_click(gui_callbacks, process, title_regex,
                               enumerate_button=mouse.Button.middle,
-                              enumerate_cancel_button=mouse.Button.right,
                               enumerate_callback=show_hide_window):
     gui_callbacks.enumerate_button = enumerate_button
-    gui_callbacks.enumerate_cancel_button = enumerate_cancel_button
     gui_callbacks.enumerate_callback = enumerate_callback
     gui_callbacks.enumerate_extra = title_regex
     with mouse.Listener(on_click=gui_callbacks.enumerate_on_click) \
          as listener:
-        thread = Thread(target=check_process, args=('HYPERSBI2.exe', listener))
+        thread = Thread(target=check_process, args=(process, listener))
         thread.start()
         listener.join()
 

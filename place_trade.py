@@ -467,10 +467,10 @@ def execute_action(config, place_trade, action):
             if key == 'tab':
                 place_trade.moved_focus = presses
         elif command == 'show_hide_window_on_click':
-            # FIXME
-            gui_callbacks = gui_interactions.GuiCallbacks()
-            gui_interactions.show_hide_window_on_click(gui_callbacks,
-                                                       arguments)
+            gui_interactions.show_hide_window_on_click(
+                gui_interactions.GuiCallbacks(),
+                os.path.basename(config['Startup Script']['trading_software']),
+                arguments)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, arguments)
         elif command == 'show_window':
