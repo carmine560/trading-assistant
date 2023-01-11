@@ -54,6 +54,7 @@ def show_hide_window(hwnd, title_regex):
     if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 9)
+            # pywintypes.error: (5, 'SetForegroundWindow', 'Access is denied.')
             win32gui.SetForegroundWindow(hwnd)
         else:
             win32gui.ShowWindow(hwnd, 6)
