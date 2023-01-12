@@ -121,7 +121,7 @@ ACTION = [
 ]
 ```
 
-#### Example 1: Login ####
+#### Example: Login ####
 
 The following example `login` waits for the Login window to show and
 clicks the Login button.
@@ -140,7 +140,7 @@ login = [
 ]
 ```
 
-#### Example 2: Show or Hide Watchlists Window on Middle Click ####
+#### Example: Show or Hide Watchlists Window on Middle Click ####
 
 The following example `show_hide_watchlists_on_click` shows or hides
 the Watchlists window on the middle click while Hyper SBI 2 is
@@ -150,7 +150,7 @@ running.
 show_hide_watchlists_on_click = [('show_hide_window_on_click', '^登録銘柄$')]
 ```
 
-#### Example 3: Toggle between Stocks ####
+#### Example: Toggle between Stocks ####
 
 The following example `toggle_between_stocks` toggles between the
 specified stocks.
@@ -172,7 +172,7 @@ toggle_between_stocks = [
 ]
 ```
 
-#### Example 4: Open and Close Long Position ####
+#### Example: Open and Close Long Position ####
 
 The following example `open_close_long_position` shows required
 windows, enters the maximum share size, and prepares a buy order.  If
