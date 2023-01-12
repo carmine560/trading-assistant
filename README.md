@@ -16,9 +16,8 @@ an action consisting of a sequence of commands, this script executes:
     trading
   * manipulating widgets to prepare your order
 
-> **Warning**
-> This script is currently under heavy development.  Changes in the
-> functionality can occur at any time.
+> **Warning** This script is currently under heavy development.
+> Changes in functionality can occur at any time.
 
 ## Prerequisites ##
 
@@ -125,7 +124,7 @@ ACTION = [
 #### Example 1: Login ####
 
 The following example `login` waits for the Login window to show and
-then clicks the Login button.
+clicks the Login button.
 
 ``` python
 login = [
