@@ -9,7 +9,6 @@ import sys
 from pynput import keyboard
 import pyautogui
 import pytesseract
-import win32api
 import win32gui
 
 import configure_option
@@ -18,40 +17,16 @@ import gui_interactions
 
 class PlaceTrade:
     def __init__(self):
-        self.exist = []
-        self.swapped = win32api.GetSystemMetrics(23)
         self.previous_position = pyautogui.position()
         self.cash_balance = 0
         self.symbol = ''
         self.share_size = 0
-        self.key = None
-        self.released = False
-        self.moved_focus = 0
-
-    def check_for_window(self, hwnd, title_regex):
-        if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
-            if win32gui.IsIconic(hwnd):
-                win32gui.ShowWindow(hwnd, 9)
-
-            win32gui.SetForegroundWindow(hwnd)
-            self.exist.append((hwnd, title_regex))
-            return
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.search(title_regex, str(win32gui.GetWindowText(hwnd)))
         if matched:
             self.symbol = matched.group(1)
             return
-
-    def on_release(self, key):
-        if hasattr(key, 'char') and key.char == self.key:
-            self.released = True
-            return False
-        elif key == self.key:
-            self.released = True
-            return False
-        elif key == keyboard.Key.esc:
-            return False
 
 def main():
     parser = argparse.ArgumentParser()
@@ -98,6 +73,7 @@ def main():
 
     config = configure_default()
     place_trade = PlaceTrade()
+    gui_callbacks = gui_interactions.GuiCallbacks()
 
     if args.r:
         save_customer_margin_ratios(config)
@@ -125,7 +101,7 @@ def main():
     elif args.e == 'LIST_ACTIONS':
         configure_option.list_section(config, 'Actions')
     elif args.e:
-        execute_action(config, place_trade, args.e)
+        execute_action(config, place_trade, gui_callbacks, args.e)
     elif args.T == 'LIST_ACTIONS':
         print(os.path.splitext(os.path.basename(__file__))[0])
         configure_option.list_section(config, 'Actions')
@@ -405,7 +381,7 @@ def get_latest(config, update_time, time_zone, *paths):
     if modified_time < latest:
         return latest
 
-def execute_action(config, place_trade, action):
+def execute_action(config, place_trade, gui_callbacks, action):
     commands = eval(config['Actions'][action])
     for i in range(len(commands)):
         command = commands[i][0]
@@ -421,7 +397,7 @@ def execute_action(config, place_trade, action):
             calculate_share_size(config, place_trade, arguments)
         elif command == 'click':
             coordinates = eval(arguments)
-            if place_trade.swapped:
+            if gui_callbacks.swapped:
                 pyautogui.rightClick(coordinates)
             else:
                 pyautogui.click(coordinates)
@@ -429,7 +405,7 @@ def execute_action(config, place_trade, action):
             arguments = arguments.split(',')
             image = ','.join(arguments[0:-4])
             region = arguments[-4:len(arguments)]
-            gui_interactions.click_widget(place_trade, image, *region)
+            gui_interactions.click_widget(gui_callbacks, image, *region)
         elif command == 'count_trades':
             section = config['Trading']
             previous_date = date.fromisoformat(section['date'])
@@ -465,10 +441,10 @@ def execute_action(config, place_trade, action):
 
             pyautogui.press(key, presses=presses)
             if key == 'tab':
-                place_trade.moved_focus = presses
+                gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
             gui_interactions.show_hide_window_on_click(
-                gui_interactions.GuiCallbacks(),
+                gui_callbacks,
                 os.path.basename(config['Startup Script']['trading_software']),
                 arguments)
         elif command == 'show_hide_window':
@@ -485,7 +461,7 @@ def execute_action(config, place_trade, action):
             engine.say(config[arguments[0]][arguments[1]])
             engine.runAndWait()
         elif command == 'wait_for_key':
-            gui_interactions.wait_for_key(place_trade, arguments)
+            gui_interactions.wait_for_key(gui_callbacks, arguments)
         elif command == 'wait_for_period':
             import time
 
@@ -494,7 +470,7 @@ def execute_action(config, place_trade, action):
             arguments = list(map(str.strip, arguments.split(',')))
             get_prices(*arguments)
         elif command == 'wait_for_window':
-            gui_interactions.wait_for_window(place_trade, arguments)
+            gui_interactions.wait_for_window(gui_callbacks, arguments)
         elif command == 'write_alt_symbol':
             symbols = list(map(str.strip, arguments.split(',')))
             if symbols[0] == place_trade.symbol:

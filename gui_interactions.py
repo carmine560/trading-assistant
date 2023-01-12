@@ -7,21 +7,51 @@ import time
 from pynput import keyboard
 from pynput import mouse
 import pyautogui
+import win32api
 import win32gui
 
 class GuiCallbacks:
     def __init__(self):
-        self.enumerate_button = None
-        self.enumerate_callback = None
-        self.enumerate_extra = ''
+        self.swapped = win32api.GetSystemMetrics(23)
+        self.moved_focus = 0
 
-    def enumerate_on_click(self, x, y, button, pressed):
-        if button == self.enumerate_button:
+        # on_click
+        self.callback = None
+        self.extra = ''
+
+        # on_release
+        self.key = None
+        self.released = False
+
+        # check_for_window
+        self.exist = []
+
+    def on_click(self, x, y, button, pressed):
+        if button == mouse.Button.middle:
             if not pressed:
-                win32gui.EnumWindows(self.enumerate_callback,
-                                     self.enumerate_extra)
+                win32gui.EnumWindows(self.callback,
+                                     self.extra)
 
-def click_widget(place_trade, image, x, y, width, height):
+    def on_release(self, key):
+        if hasattr(key, 'char') and key.char == self.key:
+            self.released = True
+            return False
+        elif key == self.key:
+            self.released = True
+            return False
+        elif key == keyboard.Key.esc:
+            return False
+
+    def check_for_window(self, hwnd, title_regex):
+        if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+            if win32gui.IsIconic(hwnd):
+                win32gui.ShowWindow(hwnd, 9)
+
+            win32gui.SetForegroundWindow(hwnd)
+            self.exist.append((hwnd, title_regex))
+            return
+
+def click_widget(gui_callbacks, image, x, y, width, height):
     location = None
     x = int(x)
     y = int(y)
@@ -32,7 +62,7 @@ def click_widget(place_trade, image, x, y, width, height):
                                             region=(x, y, width, height))
         time.sleep(0.001)
 
-    if place_trade.swapped:
+    if gui_callbacks.swapped:
         pyautogui.rightClick(pyautogui.center(location))
     else:
         pyautogui.click(pyautogui.center(location))
@@ -60,14 +90,11 @@ def show_hide_window(hwnd, title_regex):
             win32gui.ShowWindow(hwnd, 6)
         return
 
-# FIXME
 def show_hide_window_on_click(gui_callbacks, process, title_regex,
-                              enumerate_button=mouse.Button.middle,
-                              enumerate_callback=show_hide_window):
-    gui_callbacks.enumerate_button = enumerate_button
-    gui_callbacks.enumerate_callback = enumerate_callback
-    gui_callbacks.enumerate_extra = title_regex
-    with mouse.Listener(on_click=gui_callbacks.enumerate_on_click) \
+                              callback=show_hide_window):
+    gui_callbacks.callback = callback
+    gui_callbacks.extra = title_regex
+    with mouse.Listener(on_click=gui_callbacks.on_click) \
          as listener:
         thread = Thread(target=check_process, args=(process, listener))
         thread.start()
@@ -81,23 +108,23 @@ def show_window(hwnd, title_regex):
         win32gui.SetForegroundWindow(hwnd)
         return
 
-def wait_for_key(place_trade, key):
+def wait_for_key(gui_callbacks, key):
     if len(key) == 1:
-        place_trade.key = key
+        gui_callbacks.key = key
     else:
-        place_trade.key = keyboard.Key[key]
-    with keyboard.Listener(on_release=place_trade.on_release) as listener:
+        gui_callbacks.key = keyboard.Key[key]
+    with keyboard.Listener(on_release=gui_callbacks.on_release) as listener:
         listener.join()
-    if not place_trade.released:
-        for _ in range(place_trade.moved_focus):
+    if not gui_callbacks.released:
+        for _ in range(gui_callbacks.moved_focus):
             pyautogui.hotkey('shift', 'tab')
 
         sys.exit()
 
-def wait_for_window(place_trade, title_regex):
-    while next((False for i in range(len(place_trade.exist))
-                if place_trade.exist[i][1] == title_regex), True):
-        win32gui.EnumWindows(place_trade.check_for_window, title_regex)
+def wait_for_window(gui_callbacks, title_regex):
+    while next((False for i in range(len(gui_callbacks.exist))
+                if gui_callbacks.exist[i][1] == title_regex), True):
+        win32gui.EnumWindows(gui_callbacks.check_for_window, title_regex)
         time.sleep(0.001)
 
 def check_process(process, listener):
