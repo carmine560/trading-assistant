@@ -71,7 +71,7 @@ def main():
         help='configure the price limit region and the index of the price (x y width height index)')
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
-    config = configure_default()
+    config = configure()
     place_trade = PlaceTrade()
     gui_callbacks = gui_interactions.GuiCallbacks()
 
@@ -146,7 +146,7 @@ def main():
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_ocr_region(config, 'price_limit_region', args.L)
 
-def configure_default():
+def configure():
     config = configparser.ConfigParser(interpolation=None)
     config['Paths'] = {
         'customer_margin_ratios':
