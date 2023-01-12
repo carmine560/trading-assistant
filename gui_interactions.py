@@ -15,24 +15,24 @@ class GuiCallbacks:
         self.swapped = win32api.GetSystemMetrics(23)
         self.moved_focus = 0
 
-        # on_click
+        # enumerate_windows_on_click
         self.callback = None
         self.extra = ''
 
-        # on_release
+        # compare_keys_on_release
         self.key = None
         self.released = False
 
         # check_for_window
         self.exist = []
 
-    def on_click(self, x, y, button, pressed):
+    def enumerate_windows_on_click(self, x, y, button, pressed):
         if button == mouse.Button.middle:
             if not pressed:
                 win32gui.EnumWindows(self.callback,
                                      self.extra)
 
-    def on_release(self, key):
+    def compare_keys_on_release(self, key):
         if hasattr(key, 'char') and key.char == self.key:
             self.released = True
             return False
@@ -94,7 +94,7 @@ def show_hide_window_on_click(gui_callbacks, process, title_regex,
                               callback=show_hide_window):
     gui_callbacks.callback = callback
     gui_callbacks.extra = title_regex
-    with mouse.Listener(on_click=gui_callbacks.on_click) \
+    with mouse.Listener(on_click=gui_callbacks.enumerate_windows_on_click) \
          as listener:
         thread = Thread(target=check_process, args=(process, listener))
         thread.start()
@@ -113,7 +113,8 @@ def wait_for_key(gui_callbacks, key):
         gui_callbacks.key = key
     else:
         gui_callbacks.key = keyboard.Key[key]
-    with keyboard.Listener(on_release=gui_callbacks.on_release) as listener:
+    with keyboard.Listener(on_release=gui_callbacks.compare_keys_on_release) \
+         as listener:
         listener.join()
     if not gui_callbacks.released:
         for _ in range(gui_callbacks.moved_focus):
