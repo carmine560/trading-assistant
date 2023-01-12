@@ -16,6 +16,10 @@ an action consisting of a sequence of commands, this script executes:
     trading
   * manipulating widgets to prepare your order
 
+> **Warning**
+> This script is currently under heavy development.  Changes in the
+> functionality can occur at any time.
+
 ## Prerequisites ##
 
 This script has been tested with [Python for
@@ -137,7 +141,17 @@ login = [
 ]
 ```
 
-#### Example 2: Toggle between Stocks ####
+#### Example 2: Show or Hide Watchlists Window on Middle Click ####
+
+The following example `show_hide_watchlists_on_click` shows or hides
+the Watchlists window on the middle click while Hyper SBI 2 is
+running.
+
+``` python
+show_hide_watchlists_on_click = [('show_hide_window_on_click', '^登録銘柄$')]
+```
+
+#### Example 3: Toggle between Stocks ####
 
 The following example `toggle_between_stocks` toggles between the
 specified stocks.
@@ -159,7 +173,7 @@ toggle_between_stocks = [
 ]
 ```
 
-#### Example 3: Open and Close Long Position ####
+#### Example 4: Open and Close Long Position ####
 
 The following example `open_close_long_position` shows required
 windows, enters the maximum share size, and prepares a buy order.  If
