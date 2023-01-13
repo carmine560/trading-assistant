@@ -72,6 +72,17 @@ def main():
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     config = configure()
+    # TODO
+    # if args.k:
+    config.image_name = \
+        os.path.basename(config['Startup Script']['trading_software'])
+    config.process_name = os.path.splitext(config.image_name)[0]
+    config.path = \
+        os.path.splitext(__file__)[0] + '-' + config.process_name + '.ini'
+    config.read(config.path, encoding='utf-8')
+    config.startup_script = \
+        os.path.splitext(__file__)[0] + '-' + config.process_name + '.ps1'
+
     place_trade = PlaceTrade()
     gui_callbacks = gui_interactions.GuiCallbacks()
 
@@ -103,9 +114,16 @@ def main():
     elif args.e:
         execute_action(config, place_trade, gui_callbacks, args.e)
     elif args.T == 'LIST_ACTIONS':
-        print(os.path.splitext(os.path.basename(__file__))[0])
+        print(os.path.splitext(os.path.basename(config.startup_script))[0])
         configure_option.list_section(config, 'Actions')
     elif args.T:
+        if os.path.exists(config.startup_script):
+            try:
+                os.remove(config.startup_script)
+            except OSError as e:
+                print(e)
+                sys.exit(1)
+
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_option.delete_option(config, 'Actions', args.T)
         file_utilities.delete_shortcut(args.T)
@@ -117,16 +135,16 @@ def main():
         configure_startup_script(config)
         create_startup_script(config)
 
-        basename = os.path.splitext(os.path.basename(__file__))[0]
-        startup_script = os.path.splitext(__file__)[0] + '.ps1'
+        basename = os.path.splitext(os.path.basename(config.startup_script))[0]
         if args.I == 'WITHOUT_HOTKEY':
             file_utilities.create_shortcut(
                 basename, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + startup_script + '"')
+                '-WindowStyle Hidden -File "' + config.startup_script + '"')
         else:
             file_utilities.create_shortcut(
                 basename, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + startup_script + '"', args.I)
+                '-WindowStyle Hidden -File "' + config.startup_script + '"',
+                args.I)
     elif args.H:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_market_holidays(config)
@@ -147,6 +165,7 @@ def main():
         configure_ocr_region(config, 'price_limit_region', args.L)
 
 def configure():
+    # date_format requires the argument interpolation=None.
     config = configparser.ConfigParser(interpolation=None)
     config['Paths'] = {
         'customer_margin_ratios':
@@ -195,8 +214,6 @@ def configure():
     config['Trading'] = {
         'date': str(date.today()),
         'number_of_trades': '0'}
-    config.path = os.path.splitext(__file__)[0] + '.ini'
-    config.read(config.path, encoding='utf-8')
     return config
 
 def create_startup_script(config):
@@ -208,7 +225,6 @@ def create_startup_script(config):
     post_start_arguments = section['post_start_arguments']
     running_options = section['running_options']
 
-    startup_script = os.path.splitext(__file__)[0] + '.ps1'
     if len(pre_start_options):
         pre_start_options = \
             list(map(str.strip, section['pre_start_options'].split(',')))
@@ -219,10 +235,9 @@ def create_startup_script(config):
         running_options = \
             list(map(str.strip, section['running_options'].split(',')))
 
-    with open(startup_script, 'w') as f:
+    with open(config.startup_script, 'w') as f:
         lines = []
-        lines.append('if (Get-Process "'
-                     + os.path.splitext(os.path.basename(trading_software))[0]
+        lines.append('if (Get-Process "' + config.process_name
                      + '" -ErrorAction SilentlyContinue)\n{\n')
         for i in range(len(running_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
@@ -458,9 +473,7 @@ def execute_action(config, place_trade, gui_callbacks, action):
                                                '取引ポップアップ',
                                                '通知設定']
             gui_interactions.show_hide_window_on_click(
-                gui_callbacks,
-                os.path.basename(config['Startup Script']['trading_software']),
-                arguments)
+                gui_callbacks, config.image_name, arguments)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, arguments)
         elif command == 'show_window':
