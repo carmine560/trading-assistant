@@ -131,12 +131,12 @@ login = [
     # locate the Login button in the region, and click it.
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to', None),               # back the cursor to the previous position.
-    ('wait_for_window', '^HYPER SBI 2$'), # wait for the Toolbar.
+    ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
     ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
-    ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
-    ('wait_for_window', '^登録銘柄$'), # wait for the Watchlists window.
+    ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
+    ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
     ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
-    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
+    ('hide_window', '登録銘柄'),     # hide the Watchlists window.
 ]
 ```
 
@@ -147,7 +147,7 @@ the Watchlists window on the middle click while Hyper SBI 2 is
 running.
 
 ``` python
-show_hide_watchlists_on_click = [('show_hide_window_on_click', '^登録銘柄$')]
+show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 ```
 
 #### Example: Toggle between Stocks ####
@@ -157,13 +157,13 @@ specified stocks.
 
 ``` python
 toggle_between_stocks = [
-    ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
-    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
-    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
-    ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
+    ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
+    ('hide_window', '登録銘柄'),     # hide the Watchlists window.
+    ('show_window', '個別チャート\\s.*\\((\\d{4})\\)'), # show the Chart window.
+    ('show_window', '個別銘柄\\s.*\\((\\d{4})\\)'), # show the Summary window.
     ('click', '54, 45'),             # focus on the Symbol text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
+    ('get_symbol', '個別銘柄\\s.*\\((\\d{4})\\)'), # get the symbol from the Summary window.
     ('write_alt_symbol', '8306, 8308'), # write the alternative symbol.
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to', None),               # back the cursor to the previous position.
@@ -181,14 +181,14 @@ the order is placed, then it prepares a sell order for repayment.
 ``` python
 open_close_long_position = [
     # Open a Long Position
-    ('hide_parent_window', '^HYPER SBI 2$'), # hide the Toolbar.
-    ('hide_window', '^登録銘柄$'),   # hide the Watchlists window.
-    ('show_window', '^個別チャート\\s.*\\((\\d{4})\\)$'), # show the Chart window.
-    ('show_window', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # show the Summary window.
+    ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
+    ('hide_window', '登録銘柄'),     # hide the Watchlists window.
+    ('show_window', '個別チャート\\s.*\\((\\d{4})\\)'), # show the Chart window.
+    ('show_window', '個別銘柄\\s.*\\((\\d{4})\\)'), # show the Summary window.
     ('click', '201, 757'),           # select the New Order tab.
     ('click', '531, 823'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    ('get_symbol', '^個別銘柄\\s.*\\((\\d{4})\\)$'), # get the symbol from the Summary window.
+    ('get_symbol', '個別銘柄\\s.*\\((\\d{4})\\)'), # get the symbol from the Summary window.
     ('calculate_share_size', 'long'), # calculate the share size.
     ('write_share_size', None),      # write the calculated share size.
     ('click', '466, 843'),           # click the Market Order button.
@@ -244,21 +244,21 @@ py place_trade.py -e [ACTION]
 
 ### Hyper SBI 2 Window Titles ###
 
-| Window        | Regular Expression for Title    | Shortcut     |
-|---------------|---------------------------------|--------------|
-| Announcements | `^お知らせ$`                    | `Ctrl` + `I` |
-| Summary       | `^個別銘柄\s.*\((\d{4})\)$`     | `Ctrl` + `1` |
-| Watchlists    | `^登録銘柄$`                    | `Ctrl` + `2` |
-| Holdings      | `^保有証券$`                    | `Ctrl` + `3` |
-| Order Status  | `^注文一覧$`                    | `Ctrl` + `4` |
-| Chart         | `^個別チャート\s.*\((\d{4})\)$` | `Ctrl` + `5` |
-| Markets       | `^マーケット$`                  | `Ctrl` + `6` |
-| Rankings      | `^ランキング$`                  | `Ctrl` + `7` |
-| Stock Lists   | `^銘柄一覧$`                    | `Ctrl` + `8` |
-| Account       | `^口座情報$`                    | `Ctrl` + `9` |
-| News          | `^ニュース$`                    | `Ctrl` + `N` |
-| Trading       | `^取引ポップアップ$`            | `Ctrl` + `T` |
-| Notifications | `^通知設定$`                    | `Ctrl` + `G` |
+| Window        | Regular Expression for Title  | Shortcut     |
+|---------------|-------------------------------|--------------|
+| Announcements | `お知らせ`                    | `Ctrl` + `I` |
+| Summary       | `個別銘柄\s.*\((\d{4})\)`     | `Ctrl` + `1` |
+| Watchlists    | `登録銘柄`                    | `Ctrl` + `2` |
+| Holdings      | `保有証券`                    | `Ctrl` + `3` |
+| Order Status  | `注文一覧`                    | `Ctrl` + `4` |
+| Chart         | `個別チャート\s.*\((\d{4})\)` | `Ctrl` + `5` |
+| Markets       | `マーケット`                  | `Ctrl` + `6` |
+| Rankings      | `ランキング`                  | `Ctrl` + `7` |
+| Stock Lists   | `銘柄一覧`                    | `Ctrl` + `8` |
+| Account       | `口座情報`                    | `Ctrl` + `9` |
+| News          | `ニュース`                    | `Ctrl` + `N` |
+| Trading       | `取引ポップアップ`            | `Ctrl` + `T` |
+| Notifications | `通知設定`                    | `Ctrl` + `G` |
 
 ## License ##
 

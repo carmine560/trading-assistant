@@ -16,6 +16,7 @@ class GuiCallbacks:
         self.moved_focus = 0
 
         # enumerate_windows_on_click
+        self.clickable_windows = []
         self.callback = None
         self.extra = ''
 
@@ -29,8 +30,11 @@ class GuiCallbacks:
     def enumerate_windows_on_click(self, x, y, button, pressed):
         if button == mouse.Button.middle:
             if not pressed:
-                win32gui.EnumWindows(self.callback,
-                                     self.extra)
+                current_window = \
+                    win32gui.GetWindowText(win32gui.GetForegroundWindow())
+                for title_regex in self.clickable_windows:
+                    if re.fullmatch(title_regex, current_window):
+                        win32gui.EnumWindows(self.callback, self.extra)
 
     def compare_keys_on_release(self, key):
         if hasattr(key, 'char') and key.char == self.key:
@@ -43,7 +47,7 @@ class GuiCallbacks:
             return False
 
     def check_for_window(self, hwnd, title_regex):
-        if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+        if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
             if win32gui.IsIconic(hwnd):
                 win32gui.ShowWindow(hwnd, 9)
 
@@ -68,23 +72,22 @@ def click_widget(gui_callbacks, image, x, y, width, height):
         pyautogui.click(pyautogui.center(location))
 
 def hide_parent_window(hwnd, title_regex):
-    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+    if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         parent = win32gui.GetParent(hwnd)
         if parent and not win32gui.IsIconic(parent):
             win32gui.ShowWindow(parent, 6)
             return
 
 def hide_window(hwnd, title_regex):
-    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+    if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         if not win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 6)
         return
 
 def show_hide_window(hwnd, title_regex):
-    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+    if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 9)
-            # pywintypes.error: (5, 'SetForegroundWindow', 'Access is denied.')
             win32gui.SetForegroundWindow(hwnd)
         else:
             win32gui.ShowWindow(hwnd, 6)
@@ -101,7 +104,7 @@ def show_hide_window_on_click(gui_callbacks, process, title_regex,
         listener.join()
 
 def show_window(hwnd, title_regex):
-    if re.search(title_regex, str(win32gui.GetWindowText(hwnd))):
+    if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 9)
 

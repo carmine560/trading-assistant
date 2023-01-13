@@ -23,7 +23,7 @@ class PlaceTrade:
         self.share_size = 0
 
     def get_symbol(self, hwnd, title_regex):
-        matched = re.search(title_regex, str(win32gui.GetWindowText(hwnd)))
+        matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
             self.symbol = matched.group(1)
             return
@@ -443,6 +443,20 @@ def execute_action(config, place_trade, gui_callbacks, action):
             if key == 'tab':
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
+            # FIXME
+            gui_callbacks.clickable_windows = ['お知らせ',
+                                               '個別銘柄\s.*\((\d{4})\)',
+                                               '登録銘柄',
+                                               '保有証券',
+                                               '注文一覧',
+                                               '個別チャート\s.*\((\d{4})\)',
+                                               'マーケット',
+                                               'ランキング',
+                                               '銘柄一覧',
+                                               '口座情報',
+                                               'ニュース',
+                                               '取引ポップアップ',
+                                               '通知設定']
             gui_interactions.show_hide_window_on_click(
                 gui_callbacks,
                 os.path.basename(config['Startup Script']['trading_software']),
