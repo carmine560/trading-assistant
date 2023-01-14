@@ -46,20 +46,8 @@ def main():
         '-T', nargs='?', const='LIST_ACTIONS',
         help='delete an action and a shortcut to it')
     parser.add_argument(
-        '-P', action='store_true',
-        help='configure paths')
-    parser.add_argument(
         '-I', nargs='?', const='WITHOUT_HOTKEY',
         help='configure and create a startup script and create a shortcut to it ([hotkey])')
-    parser.add_argument(
-        '-H', action='store_true',
-        help='configure market holidays')
-    parser.add_argument(
-        '-R', action='store_true',
-        help='configure customer margin ratios')
-    parser.add_argument(
-        '-D', action='store_true',
-        help='configure market data')
     parser.add_argument(
         '-B', action='store_true',
         help='configure a cash balance')
@@ -127,9 +115,6 @@ def main():
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_option.delete_option(config, 'Actions', args.T)
         file_utilities.delete_shortcut(args.T)
-    elif args.P:
-        file_utilities.backup_file(config.path, number_of_backups=8)
-        configure_paths(config)
     elif args.I:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_startup_script(config)
@@ -145,15 +130,6 @@ def main():
                 basename, 'powershell.exe',
                 '-WindowStyle Hidden -File "' + config.startup_script + '"',
                 args.I)
-    elif args.H:
-        file_utilities.backup_file(config.path, number_of_backups=8)
-        configure_market_holidays(config)
-    elif args.R:
-        file_utilities.backup_file(config.path, number_of_backups=8)
-        configure_customer_margin_ratios(config)
-    elif args.D:
-        file_utilities.backup_file(config.path, number_of_backups=8)
-        configure_market_data(config)
     elif args.B:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_cash_balance(config)
@@ -167,9 +143,34 @@ def main():
 def configure():
     # date_format requires the argument interpolation=None.
     config = configparser.ConfigParser(interpolation=None)
+    # config['Trading Software'] = {
+    # config['SBI Securities'] = {
+    config['HYPERSBI2'] = {
+        'trading_software':
+        r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
+        'title_case': 'Hyper SBI 2',
+        # ast.literal_eval
+        'clickable_windows': ['お知らせ',                    # Announcements
+                              '個別銘柄\s.*\((\d{4})\)',     # Summary
+                              '登録銘柄',                    # Watchlists
+                              '保有証券',                    # Holdings
+                              '注文一覧',                    # Order Status
+                              '個別チャート\s.*\((\d{4})\)', # Chart
+                              'マーケット',                  # Markets
+                              'ランキング',                  # Rankings
+                              '銘柄一覧',                    # Stock Lists
+                              '口座情報',                    # Account
+                              'ニュース',                    # News
+                              '取引ポップアップ',            # Trading
+                              '通知設定'],                   # Notifications
+        'cash_balance_region': '0, 0, 0, 0, 0',
+        'price_limit_region': '0, 0, 0, 0, 0',
+    }
     config['Paths'] = {
+        # Customer Margin Ratios
         'customer_margin_ratios':
         os.path.join(os.path.dirname(__file__), 'customer_margin_ratios.csv'),
+        # Market Data
         'closing_prices':
         os.path.join(os.path.dirname(__file__), 'closing_prices_')}
     config['Startup Script'] = {
@@ -187,6 +188,8 @@ def configure():
         os.path.join(os.path.dirname(__file__), 'market_holidays.csv'),
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
+    # SBI Securities
+    # config['HYPERSBI2'] = {
     config['Customer Margin Ratios'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
@@ -208,6 +211,7 @@ def configure():
     config['Cash Balance'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0'}
+    # config['HYPERSBI2'] = {
     config['OCR Regions'] = {
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0'}
@@ -509,20 +513,6 @@ def execute_action(config, place_trade, gui_callbacks, action):
         elif command == 'write_share_size':
             pyautogui.write(str(place_trade.share_size))
 
-def configure_paths(config):
-    section = config['Paths']
-    customer_margin_ratios = section['customer_margin_ratios']
-    closing_prices = section['closing_prices']
-
-    section['customer_margin_ratios'] = \
-        input('customer_margin_ratios [' + customer_margin_ratios + '] ') \
-        or customer_margin_ratios
-    section['closing_prices'] = \
-        input('closing_prices [' + closing_prices + '] ') \
-        or closing_prices
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
-
 def configure_startup_script(config):
     section = config['Startup Script']
     pre_start_options = section['pre_start_options']
@@ -550,96 +540,6 @@ def configure_startup_script(config):
     section['running_options'] = \
         input('running_options [' + running_options + '] ') \
         or running_options
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
-
-def configure_market_holidays(config):
-    section = config['Market Holidays']
-    market_holiday_url = section['market_holiday_url']
-    market_holidays = section['market_holidays']
-    date_header = section['date_header']
-    date_format = section['date_format']
-
-    section['market_holiday_url'] = \
-        input('market_holiday_url [' + market_holiday_url + '] ') \
-        or market_holiday_url
-    section['market_holidays'] = \
-        input('market_holidays [' + market_holidays + '] ') \
-        or market_holidays
-    section['date_header'] = \
-        input('date_header [' + date_header + '] ') \
-        or date_header
-    section['date_format'] = \
-        input('date_format [' + date_format + '] ') \
-        or date_format
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
-
-def configure_customer_margin_ratios(config):
-    section = config['Customer Margin Ratios']
-    update_time = section['update_time']
-    time_zone = section['time_zone']
-    customer_margin_ratio_url = section['customer_margin_ratio_url']
-    symbol_header = section['symbol_header']
-    regulation_header = section['regulation_header']
-    header = section['header']
-    customer_margin_ratio = section['customer_margin_ratio']
-    suspended = section['suspended']
-
-    section['update_time'] = \
-        input('update_time [' + update_time + '] ') \
-        or update_time
-    section['time_zone'] = \
-        input('time_zone [' + time_zone + '] ') \
-        or time_zone
-    section['customer_margin_ratio_url'] = \
-        input('customer_margin_ratio_url [' + customer_margin_ratio_url + '] ') \
-        or customer_margin_ratio_url
-    section['symbol_header'] = \
-        input('symbol_header [' + symbol_header + '] ') \
-        or symbol_header
-    section['regulation_header'] = \
-        input('regulation_header [' + regulation_header + '] ') \
-        or regulation_header
-    section['header'] = \
-        input('header [' + header + '] ') \
-        or header
-    section['customer_margin_ratio'] = \
-        input('customer_margin_ratio [' + customer_margin_ratio + '] ') \
-        or customer_margin_ratio
-    section['suspended'] = \
-        input('suspended [' + suspended + '] ') \
-        or suspended
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
-
-def configure_market_data(config):
-    section = config['Market Data']
-    update_time = section['update_time']
-    time_zone = section['time_zone']
-    market_data_url = section['market_data_url']
-    encoding = section['encoding']
-    symbol_header = section['symbol_header']
-    closing_price_header = section['closing_price_header']
-
-    section['update_time'] = \
-        input('update_time [' + update_time + '] ') \
-        or update_time
-    section['time_zone'] = \
-        input('time_zone [' + time_zone + '] ') \
-        or time_zone
-    section['market_data_url'] = \
-        input('market_data_url [' + market_data_url + '] ') \
-        or market_data_url
-    section['encoding'] = \
-        input('encoding [' + encoding + '] ') \
-        or encoding
-    section['symbol_header'] = \
-        input('symbol_header [' + symbol_header + '] ') \
-        or symbol_header
-    section['closing_price_header'] = \
-        input('closing_price_header [' + closing_price_header + '] ') \
-        or closing_price_header
     with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 

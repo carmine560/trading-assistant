@@ -228,12 +228,8 @@ py place_trade.py -e [ACTION]
     shortcut to it
   * `-e [ACTION]` execute an action
   * `-T [ACTION]` delete an action and a shortcut to it
-  * `-P` configure paths
   * `-I [HOTKEY]` configure and create a startup script and create a
     shortcut to it
-  * `-H` configure market holidays
-  * `-R` configure customer margin ratios
-  * `-D` configure market data
   * `-B` configure a cash balance
   * `-C X Y WIDTH HEIGHT INDEX` configure the cash balance region and
     the index of the price
