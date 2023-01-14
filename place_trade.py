@@ -15,6 +15,21 @@ import configure_option
 import file_utilities
 import gui_interactions
 
+class Configuration(configparser.ConfigParser):
+    def __init__(self, process_name):
+        configparser.ConfigParser.__init__(self)
+        self.process_name = process_name
+        self.path = os.path.join(
+            os.path.dirname(__file__), self.process_name,
+            os.path.splitext(os.path.basename(__file__))[0] + '.ini')
+        self.startup_script = os.path.join(
+            os.path.dirname(__file__), self.process_name,
+            os.path.splitext(os.path.basename(__file__))[0] + '.ps1')
+
+    def save(self):
+        with open(self.path, 'w', encoding='utf-8') as f:
+            self.write(f)
+
 class PlaceTrade:
     def __init__(self):
         self.previous_position = pyautogui.position()
@@ -59,22 +74,12 @@ def main():
         help='configure the price limit region and the index of the price (x y width height index)')
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
-    config = configure()
     # TODO
     # if args.k:
-    config.image_name = \
-        os.path.basename(config['Startup Script']['trading_software'])
-    config.process_name = os.path.splitext(config.image_name)[0]
-    config.path = \
-        os.path.join(os.path.dirname(__file__), config.process_name,
-                     os.path.splitext(os.path.basename(__file__))[0] + '.ini')
-    file_utilities.check_parent_directory(config.path)
-    config.read(config.path, encoding='utf-8')
-    config.startup_script = \
-        os.path.join(os.path.dirname(__file__), config.process_name,
-                     os.path.splitext(os.path.basename(__file__))[0] + '.ps1')
-
+    config = configure('HYPERSBI2')
     place_trade = PlaceTrade()
+    # FIXME
+    file_utilities.check_parent_directory(config.path)
     gui_callbacks = gui_interactions.GuiCallbacks()
 
     if args.r:
@@ -91,10 +96,10 @@ def main():
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the argument target_path.
                 if len(args.M) == 1:
-                    # FIXME
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
                         '"' + __file__ + '" -e ' + args.M[0],
+                        # FIXME
                         icon_directory=os.path.dirname(config.path))
                 elif len(args.M) == 2:
                     file_utilities.create_shortcut(
@@ -149,9 +154,8 @@ def main():
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_ocr_region(config, 'price_limit_region', args.L)
 
-def configure():
-    # date_format requires the argument interpolation=None.
-    config = configparser.ConfigParser(interpolation=None)
+def configure(process_name):
+    config = Configuration(process_name)
     config['Market Holidays'] = {
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
@@ -159,12 +163,12 @@ def configure():
         os.path.join(os.path.dirname(__file__), 'market',
                      'market_holidays.csv'),
         'date_header': '日付',
-        'date_format': '%Y/%m/%d'}
+        'date_format': '%%Y/%%m/%%d'}
     config['Market Data'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
         'market_data_url':
-        'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
+        'https://kabudata-dll.com/wp-content/uploads/%%Y/%%m/%%Y%%m%%d.csv',
         'encoding': 'cp932',
         'symbol_header': '銘柄コード',
         'closing_price_header': '終値',
@@ -172,8 +176,6 @@ def configure():
         os.path.join(os.path.dirname(__file__), 'market', 'closing_prices_')}
     config['Startup Script'] = {
         'pre_start_options': '-r, -d',
-        'trading_software':
-        r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
         'post_start_options': '',
         'post_start_path': '',
         'post_start_arguments': '',
@@ -188,10 +190,12 @@ def configure():
         'header': '銘柄, コード, 建玉, 信用取引区分, 規制内容',
         'customer_margin_ratio': '委託保証金率',
         'suspended': '新規建停止',
-        # FIXME
         'customer_margin_ratios':
         os.path.join(os.path.dirname(__file__), 'HYPERSBI2',
                      'customer_margin_ratios.csv'),
+        'path':
+        r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
+        # TODO
         'title_case': 'Hyper SBI 2',
         # ast.literal_eval
         'clickable_windows': ['お知らせ',                    # Announcements
@@ -214,12 +218,12 @@ def configure():
         'utilization_ratio': '1.0',
         'date': str(date.today()),
         'number_of_trades': '0'}
+    config.read(config.path, encoding='utf-8')
     return config
 
 def create_startup_script(config):
     section = config['Startup Script']
     pre_start_options = section['pre_start_options']
-    trading_software = section['trading_software']
     post_start_options = section['post_start_options']
     post_start_path = section['post_start_path']
     post_start_arguments = section['post_start_arguments']
@@ -251,7 +255,9 @@ def create_startup_script(config):
                          + __file__ + '`" ' + pre_start_options[i]
                          + '" -NoNewWindow\n')
 
-        lines.append('    Start-Process "' + trading_software
+        # FIXME
+        lines.append('    Start-Process "'
+                     + config[config.process_name]['path']
                      + '" -NoNewWindow\n')
         for i in range(len(post_start_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
@@ -273,7 +279,7 @@ def save_customer_margin_ratios(config):
     global pd
     import pandas as pd
 
-    section = config['HYPERSBI2']
+    section = config[config.process_name]
     update_time = section['update_time']
     time_zone = section['time_zone']
     customer_margin_ratio_url = section['customer_margin_ratio_url']
@@ -439,8 +445,7 @@ def execute_action(config, place_trade, gui_callbacks, action):
                 section['date'] = str(date.today())
                 section['number_of_trades'] = '1'
 
-            with open(config.path, 'w', encoding='utf-8') as f:
-                config.write(f)
+            config.save()
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trade.get_symbol, arguments)
         elif command == 'hide_parent_window':
@@ -480,7 +485,7 @@ def execute_action(config, place_trade, gui_callbacks, action):
                                                '取引ポップアップ',
                                                '通知設定']
             gui_interactions.show_hide_window_on_click(
-                gui_callbacks, config.image_name, arguments)
+                gui_callbacks, config.process_name + '.exe', arguments)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, arguments)
         elif command == 'show_window':
@@ -519,7 +524,6 @@ def execute_action(config, place_trade, gui_callbacks, action):
 def configure_startup_script(config):
     section = config['Startup Script']
     pre_start_options = section['pre_start_options']
-    trading_software = section['trading_software']
     post_start_options = section['post_start_options']
     post_start_path = section['post_start_path']
     post_start_arguments = section['post_start_arguments']
@@ -528,9 +532,6 @@ def configure_startup_script(config):
     section['pre_start_options'] = \
         input('pre_start_options [' + pre_start_options + '] ') \
         or pre_start_options
-    section['trading_software'] = \
-        input('trading_software [' + trading_software + '] ') \
-        or trading_software
     section['post_start_options'] = \
         input('post_start_options [' + post_start_options + '] ') \
         or post_start_options
@@ -543,8 +544,7 @@ def configure_startup_script(config):
     section['running_options'] = \
         input('running_options [' + running_options + '] ') \
         or running_options
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
+    config.save()
 
 def configure_cash_balance(config):
     section = config['Trading']
@@ -572,25 +572,24 @@ def configure_cash_balance(config):
     else:
         section['utilization_ratio'] = str(utilization_ratio)
 
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
+    config.save()
 
 def configure_ocr_region(config, key, region):
-    config['HYPERSBI2'][key] = ', '.join(region)
-    with open(config.path, 'w', encoding='utf-8') as f:
-        config.write(f)
+    config[config.process_name][key] = ', '.join(region)
+    config.save()
 
 def calculate_share_size(config, place_trade, position):
     fixed_cash_balance = int(config['Trading']['fixed_cash_balance'])
     if fixed_cash_balance > 0:
         place_trade.cash_balance = fixed_cash_balance
     else:
-        region = config['HYPERSBI2']['cash_balance_region'].split(', ')
+        region = config[config.process_name]['cash_balance_region'].split(', ')
         place_trade.cash_balance = get_prices(*region)
 
     customer_margin_ratio = 0.31
     try:
-        with open(config['HYPERSBI2']['customer_margin_ratios'], 'r') as f:
+        with open(config[config.process_name]['customer_margin_ratios'], 'r') \
+             as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == place_trade.symbol:
@@ -717,7 +716,7 @@ def get_price_limit(config, place_trade):
         else:
             price_limit = closing_price + 10000000
     else:
-        region = config['HYPERSBI2']['price_limit_region'].split(', ')
+        region = config[config.process_name]['price_limit_region'].split(', ')
         price_limit = get_prices(*region, False)
     return price_limit
 
