@@ -159,10 +159,12 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-/*.csv
+# place-trade
 /*.ico
 /*.ini
 /*.png
 /*.ps1
+/HYPERSBI2/
 /TAGS
 /backups/
+/market/

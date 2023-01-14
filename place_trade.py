@@ -143,11 +143,46 @@ def main():
 def configure():
     # date_format requires the argument interpolation=None.
     config = configparser.ConfigParser(interpolation=None)
-    # config['Trading Software'] = {
-    # config['SBI Securities'] = {
-    config['HYPERSBI2'] = {
+    config['Market Holidays'] = {
+        'market_holiday_url':
+        'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
+        'market_holidays':
+        os.path.join(os.path.dirname(__file__), 'market',
+                     'market_holidays.csv'),
+        'date_header': '日付',
+        'date_format': '%Y/%m/%d'}
+    config['Market Data'] = {
+        'update_time': '20:00:00',
+        'time_zone': 'Asia/Tokyo',
+        'market_data_url':
+        'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
+        'encoding': 'cp932',
+        'symbol_header': '銘柄コード',
+        'closing_price_header': '終値',
+        'closing_prices':
+        os.path.join(os.path.dirname(__file__), 'market', 'closing_prices_')}
+    config['Startup Script'] = {
+        'pre_start_options': '-r, -d',
         'trading_software':
         r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
+        'post_start_options': '',
+        'post_start_path': '',
+        'post_start_arguments': '',
+        'running_options': ''}
+    config['HYPERSBI2'] = {
+        'update_time': '20:00:00',
+        'time_zone': 'Asia/Tokyo',
+        'customer_margin_ratio_url':
+        'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
+        'symbol_header': 'コード',
+        'regulation_header': '規制内容',
+        'header': '銘柄, コード, 建玉, 信用取引区分, 規制内容',
+        'customer_margin_ratio': '委託保証金率',
+        'suspended': '新規建停止',
+        # FIXME
+        'customer_margin_ratios':
+        os.path.join(os.path.dirname(__file__), 'HYPERSBI2',
+                     'customer_margin_ratios.csv'),
         'title_case': 'Hyper SBI 2',
         # ast.literal_eval
         'clickable_windows': ['お知らせ',                    # Announcements
@@ -164,58 +199,10 @@ def configure():
                               '取引ポップアップ',            # Trading
                               '通知設定'],                   # Notifications
         'cash_balance_region': '0, 0, 0, 0, 0',
-        'price_limit_region': '0, 0, 0, 0, 0',
-    }
-    config['Paths'] = {
-        # Customer Margin Ratios
-        'customer_margin_ratios':
-        os.path.join(os.path.dirname(__file__), 'customer_margin_ratios.csv'),
-        # Market Data
-        'closing_prices':
-        os.path.join(os.path.dirname(__file__), 'closing_prices_')}
-    config['Startup Script'] = {
-        'pre_start_options': '-r, -d',
-        'trading_software':
-        r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
-        'post_start_options': '',
-        'post_start_path': '',
-        'post_start_arguments': '',
-        'running_options': ''}
-    config['Market Holidays'] = {
-        'market_holiday_url':
-        'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
-        'market_holidays':
-        os.path.join(os.path.dirname(__file__), 'market_holidays.csv'),
-        'date_header': '日付',
-        'date_format': '%Y/%m/%d'}
-    # SBI Securities
-    # config['HYPERSBI2'] = {
-    config['Customer Margin Ratios'] = {
-        'update_time': '20:00:00',
-        'time_zone': 'Asia/Tokyo',
-        'customer_margin_ratio_url':
-        'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
-        'symbol_header': 'コード',
-        'regulation_header': '規制内容',
-        'header': '銘柄, コード, 建玉, 信用取引区分, 規制内容',
-        'customer_margin_ratio': '委託保証金率',
-        'suspended': '新規建停止'}
-    config['Market Data'] = {
-        'update_time': '20:00:00',
-        'time_zone': 'Asia/Tokyo',
-        'market_data_url':
-        'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
-        'encoding': 'cp932',
-        'symbol_header': '銘柄コード',
-        'closing_price_header': '終値'}
-    config['Cash Balance'] = {
-        'fixed_cash_balance': '0',
-        'utilization_ratio': '1.0'}
-    # config['HYPERSBI2'] = {
-    config['OCR Regions'] = {
-        'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0'}
     config['Trading'] = {
+        'fixed_cash_balance': '0',
+        'utilization_ratio': '1.0',
         'date': str(date.today()),
         'number_of_trades': '0'}
     return config
@@ -276,7 +263,7 @@ def save_customer_margin_ratios(config):
     global pd
     import pandas as pd
 
-    section = config['Customer Margin Ratios']
+    section = config['HYPERSBI2']
     update_time = section['update_time']
     time_zone = section['time_zone']
     customer_margin_ratio_url = section['customer_margin_ratio_url']
@@ -285,7 +272,7 @@ def save_customer_margin_ratios(config):
     header = section['header']
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
-    customer_margin_ratios = config['Paths']['customer_margin_ratios']
+    customer_margin_ratios = section['customer_margin_ratios']
 
     if get_latest(config, update_time, time_zone, customer_margin_ratios):
         dfs = pd.DataFrame()
@@ -308,6 +295,15 @@ def save_customer_margin_ratios(config):
                                       'suspended', inplace=True, regex=True)
         df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
                                       r'0.\1', inplace=True, regex=True)
+
+        dirname = os.path.dirname(customer_margin_ratios)
+        if not os.path.isdir(dirname):
+            try:
+                os.mkdir(dirname)
+            except OSError as e:
+                print(e)
+                sys.exit(1)
+
         df.to_csv(customer_margin_ratios, header=False, index=False)
 
 def save_market_data(config):
@@ -321,7 +317,7 @@ def save_market_data(config):
     encoding = section['encoding']
     symbol_header = section['symbol_header']
     closing_price_header = section['closing_price_header']
-    closing_prices = config['Paths']['closing_prices']
+    closing_prices = section['closing_prices']
 
     paths = []
     for i in range(1, 10):
@@ -341,6 +337,14 @@ def save_market_data(config):
         df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
         df.dropna(subset=[symbol_header, closing_price_header], inplace=True)
         df.sort_values(by=symbol_header, inplace=True)
+
+        dirname = os.path.dirname(closing_prices)
+        if not os.path.isdir(dirname):
+            try:
+                os.mkdir(dirname)
+            except OSError as e:
+                print(e)
+                sys.exit(1)
         for i in range(1, 10):
             subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
             subset.to_csv(closing_prices + str(i) + '.csv', header=False,
@@ -373,6 +377,15 @@ def get_latest(config, update_time, time_zone, *paths):
         dfs = pd.read_html(market_holiday_url, match=date_header)
         df = pd.concat(dfs)[date_header]
         df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
+
+        dirname = os.path.dirname(market_holidays)
+        if not os.path.isdir(dirname):
+            try:
+                os.mkdir(dirname)
+            except OSError as e:
+                print(e)
+                sys.exit(1)
+
         df.to_csv(market_holidays, header=False, index=False)
 
     oldest_modified_time = pd.Timestamp.now(tz='UTC')
@@ -544,7 +557,7 @@ def configure_startup_script(config):
         config.write(f)
 
 def configure_cash_balance(config):
-    section = config['Cash Balance']
+    section = config['Trading']
     fixed_cash_balance = section['fixed_cash_balance']
     utilization_ratio = section['utilization_ratio']
 
@@ -573,21 +586,21 @@ def configure_cash_balance(config):
         config.write(f)
 
 def configure_ocr_region(config, key, region):
-    config['OCR Regions'][key] = ', '.join(region)
+    config['HYPERSBI2'][key] = ', '.join(region)
     with open(config.path, 'w', encoding='utf-8') as f:
         config.write(f)
 
 def calculate_share_size(config, place_trade, position):
-    fixed_cash_balance = int(config['Cash Balance']['fixed_cash_balance'])
+    fixed_cash_balance = int(config['Trading']['fixed_cash_balance'])
     if fixed_cash_balance > 0:
         place_trade.cash_balance = fixed_cash_balance
     else:
-        region = config['OCR Regions']['cash_balance_region'].split(', ')
+        region = config['HYPERSBI2']['cash_balance_region'].split(', ')
         place_trade.cash_balance = get_prices(*region)
 
     customer_margin_ratio = 0.31
     try:
-        with open(config['Paths']['customer_margin_ratios'], 'r') as f:
+        with open(config['HYPERSBI2']['customer_margin_ratios'], 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == place_trade.symbol:
@@ -602,7 +615,7 @@ def calculate_share_size(config, place_trade, position):
     price_limit = get_price_limit(config, place_trade)
 
     trading_unit = 100
-    utilization_ratio = float(config['Cash Balance']['utilization_ratio'])
+    utilization_ratio = float(config['Trading']['utilization_ratio'])
     share_size = int(place_trade.cash_balance * utilization_ratio
                      / customer_margin_ratio / price_limit / trading_unit) \
                      * trading_unit
@@ -634,8 +647,8 @@ def get_prices(x, y, width, height, index, integer=True):
 def get_price_limit(config, place_trade):
     closing_price = 0.0
     try:
-        with open(config['Paths']['closing_prices'] + place_trade.symbol[0]
-                  + '.csv', 'r') as f:
+        with open(config['Market Data']['closing_prices']
+                  + place_trade.symbol[0] + '.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == place_trade.symbol:
@@ -714,7 +727,7 @@ def get_price_limit(config, place_trade):
         else:
             price_limit = closing_price + 10000000
     else:
-        region = config['OCR Regions']['price_limit_region'].split(', ')
+        region = config['HYPERSBI2']['price_limit_region'].split(', ')
         price_limit = get_prices(*region, False)
     return price_limit
 
