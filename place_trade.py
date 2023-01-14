@@ -66,10 +66,13 @@ def main():
         os.path.basename(config['Startup Script']['trading_software'])
     config.process_name = os.path.splitext(config.image_name)[0]
     config.path = \
-        os.path.splitext(__file__)[0] + '-' + config.process_name + '.ini'
+        os.path.join(os.path.dirname(__file__), config.process_name,
+                     os.path.splitext(os.path.basename(__file__))[0] + '.ini')
+    file_utilities.check_parent_directory(config.path)
     config.read(config.path, encoding='utf-8')
     config.startup_script = \
-        os.path.splitext(__file__)[0] + '-' + config.process_name + '.ps1'
+        os.path.join(os.path.dirname(__file__), config.process_name,
+                     os.path.splitext(os.path.basename(__file__))[0] + '.ps1')
 
     place_trade = PlaceTrade()
     gui_callbacks = gui_interactions.GuiCallbacks()
@@ -88,15 +91,20 @@ def main():
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the argument target_path.
                 if len(args.M) == 1:
+                    # FIXME
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
-                        '"' + __file__ + '" -e ' + args.M[0])
+                        '"' + __file__ + '" -e ' + args.M[0],
+                        icon_directory=os.path.dirname(config.path))
                 elif len(args.M) == 2:
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
-                        '"' + __file__ + '" -e ' + args.M[0], args.M[1])
+                        '"' + __file__ + '" -e ' + args.M[0],
+                        icon_directory=os.path.dirname(config.path),
+                        hotkey=args.M[1])
             else:
-                file_utilities.delete_shortcut(args.M[0])
+                file_utilities.delete_shortcut(args.M[0],
+                                               os.path.dirname(config.path))
     elif args.e == 'LIST_ACTIONS':
         configure_option.list_section(config, 'Actions')
     elif args.e:
@@ -114,7 +122,7 @@ def main():
 
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_option.delete_option(config, 'Actions', args.T)
-        file_utilities.delete_shortcut(args.T)
+        file_utilities.delete_shortcut(args.T, os.path.dirname(config.path))
     elif args.I:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_startup_script(config)
@@ -124,12 +132,13 @@ def main():
         if args.I == 'WITHOUT_HOTKEY':
             file_utilities.create_shortcut(
                 basename, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + config.startup_script + '"')
+                '-WindowStyle Hidden -File "' + config.startup_script + '"',
+                icon_directory=os.path.dirname(config.path))
         else:
             file_utilities.create_shortcut(
                 basename, 'powershell.exe',
                 '-WindowStyle Hidden -File "' + config.startup_script + '"',
-                args.I)
+                icon_directory=os.path.dirname(config.path), hotkey=args.I)
     elif args.B:
         file_utilities.backup_file(config.path, number_of_backups=8)
         configure_cash_balance(config)
@@ -226,6 +235,7 @@ def create_startup_script(config):
         running_options = \
             list(map(str.strip, section['running_options'].split(',')))
 
+    file_utilities.check_parent_directory(config.startup_script)
     with open(config.startup_script, 'w') as f:
         lines = []
         lines.append('if (Get-Process "' + config.process_name
@@ -296,14 +306,7 @@ def save_customer_margin_ratios(config):
         df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
                                       r'0.\1', inplace=True, regex=True)
 
-        dirname = os.path.dirname(customer_margin_ratios)
-        if not os.path.isdir(dirname):
-            try:
-                os.mkdir(dirname)
-            except OSError as e:
-                print(e)
-                sys.exit(1)
-
+        file_utilities.check_parent_directory(customer_margin_ratios)
         df.to_csv(customer_margin_ratios, header=False, index=False)
 
 def save_market_data(config):
@@ -338,13 +341,7 @@ def save_market_data(config):
         df.dropna(subset=[symbol_header, closing_price_header], inplace=True)
         df.sort_values(by=symbol_header, inplace=True)
 
-        dirname = os.path.dirname(closing_prices)
-        if not os.path.isdir(dirname):
-            try:
-                os.mkdir(dirname)
-            except OSError as e:
-                print(e)
-                sys.exit(1)
+        file_utilities.check_parent_directory(closing_prices)
         for i in range(1, 10):
             subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
             subset.to_csv(closing_prices + str(i) + '.csv', header=False,
@@ -378,14 +375,7 @@ def get_latest(config, update_time, time_zone, *paths):
         df = pd.concat(dfs)[date_header]
         df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
 
-        dirname = os.path.dirname(market_holidays)
-        if not os.path.isdir(dirname):
-            try:
-                os.mkdir(dirname)
-            except OSError as e:
-                print(e)
-                sys.exit(1)
-
+        file_utilities.check_parent_directory(market_holidays)
         df.to_csv(market_holidays, header=False, index=False)
 
     oldest_modified_time = pd.Timestamp.now(tz='UTC')

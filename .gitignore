@@ -160,11 +160,6 @@ cython_debug/
 #.idea/
 
 # place-trade
-/*.ico
-/*.ini
-/*.png
-/*.ps1
 /HYPERSBI2/
 /TAGS
-/backups/
 /market/

@@ -8,9 +8,7 @@ def backup_file(source, backup_root=None, number_of_backups=-1):
 
     if os.path.exists(source):
         if not backup_root:
-            backup_root = \
-                os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                             'backups')
+            backup_root = os.path.join(os.path.dirname(source), 'backups')
 
         if number_of_backups:
             if not os.path.isdir(backup_root):
@@ -51,77 +49,16 @@ def backup_file(source, backup_root=None, number_of_backups=-1):
                     print(e)
                     sys.exit(1)
 
-def create_shortcut(basename, target_path, arguments, hotkey=None):
-    import win32com.client
-
-    shell = win32com.client.Dispatch('WScript.Shell')
-    program_group = get_program_group()
-    if not os.path.isdir(program_group):
+def check_parent_directory(path):
+    dirname = os.path.dirname(path)
+    if not os.path.isdir(dirname):
         try:
-            os.mkdir(program_group)
+            os.mkdir(dirname)
         except OSError as e:
             print(e)
             sys.exit(1)
 
-    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
-    shortcut = shell.CreateShortCut(os.path.join(program_group,
-                                                 title + '.lnk'))
-    shortcut.WindowStyle = 7
-    shortcut.IconLocation = create_icon(basename)
-    shortcut.TargetPath = target_path
-    shortcut.Arguments = arguments
-    shortcut.WorkingDirectory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    if hotkey:
-        shortcut.Hotkey = 'CTRL+ALT+' + hotkey
-
-    shortcut.save()
-
-def delete_shortcut(basename):
-    icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                        basename + '.ico')
-    if os.path.exists(icon):
-        try:
-            os.remove(icon)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
-    program_group = get_program_group()
-    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
-    shortcut = os.path.join(program_group, title + '.lnk')
-    if os.path.exists(shortcut):
-        try:
-            os.remove(shortcut)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-    if os.path.isdir(program_group) and not os.listdir(program_group):
-        try:
-            os.rmdir(program_group)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
-    # FIXME
-    taskbar = os.path.expandvars(r'$APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar')
-    pinned_shortcut = os.path.join(taskbar, title + '.lnk')
-    if os.path.exists(pinned_shortcut):
-        try:
-            os.remove(pinned_shortcut)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
-def get_program_group():
-    import win32com.client
-
-    shell = win32com.client.Dispatch('WScript.Shell')
-    basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
-    program_group = os.path.join(shell.SpecialFolders('Programs'), title)
-    return program_group
-
-def create_icon(basename):
+def create_icon(basename, icon_directory=None):
     import winreg
 
     from PIL import Image, ImageDraw, ImageFont
@@ -179,7 +116,86 @@ def create_icon(basename):
                    image_height - text_height), lower, font=font,
                   fill=fill)
 
-    icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                        basename + '.ico')
+    if icon_directory:
+        icon = os.path.join(icon_directory, basename + '.ico')
+    else:
+        icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                            basename + '.ico')
+
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
+
+def create_shortcut(basename, target_path, arguments, icon_directory=None,
+                    hotkey=None):
+    import win32com.client
+
+    shell = win32com.client.Dispatch('WScript.Shell')
+    program_group = get_program_group()
+    if not os.path.isdir(program_group):
+        try:
+            os.mkdir(program_group)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+    shortcut = shell.CreateShortCut(os.path.join(program_group,
+                                                 title + '.lnk'))
+    shortcut.WindowStyle = 7
+    shortcut.IconLocation = create_icon(basename,
+                                        icon_directory=icon_directory)
+    shortcut.TargetPath = target_path
+    shortcut.Arguments = arguments
+    shortcut.WorkingDirectory = os.path.dirname(os.path.abspath(sys.argv[0]))
+    if hotkey:
+        shortcut.Hotkey = 'CTRL+ALT+' + hotkey
+
+    shortcut.save()
+
+def delete_shortcut(basename, icon_directory=None):
+    if icon_directory:
+        icon = os.path.join(icon_directory, basename + '.ico')
+    else:
+        icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                            basename + '.ico')
+    if os.path.exists(icon):
+        try:
+            os.remove(icon)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+    program_group = get_program_group()
+    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+    shortcut = os.path.join(program_group, title + '.lnk')
+    if os.path.exists(shortcut):
+        try:
+            os.remove(shortcut)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+    if os.path.isdir(program_group) and not os.listdir(program_group):
+        try:
+            os.rmdir(program_group)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+    # FIXME
+    taskbar = os.path.expandvars(r'$APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar')
+    pinned_shortcut = os.path.join(taskbar, title + '.lnk')
+    if os.path.exists(pinned_shortcut):
+        try:
+            os.remove(pinned_shortcut)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+def get_program_group():
+    import win32com.client
+
+    shell = win32com.client.Dispatch('WScript.Shell')
+    basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+    program_group = os.path.join(shell.SpecialFolders('Programs'), title)
+    return program_group
