@@ -127,15 +127,15 @@ The following example `show_hide_watchlists_on_click` shows or hides
 the Watchlists window on the middle click while Hyper SBI 2 is
 running.
 
-> **Note** This example contains no coordinates or images and can be
-> tested immediately in many environments.
-
 ``` python
 show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 ```
 
+> **Note** This example contains no coordinates or images and can be
+> tested immediately in many environments.
+
 ![A screenshot of Windows Terminal where place_trade.py -M was
-executed.](https://dl.dropboxusercontent.com/s/xu2xrjx5mzm7s9n/20230115T170947.png)
+executed.](https://dl.dropboxusercontent.com/s/kxg7uwevaguyykr/20230115T220145.png)
 
 #### Example: Login ####
 

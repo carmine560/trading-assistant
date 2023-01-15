@@ -4,29 +4,40 @@ def list_section(config, section):
             print(key)
 
 def modify_tuple_list(config, section, option, positioning_keys=[]):
+    import ast
+
     create = False
     if not config.has_section(section):
         config[section] = {}
     if not config.has_option(section, option):
         create = True
         config[section][option] = '[]'
-        i = -1
-    else:
-        i = 0
 
-    tuple_list = eval(config[section][option])
-    while i < len(tuple_list):
+    i = 0
+    tuple_list = ast.literal_eval(config[section][option])
+    while i <= len(tuple_list):
         if create:
             answer = input('[i]nsert/[q]uit: ').lower()
+            if not answer[0] in 'iq':
+                answer = ''
         else:
-            print(tuple_list[i])
-            answer = \
-                input('[i]nsert/[m]odify/[a]ppend/[d]elete/[q]uit: ').lower()
+            if i < len(tuple_list):
+                print(tuple_list[i])
+                answer = \
+                    input('[i]nsert/[m]odify/[d]elete/[q]uit: ').lower()
+                if not answer[0] in 'imdq':
+                    answer = ''
+            else:
+                print('end of list')
+                answer = input('[i]nsert/[q]uit: ').lower()
+                if not answer[0] in 'iq':
+                    answer = ''
 
         if len(answer):
-            if answer[0] == 'i' or answer[0] == 'a':
+            if answer[0] == 'i':
                 key = input('key: ')
-                if any(i == key for i in positioning_keys):
+                if any(key == positioning_key
+                       for positioning_key in positioning_keys):
                     value = input('input/[c]lick: ')
                     if len(value) and value[0].lower() == 'c':
                         value = configure_position()
@@ -34,9 +45,6 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
                     value = input('value: ')
                 if len(value) == 0 or value == 'None':
                     value = None
-                if answer[0] == 'a':
-                    # FIXME
-                    i += 1
 
                 tuple_list.insert(i, (key, value))
             elif answer[0] == 'm':
