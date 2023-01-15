@@ -49,15 +49,6 @@ def backup_file(source, backup_root=None, number_of_backups=-1):
                     print(e)
                     sys.exit(1)
 
-def check_parent_directory(path):
-    dirname = os.path.dirname(path)
-    if not os.path.isdir(dirname):
-        try:
-            os.mkdir(dirname)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
 def create_icon(basename, icon_directory=None):
     import winreg
 

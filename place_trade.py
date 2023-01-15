@@ -16,18 +16,22 @@ import file_utilities
 import gui_interactions
 
 class Configuration(configparser.ConfigParser):
-    def __init__(self, process_name):
-        configparser.ConfigParser.__init__(self)
+    def __init__(self, process_name, **kwargs):
+        self.market_directory = os.path.join(os.path.dirname(__file__),
+                                             'market')
         self.process_name = process_name
-        self.path = os.path.join(
-            os.path.dirname(__file__), self.process_name,
+        self.config_directory = os.path.join(os.path.dirname(__file__),
+                                             self.process_name)
+        self.config_path = os.path.join(
+            self.config_directory,
             os.path.splitext(os.path.basename(__file__))[0] + '.ini')
         self.startup_script = os.path.join(
-            os.path.dirname(__file__), self.process_name,
+            self.config_directory,
             os.path.splitext(os.path.basename(__file__))[0] + '.ps1')
+        configparser.ConfigParser.__init__(self, **kwargs)
 
     def save(self):
-        with open(self.path, 'w', encoding='utf-8') as f:
+        with open(self.config_path, 'w', encoding='utf-8') as f:
             self.write(f)
 
 class PlaceTrade:
@@ -78,8 +82,6 @@ def main():
     # if args.k:
     config = configure('HYPERSBI2')
     place_trade = PlaceTrade()
-    # FIXME
-    file_utilities.check_parent_directory(config.path)
     gui_callbacks = gui_interactions.GuiCallbacks()
 
     if args.r:
@@ -90,7 +92,7 @@ def main():
         if len(args.M) == 0:
             configure_option.list_section(config, 'Actions')
         else:
-            file_utilities.backup_file(config.path, number_of_backups=8)
+            file_utilities.backup_file(config.config_path, number_of_backups=8)
             if configure_option.modify_tuple_list(config, 'Actions', args.M[0],
                                                   ['click', 'move_to']):
                 # To pin the shortcut to the Taskbar, specify an
@@ -99,17 +101,16 @@ def main():
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
                         '"' + __file__ + '" -e ' + args.M[0],
-                        # FIXME
-                        icon_directory=os.path.dirname(config.path))
+                        icon_directory=config.config_directory)
                 elif len(args.M) == 2:
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
                         '"' + __file__ + '" -e ' + args.M[0],
-                        icon_directory=os.path.dirname(config.path),
+                        icon_directory=config.config_directory,
                         hotkey=args.M[1])
             else:
                 file_utilities.delete_shortcut(args.M[0],
-                                               os.path.dirname(config.path))
+                                               config.config_directory)
     elif args.e == 'LIST_ACTIONS':
         configure_option.list_section(config, 'Actions')
     elif args.e:
@@ -125,11 +126,11 @@ def main():
                 print(e)
                 sys.exit(1)
 
-        file_utilities.backup_file(config.path, number_of_backups=8)
+        file_utilities.backup_file(config.config_path, number_of_backups=8)
         configure_option.delete_option(config, 'Actions', args.T)
-        file_utilities.delete_shortcut(args.T, os.path.dirname(config.path))
+        file_utilities.delete_shortcut(args.T, config.config_directory)
     elif args.I:
-        file_utilities.backup_file(config.path, number_of_backups=8)
+        file_utilities.backup_file(config.config_path, number_of_backups=8)
         configure_startup_script(config)
         create_startup_script(config)
 
@@ -138,42 +139,45 @@ def main():
             file_utilities.create_shortcut(
                 basename, 'powershell.exe',
                 '-WindowStyle Hidden -File "' + config.startup_script + '"',
-                icon_directory=os.path.dirname(config.path))
+                icon_directory=config.config_directory)
         else:
             file_utilities.create_shortcut(
                 basename, 'powershell.exe',
                 '-WindowStyle Hidden -File "' + config.startup_script + '"',
-                icon_directory=os.path.dirname(config.path), hotkey=args.I)
+                icon_directory=config.config_directory, hotkey=args.I)
     elif args.B:
-        file_utilities.backup_file(config.path, number_of_backups=8)
+        file_utilities.backup_file(config.config_path, number_of_backups=8)
         configure_cash_balance(config)
     elif args.C:
-        file_utilities.backup_file(config.path, number_of_backups=8)
+        file_utilities.backup_file(config.config_path, number_of_backups=8)
         configure_ocr_region(config, 'cash_balance_region', args.C)
     elif args.L:
-        file_utilities.backup_file(config.path, number_of_backups=8)
+        file_utilities.backup_file(config.config_path, number_of_backups=8)
         configure_ocr_region(config, 'price_limit_region', args.L)
 
 def configure(process_name):
-    config = Configuration(process_name)
+    config = Configuration(process_name,
+                           interpolation=configparser.ExtendedInterpolation())
+    config['Common'] = {
+        'market_directory': config.market_directory,
+        'config_directory': config.config_directory}
     config['Market Holidays'] = {
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'market_holidays':
-        os.path.join(os.path.dirname(__file__), 'market',
-                     'market_holidays.csv'),
+        os.path.join('${Common:market_directory}', 'market_holidays.csv'),
         'date_header': '日付',
-        'date_format': '%%Y/%%m/%%d'}
+        'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
         'market_data_url':
-        'https://kabudata-dll.com/wp-content/uploads/%%Y/%%m/%%Y%%m%%d.csv',
+        'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
         'encoding': 'cp932',
         'symbol_header': '銘柄コード',
         'closing_price_header': '終値',
         'closing_prices':
-        os.path.join(os.path.dirname(__file__), 'market', 'closing_prices_')}
+        os.path.join('${Common:market_directory}', 'closing_prices_')}
     config['Startup Script'] = {
         'pre_start_options': '-r, -d',
         'post_start_options': '',
@@ -191,10 +195,10 @@ def configure(process_name):
         'customer_margin_ratio': '委託保証金率',
         'suspended': '新規建停止',
         'customer_margin_ratios':
-        os.path.join(os.path.dirname(__file__), 'HYPERSBI2',
+        os.path.join('${Common:config_directory}',
                      'customer_margin_ratios.csv'),
-        'path':
-        r'${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
+        'executable':
+        r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
         # TODO
         'title_case': 'Hyper SBI 2',
         # ast.literal_eval
@@ -218,7 +222,16 @@ def configure(process_name):
         'utilization_ratio': '1.0',
         'date': str(date.today()),
         'number_of_trades': '0'}
-    config.read(config.path, encoding='utf-8')
+    config.read(config.config_path, encoding='utf-8')
+    for directory in [config['Common']['market_directory'],
+                      config['Common']['config_directory']]:
+        if not os.path.isdir(directory):
+            try:
+                os.mkdir(directory)
+            except OSError as e:
+                print(e)
+                sys.exit(1)
+
     return config
 
 def create_startup_script(config):
@@ -239,7 +252,6 @@ def create_startup_script(config):
         running_options = \
             list(map(str.strip, section['running_options'].split(',')))
 
-    file_utilities.check_parent_directory(config.startup_script)
     with open(config.startup_script, 'w') as f:
         lines = []
         lines.append('if (Get-Process "' + config.process_name
@@ -255,9 +267,8 @@ def create_startup_script(config):
                          + __file__ + '`" ' + pre_start_options[i]
                          + '" -NoNewWindow\n')
 
-        # FIXME
         lines.append('    Start-Process "'
-                     + config[config.process_name]['path']
+                     + config[config.process_name]['executable']
                      + '" -NoNewWindow\n')
         for i in range(len(post_start_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
@@ -312,7 +323,6 @@ def save_customer_margin_ratios(config):
         df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
                                       r'0.\1', inplace=True, regex=True)
 
-        file_utilities.check_parent_directory(customer_margin_ratios)
         df.to_csv(customer_margin_ratios, header=False, index=False)
 
 def save_market_data(config):
@@ -347,7 +357,6 @@ def save_market_data(config):
         df.dropna(subset=[symbol_header, closing_price_header], inplace=True)
         df.sort_values(by=symbol_header, inplace=True)
 
-        file_utilities.check_parent_directory(closing_prices)
         for i in range(1, 10):
             subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
             subset.to_csv(closing_prices + str(i) + '.csv', header=False,
@@ -381,7 +390,6 @@ def get_latest(config, update_time, time_zone, *paths):
         df = pd.concat(dfs)[date_header]
         df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
 
-        file_utilities.check_parent_directory(market_holidays)
         df.to_csv(market_holidays, header=False, index=False)
 
     oldest_modified_time = pd.Timestamp.now(tz='UTC')

@@ -121,6 +121,19 @@ ACTION = [
 ]
 ```
 
+#### Example: Show or Hide Watchlists Window on Middle Click ####
+
+The following example `show_hide_watchlists_on_click` shows or hides
+the Watchlists window on the middle click while Hyper SBI 2 is
+running.
+
+> **Note** This example contains no coordinates or images and can be
+> tested immediately in many environments.
+
+``` python
+show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
+```
+
 #### Example: Login ####
 
 The following example `login` waits for the Login window to show and
@@ -132,22 +145,12 @@ login = [
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to', None),               # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.8'),      # wait for 0.8 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.8'),      # wait for 0.8 seconds.
     ('hide_window', '登録銘柄'),     # hide the Watchlists window.
 ]
-```
-
-#### Example: Show or Hide Watchlists Window on Middle Click ####
-
-The following example `show_hide_watchlists_on_click` shows or hides
-the Watchlists window on the middle click while Hyper SBI 2 is
-running.
-
-``` python
-show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 ```
 
 #### Example: Toggle between Stocks ####
