@@ -64,7 +64,7 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
 
     if len(tuple_list):
         config[section][option] = str(tuple_list)
-        with open(config.path, 'w', encoding='utf-8') as f:
+        with open(config.config_path, 'w', encoding='utf-8') as f:
             config.write(f)
         return True
     else:
@@ -73,7 +73,7 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
 def delete_option(config, section, option):
     if config.has_option(section, option):
         config.remove_option(section, option)
-        with open(config.path, 'w', encoding='utf-8') as f:
+        with open(config.config_path, 'w', encoding='utf-8') as f:
             config.write(f)
 
 def configure_position():

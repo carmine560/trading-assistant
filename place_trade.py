@@ -17,20 +17,19 @@ import gui_interactions
 
 class Configuration(configparser.ConfigParser):
     def __init__(self, process_name, **kwargs):
-        self.market_directory = os.path.join(os.path.dirname(__file__),
-                                             'market')
+        script_directory = os.path.dirname(__file__)
+        self.market_directory = os.path.join(script_directory, 'market')
         self.process_name = process_name
-        self.config_directory = os.path.join(os.path.dirname(__file__),
+        self.config_directory = os.path.join(script_directory,
                                              self.process_name)
-        self.config_path = os.path.join(
-            self.config_directory,
-            os.path.splitext(os.path.basename(__file__))[0] + '.ini')
-        self.startup_script = os.path.join(
-            self.config_directory,
-            os.path.splitext(os.path.basename(__file__))[0] + '.ps1')
+        script_base = os.path.splitext(os.path.basename(__file__))[0]
+        self.config_path = os.path.join(self.config_directory,
+                                        script_base + '.ini')
+        self.startup_script = os.path.join(self.config_directory,
+                                           script_base + '.ps1')
         configparser.ConfigParser.__init__(self, **kwargs)
 
-    def save(self):
+    def write_config(self):
         with open(self.config_path, 'w', encoding='utf-8') as f:
             self.write(f)
 
@@ -57,7 +56,8 @@ def main():
         help='save the previous market data')
     parser.add_argument(
         '-M', nargs='*',
-        help='create or modify an action and create a shortcut to it ([action [hotkey]])')
+        help=('create or modify an action and create a shortcut to it '
+              '([action [hotkey]])'))
     parser.add_argument(
         '-e', nargs='?', const='LIST_ACTIONS',
         help='execute an action')
@@ -66,16 +66,19 @@ def main():
         help='delete an action and a shortcut to it')
     parser.add_argument(
         '-I', nargs='?', const='WITHOUT_HOTKEY',
-        help='configure and create a startup script and create a shortcut to it ([hotkey])')
+        help=('configure and create a startup script '
+              'and create a shortcut to it ([hotkey])'))
     parser.add_argument(
         '-B', action='store_true',
         help='configure a cash balance')
     parser.add_argument(
         '-C', nargs=5,
-        help='configure the cash balance region and the index of the price (x y width height index)')
+        help=('configure the cash balance region and the index of the price '
+              '(x y width height index)'))
     parser.add_argument(
         '-L', nargs=5,
-        help='configure the price limit region and the index of the price (x y width height index)')
+        help=('configure the price limit region and the index of the price '
+              '(x y width height index)'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     # TODO
@@ -201,7 +204,6 @@ def configure(process_name):
         r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
         # TODO
         'title_case': 'Hyper SBI 2',
-        # ast.literal_eval
         'clickable_windows': ['お知らせ',                    # Announcements
                               '個別銘柄\s.*\((\d{4})\)',     # Summary
                               '登録銘柄',                    # Watchlists
@@ -418,6 +420,8 @@ def get_latest(config, update_time, time_zone, *paths):
         return latest
 
 def execute_action(config, place_trade, gui_callbacks, action):
+    import ast
+
     commands = eval(config['Actions'][action])
     for i in range(len(commands)):
         command = commands[i][0]
@@ -453,7 +457,7 @@ def execute_action(config, place_trade, gui_callbacks, action):
                 section['date'] = str(date.today())
                 section['number_of_trades'] = '1'
 
-            config.save()
+            config.write_config()
         elif command == 'get_symbol':
             win32gui.EnumWindows(place_trade.get_symbol, arguments)
         elif command == 'hide_parent_window':
@@ -478,20 +482,8 @@ def execute_action(config, place_trade, gui_callbacks, action):
             if key == 'tab':
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
-            # FIXME
-            gui_callbacks.clickable_windows = ['お知らせ',
-                                               '個別銘柄\s.*\((\d{4})\)',
-                                               '登録銘柄',
-                                               '保有証券',
-                                               '注文一覧',
-                                               '個別チャート\s.*\((\d{4})\)',
-                                               'マーケット',
-                                               'ランキング',
-                                               '銘柄一覧',
-                                               '口座情報',
-                                               'ニュース',
-                                               '取引ポップアップ',
-                                               '通知設定']
+            gui_callbacks.clickable_windows = ast.literal_eval(
+                config[config.process_name]['clickable_windows'])
             gui_interactions.show_hide_window_on_click(
                 gui_callbacks, config.process_name + '.exe', arguments)
         elif command == 'show_hide_window':
@@ -552,7 +544,7 @@ def configure_startup_script(config):
     section['running_options'] = \
         input('running_options [' + running_options + '] ') \
         or running_options
-    config.save()
+    config.write_config()
 
 def configure_cash_balance(config):
     section = config['Trading']
@@ -580,11 +572,11 @@ def configure_cash_balance(config):
     else:
         section['utilization_ratio'] = str(utilization_ratio)
 
-    config.save()
+    config.write_config()
 
 def configure_ocr_region(config, key, region):
     config[config.process_name][key] = ', '.join(region)
-    config.save()
+    config.write_config()
 
 def calculate_share_size(config, place_trade, position):
     fixed_cash_balance = int(config['Trading']['fixed_cash_balance'])
