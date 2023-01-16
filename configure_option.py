@@ -5,6 +5,7 @@ def list_section(config, section):
 
 def modify_tuple_list(config, section, option, positioning_keys=[]):
     import ast
+    import os
 
     create = False
     if not config.has_section(section):
@@ -15,6 +16,7 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
 
     i = 0
     tuple_list = ast.literal_eval(config[section][option])
+    os.system('color')
     while i <= len(tuple_list):
         if create:
             answer = tidy_answer(['insert', 'quit'])
@@ -72,8 +74,6 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
         delete_option(config, section, option)
 
 def tidy_answer(answer_list):
-    import sys
-
     abbreviation = ''
     previous_abbreviation = ''
     for word_index, word in enumerate(answer_list):
@@ -83,12 +83,14 @@ def tidy_answer(answer_list):
                 abbreviation = abbreviation + mnemonics.lower()
                 break
         if abbreviation == previous_abbreviation:
+            import sys
+
             print('undetermined mnemonics')
             sys.exit(1)
         else:
             previous_abbreviation = abbreviation
-            highlighted_word = word.replace(mnemonics, '[' + mnemonics + ']',
-                                            1)
+            highlighted_word = word.replace(
+                mnemonics, '\033[1m' + mnemonics + '\033[m', 1)
             if word_index == 0:
                 prompt = highlighted_word
             elif word_index == len(answer_list) - 1:
@@ -100,12 +102,6 @@ def tidy_answer(answer_list):
     if answer and not answer[0] in abbreviation:
         answer = ''
     return answer
-
-def delete_option(config, section, option):
-    if config.has_option(section, option):
-        config.remove_option(section, option)
-        with open(config.config_path, 'w', encoding='utf-8') as f:
-            config.write(f)
 
 def configure_position():
     import time
@@ -127,3 +123,9 @@ def configure_position():
         time.sleep(0.001)
 
     return coordinates
+
+def delete_option(config, section, option):
+    if config.has_option(section, option):
+        config.remove_option(section, option)
+        with open(config.config_path, 'w', encoding='utf-8') as f:
+            config.write(f)
