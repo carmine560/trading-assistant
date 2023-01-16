@@ -76,14 +76,14 @@ def modify_tuple_list(config, section, option, key_prompt='key',
 
     if len(tuple_list):
         config[section][option] = str(tuple_list)
-        with open(config.config_path, 'w', encoding='utf-8') as f:
-            config.write(f)
+        config.write_config()
         return True
     else:
         delete_option(config, section, option)
 
 def tidy_answer(answer_list):
     abbreviation = ''
+
     previous_abbreviation = ''
     for word_index, word in enumerate(answer_list):
         for char_index in range(len(word)):
@@ -140,5 +140,4 @@ def configure_position():
 def delete_option(config, section, option):
     if config.has_option(section, option):
         config.remove_option(section, option)
-        with open(config.config_path, 'w', encoding='utf-8') as f:
-            config.write(f)
+        config.write_config()
