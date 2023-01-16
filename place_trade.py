@@ -63,7 +63,7 @@ def main():
         help='execute an action')
     parser.add_argument(
         '-T', nargs='?', const='LIST_ACTIONS',
-        help='delete an action and a shortcut to it')
+        help='delete a startup script or an action and a shortcut to it')
     parser.add_argument(
         '-I', nargs='?', const='WITHOUT_HOTKEY',
         help=('configure and create a startup script '

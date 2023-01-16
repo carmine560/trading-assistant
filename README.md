@@ -233,7 +233,8 @@ py place_trade.py -e [ACTION]
   * `-M [ACTION [HOTKEY]]` create or modify an action and create a
     shortcut to it
   * `-e [ACTION]` execute an action
-  * `-T [ACTION]` delete an action and a shortcut to it
+  * `-T [ACTION]` delete a startup script or an action and a shortcut
+    to it
   * `-I [HOTKEY]` configure and create a startup script and create a
     shortcut to it
   * `-B` configure a cash balance
