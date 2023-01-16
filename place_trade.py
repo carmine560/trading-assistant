@@ -22,11 +22,11 @@ class Configuration(configparser.ConfigParser):
         self.process_name = process_name
         self.config_directory = os.path.join(script_directory,
                                              self.process_name)
-        script_base = os.path.splitext(os.path.basename(__file__))[0]
+        self.script_base = os.path.splitext(os.path.basename(__file__))[0]
         self.config_path = os.path.join(self.config_directory,
-                                        script_base + '.ini')
+                                        self.script_base + '.ini')
         self.startup_script = os.path.join(self.config_directory,
-                                           script_base + '.ps1')
+                                           self.script_base + '.ps1')
         configparser.ConfigParser.__init__(self, **kwargs)
 
     def write_config(self):
@@ -119,33 +119,35 @@ def main():
     elif args.e:
         execute_action(config, place_trade, gui_callbacks, args.e)
     elif args.T == 'LIST_ACTIONS':
-        print(os.path.splitext(os.path.basename(config.startup_script))[0])
-        configure_option.list_section(config, 'Actions')
-    elif args.T:
         if os.path.exists(config.startup_script):
+            print(config.script_base)
+            configure_option.list_section(config, 'Actions')
+    elif args.T:
+        if args.T == config.script_base \
+           and os.path.exists(config.startup_script):
             try:
                 os.remove(config.startup_script)
             except OSError as e:
                 print(e)
                 sys.exit(1)
+        else:
+            file_utilities.backup_file(config.config_path, number_of_backups=8)
+            configure_option.delete_option(config, 'Actions', args.T)
 
-        file_utilities.backup_file(config.config_path, number_of_backups=8)
-        configure_option.delete_option(config, 'Actions', args.T)
         file_utilities.delete_shortcut(args.T, config.config_directory)
     elif args.I:
         file_utilities.backup_file(config.config_path, number_of_backups=8)
         configure_startup_script(config)
         create_startup_script(config)
 
-        basename = os.path.splitext(os.path.basename(config.startup_script))[0]
         if args.I == 'WITHOUT_HOTKEY':
             file_utilities.create_shortcut(
-                basename, 'powershell.exe',
+                config.script_base, 'powershell.exe',
                 '-WindowStyle Hidden -File "' + config.startup_script + '"',
                 icon_directory=config.config_directory)
         else:
             file_utilities.create_shortcut(
-                basename, 'powershell.exe',
+                config.script_base, 'powershell.exe',
                 '-WindowStyle Hidden -File "' + config.startup_script + '"',
                 icon_directory=config.config_directory, hotkey=args.I)
     elif args.B:
