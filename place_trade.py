@@ -97,8 +97,11 @@ def main():
             configure_option.list_section(config, 'Actions')
         else:
             file_utilities.backup_file(config.config_path, number_of_backups=8)
-            if configure_option.modify_tuple_list(config, 'Actions', args.M[0],
-                                                  ['click', 'move_to']):
+            if configure_option.modify_tuple_list(
+                    config, 'Actions', args.M[0], key_prompt='command',
+                    value_prompt='arguments',
+                    end_of_list_prompt='end of commands',
+                    positioning_keys=['click', 'move_to']):
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the argument target_path.
                 if len(args.M) == 1:

@@ -5,7 +5,9 @@ def list_section(config, section):
         for key in config[section]:
             print(key)
 
-def modify_tuple_list(config, section, option, positioning_keys=[]):
+def modify_tuple_list(config, section, option, key_prompt='key',
+                      value_prompt='value', end_of_list_prompt='end of list',
+                      positioning_keys=[]):
     import ast
     import os
 
@@ -28,19 +30,21 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
                 print(tuple_list[i])
                 answer = tidy_answer(['insert', 'modify', 'delete', 'quit'])
             else:
-                print('end of list')
+                print(end_of_list_prompt)
                 answer = tidy_answer(['insert', 'quit'])
 
+        # TODO
         if len(answer):
             if answer[0] == 'i':
-                key = input('key: ')
+                key = input(key_prompt + ': ')
+                # TODO
                 if any(key == positioning_key
                        for positioning_key in positioning_keys):
                     value = input('input/[c]lick: ')
                     if len(value) and value[0].lower() == 'c':
                         value = configure_position()
                 else:
-                    value = input('value: ')
+                    value = input(value_prompt + ': ')
                 if len(value) == 0 or value == 'None':
                     value = None
 
@@ -48,14 +52,16 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
             elif answer[0] == 'm':
                 key = tuple_list[i][0]
                 value = tuple_list[i][1]
-                key = input('key [' + str(key) + '] ') or key
+                key = input(key_prompt + ' [' + str(key) + '] ') or key
+                # TODO
                 if any(i == key for i in positioning_keys):
                     value = input('input/[c]lick [' + str(value) + '] ') \
                         or value
                     if len(value) and value[0].lower() == 'c':
                         value = configure_position()
                 else:
-                    value = input('value [' + str(value) + '] ') or value
+                    value = input(value_prompt + ' [' + str(value) + '] ') \
+                        or value
                 if len(value) == 0 or value == 'None':
                     value = None
 
@@ -102,6 +108,12 @@ def tidy_answer(answer_list):
     answer = input(prompt).lower()
     if answer and not answer[0] in abbreviation:
         answer = ''
+
+    # TODO
+    # restore answer
+    # else:
+    #     for char_index in abbreviation:
+    #         if answer == abbreviation
     return answer
 
 def configure_position():
