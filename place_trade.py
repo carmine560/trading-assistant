@@ -57,28 +57,29 @@ def main():
     parser.add_argument(
         '-M', nargs='*',
         help=('create or modify an action and create a shortcut to it '
-              '([action [hotkey]])'))
+              '([ACTION [HOTKEY]])'))
     parser.add_argument(
         '-e', nargs='?', const='LIST_ACTIONS',
         help='execute an action')
     parser.add_argument(
         '-T', nargs='?', const='LIST_ACTIONS',
-        help='delete a startup script or an action and a shortcut to it')
+        help=('delete a startup script or an action and a shortcut to it '
+              '([SCRIPT_BASE | ACTION])'))
     parser.add_argument(
         '-I', nargs='?', const='WITHOUT_HOTKEY',
-        help=('configure and create a startup script '
-              'and create a shortcut to it ([hotkey])'))
+        help=('create or modify a startup script '
+              'and create a shortcut to it ([HOTKEY])'))
     parser.add_argument(
         '-B', action='store_true',
         help='configure a cash balance')
     parser.add_argument(
         '-C', nargs=5,
         help=('configure the cash balance region and the index of the price '
-              '(x y width height index)'))
+              '(X Y WIDTH HEIGHT INDEX)'))
     parser.add_argument(
         '-L', nargs=5,
         help=('configure the price limit region and the index of the price '
-              '(x y width height index)'))
+              '(X Y WIDTH HEIGHT INDEX)'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     # TODO
