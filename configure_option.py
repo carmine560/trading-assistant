@@ -1,3 +1,5 @@
+import sys
+
 def list_section(config, section):
     if config.has_section(section):
         for key in config[section]:
@@ -16,7 +18,8 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
 
     i = 0
     tuple_list = ast.literal_eval(config[section][option])
-    os.system('color')
+    if sys.platform == 'win32':
+        os.system('color')
     while i <= len(tuple_list):
         if create:
             answer = tidy_answer(['insert', 'quit'])
@@ -83,8 +86,6 @@ def tidy_answer(answer_list):
                 abbreviation = abbreviation + mnemonics.lower()
                 break
         if abbreviation == previous_abbreviation:
-            import sys
-
             print('undetermined mnemonics')
             sys.exit(1)
         else:
