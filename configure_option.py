@@ -17,21 +17,14 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
     tuple_list = ast.literal_eval(config[section][option])
     while i <= len(tuple_list):
         if create:
-            answer = input('[i]nsert/[q]uit: ').lower()
-            if not answer[0] in 'iq':
-                answer = ''
+            answer = tidy_answer(['insert', 'quit'])
         else:
             if i < len(tuple_list):
                 print(tuple_list[i])
-                answer = \
-                    input('[i]nsert/[m]odify/[d]elete/[q]uit: ').lower()
-                if not answer[0] in 'imdq':
-                    answer = ''
+                answer = tidy_answer(['insert', 'modify', 'delete', 'quit'])
             else:
                 print('end of list')
-                answer = input('[i]nsert/[q]uit: ').lower()
-                if not answer[0] in 'iq':
-                    answer = ''
+                answer = tidy_answer(['insert', 'quit'])
 
         if len(answer):
             if answer[0] == 'i':
@@ -77,6 +70,36 @@ def modify_tuple_list(config, section, option, positioning_keys=[]):
         return True
     else:
         delete_option(config, section, option)
+
+def tidy_answer(answer_list):
+    import sys
+
+    abbreviation = ''
+    previous_abbreviation = ''
+    for word_index, word in enumerate(answer_list):
+        for char_index in range(len(word)):
+            if not word[char_index].lower() in abbreviation:
+                mnemonics = word[char_index]
+                abbreviation = abbreviation + mnemonics.lower()
+                break
+        if abbreviation == previous_abbreviation:
+            print('undetermined mnemonics')
+            sys.exit(1)
+        else:
+            previous_abbreviation = abbreviation
+            highlighted_word = word.replace(mnemonics, '[' + mnemonics + ']',
+                                            1)
+            if word_index == 0:
+                prompt = highlighted_word
+            elif word_index == len(answer_list) - 1:
+                prompt = prompt + '/' + highlighted_word + ': '
+            else:
+                prompt = prompt + '/' + highlighted_word
+
+    answer = input(prompt).lower()
+    if answer and not answer[0] in abbreviation:
+        answer = ''
+    return answer
 
 def delete_option(config, section, option):
     if config.has_option(section, option):
