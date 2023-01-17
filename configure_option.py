@@ -33,44 +33,42 @@ def modify_tuple_list(config, section, option, key_prompt='key',
                 print(end_of_list_prompt)
                 answer = tidy_answer(['insert', 'quit'])
 
-        # TODO
-        if len(answer):
-            if answer[0] == 'i':
-                key = input(key_prompt + ': ')
-                # TODO
-                if any(key == positioning_key
-                       for positioning_key in positioning_keys):
-                    value = input('input/[c]lick: ')
-                    if len(value) and value[0].lower() == 'c':
-                        value = configure_position()
-                else:
-                    value = input(value_prompt + ': ')
-                if len(value) == 0 or value == 'None':
-                    value = None
+        if answer == 'insert':
+            key = input(key_prompt + ': ')
+            # TODO
+            if any(key == positioning_key
+                   for positioning_key in positioning_keys):
+                value = input('input/[c]lick: ')
+                if len(value) and value[0].lower() == 'c':
+                    value = configure_position()
+            else:
+                value = input(value_prompt + ': ')
+            if len(value) == 0 or value == 'None':
+                value = None
 
-                tuple_list.insert(i, (key, value))
-            elif answer[0] == 'm':
-                key = tuple_list[i][0]
-                value = tuple_list[i][1]
-                key = input(key_prompt + ' [' + str(key) + '] ') or key
-                # TODO
-                if any(i == key for i in positioning_keys):
-                    value = input('input/[c]lick [' + str(value) + '] ') \
-                        or value
-                    if len(value) and value[0].lower() == 'c':
-                        value = configure_position()
-                else:
-                    value = input(value_prompt + ' [' + str(value) + '] ') \
-                        or value
-                if len(value) == 0 or value == 'None':
-                    value = None
+            tuple_list.insert(i, (key, value))
+        elif answer == 'modify':
+            key = tuple_list[i][0]
+            value = tuple_list[i][1]
+            key = input(key_prompt + ' [' + str(key) + '] ') or key
+            # TODO
+            if any(i == key for i in positioning_keys):
+                value = input('input/[c]lick [' + str(value) + '] ') \
+                    or value
+                if len(value) and value[0].lower() == 'c':
+                    value = configure_position()
+            else:
+                value = input(value_prompt + ' [' + str(value) + '] ') \
+                    or value
+            if len(value) == 0 or value == 'None':
+                value = None
 
-                tuple_list[i] = key, value
-            elif answer[0] == 'd':
-                del tuple_list[i]
-                i -= 1
-            elif answer[0] == 'q':
-                i = len(tuple_list)
+            tuple_list[i] = key, value
+        elif answer == 'delete':
+            del tuple_list[i]
+            i -= 1
+        elif answer == 'quit':
+            i = len(tuple_list)
 
         i += 1
 
@@ -82,20 +80,20 @@ def modify_tuple_list(config, section, option, key_prompt='key',
         delete_option(config, section, option)
 
 def tidy_answer(answer_list):
-    abbreviation = ''
+    initialism = ''
 
-    previous_abbreviation = ''
+    previous_initialism = ''
     for word_index, word in enumerate(answer_list):
         for char_index in range(len(word)):
-            if not word[char_index].lower() in abbreviation:
+            if not word[char_index].lower() in initialism:
                 mnemonics = word[char_index]
-                abbreviation = abbreviation + mnemonics.lower()
+                initialism = initialism + mnemonics.lower()
                 break
-        if abbreviation == previous_abbreviation:
+        if initialism == previous_initialism:
             print('undetermined mnemonics')
             sys.exit(1)
         else:
-            previous_abbreviation = abbreviation
+            previous_initialism = initialism
             highlighted_word = word.replace(
                 mnemonics, '\033[1m' + mnemonics + '\033[m', 1)
             if word_index == 0:
@@ -106,14 +104,13 @@ def tidy_answer(answer_list):
                 prompt = prompt + '/' + highlighted_word
 
     answer = input(prompt).lower()
-    if answer and not answer[0] in abbreviation:
-        answer = ''
-
-    # TODO
-    # restore answer
-    # else:
-    #     for char_index in abbreviation:
-    #         if answer == abbreviation
+    if answer:
+        if not answer[0] in initialism:
+            answer = ''
+        else:
+            for index in range(len(initialism)):
+                if initialism[index] == answer[0]:
+                    answer = answer_list[index]
     return answer
 
 def configure_position():
