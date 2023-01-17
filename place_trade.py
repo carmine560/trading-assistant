@@ -108,11 +108,13 @@ def main():
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
                         '"' + __file__ + '" -e ' + args.M[0],
+                        title=config[config.process_name]['title'],
                         icon_directory=config.config_directory)
                 elif len(args.M) == 2:
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
                         '"' + __file__ + '" -e ' + args.M[0],
+                        title=config[config.process_name]['title'],
                         icon_directory=config.config_directory,
                         hotkey=args.M[1])
             else:
@@ -148,11 +150,13 @@ def main():
             file_utilities.create_shortcut(
                 config.script_base, 'powershell.exe',
                 '-WindowStyle Hidden -File "' + config.startup_script + '"',
+                title=config[config.process_name]['title'],
                 icon_directory=config.config_directory)
         else:
             file_utilities.create_shortcut(
                 config.script_base, 'powershell.exe',
                 '-WindowStyle Hidden -File "' + config.startup_script + '"',
+                title=config[config.process_name]['title'],
                 icon_directory=config.config_directory, hotkey=args.I)
     elif args.B:
         file_utilities.backup_file(config.config_path, number_of_backups=8)
@@ -208,8 +212,7 @@ def configure(process_name):
                      'customer_margin_ratios.csv'),
         'executable':
         r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
-        # TODO
-        'title_case': 'Hyper SBI 2',
+        'title': 'Hyper SBI 2',
         'clickable_windows': ['お知らせ',                    # Announcements
                               '個別銘柄\s.*\((\d{4})\)',     # Summary
                               '登録銘柄',                    # Watchlists

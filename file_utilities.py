@@ -116,12 +116,12 @@ def create_icon(basename, icon_directory=None):
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
 
-def create_shortcut(basename, target_path, arguments, icon_directory=None,
-                    hotkey=None):
+def create_shortcut(basename, target_path, arguments, title=None,
+                    icon_directory=None, hotkey=None):
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
-    program_group = get_program_group()
+    program_group = get_program_group(title)
     if not os.path.isdir(program_group):
         try:
             os.mkdir(program_group)
@@ -182,11 +182,13 @@ def delete_shortcut(basename, icon_directory=None):
             print(e)
             sys.exit(1)
 
-def get_program_group():
+def get_program_group(title=None):
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
-    basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+    if not title:
+        basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+
     program_group = os.path.join(shell.SpecialFolders('Programs'), title)
     return program_group
