@@ -1,5 +1,10 @@
 import sys
 
+ANSI_DEFAULT = '\033[32m'
+ANSI_ANNOTATION = '\033[33m'
+ANSI_HIGHLIGHT = '\033[4m'
+ANSI_RESET = '\033[m'
+
 def list_section(config, section):
     if config.has_section(section):
         for key in config[section]:
@@ -20,8 +25,9 @@ def modify_tuple_list(config, section, option, key_prompt='key',
 
     i = 0
     tuple_list = ast.literal_eval(config[section][option])
-    ansi_default = '\033[32m'
-    ansi_annotation = '\033[33m'
+    global ANSI_DEFAULT
+    global ANSI_ANNOTATION
+    global ANSI_RESET
     if sys.platform == 'win32':
         os.system('color')
     while i <= len(tuple_list):
@@ -29,19 +35,15 @@ def modify_tuple_list(config, section, option, key_prompt='key',
             answer = tidy_answer(['insert', 'quit'])
         else:
             if i < len(tuple_list):
-                print(ansi_default + str(tuple_list[i]) + '\033[m')
+                print(ANSI_DEFAULT + str(tuple_list[i]) + ANSI_RESET)
                 answer = tidy_answer(['insert', 'modify', 'delete', 'quit'])
             else:
-                print(ansi_annotation + end_of_list_prompt + '\033[m')
+                print(ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
                 answer = tidy_answer(['insert', 'quit'])
-
         if answer == 'insert':
             key = input(key_prompt + ': ').strip()
-            # TODO
             if any(k == key for k in positioning_keys):
-                value = input('input/[c]lick: ').strip()
-                if len(value) and value[0].lower() == 'c':
-                    value = configure_position()
+                value = configure_position(answer)
             else:
                 value = input(value_prompt + ': ').strip()
             if len(value) == 0:
@@ -52,18 +54,16 @@ def modify_tuple_list(config, section, option, key_prompt='key',
             key = tuple_list[i][0]
             if len(tuple_list[i]) == 2:
                 value = tuple_list[i][1]
+            elif len(tuple_list[i]) == 1:
+                value = ''
 
-            key = input(key_prompt + ' ' + ansi_default + str(key)
-                        + '\033[m: ').strip() or key
-            # TODO
+            key = input(key_prompt + ' ' + ANSI_DEFAULT + key
+                        + ANSI_RESET + ': ').strip() or key
             if any(k == key for k in positioning_keys):
-                value = input('input/[c]lick [' + str(value) + '] ').strip() \
-                    or value
-                if len(value) and value[0].lower() == 'c':
-                    value = configure_position()
+                value = configure_position(answer, value)
             elif len(tuple_list[i]) == 2:
-                value = input(value_prompt + ' ' + ansi_default + str(value)
-                              + '\033[m: ').strip() or value
+                value = input(value_prompt + ' ' + ANSI_DEFAULT + value
+                              + ANSI_RESET + ': ').strip() or value
             else:
                 value = input(value_prompt + ': ').strip()
             if len(value) == 0:
@@ -89,7 +89,8 @@ def tidy_answer(answer_list):
     initialism = ''
 
     previous_initialism = ''
-    ansi_highlight = '\033[4m'
+    global ANSI_HIGHLIGHT
+    global ANSI_RESET
     for word_index, word in enumerate(answer_list):
         for char_index in range(len(word)):
             if not word[char_index].lower() in initialism:
@@ -102,7 +103,7 @@ def tidy_answer(answer_list):
         else:
             previous_initialism = initialism
             highlighted_word = word.replace(
-                mnemonics, ansi_highlight + mnemonics + '\033[m', 1)
+                mnemonics, ANSI_HIGHLIGHT + mnemonics + ANSI_RESET, 1)
             if word_index == 0:
                 prompt = highlighted_word
             elif word_index == len(answer_list) - 1:
@@ -120,26 +121,38 @@ def tidy_answer(answer_list):
                     answer = answer_list[index]
     return answer
 
-def configure_position():
+def configure_position(answer, value=''):
     import time
 
     import pyautogui
     import win32api
 
-    previous_key_state = win32api.GetKeyState(0x01)
-    current_number = 0
-    coordinates = ''
-    while True:
-        key_state = win32api.GetKeyState(0x01)
-        if key_state != previous_key_state:
-            if key_state not in [0, 1]:
-                x, y = pyautogui.position()
-                coordinates = str(x) + ', ' + str(y)
-                break
+    global ANSI_HIGHLIGHT
+    global ANSI_DEFAULT
+    if answer == 'insert':
+        value = input('input/'
+                      + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + 'lick: ').strip()
+    elif answer == 'modify':
+        value = input('input/' + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + 'lick '
+                      + ANSI_DEFAULT + value + ANSI_RESET + ': ').strip() \
+                      or value
+    if len(value) and value[0].lower() == 'c':
+        previous_key_state = win32api.GetKeyState(0x01)
+        current_number = 0
+        coordinates = ''
+        while True:
+            key_state = win32api.GetKeyState(0x01)
+            if key_state != previous_key_state:
+                if key_state not in [0, 1]:
+                    x, y = pyautogui.position()
+                    coordinates = str(x) + ', ' + str(y)
+                    break
 
-        time.sleep(0.001)
+            time.sleep(0.001)
 
-    return coordinates
+        return coordinates
+    else:
+        return value
 
 def delete_option(config, section, option):
     if config.has_option(section, option):

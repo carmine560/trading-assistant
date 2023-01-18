@@ -15,6 +15,8 @@ import configure_option
 import file_utilities
 import gui_interactions
 
+# TODO
+# Remove
 class Configuration(configparser.ConfigParser):
     def __init__(self, process_name, **kwargs):
         script_directory = os.path.dirname(__file__)
