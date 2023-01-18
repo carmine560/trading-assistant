@@ -20,7 +20,8 @@ def modify_tuple_list(config, section, option, key_prompt='key',
 
     i = 0
     tuple_list = ast.literal_eval(config[section][option])
-    ascii_current = '\033[90m'
+    ansi_default = '\033[32m'
+    ansi_annotation = '\033[33m'
     if sys.platform == 'win32':
         os.system('color')
     while i <= len(tuple_list):
@@ -28,10 +29,10 @@ def modify_tuple_list(config, section, option, key_prompt='key',
             answer = tidy_answer(['insert', 'quit'])
         else:
             if i < len(tuple_list):
-                print(ascii_current + str(tuple_list[i]) + '\033[m')
+                print(ansi_default + str(tuple_list[i]) + '\033[m')
                 answer = tidy_answer(['insert', 'modify', 'delete', 'quit'])
             else:
-                print(end_of_list_prompt)
+                print(ansi_annotation + end_of_list_prompt + '\033[m')
                 answer = tidy_answer(['insert', 'quit'])
 
         if answer == 'insert':
@@ -52,7 +53,7 @@ def modify_tuple_list(config, section, option, key_prompt='key',
             if len(tuple_list[i]) == 2:
                 value = tuple_list[i][1]
 
-            key = input(key_prompt + ' ' + ascii_current + str(key)
+            key = input(key_prompt + ' ' + ansi_default + str(key)
                         + '\033[m: ').strip() or key
             # TODO
             if any(k == key for k in positioning_keys):
@@ -61,7 +62,7 @@ def modify_tuple_list(config, section, option, key_prompt='key',
                 if len(value) and value[0].lower() == 'c':
                     value = configure_position()
             elif len(tuple_list[i]) == 2:
-                value = input(value_prompt + ' ' + ascii_current + str(value)
+                value = input(value_prompt + ' ' + ansi_default + str(value)
                               + '\033[m: ').strip() or value
             else:
                 value = input(value_prompt + ': ').strip()
@@ -88,7 +89,7 @@ def tidy_answer(answer_list):
     initialism = ''
 
     previous_initialism = ''
-    ascii_highlight = '\033[1m'
+    ansi_highlight = '\033[4m'
     for word_index, word in enumerate(answer_list):
         for char_index in range(len(word)):
             if not word[char_index].lower() in initialism:
@@ -101,7 +102,7 @@ def tidy_answer(answer_list):
         else:
             previous_initialism = initialism
             highlighted_word = word.replace(
-                mnemonics, ascii_highlight + mnemonics + '\033[m', 1)
+                mnemonics, ansi_highlight + mnemonics + '\033[m', 1)
             if word_index == 0:
                 prompt = highlighted_word
             elif word_index == len(answer_list) - 1:
