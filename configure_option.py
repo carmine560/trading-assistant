@@ -10,7 +10,7 @@ def list_section(config, section):
         for key in config[section]:
             print(key)
 
-def modify_tuple_list(config, section, option, key_prompt='key',
+def modify_tuple_list(config, section, option, config_path, key_prompt='key',
                       value_prompt='value', end_of_list_prompt='end of list',
                       positioning_keys=[]):
     import ast
@@ -80,10 +80,11 @@ def modify_tuple_list(config, section, option, key_prompt='key',
 
     if len(tuple_list):
         config[section][option] = str(tuple_list)
-        config.write_config()
+        with open(config_path, 'w', encoding='utf-8') as f:
+            config.write(f)
         return True
     else:
-        delete_option(config, section, option)
+        delete_option(config, section, option, config_path)
 
 def tidy_answer(answer_list):
     initialism = ''
@@ -154,7 +155,8 @@ def configure_position(answer, value=''):
     else:
         return value
 
-def delete_option(config, section, option):
+def delete_option(config, section, option, config_path):
     if config.has_option(section, option):
         config.remove_option(section, option)
-        config.write_config()
+        with open(config_path, 'w', encoding='utf-8') as f:
+            config.write(f)

@@ -100,8 +100,8 @@ def main():
         else:
             file_utilities.backup_file(config.config_path, number_of_backups=8)
             if configure_option.modify_tuple_list(
-                    config, 'Actions', args.M[0], key_prompt='command',
-                    value_prompt='arguments',
+                    config, 'Actions', args.M[0], config.config_path,
+                    key_prompt='command', value_prompt='arguments',
                     end_of_list_prompt='end of commands',
                     positioning_keys=['click', 'move_to']):
                 # To pin the shortcut to the Taskbar, specify an
@@ -140,7 +140,8 @@ def main():
                 sys.exit(1)
         else:
             file_utilities.backup_file(config.config_path, number_of_backups=8)
-            configure_option.delete_option(config, 'Actions', args.T)
+            configure_option.delete_option(config, 'Actions', args.T,
+                                           config.config_path)
 
         file_utilities.delete_shortcut(args.T, config.config_directory)
     elif args.I:
