@@ -20,6 +20,7 @@ def modify_tuple_list(config, section, option, key_prompt='key',
 
     i = 0
     tuple_list = ast.literal_eval(config[section][option])
+    ascii_current = '\033[90m'
     if sys.platform == 'win32':
         os.system('color')
     while i <= len(tuple_list):
@@ -27,43 +28,47 @@ def modify_tuple_list(config, section, option, key_prompt='key',
             answer = tidy_answer(['insert', 'quit'])
         else:
             if i < len(tuple_list):
-                print(tuple_list[i])
+                print(ascii_current + str(tuple_list[i]) + '\033[m')
                 answer = tidy_answer(['insert', 'modify', 'delete', 'quit'])
             else:
                 print(end_of_list_prompt)
                 answer = tidy_answer(['insert', 'quit'])
 
         if answer == 'insert':
-            key = input(key_prompt + ': ')
+            key = input(key_prompt + ': ').strip()
             # TODO
-            if any(key == positioning_key
-                   for positioning_key in positioning_keys):
-                value = input('input/[c]lick: ')
+            if any(k == key for k in positioning_keys):
+                value = input('input/[c]lick: ').strip()
                 if len(value) and value[0].lower() == 'c':
                     value = configure_position()
             else:
-                value = input(value_prompt + ': ')
-            if len(value) == 0 or value == 'None':
-                value = None
-
-            tuple_list.insert(i, (key, value))
+                value = input(value_prompt + ': ').strip()
+            if len(value) == 0:
+                tuple_list.insert(i, (key,))
+            else:
+                tuple_list.insert(i, (key, value))
         elif answer == 'modify':
             key = tuple_list[i][0]
-            value = tuple_list[i][1]
-            key = input(key_prompt + ' [' + str(key) + '] ') or key
+            if len(tuple_list[i]) == 2:
+                value = tuple_list[i][1]
+
+            key = input(key_prompt + ' ' + ascii_current + str(key)
+                        + '\033[m: ').strip() or key
             # TODO
-            if any(i == key for i in positioning_keys):
-                value = input('input/[c]lick [' + str(value) + '] ') \
+            if any(k == key for k in positioning_keys):
+                value = input('input/[c]lick [' + str(value) + '] ').strip() \
                     or value
                 if len(value) and value[0].lower() == 'c':
                     value = configure_position()
+            elif len(tuple_list[i]) == 2:
+                value = input(value_prompt + ' ' + ascii_current + str(value)
+                              + '\033[m: ').strip() or value
             else:
-                value = input(value_prompt + ' [' + str(value) + '] ') \
-                    or value
-            if len(value) == 0 or value == 'None':
-                value = None
-
-            tuple_list[i] = key, value
+                value = input(value_prompt + ': ').strip()
+            if len(value) == 0:
+                tuple_list[i] = key,
+            else:
+                tuple_list[i] = key, value
         elif answer == 'delete':
             del tuple_list[i]
             i -= 1
@@ -83,6 +88,7 @@ def tidy_answer(answer_list):
     initialism = ''
 
     previous_initialism = ''
+    ascii_highlight = '\033[1m'
     for word_index, word in enumerate(answer_list):
         for char_index in range(len(word)):
             if not word[char_index].lower() in initialism:
@@ -95,7 +101,7 @@ def tidy_answer(answer_list):
         else:
             previous_initialism = initialism
             highlighted_word = word.replace(
-                mnemonics, '\033[1m' + mnemonics + '\033[m', 1)
+                mnemonics, ascii_highlight + mnemonics + '\033[m', 1)
             if word_index == 0:
                 prompt = highlighted_word
             elif word_index == len(answer_list) - 1:
@@ -103,7 +109,7 @@ def tidy_answer(answer_list):
             else:
                 prompt = prompt + '/' + highlighted_word
 
-    answer = input(prompt).lower()
+    answer = input(prompt).strip().lower()
     if answer:
         if not answer[0] in initialism:
             answer = ''

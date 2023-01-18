@@ -95,12 +95,12 @@ commands are:
 
 ``` python
 ACTION = [
-    ('back_to', None),               # back the cursor to the previous position.
+    ('back_to',),                    # back the cursor to the previous position.
     ('beep', 'FREQUENCY, DURATION'), # beep.
     ('calculate_share_size', 'POSITION'), # calculate a share size.
     ('click', 'X, Y'),               # click.
     ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'), # locate a widget image in a region, and click it.
-    ('count_trades', None),          # count the number of trades for the day.
+    ('count_trades',),               # count the number of trades for the day.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_parent_window', 'TITLE_REGEX'), # hide a parent window.
     ('hide_window', 'TITLE_REGEX'),  # hide a window.
@@ -115,7 +115,7 @@ ACTION = [
     ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'), # wait for prices to be displayed in a region.
     ('wait_for_window', 'TITLE_REGEX'), # wait for a window.
     ('write_alt_symbol', 'SYMBOL_1, SYMBOL_2'), # write the alternative symbol.
-    ('write_share_size', None),      # write the calculated share size.
+    ('write_share_size',),           # write the calculated share size.
 
     # Optional command
     ('speak_config', 'SECTION, KEY'), # speak a configuration.
@@ -147,7 +147,7 @@ clicks the Login button.
 login = [
     # locate the Login button in the region, and click it.
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
-    ('back_to', None),               # back the cursor to the previous position.
+    ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
     ('wait_for_period', '0.8'),      # wait for 0.8 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
@@ -171,7 +171,7 @@ toggle_between_stocks = [
     ('get_symbol', '個別銘柄\\s.*\\((\\d{4})\\)'), # get the symbol from the Summary window.
     ('write_alt_symbol', '8306, 8308'), # write the alternative symbol.
     ('press_key', 'enter'),          # press the Enter key.
-    ('back_to', None),               # back the cursor to the previous position.
+    ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_period', '1'),        # wait for 1 second.
     ('press_key', 'esc'),            # close the symbol suggest drop-down list.
 ]
@@ -193,11 +193,11 @@ open_close_long_position = [
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('get_symbol', '個別銘柄\\s.*\\((\\d{4})\\)'), # get the symbol from the Summary window.
     ('calculate_share_size', 'long'), # calculate the share size.
-    ('write_share_size', None),      # write the calculated share size.
+    ('write_share_size',),           # write the calculated share size.
     ('click', '466, 843'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
-    ('back_to', None),               # back the cursor to the previous position.
+    ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_key', 'space'),       # wait for space input.
     ('wait_for_prices', '193, 964, 467, 19, 0'), # wait for the execution.
 
@@ -205,12 +205,12 @@ open_close_long_position = [
     ('click', '284, 757'),           # select the Repayment tab.
     ('click', '606, 861'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    ('write_share_size', None),      # write the calculated share size.
+    ('write_share_size',),           # write the calculated share size.
     ('click', '446, 944'),           # click the Market Order button.
     ('press_key', 'tab, 5'),         # focus on the Sell Order button.
     ('beep', '1000, 100'),           # notify completion.
-    ('back_to', None),               # back the cursor to the previous position.
-    ('count_trades', None),          # count the number of trades for the day.
+    ('back_to',),                    # back the cursor to the previous position.
+    ('count_trades',),               # count the number of trades for the day.
     ('speak_config', 'Trading, number_of_trades'), # speak the number above.
 ]
 ```

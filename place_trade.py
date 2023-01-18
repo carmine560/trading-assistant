@@ -434,7 +434,8 @@ def execute_action(config, place_trade, gui_callbacks, action):
     commands = eval(config['Actions'][action])
     for i in range(len(commands)):
         command = commands[i][0]
-        arguments = commands[i][1]
+        if len(commands[i]) == 2:
+            arguments = commands[i][1]
         if command == 'back_to':
             pyautogui.moveTo(place_trade.previous_position)
         elif command == 'beep':
