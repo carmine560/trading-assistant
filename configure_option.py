@@ -57,8 +57,8 @@ def modify_tuple_list(config, section, option, key_prompt='key',
             elif len(tuple_list[i]) == 1:
                 value = ''
 
-            key = input(key_prompt + ' ' + ANSI_DEFAULT + key
-                        + ANSI_RESET + ': ').strip() or key
+            key = input(key_prompt + ' ' + ANSI_DEFAULT + key + ANSI_RESET
+                        + ': ').strip() or key
             if any(k == key for k in positioning_keys):
                 value = configure_position(answer, value)
             elif len(tuple_list[i]) == 2:
