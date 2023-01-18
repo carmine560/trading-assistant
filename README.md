@@ -136,7 +136,7 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 > tested immediately in many environments.
 
 ![A screenshot of Windows Terminal where place_trade.py -M was
-executed.](https://dl.dropboxusercontent.com/s/7me69lxmvil3dnw/20230117T154943.png)
+executed.](https://dl.dropboxusercontent.com/s/3kngdijr7trp0z2/20230118T173500.png)
 
 #### Example: Login ####
 
