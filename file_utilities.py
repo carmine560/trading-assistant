@@ -116,12 +116,12 @@ def create_icon(basename, icon_directory=None):
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
 
-def create_shortcut(basename, target_path, arguments, title=None,
+def create_shortcut(basename, target_path, arguments, program_group_base=None,
                     icon_directory=None, hotkey=None):
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
-    program_group = get_program_group(title)
+    program_group = get_program_group(program_group_base)
     if not os.path.isdir(program_group):
         try:
             os.mkdir(program_group)
@@ -143,7 +143,7 @@ def create_shortcut(basename, target_path, arguments, title=None,
 
     shortcut.save()
 
-def delete_shortcut(basename, icon_directory=None):
+def delete_shortcut(basename, program_group_base=None, icon_directory=None):
     if icon_directory:
         icon = os.path.join(icon_directory, basename + '.ico')
     else:
@@ -156,7 +156,7 @@ def delete_shortcut(basename, icon_directory=None):
             print(e)
             sys.exit(1)
 
-    program_group = get_program_group()
+    program_group = get_program_group(program_group_base)
     title = re.sub('[\W_]+', ' ', basename).rstrip().title()
     shortcut = os.path.join(program_group, title + '.lnk')
     if os.path.exists(shortcut):
@@ -182,13 +182,13 @@ def delete_shortcut(basename, icon_directory=None):
             print(e)
             sys.exit(1)
 
-def get_program_group(title=None):
+def get_program_group(program_group_base=None):
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
-    if not title:
+    if not program_group_base:
         basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-        title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+        program_group_base = re.sub('[\W_]+', ' ', basename).rstrip().title()
 
-    program_group = os.path.join(shell.SpecialFolders('Programs'), title)
+    program_group = os.path.join(shell.SpecialFolders('Programs'), program_group_base)
     return program_group

@@ -10,7 +10,7 @@ def list_section(config, section):
         for key in config[section]:
             print(key)
 
-def modify_tuple_list(config, section, option, config_path, key_prompt='key',
+def modify_tuple_list(config, section, option, config_file, key_prompt='key',
                       value_prompt='value', end_of_list_prompt='end of list',
                       positioning_keys=[]):
     import ast
@@ -67,9 +67,9 @@ def modify_tuple_list(config, section, option, config_path, key_prompt='key',
             else:
                 value = input(value_prompt + ': ').strip()
             if len(value) == 0:
-                tuple_list[i] = key,
+                tuple_list[i] = (key,)
             else:
-                tuple_list[i] = key, value
+                tuple_list[i] = (key, value)
         elif answer == 'delete':
             del tuple_list[i]
             i -= 1
@@ -80,11 +80,11 @@ def modify_tuple_list(config, section, option, config_path, key_prompt='key',
 
     if len(tuple_list):
         config[section][option] = str(tuple_list)
-        with open(config_path, 'w', encoding='utf-8') as f:
+        with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)
         return True
     else:
-        delete_option(config, section, option, config_path)
+        delete_option(config, section, option, config_file)
 
 def tidy_answer(answer_list):
     initialism = ''
@@ -155,8 +155,8 @@ def configure_position(answer, value=''):
     else:
         return value
 
-def delete_option(config, section, option, config_path):
+def delete_option(config, section, option, config_file):
     if config.has_option(section, option):
         config.remove_option(section, option)
-        with open(config_path, 'w', encoding='utf-8') as f:
+        with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)

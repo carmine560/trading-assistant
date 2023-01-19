@@ -15,28 +15,19 @@ import configure_option
 import file_utilities
 import gui_interactions
 
-# TODO
-# Remove
-class Configuration(configparser.ConfigParser):
-    def __init__(self, process_name, **kwargs):
+class Trade:
+    def __init__(self, process_name):
         script_directory = os.path.dirname(__file__)
         self.market_directory = os.path.join(script_directory, 'market')
         self.process_name = process_name
         self.config_directory = os.path.join(script_directory,
                                              self.process_name)
         self.script_base = os.path.splitext(os.path.basename(__file__))[0]
-        self.config_path = os.path.join(self.config_directory,
+        self.config_file = os.path.join(self.config_directory,
                                         self.script_base + '.ini')
         self.startup_script = os.path.join(self.config_directory,
                                            self.script_base + '.ps1')
-        configparser.ConfigParser.__init__(self, **kwargs)
 
-    def write_config(self):
-        with open(self.config_path, 'w', encoding='utf-8') as f:
-            self.write(f)
-
-class PlaceTrade:
-    def __init__(self):
         self.previous_position = pyautogui.position()
         self.cash_balance = 0
         self.symbol = ''
@@ -84,10 +75,8 @@ def main():
               '(X Y WIDTH HEIGHT INDEX)'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
-    # TODO
-    # if args.k:
-    config = configure('HYPERSBI2')
-    place_trade = PlaceTrade()
+    trade = Trade('HYPERSBI2')
+    config = configure(trade)
     gui_callbacks = gui_interactions.GuiCallbacks()
 
     if args.r:
@@ -98,9 +87,9 @@ def main():
         if len(args.M) == 0:
             configure_option.list_section(config, 'Actions')
         else:
-            file_utilities.backup_file(config.config_path, number_of_backups=8)
+            file_utilities.backup_file(trade.config_file, number_of_backups=8)
             if configure_option.modify_tuple_list(
-                    config, 'Actions', args.M[0], config.config_path,
+                    config, 'Actions', args.M[0], trade.config_file,
                     key_prompt='command', value_prompt='arguments',
                     end_of_list_prompt='end of commands',
                     positioning_keys=['click', 'move_to']):
@@ -110,73 +99,75 @@ def main():
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
                         '"' + __file__ + '" -e ' + args.M[0],
-                        title=config[config.process_name]['title'],
-                        icon_directory=config.config_directory)
+                        program_group_base=config[trade.process_name]['title'],
+                        icon_directory=trade.config_directory)
                 elif len(args.M) == 2:
                     file_utilities.create_shortcut(
                         args.M[0], 'py.exe',
                         '"' + __file__ + '" -e ' + args.M[0],
-                        title=config[config.process_name]['title'],
-                        icon_directory=config.config_directory,
+                        program_group_base=config[trade.process_name]['title'],
+                        icon_directory=trade.config_directory,
                         hotkey=args.M[1])
             else:
-                file_utilities.delete_shortcut(args.M[0],
-                                               config.config_directory)
+                file_utilities.delete_shortcut(
+                    args.M[0],
+                    program_group_base=config[trade.process_name]['title'],
+                    icon_directory=trade.config_directory)
     elif args.e == 'LIST_ACTIONS':
         configure_option.list_section(config, 'Actions')
     elif args.e:
-        execute_action(config, place_trade, gui_callbacks, args.e)
+        execute_action(trade, config, gui_callbacks, args.e)
     elif args.T == 'LIST_ACTIONS':
-        if os.path.exists(config.startup_script):
-            print(config.script_base)
+        if os.path.exists(trade.startup_script):
+            print(trade.script_base)
             configure_option.list_section(config, 'Actions')
     elif args.T:
-        if args.T == config.script_base \
-           and os.path.exists(config.startup_script):
+        if args.T == trade.script_base \
+           and os.path.exists(trade.startup_script):
             try:
-                os.remove(config.startup_script)
+                os.remove(trade.startup_script)
             except OSError as e:
                 print(e)
                 sys.exit(1)
         else:
-            file_utilities.backup_file(config.config_path, number_of_backups=8)
+            file_utilities.backup_file(trade.config_file, number_of_backups=8)
             configure_option.delete_option(config, 'Actions', args.T,
-                                           config.config_path)
+                                           trade.config_file)
 
-        file_utilities.delete_shortcut(args.T, config.config_directory)
+        file_utilities.delete_shortcut(args.T, trade.config_directory)
     elif args.I:
-        file_utilities.backup_file(config.config_path, number_of_backups=8)
-        configure_startup_script(config)
+        file_utilities.backup_file(trade.config_file, number_of_backups=8)
+        configure_startup_script(trade, config)
         create_startup_script(config)
 
         if args.I == 'WITHOUT_HOTKEY':
             file_utilities.create_shortcut(
-                config.script_base, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + config.startup_script + '"',
-                title=config[config.process_name]['title'],
-                icon_directory=config.config_directory)
+                trade.script_base, 'powershell.exe',
+                '-WindowStyle Hidden -File "' + trade.startup_script + '"',
+                program_group_base=config[trade.process_name]['title'],
+                icon_directory=trade.config_directory)
         else:
             file_utilities.create_shortcut(
-                config.script_base, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + config.startup_script + '"',
-                title=config[config.process_name]['title'],
-                icon_directory=config.config_directory, hotkey=args.I)
+                trade.script_base, 'powershell.exe',
+                '-WindowStyle Hidden -File "' + trade.startup_script + '"',
+                program_group_base=config[trade.process_name]['title'],
+                icon_directory=trade.config_directory, hotkey=args.I)
     elif args.B:
-        file_utilities.backup_file(config.config_path, number_of_backups=8)
-        configure_cash_balance(config)
+        file_utilities.backup_file(trade.config_file, number_of_backups=8)
+        configure_cash_balance(trade, config)
     elif args.C:
-        file_utilities.backup_file(config.config_path, number_of_backups=8)
-        configure_ocr_region(config, 'cash_balance_region', args.C)
+        file_utilities.backup_file(trade.config_file, number_of_backups=8)
+        configure_ocr_region(trade, config, 'cash_balance_region', args.C)
     elif args.L:
-        file_utilities.backup_file(config.config_path, number_of_backups=8)
-        configure_ocr_region(config, 'price_limit_region', args.L)
+        file_utilities.backup_file(trade.config_file, number_of_backups=8)
+        configure_ocr_region(trade, config, 'price_limit_region', args.L)
 
-def configure(process_name):
-    config = Configuration(process_name,
-                           interpolation=configparser.ExtendedInterpolation())
+def configure(trade):
+    config = configparser.ConfigParser(
+        interpolation=configparser.ExtendedInterpolation())
     config['Common'] = {
-        'market_directory': config.market_directory,
-        'config_directory': config.config_directory}
+        'market_directory': trade.market_directory,
+        'config_directory': trade.config_directory}
     config['Market Holidays'] = {
         'market_holiday_url':
         'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
@@ -236,7 +227,8 @@ def configure(process_name):
         'utilization_ratio': '1.0',
         'date': str(date.today()),
         'number_of_trades': '0'}
-    config.read(config.config_path, encoding='utf-8')
+    config.read(trade.config_file, encoding='utf-8')
+
     for directory in [config['Common']['market_directory'],
                       config['Common']['config_directory']]:
         if not os.path.isdir(directory):
@@ -266,9 +258,9 @@ def create_startup_script(config):
         running_options = \
             list(map(str.strip, section['running_options'].split(',')))
 
-    with open(config.startup_script, 'w') as f:
+    with open(trade.startup_script, 'w') as f:
         lines = []
-        lines.append('if (Get-Process "' + config.process_name
+        lines.append('if (Get-Process "' + trade.process_name
                      + '" -ErrorAction SilentlyContinue)\n{\n')
         for i in range(len(running_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
@@ -282,7 +274,7 @@ def create_startup_script(config):
                          + '" -NoNewWindow\n')
 
         lines.append('    Start-Process "'
-                     + config[config.process_name]['executable']
+                     + config[trade.process_name]['executable']
                      + '" -NoNewWindow\n')
         for i in range(len(post_start_options)):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
@@ -304,7 +296,7 @@ def save_customer_margin_ratios(config):
     global pd
     import pandas as pd
 
-    section = config[config.process_name]
+    section = config[trade.process_name]
     update_time = section['update_time']
     time_zone = section['time_zone']
     customer_margin_ratio_url = section['customer_margin_ratio_url']
@@ -332,8 +324,8 @@ def save_customer_margin_ratios(config):
 
         df = df[df[regulation_header].str.contains(
             suspended + '|' + customer_margin_ratio)]
-        df[regulation_header].replace('.*' + suspended + '.*',
-                                      'suspended', inplace=True, regex=True)
+        df[regulation_header].replace('.*' + suspended + '.*', 'suspended',
+                                      inplace=True, regex=True)
         df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
                                       r'0.\1', inplace=True, regex=True)
 
@@ -397,9 +389,7 @@ def get_latest(config, update_time, time_zone, *paths):
         print(e)
         sys.exit(1)
 
-    last_modified = pd.Timestamp(head.headers['last-modified'])
-
-    if modified_time < last_modified:
+    if modified_time < pd.Timestamp(head.headers['last-modified']):
         dfs = pd.read_html(market_holiday_url, match=date_header)
         df = pd.concat(dfs)[date_header]
         df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
@@ -431,7 +421,7 @@ def get_latest(config, update_time, time_zone, *paths):
     if modified_time < latest:
         return latest
 
-def execute_action(config, place_trade, gui_callbacks, action):
+def execute_action(trade, config, gui_callbacks, action):
     import ast
 
     commands = eval(config['Actions'][action])
@@ -440,14 +430,14 @@ def execute_action(config, place_trade, gui_callbacks, action):
         if len(commands[i]) == 2:
             arguments = commands[i][1]
         if command == 'back_to':
-            pyautogui.moveTo(place_trade.previous_position)
+            pyautogui.moveTo(trade.previous_position)
         elif command == 'beep':
             import winsound
 
             frequency, duration = eval(arguments)
             winsound.Beep(frequency, duration)
         elif command == 'calculate_share_size':
-            calculate_share_size(config, place_trade, arguments)
+            calculate_share_size(trade, config, arguments)
         elif command == 'click':
             coordinates = eval(arguments)
             if gui_callbacks.swapped:
@@ -470,9 +460,10 @@ def execute_action(config, place_trade, gui_callbacks, action):
                 section['date'] = str(date.today())
                 section['number_of_trades'] = '1'
 
-            config.write_config()
+            with open(trade.config_file, 'w', encoding='utf-8') as f:
+                config.write(f)
         elif command == 'get_symbol':
-            win32gui.EnumWindows(place_trade.get_symbol, arguments)
+            win32gui.EnumWindows(trade.get_symbol, arguments)
         elif command == 'hide_parent_window':
             win32gui.EnumWindows(gui_interactions.hide_parent_window,
                                  arguments)
@@ -496,9 +487,9 @@ def execute_action(config, place_trade, gui_callbacks, action):
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
             gui_callbacks.clickable_windows = ast.literal_eval(
-                config[config.process_name]['clickable_windows'])
+                config[trade.process_name]['clickable_windows'])
             gui_interactions.show_hide_window_on_click(
-                gui_callbacks, config.process_name + '.exe', arguments)
+                gui_callbacks, trade.process_name + '.exe', arguments)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, arguments)
         elif command == 'show_window':
@@ -525,16 +516,16 @@ def execute_action(config, place_trade, gui_callbacks, action):
             gui_interactions.wait_for_window(gui_callbacks, arguments)
         elif command == 'write_alt_symbol':
             symbols = list(map(str.strip, arguments.split(',')))
-            if symbols[0] == place_trade.symbol:
+            if symbols[0] == trade.symbol:
                 alt_symbol = symbols[1]
             else:
                 alt_symbol = symbols[0]
 
             pyautogui.write(alt_symbol)
         elif command == 'write_share_size':
-            pyautogui.write(str(place_trade.share_size))
+            pyautogui.write(str(trade.share_size))
 
-def configure_startup_script(config):
+def configure_startup_script(trade, config):
     section = config['Startup Script']
     pre_start_options = section['pre_start_options']
     post_start_options = section['post_start_options']
@@ -557,9 +548,10 @@ def configure_startup_script(config):
     section['running_options'] = \
         input('running_options [' + running_options + '] ') \
         or running_options
-    config.write_config()
+    with open(trade.config_file, 'w', encoding='utf-8') as f:
+        config.write(f)
 
-def configure_cash_balance(config):
+def configure_cash_balance(trade, config):
     section = config['Trading']
     fixed_cash_balance = section['fixed_cash_balance']
     utilization_ratio = section['utilization_ratio']
@@ -585,27 +577,29 @@ def configure_cash_balance(config):
     else:
         section['utilization_ratio'] = str(utilization_ratio)
 
-    config.write_config()
+    with open(trade.config_file, 'w', encoding='utf-8') as f:
+        config.write(f)
 
-def configure_ocr_region(config, key, region):
-    config[config.process_name][key] = ', '.join(region)
-    config.write_config()
+def configure_ocr_region(trade, config, key, region):
+    config[trade.process_name][key] = ', '.join(region)
+    with open(trade.config_file, 'w', encoding='utf-8') as f:
+        config.write(f)
 
-def calculate_share_size(config, place_trade, position):
+def calculate_share_size(trade, config, position):
     fixed_cash_balance = int(config['Trading']['fixed_cash_balance'])
     if fixed_cash_balance > 0:
-        place_trade.cash_balance = fixed_cash_balance
+        trade.cash_balance = fixed_cash_balance
     else:
-        region = config[config.process_name]['cash_balance_region'].split(', ')
-        place_trade.cash_balance = get_prices(*region)
+        region = config[trade.process_name]['cash_balance_region'].split(', ')
+        trade.cash_balance = get_prices(*region)
 
     customer_margin_ratio = 0.31
     try:
-        with open(config[config.process_name]['customer_margin_ratios'], 'r') \
+        with open(config[trade.process_name]['customer_margin_ratios'], 'r') \
              as f:
             reader = csv.reader(f)
             for row in reader:
-                if row[0] == place_trade.symbol:
+                if row[0] == trade.symbol:
                     if row[1] == 'suspended':
                         sys.exit()
                     else:
@@ -614,11 +608,10 @@ def calculate_share_size(config, place_trade, position):
     except OSError as e:
         print(e)
 
-    price_limit = get_price_limit(config, place_trade)
-
-    trading_unit = 100
     utilization_ratio = float(config['Trading']['utilization_ratio'])
-    share_size = int(place_trade.cash_balance * utilization_ratio
+    price_limit = get_price_limit(trade, config)
+    trading_unit = 100
+    share_size = int(trade.cash_balance * utilization_ratio
                      / customer_margin_ratio / price_limit / trading_unit) \
                      * trading_unit
     if share_size == 0:
@@ -626,7 +619,7 @@ def calculate_share_size(config, place_trade, position):
     if position == 'short' and share_size > 50 * trading_unit:
         share_size = 50 * trading_unit
 
-    place_trade.share_size = share_size
+    trade.share_size = share_size
 
 def get_prices(x, y, width, height, index, integer=True):
     if integer:
@@ -646,14 +639,14 @@ def get_prices(x, y, width, height, index, integer=True):
             pass
     return prices[int(index)]
 
-def get_price_limit(config, place_trade):
+def get_price_limit(trade, config):
     closing_price = 0.0
     try:
-        with open(config['Market Data']['closing_prices']
-                  + place_trade.symbol[0] + '.csv', 'r') as f:
+        with open(config['Market Data']['closing_prices'] + trade.symbol[0]
+                  + '.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
-                if row[0] == place_trade.symbol:
+                if row[0] == trade.symbol:
                     closing_price = float(row[1])
                     break
     except OSError as e:
@@ -729,7 +722,7 @@ def get_price_limit(config, place_trade):
         else:
             price_limit = closing_price + 10000000
     else:
-        region = config[config.process_name]['price_limit_region'].split(', ')
+        region = config[trade.process_name]['price_limit_region'].split(', ')
         price_limit = get_prices(*region, False)
     return price_limit
 
