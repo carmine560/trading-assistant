@@ -424,7 +424,7 @@ def get_latest(config, update_time, time_zone, *paths):
 def execute_action(trade, config, gui_callbacks, action):
     import ast
 
-    commands = eval(config['Actions'][action])
+    commands = ast.literal_eval(config['Actions'][action])
     for i in range(len(commands)):
         command = commands[i][0]
         if len(commands[i]) == 2:
@@ -434,12 +434,11 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'beep':
             import winsound
 
-            frequency, duration = eval(arguments)
-            winsound.Beep(frequency, duration)
+            winsound.Beep(*ast.literal_eval(arguments))
         elif command == 'calculate_share_size':
             calculate_share_size(trade, config, arguments)
         elif command == 'click':
-            coordinates = eval(arguments)
+            coordinates = ast.literal_eval(arguments)
             if gui_callbacks.swapped:
                 pyautogui.rightClick(coordinates)
             else:
@@ -470,7 +469,7 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'hide_window':
             win32gui.EnumWindows(gui_interactions.hide_window, arguments)
         elif command == 'move_to':
-            pyautogui.moveTo(eval(arguments))
+            pyautogui.moveTo(ast.literal_eval(arguments))
         elif command == 'press_hotkeys':
             keys = list(map(str.strip, arguments.split(',')))
             pyautogui.hotkey(*keys)
