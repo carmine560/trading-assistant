@@ -136,7 +136,9 @@ def main():
             configure_option.delete_option(config, 'Actions', args.T,
                                            trade.config_file)
 
-        file_utilities.delete_shortcut(args.T, trade.config_directory)
+        file_utilities.delete_shortcut(
+            args.T, program_group_base=config[trade.process_name]['title'],
+            icon_directory=trade.config_directory)
     elif args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configure_startup_script(trade, config)
