@@ -56,7 +56,7 @@ def create_icon(basename, icon_directory=None):
 
     acronym = ''
     for word in re.split('[\W_]+', basename):
-        if len(word):
+        if word:
             acronym = acronym + word[0].upper()
 
     image_width = image_height = 256

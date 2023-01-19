@@ -80,13 +80,13 @@ def main():
     gui_callbacks = gui_interactions.GuiCallbacks()
 
     if args.r:
-        save_customer_margin_ratios(config)
+        save_customer_margin_ratios(trade, config)
     elif args.d:
         save_market_data(config)
     elif args.M is not None:
-        if len(args.M) == 0:
-            configure_option.list_section(config, 'Actions')
-        else:
+        # Without -M, args.M is None.  Without arguments, args.M is an
+        # empty list.
+        if args.M:
             file_utilities.backup_file(trade.config_file, number_of_backups=8)
             if configure_option.modify_tuple_list(
                     config, 'Actions', args.M[0], trade.config_file,
@@ -113,6 +113,8 @@ def main():
                     args.M[0],
                     program_group_base=config[trade.process_name]['title'],
                     icon_directory=trade.config_directory)
+        else:
+            configure_option.list_section(config, 'Actions')
     elif args.e == 'LIST_ACTIONS':
         configure_option.list_section(config, 'Actions')
     elif args.e:
@@ -138,7 +140,7 @@ def main():
     elif args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configure_startup_script(trade, config)
-        create_startup_script(config)
+        create_startup_script(trade, config)
 
         if args.I == 'WITHOUT_HOTKEY':
             file_utilities.create_shortcut(
@@ -240,7 +242,7 @@ def configure(trade):
 
     return config
 
-def create_startup_script(config):
+def create_startup_script(trade, config):
     section = config['Startup Script']
     pre_start_options = section['pre_start_options']
     post_start_options = section['post_start_options']
@@ -248,13 +250,13 @@ def create_startup_script(config):
     post_start_arguments = section['post_start_arguments']
     running_options = section['running_options']
 
-    if len(pre_start_options):
+    if pre_start_options:
         pre_start_options = \
             list(map(str.strip, section['pre_start_options'].split(',')))
-    if len(post_start_options):
+    if post_start_options:
         post_start_options = \
             list(map(str.strip, section['post_start_options'].split(',')))
-    if len(running_options):
+    if running_options:
         running_options = \
             list(map(str.strip, section['running_options'].split(',')))
 
@@ -280,8 +282,8 @@ def create_startup_script(config):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
                          + __file__ + '`" ' + post_start_options[i]
                          + '" -NoNewWindow\n')
-        if len(post_start_path):
-            if len(post_start_arguments):
+        if post_start_path:
+            if post_start_arguments:
                 lines.append('    Start-Process "' + post_start_path
                              + '" -ArgumentList "' + post_start_arguments
                              + '" -NoNewWindow\n')
@@ -292,7 +294,7 @@ def create_startup_script(config):
         lines.append('}\n')
         f.writelines(lines)
 
-def save_customer_margin_ratios(config):
+def save_customer_margin_ratios(trade, config):
     global pd
     import pandas as pd
 
@@ -627,7 +629,7 @@ def get_prices(x, y, width, height, index, integer=True):
         config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
 
     prices = []
-    while not len(prices):
+    while not prices:
         try:
             image = pyautogui.screenshot(region=(x, y, width, height))
             separated_prices = pytesseract.image_to_string(image,

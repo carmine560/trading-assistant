@@ -46,10 +46,10 @@ def modify_tuple_list(config, section, option, config_file, key_prompt='key',
                 value = configure_position(answer)
             else:
                 value = input(value_prompt + ': ').strip()
-            if len(value) == 0:
-                tuple_list.insert(i, (key,))
-            else:
+            if value:
                 tuple_list.insert(i, (key, value))
+            else:
+                tuple_list.insert(i, (key,))
         elif answer == 'modify':
             key = tuple_list[i][0]
             if len(tuple_list[i]) == 2:
@@ -66,10 +66,10 @@ def modify_tuple_list(config, section, option, config_file, key_prompt='key',
                               + ANSI_RESET + ': ').strip() or value
             else:
                 value = input(value_prompt + ': ').strip()
-            if len(value) == 0:
-                tuple_list[i] = (key,)
-            else:
+            if value:
                 tuple_list[i] = (key, value)
+            else:
+                tuple_list[i] = (key,)
         elif answer == 'delete':
             del tuple_list[i]
             i -= 1
@@ -78,7 +78,7 @@ def modify_tuple_list(config, section, option, config_file, key_prompt='key',
 
         i += 1
 
-    if len(tuple_list):
+    if tuple_list:
         config[section][option] = str(tuple_list)
         with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)
@@ -137,7 +137,8 @@ def configure_position(answer, value=''):
         value = input('input/' + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + 'lick '
                       + ANSI_DEFAULT + value + ANSI_RESET + ': ').strip() \
                       or value
-    if len(value) and value[0].lower() == 'c':
+
+    if value and value[0].lower() == 'c':
         previous_key_state = win32api.GetKeyState(0x01)
         current_number = 0
         coordinates = ''
