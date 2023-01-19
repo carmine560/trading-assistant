@@ -41,38 +41,34 @@ class Trade:
 
 def main():
     parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
     parser.add_argument(
         '-d', action='store_true',
         help='save the previous market data')
-    parser.add_argument(
-        '-M', nargs='*',
-        help=('create or modify an action and create a shortcut to it '
-              '([ACTION [HOTKEY]])'))
-    parser.add_argument(
-        '-e', nargs='?', const='LIST_ACTIONS',
+    group.add_argument(
+        '-M', metavar=('ACTION', 'HOTKEY'), nargs='*',
+        help=('create or modify an action and create a shortcut to it'))
+    group.add_argument(
+        '-e', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help='execute an action')
-    parser.add_argument(
-        '-T', nargs='?', const='LIST_ACTIONS',
-        help=('delete a startup script or an action and a shortcut to it '
-              '([SCRIPT_BASE | ACTION])'))
-    parser.add_argument(
-        '-I', nargs='?', const='WITHOUT_HOTKEY',
-        help=('create or modify a startup script '
-              'and create a shortcut to it ([HOTKEY])'))
+    group.add_argument(
+        '-T', const='LIST_ACTIONS', metavar='SCRIPT_BASE | ACTION', nargs='?',
+        help=('delete a startup script or an action and a shortcut to it'))
+    group.add_argument(
+        '-I', const='WITHOUT_HOTKEY', metavar='HOTKEY', nargs='?',
+        help=('create or modify a startup script and create a shortcut to it'))
     parser.add_argument(
         '-B', action='store_true',
         help='configure a cash balance')
     parser.add_argument(
-        '-C', nargs=5,
-        help=('configure the cash balance region and the index of the price '
-              '(X Y WIDTH HEIGHT INDEX)'))
+        '-C', nargs=5, metavar=('X', 'Y', 'WIDTH', 'HEIGHT', 'INDEX'),
+        help=('configure the cash balance region and the index of the price'))
     parser.add_argument(
-        '-L', nargs=5,
-        help=('configure the price limit region and the index of the price '
-              '(X Y WIDTH HEIGHT INDEX)'))
+        '-L', nargs=5, metavar=('X', 'Y', 'WIDTH', 'HEIGHT', 'INDEX'),
+        help=('configure the price limit region and the index of the price'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade('HYPERSBI2')
@@ -81,9 +77,11 @@ def main():
 
     if args.r:
         save_customer_margin_ratios(trade, config)
-    elif args.d:
+    if args.d:
+        # TODO
+        # Remove
         save_market_data(config)
-    elif args.M is not None:
+    if args.M is not None:
         # Without -M, args.M is None.  Without arguments, args.M is an
         # empty list.
         if args.M:
@@ -115,15 +113,16 @@ def main():
                     icon_directory=trade.config_directory)
         else:
             configure_option.list_section(config, 'Actions')
-    elif args.e == 'LIST_ACTIONS':
+    if args.e == 'LIST_ACTIONS':
         configure_option.list_section(config, 'Actions')
-    elif args.e:
+    if args.e:
         execute_action(trade, config, gui_callbacks, args.e)
-    elif args.T == 'LIST_ACTIONS':
+    if args.T == 'LIST_ACTIONS':
+        # TODO
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
             configure_option.list_section(config, 'Actions')
-    elif args.T:
+    if args.T:
         if args.T == trade.script_base \
            and os.path.exists(trade.startup_script):
             try:
@@ -139,7 +138,7 @@ def main():
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process_name]['title'],
             icon_directory=trade.config_directory)
-    elif args.I:
+    if args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configure_startup_script(trade, config)
         create_startup_script(trade, config)
@@ -156,13 +155,13 @@ def main():
                 '-WindowStyle Hidden -File "' + trade.startup_script + '"',
                 program_group_base=config[trade.process_name]['title'],
                 icon_directory=trade.config_directory, hotkey=args.I)
-    elif args.B:
+    if args.B:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configure_cash_balance(trade, config)
-    elif args.C:
+    if args.C:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configure_ocr_region(trade, config, 'cash_balance_region', args.C)
-    elif args.L:
+    if args.L:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configure_ocr_region(trade, config, 'price_limit_region', args.L)
 
@@ -644,6 +643,7 @@ def get_prices(x, y, width, height, index, integer=True):
 
 def get_price_limit(trade, config):
     closing_price = 0.0
+    # TODO
     try:
         with open(config['Market Data']['closing_prices'] + trade.symbol[0]
                   + '.csv', 'r') as f:
