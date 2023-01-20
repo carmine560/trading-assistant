@@ -181,7 +181,7 @@ def configure(trade):
         'closing_time': '15:50:00',
         'time_zone': 'Asia/Tokyo',
         'market_data_url': 'https://kabutan.jp/warning/?mode=2_9&page=',
-        'pages': '4',
+        'number_of_pages': '4',
         'symbol_header': 'コード',
         'closing_price_header': '株価',
         'closing_prices':
@@ -189,8 +189,6 @@ def configure(trade):
     config['Startup Script'] = {
         'pre_start_options': '-r -d',
         'post_start_options': '',
-        'post_start_path': '',
-        'post_start_arguments': '',
         'running_options': ''}
     config['HYPERSBI2'] = {
         'update_time': '20:00:00',
@@ -245,8 +243,6 @@ def create_startup_script(trade, config):
     section = config['Startup Script']
     pre_start_options = section['pre_start_options']
     post_start_options = section['post_start_options']
-    post_start_path = section['post_start_path']
-    post_start_arguments = section['post_start_arguments']
     running_options = section['running_options']
 
     if pre_start_options:
@@ -281,14 +277,6 @@ def create_startup_script(trade, config):
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
                          + __file__ + '`" ' + post_start_options[i]
                          + '" -NoNewWindow\n')
-        if post_start_path:
-            if post_start_arguments:
-                lines.append('    Start-Process "' + post_start_path
-                             + '" -ArgumentList "' + post_start_arguments
-                             + '" -NoNewWindow\n')
-            else:
-                lines.append('    Start-Process "' + post_start_path
-                             + '" -NoNewWindow\n')
 
         lines.append('}\n')
         f.writelines(lines)
@@ -341,7 +329,7 @@ def save_market_data(config):
     closing_time = section['closing_time']
     time_zone = section['time_zone']
     market_data_url = section['market_data_url']
-    pages = section['pages']
+    number_of_pages = section['number_of_pages']
     symbol_header = section['symbol_header']
     closing_price_header = section['closing_price_header']
     closing_prices = section['closing_prices']
@@ -354,7 +342,7 @@ def save_market_data(config):
             paths.append(closing_prices + str(i) + '.csv')
         if get_latest(config, closing_time, time_zone, *paths):
             dfs = []
-            for i in range(1, int(pages) + 1):
+            for i in range(1, int(number_of_pages) + 1):
                 try:
                     dfs = dfs + pd.read_html(market_data_url + str(i),
                                              match=symbol_header)
@@ -532,8 +520,6 @@ def configure_startup_script(trade, config):
     section = config['Startup Script']
     pre_start_options = section['pre_start_options']
     post_start_options = section['post_start_options']
-    post_start_path = section['post_start_path']
-    post_start_arguments = section['post_start_arguments']
     running_options = section['running_options']
 
     section['pre_start_options'] = \
@@ -542,12 +528,6 @@ def configure_startup_script(trade, config):
     section['post_start_options'] = \
         input('post_start_options [' + post_start_options + '] ') \
         or post_start_options
-    section['post_start_path'] = \
-        input('post_start_path [' + post_start_path + '] ') \
-        or post_start_path
-    section['post_start_arguments'] = \
-        input('post_start_arguments [' + post_start_arguments + '] ') \
-        or post_start_arguments
     section['running_options'] = \
         input('running_options [' + running_options + '] ') \
         or running_options
