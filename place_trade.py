@@ -78,8 +78,6 @@ def main():
     if args.r:
         save_customer_margin_ratios(trade, config)
     if args.d:
-        # TODO
-        # Remove
         save_market_data(config)
     if args.M is not None:
         # Without -M, args.M is None.  Without arguments, args.M is an
@@ -179,17 +177,17 @@ def configure(trade):
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
-        'update_time': '20:00:00',
+        # TODO
+        'update_time': '15:20:00',
         'time_zone': 'Asia/Tokyo',
-        'market_data_url':
-        'https://kabudata-dll.com/wp-content/uploads/%Y/%m/%Y%m%d.csv',
-        'encoding': 'cp932',
-        'symbol_header': '銘柄コード',
-        'closing_price_header': '終値',
+        'market_data_url': 'https://kabutan.jp/warning/?mode=2_9&page=',
+        'pages': '4',
+        'symbol_header': 'コード',
+        'closing_price_header': '株価',
         'closing_prices':
         os.path.join('${Common:market_directory}', 'closing_prices_')}
     config['Startup Script'] = {
-        'pre_start_options': '-r, -d',
+        'pre_start_options': '-r -d',
         'post_start_options': '',
         'post_start_path': '',
         'post_start_arguments': '',
@@ -342,7 +340,7 @@ def save_market_data(config):
     update_time = section['update_time']
     time_zone = section['time_zone']
     market_data_url = section['market_data_url']
-    encoding = section['encoding']
+    pages = section['pages']
     symbol_header = section['symbol_header']
     closing_price_header = section['closing_price_header']
     closing_prices = section['closing_prices']
@@ -351,23 +349,24 @@ def save_market_data(config):
     for i in range(1, 10):
         paths.append(closing_prices + str(i) + '.csv')
 
-    latest = get_latest(config, update_time, time_zone, *paths)
-    if latest:
-        df = pd.DataFrame()
-        try:
-            df = pd.read_csv(latest.strftime(market_data_url), dtype=str,
-                             encoding=encoding)
-        except Exception as e:
-            print(e)
-            sys.exit(1)
+    # TODO
+    if True:
+        dfs = []
+        for i in range(1, int(pages) + 1):
+            try:
+                dfs = dfs + pd.read_html(market_data_url + str(i),
+                                         match=symbol_header)
+            except Exception as e:
+                print(e)
+                sys.exit(1)
 
+        df = pd.concat(dfs)
         df = df[[symbol_header, closing_price_header]]
-        df.replace('^\s+$', float('NaN'), inplace=True, regex=True)
-        df.dropna(subset=[symbol_header, closing_price_header], inplace=True)
         df.sort_values(by=symbol_header, inplace=True)
 
         for i in range(1, 10):
-            subset = df.loc[df[symbol_header].str.match(str(i) + '\d{3}5?$')]
+            subset = df.loc[df[symbol_header].astype(str).str.match(
+                str(i) + '\d{3}5?$')]
             subset.to_csv(closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
@@ -392,7 +391,9 @@ def get_latest(config, update_time, time_zone, *paths):
         print(e)
         sys.exit(1)
 
-    if modified_time < pd.Timestamp(head.headers['last-modified']):
+    # last_modified is for debugging.
+    last_modified = pd.Timestamp(head.headers['last-modified'])
+    if modified_time < last_modified:
         dfs = pd.read_html(market_holiday_url, match=date_header)
         df = pd.concat(dfs)[date_header]
         df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
@@ -643,7 +644,6 @@ def get_prices(x, y, width, height, index, integer=True):
 
 def get_price_limit(trade, config):
     closing_price = 0.0
-    # TODO
     try:
         with open(config['Market Data']['closing_prices'] + trade.symbol[0]
                   + '.csv', 'r') as f:
