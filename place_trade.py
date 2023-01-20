@@ -80,8 +80,8 @@ def main():
     if args.d:
         save_market_data(config)
     if args.M is not None:
-        # Without -M, args.M is None.  Without arguments, args.M is an
-        # empty list.
+        # args.M is None if the option -M is omitted.  args.M is an
+        # empty list if no arguments are given.
         if args.M:
             file_utilities.backup_file(trade.config_file, number_of_backups=8)
             if configure_option.modify_tuple_list(
@@ -177,8 +177,8 @@ def configure(trade):
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
-        # TODO
-        'update_time': '15:20:00',
+        'opening_time': '9:20:00',
+        'closing_time': '15:50:00',
         'time_zone': 'Asia/Tokyo',
         'market_data_url': 'https://kabutan.jp/warning/?mode=2_9&page=',
         'pages': '4',
@@ -337,7 +337,8 @@ def save_market_data(config):
     import pandas as pd
 
     section = config['Market Data']
-    update_time = section['update_time']
+    opening_time = section['opening_time']
+    closing_time = section['closing_time']
     time_zone = section['time_zone']
     market_data_url = section['market_data_url']
     pages = section['pages']
@@ -345,30 +346,31 @@ def save_market_data(config):
     closing_price_header = section['closing_price_header']
     closing_prices = section['closing_prices']
 
-    paths = []
-    for i in range(1, 10):
-        paths.append(closing_prices + str(i) + '.csv')
-
-    # TODO
-    if True:
-        dfs = []
-        for i in range(1, int(pages) + 1):
-            try:
-                dfs = dfs + pd.read_html(market_data_url + str(i),
-                                         match=symbol_header)
-            except Exception as e:
-                print(e)
-                sys.exit(1)
-
-        df = pd.concat(dfs)
-        df = df[[symbol_header, closing_price_header]]
-        df.sort_values(by=symbol_header, inplace=True)
-
+    if not pd.Timestamp(opening_time, tz=time_zone) \
+       <= pd.Timestamp.now(tz=time_zone) \
+       <= pd.Timestamp(closing_time, tz=time_zone):
+        paths = []
         for i in range(1, 10):
-            subset = df.loc[df[symbol_header].astype(str).str.match(
-                str(i) + '\d{3}5?$')]
-            subset.to_csv(closing_prices + str(i) + '.csv', header=False,
-                          index=False)
+            paths.append(closing_prices + str(i) + '.csv')
+        if get_latest(config, closing_time, time_zone, *paths):
+            dfs = []
+            for i in range(1, int(pages) + 1):
+                try:
+                    dfs = dfs + pd.read_html(market_data_url + str(i),
+                                             match=symbol_header)
+                except Exception as e:
+                    print(e)
+                    sys.exit(1)
+
+            df = pd.concat(dfs)
+            df = df[[symbol_header, closing_price_header]]
+            df.sort_values(by=symbol_header, inplace=True)
+
+            for i in range(1, 10):
+                subset = df.loc[df[symbol_header].astype(str).str.match(
+                    str(i) + '\d{3}5?$')]
+                subset.to_csv(closing_prices + str(i) + '.csv', header=False,
+                              index=False)
 
 def get_latest(config, update_time, time_zone, *paths):
     import requests
@@ -391,9 +393,7 @@ def get_latest(config, update_time, time_zone, *paths):
         print(e)
         sys.exit(1)
 
-    # last_modified is for debugging.
-    last_modified = pd.Timestamp(head.headers['last-modified'])
-    if modified_time < last_modified:
+    if modified_time < pd.Timestamp(head.headers['last-modified']):
         dfs = pd.read_html(market_holiday_url, match=date_header)
         df = pd.concat(dfs)[date_header]
         df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
