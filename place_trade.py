@@ -79,44 +79,38 @@ def main():
         save_customer_margin_ratios(trade, config)
     if args.d:
         save_market_data(config)
-    if args.M is not None:
-        # args.M is None if the option -M is omitted.  args.M is an
-        # empty list if no arguments are given.
-        if args.M:
-            file_utilities.backup_file(trade.config_file, number_of_backups=8)
-            if configuration.modify_tuple_list(
-                    config, 'Actions', args.M[0], trade.config_file,
-                    key_prompt='command', value_prompt='arguments',
-                    end_of_list_prompt='end of commands',
-                    positioning_keys=['click', 'move_to']):
-                # To pin the shortcut to the Taskbar, specify an
-                # executable file as the argument target_path.
-                if len(args.M) == 1:
-                    file_utilities.create_shortcut(
-                        args.M[0], 'py.exe',
-                        '"' + __file__ + '" -e ' + args.M[0],
-                        program_group_base=config[trade.process_name]['title'],
-                        icon_directory=trade.config_directory)
-                elif len(args.M) == 2:
-                    file_utilities.create_shortcut(
-                        args.M[0], 'py.exe',
-                        '"' + __file__ + '" -e ' + args.M[0],
-                        program_group_base=config[trade.process_name]['title'],
-                        icon_directory=trade.config_directory,
-                        hotkey=args.M[1])
-            else:
-                file_utilities.delete_shortcut(
-                    args.M[0],
+    if args.M == []:
+        # args.M is an empty list if no arguments are given.
+        configuration.list_section(config, 'Actions')
+    if args.M:
+        file_utilities.backup_file(trade.config_file, number_of_backups=8)
+        if configuration.modify_tuple_list(
+                config, 'Actions', args.M[0], trade.config_file,
+                key_prompt='command', value_prompt='arguments',
+                end_of_list_prompt='end of commands',
+                positioning_keys=['click', 'move_to']):
+            # To pin the shortcut to the Taskbar, specify an
+            # executable file as the argument target_path.
+            if len(args.M) == 1:
+                file_utilities.create_shortcut(
+                    args.M[0], 'py.exe', '"' + __file__ + '" -e ' + args.M[0],
                     program_group_base=config[trade.process_name]['title'],
                     icon_directory=trade.config_directory)
+            elif len(args.M) == 2:
+                file_utilities.create_shortcut(
+                    args.M[0], 'py.exe', '"' + __file__ + '" -e ' + args.M[0],
+                    program_group_base=config[trade.process_name]['title'],
+                    icon_directory=trade.config_directory, hotkey=args.M[1])
         else:
-            configuration.list_section(config, 'Actions')
+            file_utilities.delete_shortcut(
+                args.M[0],
+                program_group_base=config[trade.process_name]['title'],
+                icon_directory=trade.config_directory)
     if args.e == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
     if args.e:
         execute_action(trade, config, gui_callbacks, args.e)
     if args.T == 'LIST_ACTIONS':
-        # TODO
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
             configuration.list_section(config, 'Actions')
