@@ -75,8 +75,8 @@ specify the index of the price.  These configurations are saved in the
 configuration file `HYPERSBI2\place_trade.ini`.
 
 ``` batchfile
-py place_trade.py -C X Y WIDTH HEIGHT INDEX
-py place_trade.py -L X Y WIDTH HEIGHT INDEX
+py place_trade.py -C
+py place_trade.py -L
 ```
 
 ### Create or Modify Action ###
@@ -149,10 +149,10 @@ login = [
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
+    ('wait_for_period', '1.4'),      # wait for 1.4 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
+    ('wait_for_period', '1.4'),      # wait for 1.4 seconds.
     ('hide_window', '登録銘柄'),     # hide the Watchlists window.
 ]
 ```
@@ -235,10 +235,8 @@ py place_trade.py -e [ACTION]
   * `-I [HOTKEY]` create or modify a startup script and create a
     shortcut to it
   * `-B` configure a cash balance
-  * `-C X Y WIDTH HEIGHT INDEX` configure the cash balance region and
-    the index of the price
-  * `-L X Y WIDTH HEIGHT INDEX` configure the price limit region and
-    the index of the price
+  * `-C` configure the cash balance region and the index of the price
+  * `-L` configure the price limit region and the index of the price
 
 ## Appendix ##
 

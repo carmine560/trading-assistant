@@ -64,10 +64,10 @@ def main():
         '-B', action='store_true',
         help='configure a cash balance')
     parser.add_argument(
-        '-C', nargs=5, metavar=('X', 'Y', 'WIDTH', 'HEIGHT', 'INDEX'),
+        '-C', action='store_true',
         help=('configure the cash balance region and the index of the price'))
     parser.add_argument(
-        '-L', nargs=5, metavar=('X', 'Y', 'WIDTH', 'HEIGHT', 'INDEX'),
+        '-L', action='store_true',
         help=('configure the price limit region and the index of the price'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
@@ -132,9 +132,9 @@ def main():
             icon_directory=trade.config_directory)
     if args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configure_startup_script(trade, config)
+        configuration.modify_section(config, 'Startup Script',
+                                     trade.config_file)
         create_startup_script(trade, config)
-
         if args.I == 'WITHOUT_HOTKEY':
             file_utilities.create_shortcut(
                 trade.script_base, 'powershell.exe',
@@ -149,13 +149,18 @@ def main():
                 icon_directory=trade.config_directory, hotkey=args.I)
     if args.B:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configure_cash_balance(trade, config)
+        configuration.modify_option(config, 'Trading', 'fixed_cash_balance',
+                                    trade.config_file)
     if args.C:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configure_ocr_region(trade, config, 'cash_balance_region', args.C)
+        configuration.modify_option(config, trade.process_name,
+                                    'cash_balance_region', trade.config_file,
+                                    value_prompt='x, y, width, height, index')
     if args.L:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configure_ocr_region(trade, config, 'price_limit_region', args.L)
+        configuration.modify_option(config, trade.process_name,
+                                    'price_limit_region', trade.config_file,
+                                    value_prompt='x, y, width, height, index')
 
 def configure(trade):
     config = configparser.ConfigParser(
@@ -187,8 +192,7 @@ def configure(trade):
     config['HYPERSBI2'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
-        'customer_margin_ratio_url':
-        'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
+        'customer_margin_ratio_url': 'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
         'header': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
@@ -338,8 +342,8 @@ def save_market_data(config):
         dfs = []
         for i in range(1, int(number_of_pages) + 1):
             try:
-                dfs = dfs + pd.read_html(
-                    market_data_url + '&page=' + str(i), match=symbol_header)
+                dfs = dfs + pd.read_html(market_data_url + '&page=' + str(i),
+                                         match=symbol_header)
             except Exception as e:
                 print(e)
                 sys.exit(1)
@@ -519,64 +523,14 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
 
-def configure_startup_script(trade, config):
-    section = config['Startup Script']
-    pre_start_options = section['pre_start_options']
-    post_start_options = section['post_start_options']
-    running_options = section['running_options']
-
-    section['pre_start_options'] = \
-        input('pre_start_options [' + pre_start_options + '] ') \
-        or pre_start_options
-    section['post_start_options'] = \
-        input('post_start_options [' + post_start_options + '] ') \
-        or post_start_options
-    section['running_options'] = \
-        input('running_options [' + running_options + '] ') \
-        or running_options
-    with open(trade.config_file, 'w', encoding='utf-8') as f:
-        config.write(f)
-
-def configure_cash_balance(trade, config):
-    section = config['Trading']
-    fixed_cash_balance = section['fixed_cash_balance']
-    utilization_ratio = section['utilization_ratio']
-
-    section['fixed_cash_balance'] = \
-        input('fixed_cash_balance [' + fixed_cash_balance + '] ') \
-        or fixed_cash_balance
-    fixed_cash_balance = \
-        int(float(section['fixed_cash_balance'].replace(',', '')))
-    if fixed_cash_balance < 0:
-        section['fixed_cash_balance'] = '0'
-    else:
-        section['fixed_cash_balance'] = str(fixed_cash_balance)
-
-    section['utilization_ratio'] = \
-        input('utilization_ratio [' + utilization_ratio + '] ') \
-        or utilization_ratio
-    utilization_ratio = float(section['utilization_ratio'].replace(',', ''))
-    if utilization_ratio < 0.0:
-        section['utilization_ratio'] = '0.0'
-    elif utilization_ratio > 1.0:
-        section['utilization_ratio'] = '1.0'
-    else:
-        section['utilization_ratio'] = str(utilization_ratio)
-
-    with open(trade.config_file, 'w', encoding='utf-8') as f:
-        config.write(f)
-
-def configure_ocr_region(trade, config, key, region):
-    config[trade.process_name][key] = ', '.join(region)
-    with open(trade.config_file, 'w', encoding='utf-8') as f:
-        config.write(f)
-
 def calculate_share_size(trade, config, position):
     fixed_cash_balance = int(config['Trading']['fixed_cash_balance'])
     if fixed_cash_balance > 0:
         trade.cash_balance = fixed_cash_balance
     else:
-        region = config[trade.process_name]['cash_balance_region'].split(', ')
+        region = list(map(str.strip,
+                          config[trade.process_name]['cash_balance_region']
+                          .split(',')))
         trade.cash_balance = get_prices(*region)
 
     customer_margin_ratio = 0.31
@@ -708,7 +662,9 @@ def get_price_limit(trade, config):
         else:
             price_limit = closing_price + 10000000
     else:
-        region = config[trade.process_name]['price_limit_region'].split(', ')
+        region = list(map(str.strip,
+                          config[trade.process_name]['price_limit_region']
+                          .split(',')))
         price_limit = get_prices(*region, False)
     return price_limit
 

@@ -7,8 +7,37 @@ ANSI_RESET = '\033[m'
 
 def list_section(config, section):
     if config.has_section(section):
-        for key in config[section]:
-            print(key)
+        for option in config[section]:
+            print(option)
+
+def modify_section(config, section, config_file):
+    if config.has_section(section):
+        for option in config[section]:
+            if not modify_option(config, section, option, config_file):
+                break
+
+def modify_option(config, section, option, config_file, value_prompt='value'):
+    global ANSI_DEFAULT
+    global ANSI_RESET
+    if config.has_option(section, option):
+        print(option + ' = '
+              + ANSI_DEFAULT + config[section][option] + ANSI_RESET)
+        answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
+
+        if answer == 'modify':
+            value = config[section][option]
+            value = input(value_prompt + ': ').strip() or value
+            config[section][option] = value
+        elif answer == 'empty':
+            config[section][option] = ''
+        elif answer == 'default':
+            config.remove_option(section, option)
+        elif answer == 'quit':
+            return False
+
+        with open(config_file, 'w', encoding='utf-8') as f:
+            config.write(f)
+            return True
 
 def modify_tuple_list(config, section, option, config_file, key_prompt='key',
                       value_prompt='value', end_of_list_prompt='end of list',
@@ -40,6 +69,7 @@ def modify_tuple_list(config, section, option, config_file, key_prompt='key',
             else:
                 print(ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
                 answer = tidy_answer(['insert', 'quit'])
+
         if answer == 'insert':
             key = input(key_prompt + ': ').strip()
             if any(k == key for k in positioning_keys):
