@@ -191,9 +191,7 @@ def configure(trade):
         'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
-        # TODO
-        # tuple
-        'header': '銘柄, コード, 建玉, 信用取引区分, 規制内容',
+        'header': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
         'customer_margin_ratio': '委託保証金率',
         'suspended': '新規建停止',
         'customer_margin_ratios':
@@ -201,10 +199,8 @@ def configure(trade):
                      'customer_margin_ratios.csv'),
         'executable':
         r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
-        'title': 'Hyper SBI 2',
-        # TODO
-        # tuple
-        'clickable_windows': ['お知らせ',                    # Announcements
+        'title': 'Hyper SBI 2 Assistant',
+        'clickable_windows': ('お知らせ',                    # Announcements
                               '個別銘柄\s.*\((\d{4})\)',     # Summary
                               '登録銘柄',                    # Watchlists
                               '保有証券',                    # Holdings
@@ -216,7 +212,7 @@ def configure(trade):
                               '口座情報',                    # Account
                               'ニュース',                    # News
                               '取引ポップアップ',            # Trading
-                              '通知設定'],                   # Notifications
+                              '通知設定'),                   # Notifications
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0'}
     config['Trading'] = {
@@ -280,6 +276,8 @@ def create_startup_script(trade, config):
         f.writelines(lines)
 
 def save_customer_margin_ratios(trade, config):
+    import ast
+
     global pd
     import pandas as pd
 
@@ -303,7 +301,7 @@ def save_customer_margin_ratios(trade, config):
             print(e)
             sys.exit(1)
 
-        header = tuple(map(str.strip, header.split(',')))
+        header = ast.literal_eval(header)
         for index, df in enumerate(dfs):
             if tuple(df.columns.values) == header:
                 df = dfs[index][[symbol_header, regulation_header]]

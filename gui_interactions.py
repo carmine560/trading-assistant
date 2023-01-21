@@ -16,7 +16,7 @@ class GuiCallbacks:
         self.moved_focus = 0
 
         # enumerate_windows_on_click
-        self.clickable_windows = []
+        self.clickable_windows = ()
         self.callback = None
         self.extra = ''
 

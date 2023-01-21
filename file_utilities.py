@@ -49,6 +49,7 @@ def backup_file(source, backup_root=None, number_of_backups=-1):
                     print(e)
                     sys.exit(1)
 
+# TODO
 def create_icon(basename, icon_directory=None):
     import winreg
 
@@ -168,16 +169,6 @@ def delete_shortcut(basename, program_group_base=None, icon_directory=None):
     if os.path.isdir(program_group) and not os.listdir(program_group):
         try:
             os.rmdir(program_group)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
-    # TODO
-    taskbar = os.path.expandvars(r'$APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar')
-    pinned_shortcut = os.path.join(taskbar, title + '.lnk')
-    if os.path.exists(pinned_shortcut):
-        try:
-            os.remove(pinned_shortcut)
         except OSError as e:
             print(e)
             sys.exit(1)
