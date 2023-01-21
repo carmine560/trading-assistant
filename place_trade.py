@@ -174,7 +174,7 @@ def configure(trade):
         'opening_time': '9:20:00',
         'closing_time': '15:50:00',
         'time_zone': 'Asia/Tokyo',
-        'market_data_url': 'https://kabutan.jp/warning/?mode=2_9&page=',
+        'market_data_url': 'https://kabutan.jp/warning/?mode=2_9',
         'number_of_pages': '4',
         'symbol_header': 'コード',
         'closing_price_header': '株価',
@@ -330,33 +330,31 @@ def save_market_data(config):
     closing_price_header = section['closing_price_header']
     closing_prices = section['closing_prices']
 
-    if not pd.Timestamp(opening_time, tz=time_zone) \
-       <= pd.Timestamp.now(tz=time_zone) \
-       <= pd.Timestamp(closing_time, tz=time_zone):
-        paths = []
+    paths = []
+    for i in range(1, 10):
+        paths.append(closing_prices + str(i) + '.csv')
+    if get_latest(config, closing_time, time_zone, *paths,
+                  volatile_time=opening_time):
+        dfs = []
+        for i in range(1, int(number_of_pages) + 1):
+            try:
+                dfs = dfs + pd.read_html(
+                    market_data_url + '&page=' + str(i), match=symbol_header)
+            except Exception as e:
+                print(e)
+                sys.exit(1)
+
+        df = pd.concat(dfs)
+        df = df[[symbol_header, closing_price_header]]
+        df.sort_values(by=symbol_header, inplace=True)
+
         for i in range(1, 10):
-            paths.append(closing_prices + str(i) + '.csv')
-        if get_latest(config, closing_time, time_zone, *paths):
-            dfs = []
-            for i in range(1, int(number_of_pages) + 1):
-                try:
-                    dfs = dfs + pd.read_html(market_data_url + str(i),
-                                             match=symbol_header)
-                except Exception as e:
-                    print(e)
-                    sys.exit(1)
+            subset = df.loc[df[symbol_header].astype(str).str.match(
+                str(i) + '\d{3}5?$')]
+            subset.to_csv(closing_prices + str(i) + '.csv', header=False,
+                          index=False)
 
-            df = pd.concat(dfs)
-            df = df[[symbol_header, closing_price_header]]
-            df.sort_values(by=symbol_header, inplace=True)
-
-            for i in range(1, 10):
-                subset = df.loc[df[symbol_header].astype(str).str.match(
-                    str(i) + '\d{3}5?$')]
-                subset.to_csv(closing_prices + str(i) + '.csv', header=False,
-                              index=False)
-
-def get_latest(config, update_time, time_zone, *paths):
+def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
     import requests
 
     section = config['Market Holidays']
@@ -407,7 +405,16 @@ def get_latest(config, update_time, time_zone, *paths):
         latest -= pd.Timedelta(days=1)
 
     if modified_time < latest:
-        return latest
+        if volatile_time:
+            now = pd.Timestamp.now(tz=time_zone)
+            if df[0].str.contains(now.strftime(date_format)).any() \
+               or now.weekday() == 5 or now.weekday() == 6:
+                return latest
+            elif not pd.Timestamp(volatile_time, tz=time_zone) <= now \
+                 <= pd.Timestamp(update_time, tz=time_zone):
+                return latest
+        else:
+            return latest
 
 def execute_action(trade, config, gui_callbacks, action):
     import ast
