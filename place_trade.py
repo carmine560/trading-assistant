@@ -11,7 +11,7 @@ import pyautogui
 import pytesseract
 import win32gui
 
-import configure_option
+import configuration
 import file_utilities
 import gui_interactions
 
@@ -84,7 +84,7 @@ def main():
         # empty list if no arguments are given.
         if args.M:
             file_utilities.backup_file(trade.config_file, number_of_backups=8)
-            if configure_option.modify_tuple_list(
+            if configuration.modify_tuple_list(
                     config, 'Actions', args.M[0], trade.config_file,
                     key_prompt='command', value_prompt='arguments',
                     end_of_list_prompt='end of commands',
@@ -110,16 +110,16 @@ def main():
                     program_group_base=config[trade.process_name]['title'],
                     icon_directory=trade.config_directory)
         else:
-            configure_option.list_section(config, 'Actions')
+            configuration.list_section(config, 'Actions')
     if args.e == 'LIST_ACTIONS':
-        configure_option.list_section(config, 'Actions')
+        configuration.list_section(config, 'Actions')
     if args.e:
         execute_action(trade, config, gui_callbacks, args.e)
     if args.T == 'LIST_ACTIONS':
         # TODO
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
-            configure_option.list_section(config, 'Actions')
+            configuration.list_section(config, 'Actions')
     if args.T:
         if args.T == trade.script_base \
            and os.path.exists(trade.startup_script):
@@ -130,8 +130,8 @@ def main():
                 sys.exit(1)
         else:
             file_utilities.backup_file(trade.config_file, number_of_backups=8)
-            configure_option.delete_option(config, 'Actions', args.T,
-                                           trade.config_file)
+            configuration.delete_option(config, 'Actions', args.T,
+                                        trade.config_file)
 
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process_name]['title'],
