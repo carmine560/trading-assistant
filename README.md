@@ -53,13 +53,13 @@ pip install pynput
 
 ### Create Startup Script ###
 
-To calculate a maximum share size, save customer margin ratios and the
-previous market data from [*SBI Securities Margin
+To calculate a maximum share size, save customer margin ratios from
+[*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
-and [*Download Stock Market Data*](https://kabudata-dll.com/) in
-advance.  The following option creates a startup script
-`HYPERSBI2\place_trade.ps1` that processes them and starts Hyper SBI
-2.
+and the previous market data from [*Most Active Stocks Today —
+Kabutan*](https://kabutan.jp/warning/?mode=2_9) etc. in advance.  The
+following option creates a startup script `HYPERSBI2\place_trade.ps1`
+that processes them and starts Hyper SBI 2.
 
 ``` batchfile
 py place_trade.py -I [HOTKEY]

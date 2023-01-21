@@ -172,7 +172,7 @@ def delete_shortcut(basename, program_group_base=None, icon_directory=None):
             print(e)
             sys.exit(1)
 
-    # FIXME
+    # TODO
     taskbar = os.path.expandvars(r'$APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar')
     pinned_shortcut = os.path.join(taskbar, title + '.lnk')
     if os.path.exists(pinned_shortcut):

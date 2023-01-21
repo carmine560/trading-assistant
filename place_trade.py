@@ -197,6 +197,8 @@ def configure(trade):
         'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
+        # TODO
+        # tuple
         'header': '銘柄, コード, 建玉, 信用取引区分, 規制内容',
         'customer_margin_ratio': '委託保証金率',
         'suspended': '新規建停止',
@@ -206,6 +208,8 @@ def configure(trade):
         'executable':
         r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
         'title': 'Hyper SBI 2',
+        # TODO
+        # tuple
         'clickable_windows': ['お知らせ',                    # Announcements
                               '個別銘柄\s.*\((\d{4})\)',     # Summary
                               '登録銘柄',                    # Watchlists
