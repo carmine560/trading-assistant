@@ -1,4 +1,4 @@
-# place-trade #
+# trading-assistant #
 
 <!-- Python script that assists in discretionary day trading of stocks
 on margin using Hyper SBI 2 -->
@@ -6,8 +6,8 @@ on margin using Hyper SBI 2 -->
 <!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui
 pynput pyttsx3 -->
 
-`place_trade.py` assists in discretionary day trading of stocks on
-margin using [Hyper SBI
+`trading_assistant.py` assists in discretionary day trading of stocks
+on margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining
 an action consisting of a sequence of commands, this script executes:
 
@@ -58,11 +58,12 @@ To calculate a maximum share size, save customer margin ratios from
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and the previous market data from [*Most Active Stocks Today —
 Kabutan*](https://kabutan.jp/warning/?mode=2_9) etc. in advance.  The
-following option creates a startup script `HYPERSBI2\place_trade.ps1`
-that processes them and starts Hyper SBI 2.
+following option creates a startup script
+`HYPERSBI2\trading_assistant.ps1` that processes them and starts Hyper
+SBI 2.
 
 ``` batchfile
-py place_trade.py -I [HOTKEY]
+py trading_assistant.py -I [HOTKEY]
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
@@ -72,11 +73,11 @@ SBI 2 so that Tesseract recognizes these prices.  A price limit is
 only referenced if the previous closing price does not exist in the
 market data above.  Because there can be multiple prices in a region,
 specify the index of the price.  These configurations are saved in the
-configuration file `HYPERSBI2\place_trade.ini`.
+configuration file `HYPERSBI2\trading_assistant.ini`.
 
 ``` batchfile
-py place_trade.py -C
-py place_trade.py -L
+py trading_assistant.py -C
+py trading_assistant.py -L
 ```
 
 ### Create or Modify Action ###
@@ -84,7 +85,7 @@ py place_trade.py -L
 Create or modify an action to be processed by this script.
 
 ``` batchfile
-py place_trade.py -M [ACTION [HOTKEY]]
+py trading_assistant.py -M [ACTION [HOTKEY]]
 ```
 
 Then insert, modify, or delete each command of the action.  An action
@@ -135,7 +136,7 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 > **Note** This example contains no coordinates or images and can be
 > tested immediately in many environments.
 
-![A screenshot of Windows Terminal where place_trade.py -M was
+![A screenshot of Windows Terminal where trading_assistant.py -M was
 executed.](https://dl.dropboxusercontent.com/s/z56fvfg71tiqex1/20230118T230510.png)
 
 #### Example: Login ####
@@ -149,10 +150,10 @@ login = [
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '1.4'),      # wait for 1.4 seconds.
+    ('wait_for_period', '1.6'),      # wait for 1.6 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '1.4'),      # wait for 1.4 seconds.
+    ('wait_for_period', '1.6'),      # wait for 1.6 seconds.
     ('hide_window', '登録銘柄'),     # hide the Watchlists window.
 ]
 ```
@@ -220,7 +221,7 @@ open_close_long_position = [
 Execute an action saved in the configuration file.
 
 ``` batchfile
-py place_trade.py -e [ACTION]
+py trading_assistant.py -e [ACTION]
 ```
 
 ### Options ###

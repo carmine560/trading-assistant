@@ -17,11 +17,12 @@ import gui_interactions
 
 class Trade:
     def __init__(self, process_name):
-        script_directory = os.path.dirname(__file__)
-        self.market_directory = os.path.join(script_directory, 'market')
+        localappdata = os.path.join(
+            os.path.expandvars('$LOCALAPPDATA'),
+            os.path.basename(os.path.dirname(__file__)))
+        self.market_directory = os.path.join(localappdata, 'market')
         self.process_name = process_name
-        self.config_directory = os.path.join(script_directory,
-                                             self.process_name)
+        self.config_directory = os.path.join(localappdata, self.process_name)
         self.script_base = os.path.splitext(os.path.basename(__file__))[0]
         self.config_file = os.path.join(self.config_directory,
                                         self.script_base + '.ini')
@@ -230,7 +231,7 @@ def configure(trade):
                       config['Common']['config_directory']]:
         if not os.path.isdir(directory):
             try:
-                os.mkdir(directory)
+                os.makedirs(directory)
             except OSError as e:
                 print(e)
                 sys.exit(1)

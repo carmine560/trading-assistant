@@ -22,6 +22,8 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
     if config.has_option(section, option):
         print(option + ' = '
               + ANSI_DEFAULT + config[section][option] + ANSI_RESET)
+        # TODO
+        # if empty
         answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
