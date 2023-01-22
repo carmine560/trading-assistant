@@ -181,5 +181,6 @@ def get_program_group(program_group_base=None):
         basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         program_group_base = re.sub('[\W_]+', ' ', basename).rstrip().title()
 
-    program_group = os.path.join(shell.SpecialFolders('Programs'), program_group_base)
+    program_group = os.path.join(shell.SpecialFolders('Programs'),
+                                 program_group_base)
     return program_group

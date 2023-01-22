@@ -18,7 +18,7 @@ import gui_interactions
 class Trade:
     def __init__(self, process_name):
         localappdata = os.path.join(
-            os.path.expandvars('$LOCALAPPDATA'),
+            os.path.expandvars('%LOCALAPPDATA%'),
             os.path.basename(os.path.dirname(__file__)))
         self.market_directory = os.path.join(localappdata, 'market')
         self.process_name = process_name
