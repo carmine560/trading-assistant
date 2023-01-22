@@ -61,8 +61,8 @@ Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.h
 and the previous market data from [*Most Active Stocks Today —
 Kabutan*](https://kabutan.jp/warning/?mode=2_9) etc. in advance.  The
 following option creates a startup script
-`HYPERSBI2\trading_assistant.ps1` that processes them and starts Hyper
-SBI 2.
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1`
+that processes them and starts Hyper SBI 2.
 
 ``` batchfile
 py trading_assistant.py -I [HOTKEY]
@@ -75,7 +75,8 @@ SBI 2 so that Tesseract recognizes these prices.  A price limit is
 only referenced if the previous closing price does not exist in the
 market data above.  Because there can be multiple prices in a region,
 specify the index of the price.  These configurations are saved in the
-configuration file `HYPERSBI2\trading_assistant.ini`.
+configuration file
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`.
 
 ``` batchfile
 py trading_assistant.py -C
