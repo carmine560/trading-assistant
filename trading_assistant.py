@@ -525,11 +525,12 @@ def execute_action(trade, config, gui_callbacks, action):
             pyautogui.write(str(trade.share_size))
 
 def calculate_share_size(trade, config, position):
-    fixed_cash_balance = int(config['Trading']['fixed_cash_balance'] or 0)
+    fixed_cash_balance = \
+        int(config['Trading']['fixed_cash_balance'].replace(',', '') or 0)
     if fixed_cash_balance > 0:
         trade.cash_balance = fixed_cash_balance
     else:
-        region = list(map(str.strip,
+        region = list(map(int,
                           config[trade.process_name]['cash_balance_region']
                           .split(',')))
         trade.cash_balance = get_prices(*region)
@@ -563,6 +564,8 @@ def calculate_share_size(trade, config, position):
     trade.share_size = share_size
 
 def get_prices(x, y, width, height, index, integer=True):
+    from PIL import ImageGrab
+
     if integer:
         config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
     else:
@@ -571,7 +574,7 @@ def get_prices(x, y, width, height, index, integer=True):
     prices = []
     while not prices:
         try:
-            image = pyautogui.screenshot(region=(x, y, width, height))
+            image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
             separated_prices = pytesseract.image_to_string(image,
                                                            config=config)
             prices = list(map(lambda price: float(price.replace(',', '')),
@@ -663,7 +666,7 @@ def get_price_limit(trade, config):
         else:
             price_limit = closing_price + 10000000
     else:
-        region = list(map(str.strip,
+        region = list(map(int,
                           config[trade.process_name]['price_limit_region']
                           .split(',')))
         price_limit = get_prices(*region, False)
