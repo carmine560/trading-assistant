@@ -181,7 +181,7 @@ def configure(trade):
         'closing_time': '15:50:00',
         'time_zone': 'Asia/Tokyo',
         'market_data_url': 'https://kabutan.jp/warning/?mode=2_9',
-        'number_of_pages': '4',
+        'number_of_pages': '2',
         'symbol_header': 'コード',
         'closing_price_header': '株価',
         'closing_prices':
@@ -218,12 +218,12 @@ def configure(trade):
                               'ニュース',                    # News
                               '取引ポップアップ',            # Trading
                               '通知設定'),                   # Notifications
-        'cash_balance_region': '0, 0, 0, 0, 0',
-        'price_limit_region': '0, 0, 0, 0, 0'}
+        'cash_balance_region': '',
+        'price_limit_region': ''}
     config['Trading'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0',
-        'date': str(date.today()),
+        'date': '',
         'number_of_trades': '0'}
     config.read(trade.config_file, encoding='utf-8')
 
@@ -525,7 +525,7 @@ def execute_action(trade, config, gui_callbacks, action):
             pyautogui.write(str(trade.share_size))
 
 def calculate_share_size(trade, config, position):
-    fixed_cash_balance = int(config['Trading']['fixed_cash_balance'])
+    fixed_cash_balance = int(config['Trading']['fixed_cash_balance'] or 0)
     if fixed_cash_balance > 0:
         trade.cash_balance = fixed_cash_balance
     else:

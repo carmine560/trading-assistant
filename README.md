@@ -150,10 +150,10 @@ login = [
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '1.6'),      # wait for 1.6 seconds.
+    ('wait_for_period', '2'),        # wait for 2 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '1.6'),      # wait for 1.6 seconds.
+    ('wait_for_period', '2'),        # wait for 2 seconds.
     ('hide_window', '登録銘柄'),     # hide the Watchlists window.
 ]
 ```

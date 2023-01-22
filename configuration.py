@@ -22,8 +22,6 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
     if config.has_option(section, option):
         print(option + ' = '
               + ANSI_DEFAULT + config[section][option] + ANSI_RESET)
-        # TODO
-        # if empty
         answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
@@ -67,7 +65,8 @@ def modify_tuple_list(config, section, option, config_file, key_prompt='key',
         else:
             if i < len(tuple_list):
                 print(ANSI_DEFAULT + str(tuple_list[i]) + ANSI_RESET)
-                answer = tidy_answer(['insert', 'modify', 'delete', 'quit'])
+                answer = tidy_answer(['insert', 'modify', 'empty', 'delete',
+                                      'quit'])
             else:
                 print(ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
                 answer = tidy_answer(['insert', 'quit'])
@@ -102,6 +101,8 @@ def modify_tuple_list(config, section, option, config_file, key_prompt='key',
                 tuple_list[i] = (key, value)
             else:
                 tuple_list[i] = (key,)
+        elif answer == 'empty':
+            tuple_list[i] = (tuple_list[i][0],)
         elif answer == 'delete':
             del tuple_list[i]
             i -= 1
