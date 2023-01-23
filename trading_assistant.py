@@ -109,13 +109,13 @@ def main():
                 icon_directory=trade.config_directory)
     if args.e == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
-    if args.e:
+    elif args.e:
         execute_action(trade, config, gui_callbacks, args.e)
     if args.T == 'LIST_ACTIONS':
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
             configuration.list_section(config, 'Actions')
-    if args.T:
+    elif args.T:
         if args.T == trade.script_base \
            and os.path.exists(trade.startup_script):
             try:
