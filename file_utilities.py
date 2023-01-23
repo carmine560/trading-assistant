@@ -130,7 +130,7 @@ def create_shortcut(basename, target_path, arguments, program_group_base=None,
             print(e)
             sys.exit(1)
 
-    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+    title = re.sub('[\W_]+', ' ', basename).strip().title()
     shortcut = shell.CreateShortCut(os.path.join(program_group,
                                                  title + '.lnk'))
     shortcut.WindowStyle = 7
@@ -158,7 +158,7 @@ def delete_shortcut(basename, program_group_base=None, icon_directory=None):
             sys.exit(1)
 
     program_group = get_program_group(program_group_base)
-    title = re.sub('[\W_]+', ' ', basename).rstrip().title()
+    title = re.sub('[\W_]+', ' ', basename).strip().title()
     shortcut = os.path.join(program_group, title + '.lnk')
     if os.path.exists(shortcut):
         try:
@@ -179,7 +179,7 @@ def get_program_group(program_group_base=None):
     shell = win32com.client.Dispatch('WScript.Shell')
     if not program_group_base:
         basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-        program_group_base = re.sub('[\W_]+', ' ', basename).rstrip().title()
+        program_group_base = re.sub('[\W_]+', ' ', basename).strip().title()
 
     program_group = os.path.join(shell.SpecialFolders('Programs'),
                                  program_group_base)

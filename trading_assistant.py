@@ -17,12 +17,12 @@ import gui_interactions
 
 class Trade:
     def __init__(self, process_name):
-        localappdata = os.path.join(
+        config_home = os.path.join(
             os.path.expandvars('%LOCALAPPDATA%'),
             os.path.basename(os.path.dirname(__file__)))
-        self.market_directory = os.path.join(localappdata, 'market')
+        self.market_directory = os.path.join(config_home, 'market')
         self.process_name = process_name
-        self.config_directory = os.path.join(localappdata, self.process_name)
+        self.config_directory = os.path.join(config_home, self.process_name)
         self.script_base = os.path.splitext(os.path.basename(__file__))[0]
         self.config_file = os.path.join(self.config_directory,
                                         self.script_base + '.ini')
