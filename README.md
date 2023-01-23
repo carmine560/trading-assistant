@@ -4,7 +4,7 @@
 on margin using Hyper SBI 2 -->
 
 <!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui
-pynput pyttsx3 -->
+pynput pyttsx3 pillow -->
 
 `trading_assistant.py` assists in discretionary day trading of stocks
 on margin using [Hyper SBI

@@ -509,7 +509,7 @@ def execute_action(trade, config, gui_callbacks, action):
 
             time.sleep(float(arguments))
         elif command == 'wait_for_prices':
-            arguments = list(map(str.strip, arguments.split(',')))
+            arguments = list(map(int, arguments.split(',')))
             get_prices(*arguments)
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(gui_callbacks, arguments)
