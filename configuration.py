@@ -39,9 +39,9 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
             config.write(f)
             return True
 
-def modify_tuple_list(config, section, option, config_file, key_prompt='key',
-                      value_prompt='value', end_of_list_prompt='end of list',
-                      positioning_keys=[]):
+def modify_tuples(config, section, option, config_file, key_prompt='key',
+                  value_prompt='value', end_of_list_prompt='end of list',
+                  positioning_keys=[]):
     import ast
     import os
 
@@ -53,18 +53,18 @@ def modify_tuple_list(config, section, option, config_file, key_prompt='key',
         config[section][option] = '[]'
 
     i = 0
-    tuple_list = ast.literal_eval(config[section][option])
+    tuples = ast.literal_eval(config[section][option])
     global ANSI_DEFAULT
     global ANSI_ANNOTATION
     global ANSI_RESET
     if sys.platform == 'win32':
         os.system('color')
-    while i <= len(tuple_list):
+    while i <= len(tuples):
         if create:
             answer = tidy_answer(['insert', 'quit'])
         else:
-            if i < len(tuple_list):
-                print(ANSI_DEFAULT + str(tuple_list[i]) + ANSI_RESET)
+            if i < len(tuples):
+                print(ANSI_DEFAULT + str(tuples[i]) + ANSI_RESET)
                 answer = tidy_answer(['insert', 'modify', 'empty', 'delete',
                                       'quit'])
             else:
@@ -78,54 +78,54 @@ def modify_tuple_list(config, section, option, config_file, key_prompt='key',
             else:
                 value = input(value_prompt + ': ').strip()
             if value:
-                tuple_list.insert(i, (key, value))
+                tuples.insert(i, (key, value))
             else:
-                tuple_list.insert(i, (key,))
+                tuples.insert(i, (key,))
         elif answer == 'modify':
-            key = tuple_list[i][0]
-            if len(tuple_list[i]) == 2:
-                value = tuple_list[i][1]
-            elif len(tuple_list[i]) == 1:
+            key = tuples[i][0]
+            if len(tuples[i]) == 2:
+                value = tuples[i][1]
+            elif len(tuples[i]) == 1:
                 value = ''
 
             key = input(key_prompt + ' ' + ANSI_DEFAULT + key + ANSI_RESET
                         + ': ').strip() or key
             if any(k == key for k in positioning_keys):
                 value = configure_position(answer, value)
-            elif len(tuple_list[i]) == 2:
+            elif len(tuples[i]) == 2:
                 value = input(value_prompt + ' ' + ANSI_DEFAULT + value
                               + ANSI_RESET + ': ').strip() or value
             else:
                 value = input(value_prompt + ': ').strip()
             if value:
-                tuple_list[i] = (key, value)
+                tuples[i] = (key, value)
             else:
-                tuple_list[i] = (key,)
+                tuples[i] = (key,)
         elif answer == 'empty':
-            tuple_list[i] = (tuple_list[i][0],)
+            tuples[i] = (tuples[i][0],)
         elif answer == 'delete':
-            del tuple_list[i]
+            del tuples[i]
             i -= 1
         elif answer == 'quit':
-            i = len(tuple_list)
+            i = len(tuples)
 
         i += 1
 
-    if tuple_list:
-        config[section][option] = str(tuple_list)
+    if tuples:
+        config[section][option] = str(tuples)
         with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)
         return True
     else:
         delete_option(config, section, option, config_file)
 
-def tidy_answer(answer_list):
+def tidy_answer(answers):
     initialism = ''
 
     previous_initialism = ''
     global ANSI_HIGHLIGHT
     global ANSI_RESET
-    for word_index, word in enumerate(answer_list):
+    for word_index, word in enumerate(answers):
         for char_index in range(len(word)):
             if not word[char_index].lower() in initialism:
                 mnemonics = word[char_index]
@@ -140,7 +140,7 @@ def tidy_answer(answer_list):
                 mnemonics, ANSI_HIGHLIGHT + mnemonics + ANSI_RESET, 1)
             if word_index == 0:
                 prompt = highlighted_word
-            elif word_index == len(answer_list) - 1:
+            elif word_index == len(answers) - 1:
                 prompt = prompt + '/' + highlighted_word + ': '
             else:
                 prompt = prompt + '/' + highlighted_word
@@ -152,7 +152,7 @@ def tidy_answer(answer_list):
         else:
             for index in range(len(initialism)):
                 if initialism[index] == answer[0]:
-                    answer = answer_list[index]
+                    answer = answers[index]
     return answer
 
 def configure_position(answer, value=''):

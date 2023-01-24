@@ -4,7 +4,7 @@
 on margin using Hyper SBI 2 -->
 
 <!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui
-pynput pyttsx3 pillow -->
+pynput pyttsx3 -->
 
 `trading_assistant.py` assists in discretionary day trading of stocks
 on margin using [Hyper SBI
@@ -29,7 +29,6 @@ and uses the following packages:
     ratios and the previous market data from websites
   * [pywin32](https://github.com/mhammond/pywin32) to access the
     Windows APIs
-  * [Pillow](https://python-pillow.org/) to take a screenshot
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
     [Tesseract](https://tesseract-ocr.github.io/) to recognize prices
     on Hyper SBI 2
@@ -45,7 +44,6 @@ Install each package as needed.  For example:
 ``` batchfile
 pip install pandas
 pip install pywin32
-pip install Pillow
 pip install pytesseract
 pip install pyautogui
 pip install pynput

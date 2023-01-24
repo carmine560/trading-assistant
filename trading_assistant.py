@@ -85,11 +85,11 @@ def main():
         configuration.list_section(config, 'Actions')
     if args.M:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        if configuration.modify_tuple_list(
-                config, 'Actions', args.M[0], trade.config_file,
-                key_prompt='command', value_prompt='arguments',
-                end_of_list_prompt='end of commands',
-                positioning_keys=['click', 'move_to']):
+        if configuration.modify_tuples(config, 'Actions', args.M[0],
+                                       trade.config_file, key_prompt='command',
+                                       value_prompt='arguments',
+                                       end_of_list_prompt='end of commands',
+                                       positioning_keys=['click', 'move_to']):
             # To pin the shortcut to the Taskbar, specify an
             # executable file as the argument target_path.
             if len(args.M) == 1:
@@ -564,8 +564,6 @@ def calculate_share_size(trade, config, position):
     trade.share_size = share_size
 
 def get_prices(x, y, width, height, index, integer=True):
-    from PIL import ImageGrab
-
     if integer:
         config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
     else:
@@ -574,7 +572,7 @@ def get_prices(x, y, width, height, index, integer=True):
     prices = []
     while not prices:
         try:
-            image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
+            image = pyautogui.screenshot(region=(x, y, width, height))
             separated_prices = pytesseract.image_to_string(image,
                                                            config=config)
             prices = list(map(lambda price: float(price.replace(',', '')),
