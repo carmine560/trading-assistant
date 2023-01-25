@@ -72,7 +72,7 @@ def main():
         help=('configure the price limit region and the index of the price'))
     parser.add_argument(
         '-H', action='store_true',
-        help=('configure the price limit region and the index of the price'))
+        help=('monitor hotkeys and execute actions'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade('HYPERSBI2')
@@ -231,22 +231,10 @@ def configure(trade):
         'utilization_ratio': '1.0',
         'date': str(date.today()),
         'number_of_trades': '0'}
-    # config['Actions'] = {
-    #     'global_hotkeys': {
-    #         0: ('open_close_long_position', '<ctrl>+<alt>+l'),
-    #         1: ('open_close_short_position', '<ctrl>+<alt_gr>+s'),
-    #         2: ('toggle_between_stocks', '<ctrl>+<alt_gr>+t'),
-    #         3: ('', '')}}
-    # config['Global Hotkeys'] = {
-    #     'global_hotkey_0': ('open_close_long_position', '<ctrl>+<alt>+l'),
-    #     'global_hotkey_1': ('open_close_short_position', '<ctrl>+<alt_gr>+s'),
-    #     'global_hotkey_2': ('toggle_between_stocks', '<ctrl>+<alt_gr>+t'),
-    #     'global_hotkey_3': ('', '')}
     config['Hotkeys'] = {
-        '0': ('<ctrl>+<alt>+l', 'open_close_long_position'),
-        '1': ('<ctrl>+<alt_gr>+s', 'open_close_short_position'),
-        '2': ('<ctrl>+<alt_gr>+t', 'toggle_between_stocks'),
-        '3': ('', '')}
+        '<ctrl>+<alt>+l': 'open_close_long_position',
+        '<ctrl>+<alt_gr>+s': 'open_close_short_position',
+        '<ctrl>+<alt_gr>+t': 'toggle_between_stocks'}
     config.read(trade.config_file, encoding='utf-8')
 
     for directory in [config['Common']['market_directory'],
@@ -525,7 +513,10 @@ def execute_action(trade, config, gui_callbacks, action):
             engine.say(config[arguments[0]][arguments[1]])
             engine.runAndWait()
         elif command == 'wait_for_key':
-            gui_interactions.wait_for_key(gui_callbacks, arguments)
+            # TODO
+            # gui_interactions.wait_for_key(gui_callbacks, arguments)
+            if not gui_interactions.wait_for_key(gui_callbacks, arguments):
+                return
         elif command == 'wait_for_period':
             import time
 
@@ -693,46 +684,41 @@ def get_price_limit(trade, config):
     return price_limit
 
 def monitor_hotkeys(trade, config, gui_callbacks):
-    import ast
-
     from pynput import keyboard
 
-    # hotkey_action = config['Hotkeys']
-    # print(config['Hotkeys'].items())
-    # hotkey_action[section] = {}
-    section = 'Hotkeys'
-    hotkey_action = {}
-    for option in config.options(section):
-        print(config.get(section, option))
-        hotkey_action[option] = ast.literal_eval(config.get(section, option))
-
-    print(hotkey_action)
-
-    # execute_action(trade, config, gui_callbacks, args.e)
-
     def on_activate_0():
-        print(hotkey_action[str(0)][1])
-        execute_action(trade, config, gui_callbacks, hotkey_action[str(0)][1])
+        print(config[section][options[0]])
+        if execute:
+            execute_action(trade, config, gui_callbacks,
+                           config[section][options[0]])
 
     def on_activate_1():
-        print(hotkey_action[str(1)][1])
-        execute_action(trade, config, gui_callbacks, hotkey_action[str(1)][1])
+        print(config[section][options[1]])
+        if execute:
+            execute_action(trade, config, gui_callbacks,
+                           config[section][options[1]])
 
     def on_activate_2():
-        print(hotkey_action[str(2)][1])
-        execute_action(trade, config, gui_callbacks, hotkey_action[str(2)][1])
+        print(config[section][options[2]])
+        if execute:
+            execute_action(trade, config, gui_callbacks,
+                           config[section][options[2]])
 
     def on_activate_3():
-        print(hotkey_action[str(3)][1])
-        execute_action(trade, config, gui_callbacks, hotkey_action[str(3)][1])
+        print(config[section][options[3]])
+        if execute:
+            execute_action(trade, config, gui_callbacks,
+                           config[section][options[3]])
 
+    # TODO
+    execute = False
+
+    section = 'Hotkeys'
+    options = config.options(section)
     hotkeys = {}
-    for i in range(4):
-        if hotkey_action[str(i)][0] and hotkey_action[str(i)][1]:
-            hotkeys[hotkey_action[str(i)][0]] = eval('on_activate_' + str(i))
+    for index, option in enumerate(options):
+        hotkeys[option] = eval('on_activate_' + str(index))
 
-    print(hotkeys)
-    # sys.exit()
     with keyboard.GlobalHotKeys(hotkeys) as h:
         h.join()
 

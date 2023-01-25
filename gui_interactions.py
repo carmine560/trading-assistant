@@ -119,12 +119,21 @@ def wait_for_key(gui_callbacks, key):
     with keyboard.Listener(on_release=gui_callbacks.compare_keys_on_release) \
          as listener:
         listener.join()
-    if not gui_callbacks.released:
+
+    # TODO
+    # if not gui_callbacks.released:
+    #     for _ in range(gui_callbacks.moved_focus):
+    #         pyautogui.hotkey('shift', 'tab')
+
+    #     sys.exit()
+
+    if gui_callbacks.released:
+        return True
+    else:
         for _ in range(gui_callbacks.moved_focus):
             pyautogui.hotkey('shift', 'tab')
 
-        # TODO
-        sys.exit()
+        return False
 
 def wait_for_window(gui_callbacks, title_regex):
     while next((False for i in range(len(gui_callbacks.exist))
