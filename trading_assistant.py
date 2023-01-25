@@ -70,6 +70,9 @@ def main():
     parser.add_argument(
         '-L', action='store_true',
         help=('configure the price limit region and the index of the price'))
+    parser.add_argument(
+        '-H', action='store_true',
+        help=('configure the price limit region and the index of the price'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade('HYPERSBI2')
@@ -162,6 +165,9 @@ def main():
         configuration.modify_option(config, trade.process_name,
                                     'price_limit_region', trade.config_file,
                                     value_prompt='x, y, width, height, index')
+    if args.H:
+        # TODO
+        monitor_hotkeys(trade, config, gui_callbacks)
 
 def configure(trade):
     config = configparser.ConfigParser(
@@ -218,13 +224,29 @@ def configure(trade):
                               'ニュース',                    # News
                               '取引ポップアップ',            # Trading
                               '通知設定'),                   # Notifications
-        'cash_balance_region': '',
-        'price_limit_region': ''}
+        'cash_balance_region': '0, 0, 0, 0, 0',
+        'price_limit_region': '0, 0, 0, 0, 0'}
     config['Trading'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0',
-        'date': '',
+        'date': str(date.today()),
         'number_of_trades': '0'}
+    # config['Actions'] = {
+    #     'global_hotkeys': {
+    #         0: ('open_close_long_position', '<ctrl>+<alt>+l'),
+    #         1: ('open_close_short_position', '<ctrl>+<alt_gr>+s'),
+    #         2: ('toggle_between_stocks', '<ctrl>+<alt_gr>+t'),
+    #         3: ('', '')}}
+    # config['Global Hotkeys'] = {
+    #     'global_hotkey_0': ('open_close_long_position', '<ctrl>+<alt>+l'),
+    #     'global_hotkey_1': ('open_close_short_position', '<ctrl>+<alt_gr>+s'),
+    #     'global_hotkey_2': ('toggle_between_stocks', '<ctrl>+<alt_gr>+t'),
+    #     'global_hotkey_3': ('', '')}
+    config['Hotkeys'] = {
+        '0': ('<ctrl>+<alt>+l', 'open_close_long_position'),
+        '1': ('<ctrl>+<alt_gr>+s', 'open_close_short_position'),
+        '2': ('<ctrl>+<alt_gr>+t', 'toggle_between_stocks'),
+        '3': ('', '')}
     config.read(trade.config_file, encoding='utf-8')
 
     for directory in [config['Common']['market_directory'],
@@ -669,6 +691,50 @@ def get_price_limit(trade, config):
                           .split(',')))
         price_limit = get_prices(*region, False)
     return price_limit
+
+def monitor_hotkeys(trade, config, gui_callbacks):
+    import ast
+
+    from pynput import keyboard
+
+    # hotkey_action = config['Hotkeys']
+    # print(config['Hotkeys'].items())
+    # hotkey_action[section] = {}
+    section = 'Hotkeys'
+    hotkey_action = {}
+    for option in config.options(section):
+        print(config.get(section, option))
+        hotkey_action[option] = ast.literal_eval(config.get(section, option))
+
+    print(hotkey_action)
+
+    # execute_action(trade, config, gui_callbacks, args.e)
+
+    def on_activate_0():
+        print(hotkey_action[str(0)][1])
+        execute_action(trade, config, gui_callbacks, hotkey_action[str(0)][1])
+
+    def on_activate_1():
+        print(hotkey_action[str(1)][1])
+        execute_action(trade, config, gui_callbacks, hotkey_action[str(1)][1])
+
+    def on_activate_2():
+        print(hotkey_action[str(2)][1])
+        execute_action(trade, config, gui_callbacks, hotkey_action[str(2)][1])
+
+    def on_activate_3():
+        print(hotkey_action[str(3)][1])
+        execute_action(trade, config, gui_callbacks, hotkey_action[str(3)][1])
+
+    hotkeys = {}
+    for i in range(4):
+        if hotkey_action[str(i)][0] and hotkey_action[str(i)][1]:
+            hotkeys[hotkey_action[str(i)][0]] = eval('on_activate_' + str(i))
+
+    print(hotkeys)
+    # sys.exit()
+    with keyboard.GlobalHotKeys(hotkeys) as h:
+        h.join()
 
 if __name__ == '__main__':
     main()
