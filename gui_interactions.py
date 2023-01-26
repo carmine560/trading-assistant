@@ -120,13 +120,6 @@ def wait_for_key(gui_callbacks, key):
          as listener:
         listener.join()
 
-    # TODO
-    # if not gui_callbacks.released:
-    #     for _ in range(gui_callbacks.moved_focus):
-    #         pyautogui.hotkey('shift', 'tab')
-
-    #     sys.exit()
-
     if gui_callbacks.released:
         return True
     else:
