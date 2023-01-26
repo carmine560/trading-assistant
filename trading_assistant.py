@@ -71,8 +71,11 @@ def main():
         '-L', action='store_true',
         help=('configure the price limit region and the index of the price'))
     parser.add_argument(
-        '-H', action='store_true',
+        '-k', action='store_true',
         help=('monitor hotkeys and execute actions'))
+    parser.add_argument(
+        '-K', action='store_true',
+        help=('configure a mapping from hotkeys to actions'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade('HYPERSBI2')
