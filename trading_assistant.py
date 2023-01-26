@@ -70,12 +70,6 @@ def main():
     parser.add_argument(
         '-L', action='store_true',
         help=('configure the price limit region and the index of the price'))
-    parser.add_argument(
-        '-k', action='store_true',
-        help=('monitor hotkeys and execute actions'))
-    parser.add_argument(
-        '-K', action='store_true',
-        help=('configure a mapping from hotkeys to actions'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade('HYPERSBI2')
@@ -168,9 +162,6 @@ def main():
         configuration.modify_option(config, trade.process_name,
                                     'price_limit_region', trade.config_file,
                                     value_prompt='x, y, width, height, index')
-    if args.k:
-        # TODO
-        monitor_hotkeys(trade, config, gui_callbacks)
 
 def configure(trade):
     config = configparser.ConfigParser(
@@ -234,10 +225,6 @@ def configure(trade):
         'utilization_ratio': '1.0',
         'date': str(date.today()),
         'number_of_trades': '0'}
-    # config['Hotkeys'] = {
-    #     '<ctrl>+<alt>+l': 'open_close_long_position',
-    #     '<ctrl>+<alt_gr>+s': 'open_close_short_position',
-    #     '<ctrl>+<alt_gr>+t': 'toggle_between_stocks'}
     config.read(trade.config_file, encoding='utf-8')
 
     for directory in [config['Common']['market_directory'],
@@ -683,59 +670,6 @@ def get_price_limit(trade, config):
                           .split(',')))
         price_limit = get_prices(*region, False)
     return price_limit
-
-# TODO
-def monitor_hotkeys(trade, config, gui_callbacks):
-    # from pynput import keyboard
-
-    # def on_activate(listener, action):
-    #     print(action)
-    #     # listener.stop()
-    #     execute_action(trade, config, gui_callbacks, action)
-    #     # with keyboard.GlobalHotKeys(hotkeys) as listener:
-    #     #     listener.join()
-
-    # def on_activate_0():
-    #     on_activate(listener, config[section][options[0]])
-
-    # def on_activate_1():
-    #     on_activate(listener, config[section][options[1]])
-
-    # def on_activate_2():
-    #     on_activate(listener, config[section][options[2]])
-
-    # def on_activate_3():
-    #     on_activate(listener, config[section][options[3]])
-
-    # section = 'Hotkeys'
-    # options = config.options(section)
-    # hotkeys = {}
-    # for index, option in enumerate(options):
-    #     if index >= 4:
-    #         break
-    #     else:
-    #         hotkeys[option] = eval('on_activate_' + str(index))
-
-    # print(hotkeys)
-
-    # with keyboard.GlobalHotKeys(hotkeys) as listener:
-    #     listener.join()
-
-    from pynput import mouse
-
-    def on_click(x, y, button, pressed):
-        if button == mouse.Button.x1:
-            print('x1')
-            execute_action(trade, config, gui_callbacks,
-                           'open_close_short_position')
-
-        elif button == mouse.Button.x2:
-            print('x2')
-            execute_action(trade, config, gui_callbacks,
-                           'open_close_long_position')
-
-    with mouse.Listener(on_click=on_click) as listener:
-        listener.join()
 
 if __name__ == '__main__':
     main()
