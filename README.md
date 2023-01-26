@@ -151,10 +151,10 @@ login = [
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '2.6'),      # wait for 2.6 seconds.
+    ('wait_for_period', '2.8'),      # wait for 2.8 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '2.6'),      # wait for 2.6 seconds.
+    ('wait_for_period', '2.8'),      # wait for 2.8 seconds.
     ('hide_window', '登録銘柄'),     # hide the Watchlists window.
 ]
 ```
@@ -174,7 +174,7 @@ toggle_between_stocks = [
     ('write_alt_symbol', '8306, 8308'), # write the alternative symbol.
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to',),                    # back the cursor to the previous position.
-    ('wait_for_period', '1'),        # wait for 1 second.
+    ('wait_for_period', '1.2'),      # wait for 1.2 second.
     ('press_key', 'esc'),            # close the symbol suggest drop-down list.
 ]
 ```
