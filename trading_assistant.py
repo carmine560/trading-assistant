@@ -170,22 +170,24 @@ def configure(trade):
         'market_directory': trade.market_directory,
         'config_directory': trade.config_directory}
     config['Market Holidays'] = {
-        'market_holiday_url':
-        'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
+        'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'market_holidays':
         os.path.join('${Common:market_directory}', 'market_holidays.csv'),
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
-        'opening_time': '9:20:00',
-        'closing_time': '15:50:00',
+        'opening_time': '9:00:00',
+        'closing_time': '15:30:00',
+        'delay': '20',
         'time_zone': 'Asia/Tokyo',
-        'market_data_url': 'https://kabutan.jp/warning/?mode=2_9',
+        'url': 'https://kabutan.jp/warning/?mode=2_9',
         'number_of_pages': '2',
         'symbol_header': 'コード',
-        'closing_price_header': '株価',
+        'price_header': '株価',
         'closing_prices':
-        os.path.join('${Common:market_directory}', 'closing_prices_')}
+        os.path.join('${Common:market_directory}', 'closing_prices_'),
+        # TODO
+        'price_limit': '0'}
     config['Startup Script'] = {
         'pre_start_options': '-r -d',
         'post_start_options': '',
@@ -193,7 +195,7 @@ def configure(trade):
     config['HYPERSBI2'] = {
         'update_time': '20:00:00',
         'time_zone': 'Asia/Tokyo',
-        'customer_margin_ratio_url': 'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
+        'url': 'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
         'header': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
@@ -289,7 +291,7 @@ def save_customer_margin_ratios(trade, config):
     section = config[trade.process_name]
     update_time = section['update_time']
     time_zone = section['time_zone']
-    customer_margin_ratio_url = section['customer_margin_ratio_url']
+    url = section['url']
     symbol_header = section['symbol_header']
     regulation_header = section['regulation_header']
     header = section['header']
@@ -300,8 +302,7 @@ def save_customer_margin_ratios(trade, config):
     if get_latest(config, update_time, time_zone, customer_margin_ratios):
         dfs = pd.DataFrame()
         try:
-            dfs = pd.read_html(customer_margin_ratio_url,
-                               match=regulation_header, header=0)
+            dfs = pd.read_html(url, match=regulation_header, header=0)
         except Exception as e:
             print(e)
             sys.exit(1)
@@ -321,37 +322,57 @@ def save_customer_margin_ratios(trade, config):
 
         df.to_csv(customer_margin_ratios, header=False, index=False)
 
-def save_market_data(config):
+def save_market_data(config, clipboard=False):
     global pd
     import pandas as pd
 
     section = config['Market Data']
     opening_time = section['opening_time']
     closing_time = section['closing_time']
+    delay = int(section['delay'])
     time_zone = section['time_zone']
-    market_data_url = section['market_data_url']
-    number_of_pages = section['number_of_pages']
+    url = section['url']
+    number_of_pages = int(section['number_of_pages'])
     symbol_header = section['symbol_header']
-    closing_price_header = section['closing_price_header']
+    price_header = section['price_header']
     closing_prices = section['closing_prices']
+    price_limit = float(section['price_limit'])
 
-    paths = []
-    for i in range(1, 10):
-        paths.append(closing_prices + str(i) + '.csv')
-    if get_latest(config, closing_time, time_zone, *paths,
-                  volatile_time=opening_time):
+    if clipboard:
+        latest = True
+    else:
+        paths = []
+        for i in range(1, 10):
+            paths.append(closing_prices + str(i) + '.csv')
+
+        opening_time = (pd.Timestamp(opening_time, tz=time_zone)
+                        + pd.Timedelta(minutes=delay)).strftime('%X')
+        closing_time = (pd.Timestamp(closing_time, tz=time_zone)
+                        + pd.Timedelta(minutes=delay)).strftime('%X')
+        latest = get_latest(config, closing_time, time_zone, *paths,
+                            volatile_time=opening_time)
+
+    if latest:
         dfs = []
-        for i in range(1, int(number_of_pages) + 1):
+        for i in range(number_of_pages):
             try:
-                dfs = dfs + pd.read_html(market_data_url + '&page=' + str(i),
+                dfs = dfs + pd.read_html(url + '&page=' + str(i + 1),
                                          match=symbol_header)
             except Exception as e:
                 print(e)
                 sys.exit(1)
 
         df = pd.concat(dfs)
-        df = df[[symbol_header, closing_price_header]]
-        df.sort_values(by=symbol_header, inplace=True)
+        if clipboard:
+            if price_limit > 0:
+                df = df.loc[df[price_header] < price_limit]
+
+            df = df[[symbol_header]]
+            df.to_clipboard(index=False, header=False)
+            return
+        else:
+            df = df[[symbol_header, price_header]]
+            df.sort_values(by=symbol_header, inplace=True)
 
         for i in range(1, 10):
             subset = df.loc[df[symbol_header].astype(str).str.match(
@@ -363,7 +384,7 @@ def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
     import requests
 
     section = config['Market Holidays']
-    market_holiday_url = section['market_holiday_url']
+    url = section['url']
     market_holidays = section['market_holidays']
     date_header = section['date_header']
     date_format = section['date_format']
@@ -373,7 +394,7 @@ def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
         modified_time = pd.Timestamp(os.path.getmtime(market_holidays),
                                      tz='UTC', unit='s')
 
-    head = requests.head(market_holiday_url)
+    head = requests.head(url)
     try:
         head.raise_for_status()
     except Exception as e:
@@ -381,7 +402,7 @@ def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
         sys.exit(1)
 
     if modified_time < pd.Timestamp(head.headers['last-modified']):
-        dfs = pd.read_html(market_holiday_url, match=date_header)
+        dfs = pd.read_html(url, match=date_header)
         df = pd.concat(dfs)[date_header]
         df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
 
@@ -448,6 +469,8 @@ def execute_action(trade, config, gui_callbacks, action):
             image = ','.join(arguments[0:-4])
             region = arguments[-4:len(arguments)]
             gui_interactions.click_widget(gui_callbacks, image, *region)
+        elif command == 'copy_market_data':
+            save_market_data(config, clipboard=True)
         elif command == 'count_trades':
             section = config['Trading']
             previous_date = date.fromisoformat(section['date'])

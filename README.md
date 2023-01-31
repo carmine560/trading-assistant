@@ -102,6 +102,7 @@ ACTION = [
     ('calculate_share_size', 'POSITION'), # calculate a share size.
     ('click', 'X, Y'),               # click.
     ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'), # locate a widget image in a region, and click it.
+    ('copy_market_data',),           # copy the current market data to the clipboard.
     ('count_trades',),               # count the number of trades for the day.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_parent_window', 'TITLE_REGEX'), # hide a parent window.
@@ -151,10 +152,10 @@ login = [
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '3'),        # wait for 3 seconds.
+    ('wait_for_period', '4.2'),      # wait for 4.2 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '3'),        # wait for 3 seconds.
+    ('wait_for_period', '4.2'),      # wait for 4.2 seconds.
     ('hide_window', '登録銘柄'),     # hide the Watchlists window.
 ]
 ```
