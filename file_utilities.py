@@ -2,24 +2,24 @@ import os
 import re
 import sys
 
-def backup_file(source, backup_root=None, number_of_backups=-1):
+def backup_file(source, backup_directory=None, number_of_backups=-1):
     from datetime import datetime
     import shutil
 
     if os.path.exists(source):
-        if not backup_root:
-            backup_root = os.path.join(os.path.dirname(source), 'backups')
+        if not backup_directory:
+            backup_directory = os.path.join(os.path.dirname(source), 'backups')
 
         if number_of_backups:
-            if not os.path.isdir(backup_root):
+            if not os.path.isdir(backup_directory):
                 try:
-                    os.makedirs(backup_root)
+                    os.makedirs(backup_directory)
                 except OSError as e:
                     print(e)
                     sys.exit(1)
 
             backup = os.path.join(
-                backup_root,
+                backup_directory,
                 os.path.splitext(os.path.basename(source))[0]
                 + datetime.fromtimestamp(
                     os.path.getmtime(source)).strftime('-%Y%m%dT%H%M%S')
@@ -32,19 +32,19 @@ def backup_file(source, backup_root=None, number_of_backups=-1):
                     sys.exit(1)
 
             if number_of_backups > 0:
-                backups = os.listdir(backup_root)
+                backups = os.listdir(backup_directory)
                 excess = len(backups) - number_of_backups
                 if excess > 0:
                     for f in backups[:excess]:
                         try:
-                            os.remove(os.path.join(backup_root, f))
+                            os.remove(os.path.join(backup_directory, f))
                         except OSError as e:
                             print(e)
                             sys.exit(1)
         else:
-            if os.path.isdir(backup_root):
+            if os.path.isdir(backup_directory):
                 try:
-                    shutil.rmtree(backup_root)
+                    shutil.rmtree(backup_directory)
                 except Exception as e:
                     print(e)
                     sys.exit(1)

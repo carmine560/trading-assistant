@@ -152,12 +152,29 @@ login = [
     ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
     ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '4.2'),      # wait for 4.2 seconds.
+    ('wait_for_period', '4.6'),      # wait for 4.6 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '4.2'),      # wait for 4.2 seconds.
-    ('hide_window', '登録銘柄'),     # hide the Watchlists window.
-]
+    ('wait_for_period', '4.6'),      # wait for 4.6 seconds.
+    ('hide_window', '登録銘柄')]     # hide the Watchlists window.
+```
+
+#### Example: Replace Watchlist ####
+
+``` python
+replace_watchlist = [
+    ('copy_market_data',),           # copy the current market data to the clipboard.
+    ('show_window', '登録銘柄'),     # show the Watchlist window.
+    ('click', '1668, 41'),           # click the List button.
+    ('press_key', 'tab, 2'),         # focus on the stock list pane.
+    ('press_hotkeys', 'ctrl, a'),    # select all stocks.
+    ('press_key', 'del'),            # delete all stocks.
+    ('press_key', 'enter'),          # confirm deletion.
+    ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
+    ('press_key', 'enter'),          # confirm registration.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('click', '1729, 41'),           # click the Tile button.
+    ('back_to',)]                    # back the cursor to the previous position.
 ```
 
 #### Example: Toggle between Stocks ####
@@ -176,8 +193,7 @@ toggle_between_stocks = [
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_period', '1.2'),      # wait for 1.2 second.
-    ('press_key', 'esc'),            # close the symbol suggest drop-down list.
-]
+    ('press_key', 'esc')]            # close the symbol suggest drop-down list.
 ```
 
 #### Example: Open and Close Long Position ####
@@ -214,8 +230,7 @@ open_close_long_position = [
     ('beep', '1000, 100'),           # notify completion.
     ('back_to',),                    # back the cursor to the previous position.
     ('count_trades',),               # count the number of trades for the day.
-    ('speak_config', 'Trading, number_of_trades'), # speak the number above.
-]
+    ('speak_config', 'Trading, number_of_trades')] # speak the number above.
 ```
 
 ### Execute Action ###
