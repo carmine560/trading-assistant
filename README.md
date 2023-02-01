@@ -121,8 +121,7 @@ ACTION = [
     ('write_share_size',),           # write the calculated share size.
 
     # Optional command
-    ('speak_config', 'SECTION, KEY'), # speak a configuration.
-]
+    ('speak_config', 'SECTION, KEY')] # speak a configuration.
 ```
 
 #### Example: Show or Hide Watchlists Window on Middle Click ####
@@ -160,6 +159,9 @@ login = [
 ```
 
 #### Example: Replace Watchlist ####
+
+The following example `replace_watchlist` replaces the stocks in the
+Watchlist window with new ones copied from the current market data.
 
 ``` python
 replace_watchlist = [
