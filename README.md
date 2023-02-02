@@ -41,7 +41,7 @@ and uses the following packages:
 
 Install each package as needed.  For example:
 
-``` batchfile
+``` powershell
 pip install pandas
 pip install pywin32
 pip install pytesseract
@@ -62,7 +62,7 @@ following option creates a startup script
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1`
 that processes them and starts Hyper SBI 2.
 
-``` batchfile
+``` powershell
 py trading_assistant.py -I [HOTKEY]
 ```
 
@@ -76,7 +76,7 @@ specify the index of the price.  These configurations are saved in the
 configuration file
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`.
 
-``` batchfile
+``` powershell
 py trading_assistant.py -C
 py trading_assistant.py -L
 ```
@@ -85,7 +85,7 @@ py trading_assistant.py -L
 
 Create or modify an action to be processed by this script.
 
-``` batchfile
+``` powershell
 py trading_assistant.py -M [ACTION [HOTKEY]]
 ```
 
@@ -148,13 +148,13 @@ clicks the Login button.
 ``` python
 login = [
     # locate the Login button in the region, and click it.
-    ('click_widget', '\\path\\to\\login.png, 890, 510, 140, 31'),
+    ('click_widget', '\path\to\login.png, 890, 510, 140, 31'),
     ('back_to',),                    # back the cursor to the previous position.
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '4.6'),      # wait for 4.6 seconds.
+    ('wait_for_period', '1'),        # wait for 1 seconds.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '4.6'),      # wait for 4.6 seconds.
+    ('wait_for_period', '1'),        # wait for 1 seconds.
     ('hide_window', '登録銘柄')]     # hide the Watchlists window.
 ```
 
@@ -170,11 +170,11 @@ replace_watchlist = [
     ('click', '1668, 41'),           # click the List button.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
-    ('press_key', 'del'),            # delete all stocks.
-    ('press_key', 'enter'),          # confirm deletion.
+    ('press_key', 'del'),            # delete them.
+    ('press_key', 'enter'),          # confirm the deletion.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
-    ('press_key', 'enter'),          # confirm registration.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('press_key', 'enter'),          # confirm the registration.
+    ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
     ('click', '1729, 41'),           # click the Tile button.
     ('back_to',)]                    # back the cursor to the previous position.
 ```
@@ -186,15 +186,15 @@ specified stocks.
 
 ``` python
 toggle_between_stocks = [
-    ('show_window', '個別チャート\\s.*\\((\\d{4})\\)'), # show the Chart window.
-    ('show_window', '個別銘柄\\s.*\\((\\d{4})\\)'), # show the Summary window.
+    ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
+    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
     ('click', '54, 45'),             # focus on the Symbol text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    ('get_symbol', '個別銘柄\\s.*\\((\\d{4})\\)'), # get the symbol from the Summary window.
+    ('get_symbol', '個別銘柄\s.*\((\d{4})\)'), # get the symbol from the Summary window.
     ('write_alt_symbol', '8306, 8308'), # write the alternative symbol.
     ('press_key', 'enter'),          # press the Enter key.
     ('back_to',),                    # back the cursor to the previous position.
-    ('wait_for_period', '1.2'),      # wait for 1.2 second.
+    ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
     ('press_key', 'esc')]            # close the symbol suggest drop-down list.
 ```
 
@@ -207,12 +207,12 @@ the order is placed, then it prepares a sell order for repayment.
 ``` python
 open_close_long_position = [
     # Open a Long Position
-    ('show_window', '個別チャート\\s.*\\((\\d{4})\\)'), # show the Chart window.
-    ('show_window', '個別銘柄\\s.*\\((\\d{4})\\)'), # show the Summary window.
+    ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
+    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
     ('click', '201, 757'),           # select the New Order tab.
     ('click', '531, 823'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    ('get_symbol', '個別銘柄\\s.*\\((\\d{4})\\)'), # get the symbol from the Summary window.
+    ('get_symbol', '個別銘柄\s.*\((\d{4})\)'), # get the symbol from the Summary window.
     ('calculate_share_size', 'long'), # calculate the share size.
     ('write_share_size',),           # write the calculated share size.
     ('click', '466, 843'),           # click the Market Order button.
@@ -239,7 +239,7 @@ open_close_long_position = [
 
 Execute an action saved in the configuration file.
 
-``` batchfile
+``` powershell
 py trading_assistant.py -e [ACTION]
 ```
 

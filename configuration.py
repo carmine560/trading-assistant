@@ -25,9 +25,13 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
         answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
-            value = config[section][option]
-            value = input(value_prompt + ': ').strip() or value
-            config[section][option] = value
+            # TODO
+            if config[section][option][0:2] == '[(':
+                modify_tuples(config, section, option, config_file)
+            else:
+                value = config[section][option]
+                value = input(value_prompt + ': ').strip() or value
+                config[section][option] = value
         elif answer == 'empty':
             config[section][option] = ''
         elif answer == 'default':
@@ -39,6 +43,7 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
             config.write(f)
             return True
 
+# TODO
 def modify_tuples(config, section, option, config_file, key_prompt='key',
                   value_prompt='value', end_of_list_prompt='end of list',
                   positioning_keys=[]):
