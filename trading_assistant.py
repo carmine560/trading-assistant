@@ -475,6 +475,15 @@ def execute_action(trade, config, gui_callbacks, action):
             gui_interactions.click_widget(gui_callbacks, image, *region)
         elif command == 'copy_market_data':
             save_market_data(config, clipboard=True)
+        elif command == 'copy_numeric_column':
+            import win32clipboard
+
+            arguments = list(map(int, arguments.split(',')))
+            text = recognize_text(*arguments, None, text_type='numeric_column')
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardText(text)
+            win32clipboard.CloseClipboard()
         elif command == 'count_trades':
             section = config['Trading']
             previous_date = date.fromisoformat(section['date'])
@@ -606,7 +615,7 @@ def recognize_text(x, y, width, height, index, text_type='prices'):
     multiplier = 4
     threshold = 128
     # TODO
-    # timeout
+    # timeout, wait_for_prices
     while not text:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
@@ -615,15 +624,16 @@ def recognize_text(x, y, width, height, index, text_type='prices'):
                                  Image.LANCZOS)
             image = image.convert('L')
             image = image.point(lambda p: 255 if p > threshold else 0)
-            separated_text = pytesseract.image_to_string(image,
-                                                         config=config)
+            text = pytesseract.image_to_string(image, config=config)
             text = list(map(lambda t: float(t.replace(',', '')),
-                            separated_text.split(' ')))
+                            text.split(' ')))
         except:
             pass
 
-    print(text)
-    return text[int(index)]
+    if index is None:
+        return text
+    else:
+        return text[int(index)]
 
 def get_price_limit(trade, config):
     closing_price = 0.0
