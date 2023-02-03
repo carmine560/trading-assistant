@@ -538,7 +538,7 @@ def execute_action(trade, config, gui_callbacks, action):
             time.sleep(float(arguments))
         elif command == 'wait_for_prices':
             arguments = list(map(int, arguments.split(',')))
-            get_prices(*arguments)
+            recognize_text(*arguments)
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(gui_callbacks, arguments)
         elif command == 'write_alt_symbol':
@@ -561,7 +561,7 @@ def calculate_share_size(trade, config, position):
         region = list(map(int,
                           config[trade.process_name]['cash_balance_region']
                           .split(',')))
-        trade.cash_balance = get_prices(*region)
+        trade.cash_balance = recognize_text(*region)
 
     customer_margin_ratio = 0.31
     try:
@@ -591,23 +591,39 @@ def calculate_share_size(trade, config, position):
 
     trade.share_size = share_size
 
-def get_prices(x, y, width, height, index, integer=True):
-    if integer:
-        config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
-    else:
-        config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
+def recognize_text(x, y, width, height, index, text_type='prices'):
+    from PIL import Image
+    from PIL import ImageGrab
 
-    prices = []
-    while not prices:
+    if text_type == 'prices':
+        config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
+    elif text_type == 'decimal_prices':
+        config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
+    elif text_type == 'numeric_column':
+        config = '-c tessedit_char_whitelist=0123456789 --psm 6'
+
+    text = []
+    multiplier = 4
+    threshold = 128
+    # TODO
+    # timeout
+    while not text:
         try:
-            image = pyautogui.screenshot(region=(x, y, width, height))
-            separated_prices = pytesseract.image_to_string(image,
-                                                           config=config)
-            prices = list(map(lambda price: float(price.replace(',', '')),
-                              separated_prices.split(' ')))
+            image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
+            # TODO
+            image = image.resize((multiplier * width, multiplier * height),
+                                 Image.LANCZOS)
+            image = image.convert('L')
+            image = image.point(lambda p: 255 if p > threshold else 0)
+            separated_text = pytesseract.image_to_string(image,
+                                                         config=config)
+            text = list(map(lambda t: float(t.replace(',', '')),
+                            separated_text.split(' ')))
         except:
             pass
-    return prices[int(index)]
+
+    print(text)
+    return text[int(index)]
 
 def get_price_limit(trade, config):
     closing_price = 0.0
@@ -695,7 +711,7 @@ def get_price_limit(trade, config):
         region = list(map(int,
                           config[trade.process_name]['price_limit_region']
                           .split(',')))
-        price_limit = get_prices(*region, False)
+        price_limit = recognize_text(*region, text_type='decimal_prices')
     return price_limit
 
 if __name__ == '__main__':

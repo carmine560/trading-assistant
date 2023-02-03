@@ -172,9 +172,9 @@ replace_watchlist = [
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
     ('press_key', 'enter'),          # confirm the deletion.
+    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
-    ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
     ('click', '1729, 41'),           # click the Tile button.
     ('back_to',)]                    # back the cursor to the previous position.
 ```
