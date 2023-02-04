@@ -107,8 +107,8 @@ ACTION = [
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     # recognize numeric columns and copy symbols to the clipboard.
-    ('copy_symbols_from_numeric_columns', 'X, Y, WIDTH, HEIGHT, SYMBOL_INDEX,
-    PRICE_INDEX'),
+    ('copy_symbols_from_numeric_columns',
+     'X, Y, WIDTH, HEIGHT, SYMBOL_INDEX, PRICE_INDEX'),
     ('count_trades',),               # count the number of trades for the day.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_parent_window', 'TITLE_REGEX'), # hide a parent window.
@@ -130,125 +130,6 @@ ACTION = [
 
     # Optional Command
     ('speak_config', 'SECTION, KEY')] # speak a configuration.
-```
-
-#### Example: Show or Hide Watchlists Window on Middle Click ####
-
-The following example `show_hide_watchlists_on_click` shows or hides
-the Watchlists window on the middle click while Hyper SBI 2 is
-running.
-
-``` python
-show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
-```
-
-> **Note** This example contains no coordinates or images and can be
-> tested immediately in many environments.
-
-![A screenshot of Windows Terminal where trading_assistant.py -M was
-executed.](https://dl.dropboxusercontent.com/s/bfi0o7ployesuwb/20230122T151015.png)
-
-#### Example: Login ####
-
-The following example `login` waits for the Login window to show and
-clicks the Login button.
-
-``` python
-login = [
-    # locate the Login button in the region, and click it.
-    ('click_widget', '\path\to\login.png, 890, 510, 140, 31'),
-    # back the cursor to the previous position.
-    ('back_to',),
-    ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '1'),        # wait for 1 seconds.
-    ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
-    ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '1'),        # wait for 1 seconds.
-    ('hide_window', '登録銘柄')]     # hide the Watchlists window.
-```
-
-#### Example: Replace Watchlist ####
-
-The following example `replace_watchlist` replaces the stocks in the
-Watchlist window with new ones copied from the current market data.
-
-``` python
-replace_watchlist = [
-    # copy symbols from the current market data to the clipboard.
-    ('copy_symbols_from_market_data',),
-    ('show_window', '登録銘柄'),     # show the Watchlist window.
-    ('click', '1668, 41'),           # click the List button.
-    ('press_key', 'tab, 2'),         # focus on the stock list pane.
-    ('press_hotkeys', 'ctrl, a'),    # select all stocks.
-    ('press_key', 'del'),            # delete them.
-    ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
-    ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
-    ('press_key', 'enter'),          # confirm the registration.
-    ('click', '1729, 41'),           # click the Tile button.
-    # back the cursor to the previous position.
-    ('back_to',)]
-```
-
-#### Example: Toggle between Stocks ####
-
-The following example `toggle_between_stocks` toggles between the
-specified stocks.
-
-``` python
-toggle_between_stocks = [
-    ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
-    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
-    ('click', '54, 45'),             # focus on the Symbol text box.
-    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    # get the symbol from the Summary window.
-    ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
-    ('write_alt_symbol', '8306, 8308'), # write the alternative symbol.
-    ('press_key', 'enter'),          # press the Enter key.
-    # back the cursor to the previous position.
-    ('back_to',),
-    ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
-    ('press_key', 'esc')]            # close the symbol suggest drop-down list.
-```
-
-#### Example: Open and Close Long Position ####
-
-The following example `open_close_long_position` shows required
-windows, enters the maximum share size, and prepares a buy order.  If
-the order is placed, then it prepares a sell order for repayment.
-
-``` python
-open_close_long_position = [
-    # Open a Long Position
-    ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
-    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
-    ('click', '201, 757'),           # select the New Order tab.
-    ('click', '531, 823'),           # focus on the Share Size text box.
-    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    # get the symbol from the Summary window.
-    ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
-    ('calculate_share_size', 'long'), # calculate the share size.
-    ('write_share_size',),           # write the calculated share size.
-    ('click', '466, 843'),           # click the Market Order button.
-    ('press_key', 'tab, 3'),         # focus on the Buy Order button.
-    ('beep', '1000, 100'),           # notify completion.
-    # back the cursor to the previous position.
-    ('back_to',),
-    ('wait_for_key', 'space'),       # wait for space input.
-    ('wait_for_prices', '193, 964, 467, 19, 0'), # wait for the execution.
-
-    # Close the Long Position
-    ('click', '284, 757'),           # select the Repayment tab.
-    ('click', '606, 861'),           # focus on the Share Size text box.
-    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    ('write_share_size',),           # write the calculated share size.
-    ('click', '446, 944'),           # click the Market Order button.
-    ('press_key', 'tab, 5'),         # focus on the Sell Order button.
-    ('beep', '1000, 100'),           # notify completion.
-    # back the cursor to the previous position.
-    ('back_to',),
-    ('count_trades',),               # count the number of trades for the day.
-    ('speak_config', 'Trading, number_of_trades')] # speak the number above.
 ```
 
 ### Execute Action ###
@@ -293,6 +174,163 @@ py trading_assistant.py -e [ACTION]
 | News          | `ニュース`                    | `Ctrl` + `N` |
 | Trading       | `取引ポップアップ`            | `Ctrl` + `T` |
 | Notifications | `通知設定`                    | `Ctrl` + `G` |
+
+### Action Examples ###
+
+#### Show or Hide Watchlists Window on Middle Click ####
+
+The following example `show_hide_watchlists_on_click` shows or hides
+the Watchlists window on the middle click while Hyper SBI 2 is
+running.
+
+``` python
+show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
+```
+
+> **Note** This example contains no coordinates or images and can be
+> tested immediately in many environments.
+
+![A screenshot of Windows Terminal where trading_assistant.py -M was
+executed.](https://dl.dropboxusercontent.com/s/bfi0o7ployesuwb/20230122T151015.png)
+
+#### Login ####
+
+The following example `login` waits for the Login window to show and
+clicks the Login button.
+
+``` python
+login = [
+    # locate the Login button in the region, and click it.
+    ('click_widget', '\path\to\login.png, 890, 510, 140, 31'),
+    # back the cursor to the previous position.
+    ('back_to',),
+    ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
+    ('wait_for_period', '1'),        # wait for 1 seconds.
+    ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
+    ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
+    ('wait_for_period', '1'),        # wait for 1 seconds.
+    ('hide_window', '登録銘柄')]     # hide the Watchlists window.
+```
+
+#### Replace Watchlist with Market Data ####
+
+The following example `replace_watchlist_with_market_data` replaces
+the stocks in the Watchlist window with new ones copied from the
+current market data above.
+
+> **Note** Kabutan's free market data is 20 minute delay.
+
+``` python
+replace_watchlist_with_market_data = [
+    # copy symbols from the current market data to the clipboard.
+    ('copy_symbols_from_market_data',),
+    ('show_window', '登録銘柄'),     # show the Watchlist window.
+    ('click', '1668, 41'),           # click the List button.
+    ('press_key', 'tab, 2'),         # focus on the stock list pane.
+    ('press_hotkeys', 'ctrl, a'),    # select all stocks.
+    ('press_key', 'del'),            # delete them.
+    ('press_key', 'enter'),          # confirm the deletion.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
+    ('press_key', 'enter'),          # confirm the registration.
+    ('click', '1729, 41'),           # click the Tile button.
+    # back the cursor to the previous position.
+    ('back_to',)]
+```
+
+#### Replace Watchlist with Ranking ####
+
+The following example `replace_watchlist_with_ranking` replaces the
+stocks in the Watchlist window with new ones recognized in the
+Rankings window.
+
+> **Note** The Rankings window is real-time, but text recognition is
+> not as accurate as the downloaded market data above.
+
+``` python
+replace_watchlist_with_ranking = [
+    ('show_window', '登録銘柄'),     # show the Watchlist window.
+    ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('click', '88, 339'),            # click the Tick Count button.
+    ('click', '246, 65'),            # click the All Markets button.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    # recognize numeric columns and copy symbols to the clipboard.
+    ('copy_symbols_from_numeric_columns', '327, 151, 304, 691, 0, -1'),
+    ('press_hotkeys', 'alt, f4'),    # close the Rankings window.
+    ('click', '1668, 41'),           # click the List button.
+    ('press_key', 'tab, 2'),         # focus on the stock list pane.
+    ('press_hotkeys', 'ctrl, a'),    # select all stocks.
+    ('press_key', 'del'),            # delete them.
+    ('press_key', 'enter'),          # confirm the deletion.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
+    ('press_key', 'enter'),          # confirm the registration.
+    ('click', '1729, 41'),           # click the Tile button.
+    # back the cursor to the previous position.
+    ('back_to',)]
+```
+
+#### Toggle between Stocks ####
+
+The following example `toggle_between_stocks` toggles between the
+specified stocks.
+
+``` python
+toggle_between_stocks = [
+    ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
+    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
+    ('click', '54, 45'),             # focus on the Symbol text box.
+    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
+    # get the symbol from the Summary window.
+    ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
+    ('write_alt_symbol', '8306, 8308'), # write the alternative symbol.
+    ('press_key', 'enter'),          # press the Enter key.
+    # back the cursor to the previous position.
+    ('back_to',),
+    ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
+    ('press_key', 'esc')]            # close the symbol suggest drop-down list.
+```
+
+#### Open and Close Long Position ####
+
+The following example `open_close_long_position` shows required
+windows, enters the maximum share size, and prepares a buy order.  If
+the order is placed, then it prepares a sell order for repayment.
+
+``` python
+open_close_long_position = [
+    # Open a Long Position
+    ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
+    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
+    ('click', '201, 757'),           # select the New Order tab.
+    ('click', '531, 823'),           # focus on the Share Size text box.
+    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
+    # get the symbol from the Summary window.
+    ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
+    ('calculate_share_size', 'long'), # calculate the share size.
+    ('write_share_size',),           # write the calculated share size.
+    ('click', '466, 843'),           # click the Market Order button.
+    ('press_key', 'tab, 3'),         # focus on the Buy Order button.
+    ('beep', '1000, 100'),           # notify completion.
+    # back the cursor to the previous position.
+    ('back_to',),
+    ('wait_for_key', 'space'),       # wait for space input.
+    ('wait_for_prices', '193, 964, 467, 19, 0'), # wait for the execution.
+
+    # Close the Long Position
+    ('click', '284, 757'),           # select the Repayment tab.
+    ('click', '606, 861'),           # focus on the Share Size text box.
+    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
+    ('write_share_size',),           # write the calculated share size.
+    ('click', '446, 944'),           # click the Market Order button.
+    ('press_key', 'tab, 5'),         # focus on the Sell Order button.
+    ('beep', '1000, 100'),           # notify completion.
+    # back the cursor to the previous position.
+    ('back_to',),
+    ('count_trades',),               # count the number of trades for the day.
+    ('speak_config', 'Trading, number_of_trades')] # speak the number above.
+```
 
 ## License ##
 
