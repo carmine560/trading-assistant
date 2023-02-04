@@ -470,19 +470,35 @@ def execute_action(trade, config, gui_callbacks, action):
                 pyautogui.click(coordinates)
         elif command == 'click_widget':
             arguments = arguments.split(',')
-            image = ','.join(arguments[0:-4])
+            image = ','.join(arguments[:-4])
             region = arguments[-4:len(arguments)]
             gui_interactions.click_widget(gui_callbacks, image, *region)
         elif command == 'copy_market_data':
             save_market_data(config, clipboard=True)
-        elif command == 'copy_numeric_column':
+        elif command == 'copy_numeric_columns':
             import win32clipboard
 
             arguments = list(map(int, arguments.split(',')))
-            text = recognize_text(*arguments, None, text_type='numeric_column')
+            split_string = recognize_text(*arguments, None,
+                                          text_type='numeric_columns')
+
+            # TODO
+            symbol_index = 0
+            price_index = -1
+            symbols = []
+            price_limit = float(config['Market Data']['price_limit'])
+            for split_item in split_string:
+                if price_limit > 0 \
+                   and float(split_item[price_index].replace(',', '')) \
+                   < price_limit:
+                    symbols.append(split_item[symbol_index])
+
+            print(symbols)
+            print(' '.join(symbols))
+
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardText(text)
+            win32clipboard.SetClipboardText(' '.join(symbols))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
             section = config['Trading']
@@ -600,40 +616,55 @@ def calculate_share_size(trade, config, position):
 
     trade.share_size = share_size
 
-def recognize_text(x, y, width, height, index, text_type='prices'):
+def recognize_text(x, y, width, height, index, text_type='integers'):
     from PIL import Image
     from PIL import ImageGrab
 
-    if text_type == 'prices':
+    if text_type == 'integers':
         config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
-    elif text_type == 'decimal_prices':
+    elif text_type == 'decimal_numbers':
         config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
-    elif text_type == 'numeric_column':
-        config = '-c tessedit_char_whitelist=0123456789 --psm 6'
+    elif text_type == 'numeric_columns':
+        config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 6'
 
-    text = []
+    split_string = []
     multiplier = 4
+    # multiplier = 2
+    # multiplier = 2
+    # multiplier = 16
     threshold = 128
-    # TODO
-    # timeout, wait_for_prices
-    while not text:
+    # threshold = 96
+    # threshold = 64
+    # threshold = 110
+    # threshold = 48
+    while not split_string:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
             # TODO
             image = image.resize((multiplier * width, multiplier * height),
                                  Image.LANCZOS)
-            image = image.convert('L')
+            # image = image.resize((multiplier * width, multiplier * height),
+            #                      Image.BICUBIC)
+            # image = image.point(lambda p: 255 if p > threshold else 0)
+            # image = image.convert('L')
             image = image.point(lambda p: 255 if p > threshold else 0)
-            text = pytesseract.image_to_string(image, config=config)
-            text = list(map(lambda t: float(t.replace(',', '')),
-                            text.split(' ')))
+            # image = image.convert('1')
+            image.save('01.png')
+            string = pytesseract.image_to_string(image, config=config)
+            if text_type == 'integers' or text_type == 'decimal_numbers':
+                split_string = list(map(lambda s: float(s.replace(',', '')),
+                                        string.split(' ')))
+            elif text_type == 'numeric_columns':
+                for item in string.splitlines():
+                    split_string.append(item.split(' '))
         except:
             pass
 
+    print(split_string)
     if index is None:
-        return text
+        return split_string
     else:
-        return text[int(index)]
+        return split_string[int(index)]
 
 def get_price_limit(trade, config):
     closing_price = 0.0
@@ -721,7 +752,7 @@ def get_price_limit(trade, config):
         region = list(map(int,
                           config[trade.process_name]['price_limit_region']
                           .split(',')))
-        price_limit = recognize_text(*region, text_type='decimal_prices')
+        price_limit = recognize_text(*region, text_type='decimal_numbers')
     return price_limit
 
 if __name__ == '__main__':

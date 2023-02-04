@@ -102,8 +102,8 @@ ACTION = [
     ('calculate_share_size', 'POSITION'), # calculate a share size.
     ('click', 'X, Y'),               # click.
     ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'), # locate a widget image in a region, and click it.
-    ('copy_market_data',),           # copy the current market data to the clipboard.
-    ('copy_numeric_column', 'X, Y, WIDTH, HEIGHT'), # recognize a numeric column and copy it to the clipboard.
+    ('copy_market_data',),           # copy symbols from the current market data to the clipboard.
+    ('copy_numeric_columns', 'X, Y, WIDTH, HEIGHT, INDEX, SUBINDEX'), # recognize numeric columns and copy symbols to the clipboard.
     ('count_trades',),               # count the number of trades for the day.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_parent_window', 'TITLE_REGEX'), # hide a parent window.
