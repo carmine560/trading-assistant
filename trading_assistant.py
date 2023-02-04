@@ -479,12 +479,12 @@ def execute_action(trade, config, gui_callbacks, action):
             import win32clipboard
 
             arguments = list(map(int, arguments.split(',')))
-            split_string = recognize_text(*arguments, None,
+            split_string = recognize_text(*arguments[:4], None,
                                           text_type='numeric_columns')
 
             # TODO
-            symbol_index = 0
-            price_index = -1
+            symbol_index = arguments[4]
+            price_index = arguments[5]
             symbols = []
             price_limit = float(config['Market Data']['price_limit'])
             for split_item in split_string:
@@ -648,8 +648,19 @@ def recognize_text(x, y, width, height, index, text_type='integers'):
             # image = image.point(lambda p: 255 if p > threshold else 0)
             # image = image.convert('L')
             image = image.point(lambda p: 255 if p > threshold else 0)
+            # pixdata = image.load()
+            # for y in range(image.size[1]):
+            #     for x in range(image.size[0]):
+            #         # print(pixdata[x, y])
+            #         # # if pixdata[x, y] == (255, 255, 255, 255):
+            #         # #     pixdata[x, y] = (0, 0, 0, 255)
+            #         if pixdata[x, y] == (255, 0, 0):
+            #             pixdata[x, y] = (255, 255, 255)
+            #         elif pixdata[x, y] == (0, 255, 255):
+            #             pixdata[x, y] = (255, 255, 255)
             # image = image.convert('1')
-            image.save('01.png')
+            # image = image.convert('L')
+            image.save('03.png')
             string = pytesseract.image_to_string(image, config=config)
             if text_type == 'integers' or text_type == 'decimal_numbers':
                 split_string = list(map(lambda s: float(s.replace(',', '')),
