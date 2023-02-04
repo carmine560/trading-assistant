@@ -473,28 +473,21 @@ def execute_action(trade, config, gui_callbacks, action):
             image = ','.join(arguments[:-4])
             region = arguments[-4:len(arguments)]
             gui_interactions.click_widget(gui_callbacks, image, *region)
-        elif command == 'copy_market_data':
+        elif command == 'copy_symbols_from_market_data':
             save_market_data(config, clipboard=True)
-        elif command == 'copy_numeric_columns':
+        elif command == 'copy_symbols_from_numeric_columns':
             import win32clipboard
 
             arguments = list(map(int, arguments.split(',')))
             split_string = recognize_text(*arguments[:4], None,
                                           text_type='numeric_columns')
-
-            # TODO
-            symbol_index = arguments[4]
-            price_index = arguments[5]
-            symbols = []
             price_limit = float(config['Market Data']['price_limit'])
+            symbols = []
             for split_item in split_string:
                 if price_limit > 0 \
-                   and float(split_item[price_index].replace(',', '')) \
+                   and float(split_item[arguments[5]].replace(',', '')) \
                    < price_limit:
-                    symbols.append(split_item[symbol_index])
-
-            print(symbols)
-            print(' '.join(symbols))
+                    symbols.append(split_item[arguments[4]].replace('.', ''))
 
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
@@ -616,7 +609,8 @@ def calculate_share_size(trade, config, position):
 
     trade.share_size = share_size
 
-def recognize_text(x, y, width, height, index, text_type='integers'):
+def recognize_text(x, y, width, height, index, text_type='integers',
+                   multiplier=4, threshold=128):
     from PIL import Image
     from PIL import ImageGrab
 
@@ -628,39 +622,13 @@ def recognize_text(x, y, width, height, index, text_type='integers'):
         config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 6'
 
     split_string = []
-    multiplier = 4
-    # multiplier = 2
-    # multiplier = 2
-    # multiplier = 16
-    threshold = 128
-    # threshold = 96
-    # threshold = 64
-    # threshold = 110
-    # threshold = 48
     while not split_string:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
             # TODO
             image = image.resize((multiplier * width, multiplier * height),
                                  Image.LANCZOS)
-            # image = image.resize((multiplier * width, multiplier * height),
-            #                      Image.BICUBIC)
-            # image = image.point(lambda p: 255 if p > threshold else 0)
-            # image = image.convert('L')
             image = image.point(lambda p: 255 if p > threshold else 0)
-            # pixdata = image.load()
-            # for y in range(image.size[1]):
-            #     for x in range(image.size[0]):
-            #         # print(pixdata[x, y])
-            #         # # if pixdata[x, y] == (255, 255, 255, 255):
-            #         # #     pixdata[x, y] = (0, 0, 0, 255)
-            #         if pixdata[x, y] == (255, 0, 0):
-            #             pixdata[x, y] = (255, 255, 255)
-            #         elif pixdata[x, y] == (0, 255, 255):
-            #             pixdata[x, y] = (255, 255, 255)
-            # image = image.convert('1')
-            # image = image.convert('L')
-            image.save('03.png')
             string = pytesseract.image_to_string(image, config=config)
             if text_type == 'integers' or text_type == 'decimal_numbers':
                 split_string = list(map(lambda s: float(s.replace(',', '')),
@@ -671,7 +639,6 @@ def recognize_text(x, y, width, height, index, text_type='integers'):
         except:
             pass
 
-    print(split_string)
     if index is None:
         return split_string
     else:
