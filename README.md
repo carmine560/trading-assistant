@@ -205,10 +205,10 @@ login = [
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '1'),        # wait for 1 seconds.
+    ('wait_for_period', '1'),        # wait for 1 second.
     ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '1'),        # wait for 1 seconds.
+    ('wait_for_period', '1'),        # wait for 1 second.
     ('hide_window', '登録銘柄')]     # hide the Watchlists window.
 ```
 
@@ -218,7 +218,7 @@ The following example `replace_watchlist_with_market_data` replaces
 the stocks in the Watchlist window with new ones copied from the
 current market data above.
 
-> **Note** Kabutan's free market data is 20 minute delay.
+> **Note** Kabutan's free market data has a 20-minute delay.
 
 ``` python
 replace_watchlist_with_market_data = [
@@ -257,7 +257,7 @@ replace_watchlist_with_ranking = [
     ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     # recognize numeric columns and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_columns', '327, 151, 304, 691, 0, -1'),
-    ('press_hotkeys', 'alt, f4'),    # close the Rankings window.
+    ('press_hotkeys', 'alt, f4'),    # close the window.
     ('click', '1668, 41'),           # click the List button.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
