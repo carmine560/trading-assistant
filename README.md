@@ -215,7 +215,7 @@ login = [
 #### Replace Watchlist with Market Data ####
 
 The following example `replace_watchlist_with_market_data` replaces
-the stocks in the Watchlist window with new ones copied from the
+the stocks in the Watchlists window with new ones copied from the
 current market data above.
 
 > **Note** Kabutan's free market data has a 20-minute delay.
@@ -224,7 +224,7 @@ current market data above.
 replace_watchlist_with_market_data = [
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
-    ('show_window', '登録銘柄'),     # show the Watchlist window.
+    ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('click', '1668, 41'),           # click the List button.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
@@ -241,7 +241,7 @@ replace_watchlist_with_market_data = [
 #### Replace Watchlist with Ranking ####
 
 The following example `replace_watchlist_with_ranking` replaces the
-stocks in the Watchlist window with new ones recognized in the
+stocks in the Watchlists window with new ones recognized in the
 Rankings window.
 
 > **Note** The Rankings window is real-time, but text recognition is
@@ -249,7 +249,7 @@ Rankings window.
 
 ``` python
 replace_watchlist_with_ranking = [
-    ('show_window', '登録銘柄'),     # show the Watchlist window.
+    ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
     ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('click', '88, 339'),            # click the Tick Count button.
