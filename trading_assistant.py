@@ -503,6 +503,7 @@ def execute_action(trade, config, gui_callbacks, action):
                 section['date'] = str(date.today())
                 section['number_of_trades'] = '1'
 
+            configuration.check_config_directory(trade.config_file)
             with open(trade.config_file, 'w', encoding='utf-8') as f:
                 config.write(f)
         elif command == 'get_symbol':

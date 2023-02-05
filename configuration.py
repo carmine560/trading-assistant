@@ -1,9 +1,19 @@
+import os
 import sys
 
 ANSI_DEFAULT = '\033[32m'
 ANSI_ANNOTATION = '\033[33m'
 ANSI_HIGHLIGHT = '\033[4m'
 ANSI_RESET = '\033[m'
+
+def check_config_directory(config_file):
+    config_directory = os.path.dirname(config_file)
+    if not os.path.isdir(config_directory):
+        try:
+            os.mkdir(config_directory)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
 
 def list_section(config, section):
     if config.has_section(section):
@@ -39,6 +49,7 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
         elif answer == 'quit':
             return False
 
+        check_config_directory(config_file)
         with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)
             return True
@@ -48,7 +59,6 @@ def modify_tuples(config, section, option, config_file, key_prompt='key',
                   value_prompt='value', end_of_list_prompt='end of list',
                   positioning_keys=[]):
     import ast
-    import os
 
     create = False
     if not config.has_section(section):
@@ -118,6 +128,7 @@ def modify_tuples(config, section, option, config_file, key_prompt='key',
 
     if tuples:
         config[section][option] = str(tuples)
+        check_config_directory(config_file)
         with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)
         return True
@@ -197,5 +208,6 @@ def configure_position(answer, value=''):
 def delete_option(config, section, option, config_file):
     if config.has_option(section, option):
         config.remove_option(section, option)
+        check_config_directory(config_file)
         with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)
