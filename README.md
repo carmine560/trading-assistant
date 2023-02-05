@@ -230,7 +230,7 @@ replace_watchlist_with_market_data = [
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
     ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('click', '1729, 41'),           # click the Tile button.
@@ -251,10 +251,11 @@ Rankings window.
 replace_watchlist_with_ranking = [
     ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
-    ('click', '88, 339'),            # click the Tick Count button.
+    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
+    ('click', '38, 39'),             # click the Rankings tab.
+    ('click', '88, 339'),            # click the Tick Count item.
     ('click', '246, 65'),            # click the All Markets button.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     # recognize numeric columns and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_columns', '327, 151, 304, 691, 0, -1'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
@@ -263,7 +264,7 @@ replace_watchlist_with_ranking = [
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
     ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('click', '1729, 41'),           # click the Tile button.

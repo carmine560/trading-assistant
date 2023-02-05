@@ -187,8 +187,7 @@ def configure(trade):
         'price_header': '株価',
         'closing_prices':
         os.path.join('${Common:market_directory}', 'closing_prices_'),
-        # TODO
-        'price_limit': '0'}
+        'maximum_price': '0'}
     config['Startup Script'] = {
         'pre_start_options': '-r -d',
         'post_start_options': '',
@@ -337,7 +336,7 @@ def save_market_data(config, clipboard=False):
     symbol_header = section['symbol_header']
     price_header = section['price_header']
     closing_prices = section['closing_prices']
-    price_limit = float(section['price_limit'])
+    maximum_price = float(section['maximum_price'])
 
     if clipboard:
         # TODO
@@ -368,8 +367,8 @@ def save_market_data(config, clipboard=False):
 
         df = pd.concat(dfs)
         if clipboard:
-            if price_limit > 0:
-                df = df.loc[df[price_header] < price_limit]
+            if maximum_price > 0:
+                df = df.loc[df[price_header] < maximum_price]
 
             df = df[[symbol_header]]
             df.to_clipboard(index=False, header=False)
@@ -481,12 +480,12 @@ def execute_action(trade, config, gui_callbacks, action):
             arguments = list(map(int, arguments.split(',')))
             split_string = recognize_text(*arguments[:4], None,
                                           text_type='numeric_columns')
-            price_limit = float(config['Market Data']['price_limit'])
+            maximum_price = float(config['Market Data']['maximum_price'])
             symbols = []
             for split_item in split_string:
-                if price_limit > 0 \
+                if maximum_price > 0 \
                    and float(split_item[arguments[5]].replace(',', '')) \
-                   < price_limit:
+                   < maximum_price:
                     symbols.append(split_item[arguments[4]].replace('.', ''))
 
             win32clipboard.OpenClipboard()
