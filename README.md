@@ -191,7 +191,7 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 > tested immediately in many environments.
 
 ![A screenshot of Windows Terminal where trading_assistant.py -M was
-executed.](https://dl.dropboxusercontent.com/s/bfi0o7ployesuwb/20230122T151015.png)
+executed.](https://dl.dropboxusercontent.com/s/ch1nqnjusoki0wk/20230205T183114.png)
 
 #### Login ####
 
