@@ -21,8 +21,8 @@ an action consisting of a sequence of commands, this script executes:
 
 ## Prerequisites ##
 
-This script has been tested with [Python for
-Windows](https://www.python.org/downloads/windows/) and Hyper SBI 2
+This script has been tested in [Python for
+Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2
 and uses the following packages:
 
   * [pandas](https://pandas.pydata.org/) to save customer margin

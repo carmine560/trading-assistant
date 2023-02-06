@@ -338,9 +338,8 @@ def save_market_data(config, clipboard=False):
     closing_prices = section['closing_prices']
     maximum_price = float(section['maximum_price'])
 
+    # TODO
     if clipboard:
-        # TODO
-        # watchlist.csv
         latest = True
     else:
         paths = []
@@ -610,7 +609,8 @@ def calculate_share_size(trade, config, position):
     trade.share_size = share_size
 
 def recognize_text(x, y, width, height, index, text_type='integers',
-                   multiplier=4, threshold=128):
+                   multiplier=4, threshold=128, target_color=(0, 0, 255),
+                   replacement_color=(0, 0, 0)):
     from PIL import Image
     from PIL import ImageGrab
 
@@ -629,6 +629,12 @@ def recognize_text(x, y, width, height, index, text_type='integers',
             image = image.resize((multiplier * width, multiplier * height),
                                  Image.LANCZOS)
             image = image.point(lambda p: 255 if p > threshold else 0)
+            pixel_data = image.load()
+            for y in range(image.size[1]):
+                for x in range(image.size[0]):
+                    if pixel_data[x, y] == target_color:
+                        pixel_data[x, y] = replacement_color
+
             string = pytesseract.image_to_string(image, config=config)
             if text_type == 'integers' or text_type == 'decimal_numbers':
                 split_string = list(map(lambda s: float(s.replace(',', '')),
