@@ -54,7 +54,6 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
             config.write(f)
             return True
 
-# TODO
 def modify_tuples(config, section, option, config_file, key_prompt='key',
                   value_prompt='value', end_of_list_prompt='end of list',
                   positioning_keys=[]):
@@ -134,6 +133,7 @@ def modify_tuples(config, section, option, config_file, key_prompt='key',
         return True
     else:
         delete_option(config, section, option, config_file)
+        return False
 
 def tidy_answer(answers):
     initialism = ''

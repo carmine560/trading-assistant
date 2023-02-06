@@ -52,7 +52,7 @@ def main():
         '-d', action='store_true',
         help='save the previous market data')
     group.add_argument(
-        '-M', metavar=('ACTION', 'HOTKEY'), nargs='*',
+        '-M', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help=('create or modify an action and create a shortcut to it'))
     group.add_argument(
         '-e', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
@@ -61,7 +61,7 @@ def main():
         '-T', const='LIST_ACTIONS', metavar='SCRIPT_BASE | ACTION', nargs='?',
         help=('delete a startup script or an action and a shortcut to it'))
     group.add_argument(
-        '-I', const='WITHOUT_HOTKEY', metavar='HOTKEY', nargs='?',
+        '-I', action='store_true',
         help=('create or modify a startup script and create a shortcut to it'))
     parser.add_argument(
         '-B', action='store_true',
@@ -82,32 +82,24 @@ def main():
         save_customer_margin_ratios(trade, config)
     if args.d:
         save_market_data(config)
-    if args.M == []:
-        # args.M is an empty list if no arguments are given.
+    if args.M == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
-    if args.M:
+    elif args.M:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        if configuration.modify_tuples(config, 'Actions', args.M[0],
+        if configuration.modify_tuples(config, 'Actions', args.M,
                                        trade.config_file, key_prompt='command',
                                        value_prompt='arguments',
                                        end_of_list_prompt='end of commands',
                                        positioning_keys=['click', 'move_to']):
             # To pin the shortcut to the Taskbar, specify an
             # executable file as the argument target_path.
-            if len(args.M) == 1:
-                file_utilities.create_shortcut(
-                    args.M[0], 'py.exe', '"' + __file__ + '" -e ' + args.M[0],
-                    program_group_base=config[trade.process_name]['title'],
-                    icon_directory=trade.config_directory)
-            elif len(args.M) == 2:
-                file_utilities.create_shortcut(
-                    args.M[0], 'py.exe', '"' + __file__ + '" -e ' + args.M[0],
-                    program_group_base=config[trade.process_name]['title'],
-                    icon_directory=trade.config_directory, hotkey=args.M[1])
+            file_utilities.create_shortcut(
+                args.M, 'py.exe', '"' + __file__ + '" -e ' + args.M,
+                program_group_base=config[trade.process_name]['title'],
+                icon_directory=trade.config_directory)
         else:
             file_utilities.delete_shortcut(
-                args.M[0],
-                program_group_base=config[trade.process_name]['title'],
+                args.M, program_group_base=config[trade.process_name]['title'],
                 icon_directory=trade.config_directory)
     if args.e == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
@@ -138,18 +130,11 @@ def main():
         configuration.modify_section(config, 'Startup Script',
                                      trade.config_file)
         create_startup_script(trade, config)
-        if args.I == 'WITHOUT_HOTKEY':
-            file_utilities.create_shortcut(
-                trade.script_base, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + trade.startup_script + '"',
-                program_group_base=config[trade.process_name]['title'],
-                icon_directory=trade.config_directory)
-        else:
-            file_utilities.create_shortcut(
-                trade.script_base, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + trade.startup_script + '"',
-                program_group_base=config[trade.process_name]['title'],
-                icon_directory=trade.config_directory, hotkey=args.I)
+        file_utilities.create_shortcut(
+            trade.script_base, 'powershell.exe',
+            '-WindowStyle Hidden -File "' + trade.startup_script + '"',
+            program_group_base=config[trade.process_name]['title'],
+            icon_directory=trade.config_directory)
     if args.B:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configuration.modify_option(config, 'Trading', 'fixed_cash_balance',
@@ -223,8 +208,8 @@ def configure(trade):
                               '通知設定'),                   # Notifications
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0',
-        'multiplier': '4',
-        'threshold': '100',
+        'image_magnification': '4',
+        'binarization_threshold': '100',
         'target_color': '(0, 0, 255)',
         'replacement_color': '(0, 0, 0)'}
     config['Trading'] = {
@@ -385,7 +370,6 @@ def save_market_data(config, clipboard=False):
             subset.to_csv(closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
-# TODO
 def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
     import requests
 
@@ -616,8 +600,8 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
     from PIL import Image
     from PIL import ImageGrab
 
-    multiplier = int(section['multiplier'])
-    threshold = int(section['threshold'])
+    image_magnification = int(section['image_magnification'])
+    binarization_threshold = int(section['binarization_threshold'])
     target_color = ast.literal_eval(section['target_color'])
     replacement_color = ast.literal_eval(section['replacement_color'])
 
@@ -632,9 +616,11 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
     while not split_string:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
-            image = image.resize((multiplier * width, multiplier * height),
+            image = image.resize((image_magnification * width,
+                                  image_magnification * height),
                                  Image.LANCZOS)
-            image = image.point(lambda p: 255 if p > threshold else 0)
+            image = image.point(lambda p:
+                                255 if p > binarization_threshold else 0)
             pixel_data = image.load()
             for y in range(image.size[1]):
                 for x in range(image.size[0]):

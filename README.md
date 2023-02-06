@@ -63,7 +63,7 @@ following option creates a startup script
 that processes them and starts Hyper SBI 2.
 
 ``` powershell
-py trading_assistant.py -I [HOTKEY]
+py trading_assistant.py -I
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
@@ -86,7 +86,7 @@ py trading_assistant.py -L
 Create or modify an action to be processed by this script.
 
 ``` powershell
-py trading_assistant.py -M [ACTION [HOTKEY]]
+py trading_assistant.py -M [ACTION]
 ```
 
 Then insert, modify, or delete each command of the action.  An action
@@ -144,12 +144,12 @@ py trading_assistant.py -e [ACTION]
 
   * `-r` save customer margin ratios
   * `-d` save the previous market data
-  * `-M [ACTION [HOTKEY]]` create or modify an action and create a
+  * `-M [ACTION]` create or modify an action and create a
     shortcut to it
   * `-e [ACTION]` execute an action
   * `-T [SCRIPT_BASE | ACTION]` delete a startup script or an action
     and a shortcut to it
-  * `-I [HOTKEY]` create or modify a startup script and create a
+  * `-I` create or modify a startup script and create a
     shortcut to it
   * `-B` configure a cash balance
   * `-C` configure the cash balance region and the index of the price
