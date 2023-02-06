@@ -224,7 +224,7 @@ def configure(trade):
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0',
         'multiplier': '4',
-        'threshold': '128',
+        'threshold': '100',
         'target_color': '(0, 0, 255)',
         'replacement_color': '(0, 0, 0)'}
     config['Trading'] = {
@@ -612,7 +612,6 @@ def calculate_share_size(trade, config, position):
 
     trade.share_size = share_size
 
-# TODO
 def recognize_text(section, x, y, width, height, index, text_type='integers'):
     from PIL import Image
     from PIL import ImageGrab
@@ -633,7 +632,6 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
     while not split_string:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
-            # TODO
             image = image.resize((multiplier * width, multiplier * height),
                                  Image.LANCZOS)
             image = image.point(lambda p: 255 if p > threshold else 0)
