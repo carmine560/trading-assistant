@@ -1,5 +1,6 @@
 from datetime import date
 import argparse
+import ast
 import configparser
 import csv
 import os
@@ -221,7 +222,11 @@ def configure(trade):
                               '取引ポップアップ',            # Trading
                               '通知設定'),                   # Notifications
         'cash_balance_region': '0, 0, 0, 0, 0',
-        'price_limit_region': '0, 0, 0, 0, 0'}
+        'price_limit_region': '0, 0, 0, 0, 0',
+        'multiplier': '4',
+        'threshold': '128',
+        'target_color': '(0, 0, 255)',
+        'replacement_color': '(0, 0, 0)'}
     config['Trading'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0',
@@ -283,8 +288,6 @@ def create_startup_script(trade, config):
         f.writelines(lines)
 
 def save_customer_margin_ratios(trade, config):
-    import ast
-
     global pd
     import pandas as pd
 
@@ -382,6 +385,7 @@ def save_market_data(config, clipboard=False):
             subset.to_csv(closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
+# TODO
 def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
     import requests
 
@@ -445,8 +449,6 @@ def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
             return latest
 
 def execute_action(trade, config, gui_callbacks, action):
-    import ast
-
     commands = ast.literal_eval(config['Actions'][action])
     for i in range(len(commands)):
         command = commands[i][0]
@@ -477,7 +479,8 @@ def execute_action(trade, config, gui_callbacks, action):
             import win32clipboard
 
             arguments = list(map(int, arguments.split(',')))
-            split_string = recognize_text(*arguments[:4], None,
+            split_string = recognize_text(config[trade.process_name],
+                                          *arguments[:4], None,
                                           text_type='numeric_columns')
             maximum_price = float(config['Market Data']['maximum_price'])
             symbols = []
@@ -555,7 +558,7 @@ def execute_action(trade, config, gui_callbacks, action):
             time.sleep(float(arguments))
         elif command == 'wait_for_prices':
             arguments = list(map(int, arguments.split(',')))
-            recognize_text(*arguments)
+            recognize_text(config[trade.process_name], *arguments)
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(gui_callbacks, arguments)
         elif command == 'write_alt_symbol':
@@ -578,7 +581,8 @@ def calculate_share_size(trade, config, position):
         region = list(map(int,
                           config[trade.process_name]['cash_balance_region']
                           .split(',')))
-        trade.cash_balance = recognize_text(*region)
+        trade.cash_balance = recognize_text(config[trade.process_name],
+                                            *region)
 
     customer_margin_ratio = 0.31
     try:
@@ -608,11 +612,15 @@ def calculate_share_size(trade, config, position):
 
     trade.share_size = share_size
 
-def recognize_text(x, y, width, height, index, text_type='integers',
-                   multiplier=4, threshold=128, target_color=(0, 0, 255),
-                   replacement_color=(0, 0, 0)):
+# TODO
+def recognize_text(section, x, y, width, height, index, text_type='integers'):
     from PIL import Image
     from PIL import ImageGrab
+
+    multiplier = int(section['multiplier'])
+    threshold = int(section['threshold'])
+    target_color = ast.literal_eval(section['target_color'])
+    replacement_color = ast.literal_eval(section['replacement_color'])
 
     if text_type == 'integers':
         config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
@@ -736,7 +744,8 @@ def get_price_limit(trade, config):
         region = list(map(int,
                           config[trade.process_name]['price_limit_region']
                           .split(',')))
-        price_limit = recognize_text(*region, text_type='decimal_numbers')
+        price_limit = recognize_text(config[trade.process_name], *region,
+                                     text_type='decimal_numbers')
     return price_limit
 
 if __name__ == '__main__':
