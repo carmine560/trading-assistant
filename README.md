@@ -155,29 +155,9 @@ py trading_assistant.py -e [ACTION]
   * `-C` configure the cash balance region and the index of the price
   * `-L` configure the price limit region and the index of the price
 
-## Appendix ##
+## Action Examples ##
 
-### Hyper SBI 2 Window Titles ###
-
-| Window        | Regular Expression for Title  | Shortcut     |
-|---------------|-------------------------------|--------------|
-| Announcements | `お知らせ`                    | `Ctrl` + `I` |
-| Summary       | `個別銘柄\s.*\((\d{4})\)`     | `Ctrl` + `1` |
-| Watchlists    | `登録銘柄`                    | `Ctrl` + `2` |
-| Holdings      | `保有証券`                    | `Ctrl` + `3` |
-| Order Status  | `注文一覧`                    | `Ctrl` + `4` |
-| Chart         | `個別チャート\s.*\((\d{4})\)` | `Ctrl` + `5` |
-| Markets       | `マーケット`                  | `Ctrl` + `6` |
-| Rankings      | `ランキング`                  | `Ctrl` + `7` |
-| Stock Lists   | `銘柄一覧`                    | `Ctrl` + `8` |
-| Account       | `口座情報`                    | `Ctrl` + `9` |
-| News          | `ニュース`                    | `Ctrl` + `N` |
-| Trading       | `取引ポップアップ`            | `Ctrl` + `T` |
-| Notifications | `通知設定`                    | `Ctrl` + `G` |
-
-### Action Examples ###
-
-#### Show or Hide Watchlists Window on Middle Click ####
+### Show or Hide Watchlists Window on Middle Click ###
 
 The following example `show_hide_watchlists_on_click` shows or hides
 the Watchlists window on the middle click while Hyper SBI 2 is
@@ -190,7 +170,7 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 > **Note** This example contains no coordinates or images and can be
 > tested immediately in many environments.
 
-#### Login ####
+### Login ###
 
 The following example `login` waits for the Login window to show and
 clicks the Login button.
@@ -209,7 +189,7 @@ login = [
     ('hide_window', '登録銘柄')]     # hide the Watchlists window.
 ```
 
-#### Replace Watchlist with Market Data ####
+### Replace Watchlist with Downloaded Market Data ###
 
 The following example `update_most_active_watchlist` replaces the
 stocks in the Watchlists window with new ones copied from the current
@@ -236,7 +216,7 @@ update_most_active_watchlist = [
     ('back_to',)]
 ```
 
-#### Replace Watchlist with Ranking ####
+### Replace Watchlist with Hyper SBI 2 Ranking ###
 
 The following example `update_tick_count_watchlist` replaces the
 stocks in the Watchlists window with new ones recognized in the
@@ -271,7 +251,7 @@ update_tick_count_watchlist = [
     ('back_to',)]
 ```
 
-#### Toggle between Stocks ####
+### Toggle between Stocks ###
 
 The following example `toggle_between_stocks` toggles between the
 specified stocks.
@@ -292,7 +272,7 @@ toggle_between_stocks = [
     ('press_key', 'esc')]            # close the symbol suggest drop-down list.
 ```
 
-#### Open and Close Long Position ####
+### Open and Close Long Position ###
 
 The following example `open_close_long_position` shows required
 windows, enters the maximum share size, and prepares a buy order.  If
@@ -331,6 +311,26 @@ open_close_long_position = [
     ('count_trades',),               # count the number of trades for the day.
     ('speak_config', 'Trading, number_of_trades')] # speak the number above.
 ```
+
+## Appendix ##
+
+### Hyper SBI 2 Window Titles ###
+
+| Window        | Regular Expression for Title  | Shortcut     |
+|---------------|-------------------------------|--------------|
+| Announcements | `お知らせ`                    | `Ctrl` + `I` |
+| Summary       | `個別銘柄\s.*\((\d{4})\)`     | `Ctrl` + `1` |
+| Watchlists    | `登録銘柄`                    | `Ctrl` + `2` |
+| Holdings      | `保有証券`                    | `Ctrl` + `3` |
+| Order Status  | `注文一覧`                    | `Ctrl` + `4` |
+| Chart         | `個別チャート\s.*\((\d{4})\)` | `Ctrl` + `5` |
+| Markets       | `マーケット`                  | `Ctrl` + `6` |
+| Rankings      | `ランキング`                  | `Ctrl` + `7` |
+| Stock Lists   | `銘柄一覧`                    | `Ctrl` + `8` |
+| Account       | `口座情報`                    | `Ctrl` + `9` |
+| News          | `ニュース`                    | `Ctrl` + `N` |
+| Trading       | `取引ポップアップ`            | `Ctrl` + `T` |
+| Notifications | `通知設定`                    | `Ctrl` + `G` |
 
 ## License ##
 
