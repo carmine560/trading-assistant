@@ -622,10 +622,10 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
             image = image.point(lambda p:
                                 255 if p > binarization_threshold else 0)
             pixel_data = image.load()
-            for y in range(image.size[1]):
-                for x in range(image.size[0]):
-                    if pixel_data[x, y] == target_color:
-                        pixel_data[x, y] = replacement_color
+            for image_y in range(image.size[1]):
+                for image_x in range(image.size[0]):
+                    if pixel_data[image_x, image_y] == target_color:
+                        pixel_data[image_x, image_y] = replacement_color
 
             string = pytesseract.image_to_string(image, config=config)
             if text_type == 'integers' or text_type == 'decimal_numbers':
