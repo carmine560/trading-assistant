@@ -209,7 +209,7 @@ def configure(trade):
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '4',
-        'binarization_threshold': '100',
+        'binarization_threshold': '128',
         'target_color': '(0, 0, 255)',
         'replacement_color': '(0, 0, 0)'}
     config['Trading'] = {
@@ -217,6 +217,9 @@ def configure(trade):
         'utilization_ratio': '1.0',
         'date': str(date.today()),
         'number_of_trades': '0'}
+    config['Actions'] = {
+        'show_hide_watchlists_on_click':
+        [('show_hide_window_on_click', '登録銘柄')]}
     config.read(trade.config_file, encoding='utf-8')
 
     for directory in [config['Common']['market_directory'],

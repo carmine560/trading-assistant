@@ -190,9 +190,6 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 > **Note** This example contains no coordinates or images and can be
 > tested immediately in many environments.
 
-![A screenshot of Windows Terminal where trading_assistant.py -M was
-executed.](https://dl.dropboxusercontent.com/s/9p3kr2ciw3cbmwi/20230205T184645.png)
-
 #### Login ####
 
 The following example `login` waits for the Login window to show and
@@ -214,23 +211,24 @@ login = [
 
 #### Replace Watchlist with Market Data ####
 
-The following example `replace_watchlist_with_market_data` replaces
-the stocks in the Watchlists window with new ones copied from the
-current market data above.
+The following example `update_most_active_watchlist` replaces the
+stocks in the Watchlists window with new ones copied from the current
+market data above.
 
 > **Note** Kabutan's free market data has a 20-minute delay.
 
 ``` python
-replace_watchlist_with_market_data = [
+update_most_active_watchlist = [
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     ('show_window', '登録銘柄'),     # show the Watchlists window.
+    ('click', '44, 96'),             # select the first watchlist.
     ('click', '1668, 41'),           # click the List button.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
     ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
+    ('wait_for_period', '1'),        # wait for 1 second.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('click', '1729, 41'),           # click the Tile button.
@@ -240,31 +238,32 @@ replace_watchlist_with_market_data = [
 
 #### Replace Watchlist with Ranking ####
 
-The following example `replace_watchlist_with_ranking` replaces the
+The following example `update_tick_count_watchlist` replaces the
 stocks in the Watchlists window with new ones recognized in the
 Rankings window.
 
-> **Note** The Rankings window is real-time, but text recognition is
-> not as accurate as the downloaded market data above.
+> **Note** The Rankings window is updated in real-time, but text
+> recognition is not as accurate as the downloaded market data above.
 
 ``` python
-replace_watchlist_with_ranking = [
+update_tick_count_watchlist = [
     ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
-    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('click', '38, 39'),             # click the Rankings tab.
-    ('click', '88, 339'),            # click the Tick Count item.
+    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
+    ('click', '38, 39'),             # select the Rankings tab.
+    ('click', '88, 339'),            # select the Tick Count ranking.
     ('click', '246, 65'),            # click the All Markets button.
-    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
+    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     # recognize numeric columns and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_columns', '327, 151, 304, 691, 0, -1'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
+    ('click', '44, 122'),            # select the second watchlist.
     ('click', '1668, 41'),           # click the List button.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
     ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
+    ('wait_for_period', '1'),        # wait for 1 second.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('click', '1729, 41'),           # click the Tile button.
