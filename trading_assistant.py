@@ -211,6 +211,7 @@ def configure(trade):
         'image_magnification': '4',
         'binarization_threshold': '128',
         'target_color': '(0, 0, 255)',
+        # TODO
         'replacement_color': '(0, 0, 0)'}
     config['Trading'] = {
         'fixed_cash_balance': '0',
@@ -472,8 +473,8 @@ def execute_action(trade, config, gui_callbacks, action):
             maximum_price = float(config['Market Data']['maximum_price'])
             symbols = []
             for split_item in split_string:
-                if maximum_price > 0 \
-                   and float(split_item[arguments[5]].replace(',', '')) \
+                if maximum_price == 0 \
+                   or float(split_item[arguments[5]].replace(',', '')) \
                    < maximum_price:
                     symbols.append(split_item[arguments[4]].replace('.', ''))
 
@@ -619,6 +620,7 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
     while not split_string:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
+            # image.save('00.png')
             image = image.resize((image_magnification * width,
                                   image_magnification * height),
                                  Image.LANCZOS)
@@ -629,7 +631,14 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
                 for image_x in range(image.size[0]):
                     if pixel_data[image_x, image_y] == target_color:
                         pixel_data[image_x, image_y] = replacement_color
+                        # elif pixel_data[image_x, image_y] == (0, 255, 255) \
+                            #      or pixel_data[image_x, image_y] == (0, 255, 0) \
+                            #      or pixel_data[image_x, image_y] == (255, 0, 0) \
+                            #      or pixel_data[image_x, image_y] == (255, 0, 255) \
+                            #      or pixel_data[image_x, image_y] == (255, 255, 0):
+                        #     pixel_data[image_x, image_y] = (255, 255, 255)
 
+            # image.save('01.png')
             string = pytesseract.image_to_string(image, config=config)
             if text_type == 'integers' or text_type == 'decimal_numbers':
                 split_string = list(map(lambda s: float(s.replace(',', '')),
