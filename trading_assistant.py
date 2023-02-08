@@ -471,6 +471,7 @@ def execute_action(trade, config, gui_callbacks, action):
                                           *arguments[:4], None,
                                           text_type='numeric_columns')
             maximum_price = float(config['Market Data']['maximum_price'])
+            print(split_string)
             symbols = []
             for split_item in split_string:
                 if maximum_price == 0 \
@@ -481,6 +482,26 @@ def execute_action(trade, config, gui_callbacks, action):
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(' '.join(symbols))
+            win32clipboard.CloseClipboard()
+        elif command == 'copy_symbols_from_numeric_column':
+            import win32clipboard
+
+            arguments = list(map(int, arguments.split(',')))
+            split_string = recognize_text(config[trade.process_name],
+                                          *arguments[:4], None,
+                                          text_type='numeric_column')
+            # maximum_price = float(config['Market Data']['maximum_price'])
+            # print(split_string)
+            # symbols = []
+            # for split_item in split_string:
+            #     if maximum_price == 0 \
+            #        or float(split_item[arguments[5]].replace(',', '')) \
+            #        < maximum_price:
+            #         symbols.append(split_item[arguments[4]].replace('.', ''))
+
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardText(' '.join(split_string))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
             section = config['Trading']
@@ -603,6 +624,7 @@ def calculate_share_size(trade, config, position):
 def recognize_text(section, x, y, width, height, index, text_type='integers'):
     from PIL import Image
     from PIL import ImageGrab
+    from PIL import ImageOps
 
     image_magnification = int(section['image_magnification'])
     binarization_threshold = int(section['binarization_threshold'])
@@ -615,12 +637,14 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
         config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
     elif text_type == 'numeric_columns':
         config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 6'
+    elif text_type == 'numeric_column':
+        config = '-c tessedit_char_whitelist=0123456789 --psm 6'
 
     split_string = []
     while not split_string:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
-            # image.save('00.png')
+            image.save('00.png')
             image = image.resize((image_magnification * width,
                                   image_magnification * height),
                                  Image.LANCZOS)
@@ -631,14 +655,17 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
                 for image_x in range(image.size[0]):
                     if pixel_data[image_x, image_y] == target_color:
                         pixel_data[image_x, image_y] = replacement_color
-                        # elif pixel_data[image_x, image_y] == (0, 255, 255) \
-                            #      or pixel_data[image_x, image_y] == (0, 255, 0) \
-                            #      or pixel_data[image_x, image_y] == (255, 0, 0) \
-                            #      or pixel_data[image_x, image_y] == (255, 0, 255) \
-                            #      or pixel_data[image_x, image_y] == (255, 255, 0):
-                        #     pixel_data[image_x, image_y] = (255, 255, 255)
+                    # elif pixel_data[image_x, image_y] == (0, 255, 255) \
+                    #          or pixel_data[image_x, image_y] == (0, 255, 0) \
+                    #          or pixel_data[image_x, image_y] == (255, 0, 0) \
+                    #          or pixel_data[image_x, image_y] == (255, 0, 255) \
+                    #          or pixel_data[image_x, image_y] == (255, 255, 0):
+                    #     pixel_data[image_x, image_y] = (255, 255, 255)
 
-            # image.save('01.png')
+            # TODO
+            image = ImageOps.invert(image)
+
+            image.save('01.png')
             string = pytesseract.image_to_string(image, config=config)
             if text_type == 'integers' or text_type == 'decimal_numbers':
                 split_string = list(map(lambda s: float(s.replace(',', '')),
@@ -646,6 +673,9 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
             elif text_type == 'numeric_columns':
                 for item in string.splitlines():
                     split_string.append(item.split(' '))
+            elif text_type == 'numeric_column':
+                for item in string.splitlines():
+                    split_string.append(item)
         except:
             pass
 
