@@ -190,14 +190,14 @@ login = [
 
 ### Replace Watchlist with Downloaded Market Data ###
 
-The following example `update_most_active_watchlist` replaces the
-stocks in the Watchlists window with new ones copied from the current
-market data above.
+The following example `watch_active_stocks` replaces the stocks in the
+Watchlists window with new ones copied from the current market data
+above.
 
 > **Note** Kabutan's free market data has a 20-minute delay.
 
 ``` python
-update_most_active_watchlist = [
+watch_active_stocks = [
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     ('show_window', '登録銘柄'),     # show the Watchlists window.
@@ -217,15 +217,14 @@ update_most_active_watchlist = [
 
 ### Replace Watchlist with Hyper SBI 2 Ranking ###
 
-The following example `update_tick_count_watchlist` replaces the
-stocks in the Watchlists window with new ones recognized in the
-Rankings window.
+The following example `watch_tick_count` replaces the stocks in the
+Watchlists window with new ones recognized in the Rankings window.
 
 > **Note** The Rankings window is updated in real-time, but text
 > recognition is not as accurate as the downloaded market data above.
 
 ``` python
-update_tick_count_watchlist = [
+watch_tick_count = [
     ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
