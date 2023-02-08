@@ -172,8 +172,7 @@ def configure(trade):
         'symbol_header': 'コード',
         'price_header': '株価',
         'closing_prices':
-        os.path.join('${Common:market_directory}', 'closing_prices_'),
-        'maximum_price': '0'}
+        os.path.join('${Common:market_directory}', 'closing_prices_')}
     config['Startup Script'] = {
         'pre_start_options': '-r -d',
         'post_start_options': '',
@@ -210,8 +209,10 @@ def configure(trade):
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '4',
         'binarization_threshold': '128',
-        'target_color': '(0, 0, 255)',
         # TODO
+        # 'target_color': '(0, 255, 255)',
+        # 'replacement_color': '(255, 255, 255)'}
+        'target_color': '(0, 0, 255)',
         'replacement_color': '(0, 0, 0)'}
     config['Trading'] = {
         'fixed_cash_balance': '0',
@@ -328,7 +329,6 @@ def save_market_data(config, clipboard=False):
     symbol_header = section['symbol_header']
     price_header = section['price_header']
     closing_prices = section['closing_prices']
-    maximum_price = float(section['maximum_price'])
 
     # TODO
     if clipboard:
@@ -358,9 +358,6 @@ def save_market_data(config, clipboard=False):
 
         df = pd.concat(dfs)
         if clipboard:
-            if maximum_price > 0:
-                df = df.loc[df[price_header] < maximum_price]
-
             df = df[[symbol_header]]
             df.to_clipboard(index=False, header=False)
             return
@@ -463,41 +460,13 @@ def execute_action(trade, config, gui_callbacks, action):
             gui_interactions.click_widget(gui_callbacks, image, *region)
         elif command == 'copy_symbols_from_market_data':
             save_market_data(config, clipboard=True)
-        elif command == 'copy_symbols_from_numeric_columns':
-            import win32clipboard
-
-            arguments = list(map(int, arguments.split(',')))
-            split_string = recognize_text(config[trade.process_name],
-                                          *arguments[:4], None,
-                                          text_type='numeric_columns')
-            maximum_price = float(config['Market Data']['maximum_price'])
-            print(split_string)
-            symbols = []
-            for split_item in split_string:
-                if maximum_price == 0 \
-                   or float(split_item[arguments[5]].replace(',', '')) \
-                   < maximum_price:
-                    symbols.append(split_item[arguments[4]].replace('.', ''))
-
-            win32clipboard.OpenClipboard()
-            win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardText(' '.join(symbols))
-            win32clipboard.CloseClipboard()
         elif command == 'copy_symbols_from_numeric_column':
             import win32clipboard
 
             arguments = list(map(int, arguments.split(',')))
             split_string = recognize_text(config[trade.process_name],
-                                          *arguments[:4], None,
+                                          *arguments, None,
                                           text_type='numeric_column')
-            # maximum_price = float(config['Market Data']['maximum_price'])
-            # print(split_string)
-            # symbols = []
-            # for split_item in split_string:
-            #     if maximum_price == 0 \
-            #        or float(split_item[arguments[5]].replace(',', '')) \
-            #        < maximum_price:
-            #         symbols.append(split_item[arguments[4]].replace('.', ''))
 
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
@@ -635,8 +604,6 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
         config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
     elif text_type == 'decimal_numbers':
         config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
-    elif text_type == 'numeric_columns':
-        config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 6'
     elif text_type == 'numeric_column':
         config = '-c tessedit_char_whitelist=0123456789 --psm 6'
 
@@ -644,7 +611,6 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
     while not split_string:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
-            image.save('00.png')
             image = image.resize((image_magnification * width,
                                   image_magnification * height),
                                  Image.LANCZOS)
@@ -655,24 +621,13 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
                 for image_x in range(image.size[0]):
                     if pixel_data[image_x, image_y] == target_color:
                         pixel_data[image_x, image_y] = replacement_color
-                    # elif pixel_data[image_x, image_y] == (0, 255, 255) \
-                    #          or pixel_data[image_x, image_y] == (0, 255, 0) \
-                    #          or pixel_data[image_x, image_y] == (255, 0, 0) \
-                    #          or pixel_data[image_x, image_y] == (255, 0, 255) \
-                    #          or pixel_data[image_x, image_y] == (255, 255, 0):
-                    #     pixel_data[image_x, image_y] = (255, 255, 255)
 
             # TODO
             image = ImageOps.invert(image)
-
-            image.save('01.png')
             string = pytesseract.image_to_string(image, config=config)
             if text_type == 'integers' or text_type == 'decimal_numbers':
                 split_string = list(map(lambda s: float(s.replace(',', '')),
                                         string.split(' ')))
-            elif text_type == 'numeric_columns':
-                for item in string.splitlines():
-                    split_string.append(item.split(' '))
             elif text_type == 'numeric_column':
                 for item in string.splitlines():
                     split_string.append(item)

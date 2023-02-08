@@ -107,8 +107,7 @@ ACTION = [
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     # recognize numeric columns and copy symbols to the clipboard.
-    ('copy_symbols_from_numeric_columns',
-     'X, Y, WIDTH, HEIGHT, SYMBOL_INDEX, PRICE_INDEX'),
+    ('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT'),
     ('count_trades',),               # count the number of trades for the day.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
     ('hide_parent_window', 'TITLE_REGEX'), # hide a parent window.
@@ -235,7 +234,7 @@ update_tick_count_watchlist = [
     ('click', '246, 65'),            # click the All Markets button.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     # recognize numeric columns and copy symbols to the clipboard.
-    ('copy_symbols_from_numeric_columns', '327, 151, 304, 691, 0, -1'),
+    ('copy_symbols_from_numeric_column', '327, 153, 54, 691'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
     ('click', '44, 122'),            # select the second watchlist.
     ('click', '1668, 41'),           # click the List button.
