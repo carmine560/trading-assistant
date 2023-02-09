@@ -106,7 +106,7 @@ ACTION = [
     ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'),
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
-    # recognize numeric columns and copy symbols to the clipboard.
+    # recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT'),
     ('count_trades',),               # count the number of trades for the day.
     ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
@@ -223,7 +223,7 @@ The following example `watch_tick_count` replaces the stocks in the
 Watchlists window with new ones recognized in the Rankings window.
 
 > **Note** The Rankings window is updated in real-time, but text
-> recognition is not as accurate as the downloaded market data above.
+> recognition is not as accurate as the scraped market data above.
 
 ``` python
 watch_tick_count = [
@@ -234,7 +234,7 @@ watch_tick_count = [
     ('click', '88, 339'),            # select the Tick Count ranking.
     ('click', '246, 65'),            # click the All Markets button.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
-    # recognize numeric columns and copy symbols to the clipboard.
+    # recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', '327, 153, 54, 691'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
     ('click', '44, 122'),            # select the second watchlist.
