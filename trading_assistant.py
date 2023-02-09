@@ -210,8 +210,11 @@ def configure(trade):
         'image_magnification': '4',
         'binarization_threshold': '128',
         # TODO
-        # 'target_color': '(0, 255, 255)',
-        # 'replacement_color': '(255, 255, 255)'}
+        # %APPDATA%/SBI Securities/HYPERSBI2/theme.ini
+        # 'light_target_color': '(0, 255, 255)',
+        # 'light_replacement_color': '(255, 255, 255)'}
+        # 'dark_target_color': '(0, 0, 255)',
+        # 'dark_replacement_color': '(0, 0, 0)'}
         'target_color': '(0, 0, 255)',
         'replacement_color': '(0, 0, 0)'}
     config['Trading'] = {
@@ -220,6 +223,8 @@ def configure(trade):
         'date': str(date.today()),
         'number_of_trades': '0'}
     config['Actions'] = {
+        'minimize_all_windows': [('press_hotkeys', 'win, m')],
+        'show_hide_watchlists': [('show_hide_window', '登録銘柄')],
         'show_hide_watchlists_on_click':
         [('show_hide_window_on_click', '登録銘柄')]}
     config.read(trade.config_file, encoding='utf-8')

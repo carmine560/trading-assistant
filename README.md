@@ -188,10 +188,10 @@ login = [
     ('hide_window', '登録銘柄')]     # hide the Watchlists window.
 ```
 
-### Replace Watchlist with Downloaded Market Data ###
+### Replace Watchlist with Market Data on Website ###
 
 The following example `watch_active_stocks` replaces the stocks in the
-Watchlists window with new ones copied from the current market data
+Watchlists window with new ones scraped from the current market data
 above.
 
 > **Note** Kabutan's free market data has a 20-minute delay.
@@ -206,10 +206,12 @@ watch_active_stocks = [
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
+    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '1'),        # wait for 1 second.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
+    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('click', '1729, 41'),           # click the Tile button.
     # back the cursor to the previous position.
     ('back_to',)]
@@ -240,10 +242,12 @@ watch_tick_count = [
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
+    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '1'),        # wait for 1 second.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
+    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('click', '1729, 41'),           # click the Tile button.
     # back the cursor to the previous position.
     ('back_to',)]
