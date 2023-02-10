@@ -282,7 +282,7 @@ the order is placed, then it prepares a sell order for repayment.
 
 ``` python
 open_close_long_position = [
-    # Open a Long Position
+    # Open Long Position
     ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
     ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
     ('click', '201, 757'),           # select the New Order tab.
@@ -300,7 +300,7 @@ open_close_long_position = [
     ('wait_for_key', 'space'),       # wait for space input.
     ('wait_for_prices', '193, 964, 467, 19, 0'), # wait for the execution.
 
-    # Close the Long Position
+    # Close Long Position
     ('click', '284, 757'),           # select the Repayment tab.
     ('click', '606, 861'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
