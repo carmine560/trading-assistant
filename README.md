@@ -44,6 +44,7 @@ Install each package as needed.  For example:
 ``` powershell
 pip install pandas
 pip install pywin32
+winget install UB-Mannheim.TesseractOCR
 pip install pytesseract
 pip install pyautogui
 pip install pynput
