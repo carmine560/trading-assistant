@@ -91,10 +91,9 @@ py trading_assistant.py -M [ACTION]
 ```
 
 Then insert, modify, or delete each command of the action.  An action
-is a list of commands, and a command is a tuple of itself and its
-arguments.  Commands are executed in order from the beginning of the
-list.  These actions are saved in the configuration file.  Possible
-commands are:
+is a list of sequential commands, and a command is a tuple of itself
+and its arguments.  These actions are saved in the configuration file.
+Possible commands are:
 
 ``` python
 ACTION = [
