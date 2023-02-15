@@ -27,6 +27,8 @@ def modify_section(config, section, config_file):
                 break
 
 def modify_option(config, section, option, config_file, value_prompt='value'):
+    import re
+
     global ANSI_DEFAULT
     global ANSI_RESET
     if config.has_option(section, option):
@@ -35,8 +37,7 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
         answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
-            # TODO
-            if config[section][option][0:2] == '[(':
+            if re.sub('\s+', '', config[section][option])[0:2] == '[(':
                 modify_tuples(config, section, option, config_file)
             else:
                 value = config[section][option]
