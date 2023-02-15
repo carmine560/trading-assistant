@@ -338,7 +338,7 @@ open_close_long_position = [
 
 [MIT](LICENSE.md)
 
-## Links ##
+## Link ##
 
   * [*Python Scripting to Assist in Day Trading on Margin Using Hyper
     SBI 2*](): a blog post for more details.
