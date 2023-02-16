@@ -6,6 +6,7 @@ import csv
 import os
 import re
 import sys
+import time
 
 from pynput import keyboard
 import pyautogui
@@ -352,7 +353,6 @@ def save_market_data(config, clipboard=False):
 
     if latest:
         dfs = []
-        # TODO
         for i in range(number_of_pages):
             try:
                 dfs = dfs + pd.read_html(url + '&page=' + str(i + 1),
@@ -360,6 +360,8 @@ def save_market_data(config, clipboard=False):
             except Exception as e:
                 print(e)
                 sys.exit(1)
+            if i < number_of_pages - 1:
+                time.sleep(1)
 
         df = pd.concat(dfs)
         if clipboard:
@@ -536,8 +538,6 @@ def execute_action(trade, config, gui_callbacks, action):
             if not gui_interactions.wait_for_key(gui_callbacks, arguments):
                 return
         elif command == 'wait_for_period':
-            import time
-
             time.sleep(float(arguments))
         elif command == 'wait_for_prices':
             arguments = list(map(int, arguments.split(',')))
