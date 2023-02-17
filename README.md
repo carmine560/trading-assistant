@@ -58,7 +58,7 @@ To calculate a maximum share size, save customer margin ratios from
 [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and the previous market data from [*Most Active Stocks Today —
-Kabutan*](https://kabutan.jp/warning/?mode=2_9) etc. in advance.  The
+Kabutan*](https://kabutan.jp/warning/?mode=2_9) in advance.  The
 following option creates a startup script
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1`
 that processes them and starts Hyper SBI 2.
@@ -271,7 +271,7 @@ toggle_between_stocks = [
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
-    ('press_key', 'esc')]            # close the symbol suggest drop-down menu.
+    ('press_key', 'esc')]            # close the symbol drop-down menu.
 ```
 
 ### Open and Close Long Position ###
