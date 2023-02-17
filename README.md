@@ -271,7 +271,7 @@ toggle_between_stocks = [
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
-    ('press_key', 'esc')]            # close the symbol suggest drop-down list.
+    ('press_key', 'esc')]            # close the symbol suggest drop-down menu.
 ```
 
 ### Open and Close Long Position ###
@@ -285,27 +285,32 @@ open_close_long_position = [
     # Open Long Position
     ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
     ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
-    ('click', '201, 757'),           # select the New Order tab.
-    ('click', '531, 823'),           # focus on the Share Size text box.
+    ('click', '207, 729'),           # select the New Order tab.
+    ('click', '540, 801'),           # focus on the Share Size text box.
+    # open the transaction classification drop-down menu.
+    ('click', '230, 753'),
+    ('press_key', 'end'),            # select Day Trading on Margin.
+    ('press_key', 'enter'),          # close the menu.
+    ('click', '540, 801'),           # refocus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     # get the symbol from the Summary window.
     ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
     ('calculate_share_size', 'long'), # calculate the share size.
     ('write_share_size',),           # write the calculated share size.
-    ('click', '466, 843'),           # click the Market Order button.
+    ('click', '476, 823'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # wait for space input.
-    ('wait_for_prices', '193, 964, 467, 19, 0'), # wait for the execution.
+    ('wait_for_prices', '201, 958, 468, 19, 0'), # wait for the execution.
 
     # Close Long Position
-    ('click', '284, 757'),           # select the Repayment tab.
-    ('click', '606, 861'),           # focus on the Share Size text box.
+    ('click', '291, 729'),           # select the Repayment tab.
+    ('click', '603, 844'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('write_share_size',),           # write the calculated share size.
-    ('click', '446, 944'),           # click the Market Order button.
+    ('click', '454, 936'),           # click the Market Order button.
     ('press_key', 'tab, 5'),         # focus on the Sell Order button.
     ('beep', '1000, 100'),           # notify completion.
     # back the cursor to the previous position.
