@@ -1,3 +1,4 @@
+
 from datetime import date
 import argparse
 import ast
@@ -210,14 +211,10 @@ def configure(trade):
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '4',
         'binarization_threshold': '128',
-        # TODO
-        # %APPDATA%/SBI Securities/HYPERSBI2/theme.ini
-        # 'light_target_color': '(0, 255, 255)',
-        # 'light_replacement_color': '(255, 255, 255)'}
-        # 'dark_target_color': '(0, 0, 255)',
-        # 'dark_replacement_color': '(0, 0, 0)'}
-        'target_color': '(0, 0, 255)',
-        'replacement_color': '(0, 0, 0)'}
+        'dark_target_color': '(0, 0, 255)',
+        'dark_replacement_color': '(0, 0, 0)',
+        'light_target_color': '(0, 255, 255)',
+        'light_replacement_color': '(255, 255, 255)'}
     config['Trading'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0',
@@ -229,6 +226,17 @@ def configure(trade):
         'show_hide_watchlists_on_click':
         [('show_hide_window_on_click', '登録銘柄')]}
     config.read(trade.config_file, encoding='utf-8')
+
+    if trade.process_name == 'HYPERSBI2':
+        theme_config = configparser.ConfigParser()
+        theme_config_file = os.path.join(os.path.expandvars('%APPDATA%'),
+                                         'SBI Securities/HYPERSBI2/theme.ini')
+        theme_config.read(theme_config_file)
+        if theme_config.has_option('General', 'theme') \
+           and theme_config['General']['theme'] == 'Light':
+            config[trade.process_name]['dark_theme'] = 'False'
+        else:                   # Dark as a fallback
+            config[trade.process_name]['dark_theme'] = 'True'
 
     for directory in [config['Common']['market_directory'],
                       config['Common']['config_directory']]:
@@ -602,8 +610,14 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
 
     image_magnification = int(section['image_magnification'])
     binarization_threshold = int(section['binarization_threshold'])
-    target_color = ast.literal_eval(section['target_color'])
-    replacement_color = ast.literal_eval(section['replacement_color'])
+    dark_theme = section.getboolean('dark_theme')
+    if dark_theme:
+        target_color = ast.literal_eval(section['dark_target_color'])
+        replacement_color = ast.literal_eval(section['dark_replacement_color'])
+    else:
+        target_color = ast.literal_eval(section['light_target_color'])
+        replacement_color = ast.literal_eval(
+            section['light_replacement_color'])
 
     if text_type == 'integers':
         config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
@@ -626,9 +640,9 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
                 for image_x in range(image.size[0]):
                     if pixel_data[image_x, image_y] == target_color:
                         pixel_data[image_x, image_y] = replacement_color
+            if dark_theme:
+                image = ImageOps.invert(image)
 
-            # TODO
-            image = ImageOps.invert(image)
             string = pytesseract.image_to_string(image, config=config)
             if text_type == 'integers' or text_type == 'decimal_numbers':
                 split_string = list(map(lambda s: float(s.replace(',', '')),
