@@ -218,8 +218,8 @@ def configure(trade):
     config['Trading'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0',
-        'date': str(date.today()),
-        'number_of_trades': '0'}
+        'current_date': str(date.today()),
+        'current_number_of_trades': '0'}
     config['Actions'] = {
         'minimize_all_windows': [('press_hotkeys', 'win, m')],
         'show_hide_watchlists': [('show_hide_window', '登録銘柄')],
@@ -234,9 +234,9 @@ def configure(trade):
         theme_config.read(theme_config_file)
         if theme_config.has_option('General', 'theme') \
            and theme_config['General']['theme'] == 'Light':
-            config[trade.process_name]['dark_theme'] = 'False'
+            config[trade.process_name]['currently_dark_theme'] = 'False'
         else:                   # Dark as a fallback
-            config[trade.process_name]['dark_theme'] = 'True'
+            config[trade.process_name]['currently_dark_theme'] = 'True'
 
     for directory in [config['Common']['market_directory'],
                       config['Common']['config_directory']]:
@@ -489,14 +489,14 @@ def execute_action(trade, config, gui_callbacks, action):
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
             section = config['Trading']
-            previous_date = date.fromisoformat(section['date'])
+            previous_date = date.fromisoformat(section['current_date'])
             current_date = date.today()
             if previous_date == current_date:
-                section['number_of_trades'] = \
-                    str(int(section['number_of_trades']) + 1)
+                section['current_number_of_trades'] = \
+                    str(int(section['current_number_of_trades']) + 1)
             else:
-                section['date'] = str(date.today())
-                section['number_of_trades'] = '1'
+                section['current_date'] = str(date.today())
+                section['current_number_of_trades'] = '1'
 
             configuration.check_config_directory(trade.config_file)
             with open(trade.config_file, 'w', encoding='utf-8') as f:
@@ -610,8 +610,8 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
 
     image_magnification = int(section['image_magnification'])
     binarization_threshold = int(section['binarization_threshold'])
-    dark_theme = section.getboolean('dark_theme')
-    if dark_theme:
+    currently_dark_theme = section.getboolean('currently_dark_theme')
+    if currently_dark_theme:
         target_color = ast.literal_eval(section['dark_target_color'])
         replacement_color = ast.literal_eval(section['dark_replacement_color'])
     else:
@@ -640,7 +640,7 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
                 for image_x in range(image.size[0]):
                     if pixel_data[image_x, image_y] == target_color:
                         pixel_data[image_x, image_y] = replacement_color
-            if dark_theme:
+            if currently_dark_theme:
                 image = ImageOps.invert(image)
 
             string = pytesseract.image_to_string(image, config=config)
