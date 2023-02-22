@@ -169,7 +169,7 @@ def configure(trade):
         'closing_time': '15:30:00',
         'delay': '20',
         'time_zone': 'Asia/Tokyo',
-        'url': 'https://kabutan.jp/warning/?mode=2_9',
+        'url': 'https://kabutan.jp/warning/?mode=2_9&market=1',
         'number_of_pages': '2',
         'symbol_header': 'コード',
         'price_header': '株価',

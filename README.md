@@ -58,8 +58,8 @@ To calculate a maximum share size, save customer margin ratios from
 [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and the previous market data from [*Most Active Stocks Today —
-Kabutan*](https://kabutan.jp/warning/?mode=2_9) in advance.  The
-following option creates a startup script
+Kabutan*](https://kabutan.jp/warning/?mode=2_9&market=1) in advance.
+The following option creates a startup script
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1`
 that processes them and starts Hyper SBI 2.
 
@@ -232,7 +232,7 @@ watch_tick_count = [
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('click', '38, 39'),             # select the Rankings tab.
     ('click', '88, 339'),            # select the Tick Count ranking.
-    ('click', '246, 65'),            # click the All Markets button.
+    ('click', '315, 65'),            # click the Prime Market button.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     # recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', '327, 153, 54, 691'),
