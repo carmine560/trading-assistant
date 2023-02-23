@@ -187,6 +187,10 @@ login = [
     ('hide_window', '登録銘柄')]     # hide the Watchlists window.
 ```
 
+> **Note** These examples are tested in the following environment:
+> 1080p, a maximized Watchlists window, a left-snapped Summary window,
+> and a right-snapped Chart window.
+
 ### Replace Watchlist with Market Data on Website ###
 
 The following `watch_active_stocks` replaces the stocks in the
@@ -291,9 +295,9 @@ toggle_between_stocks = [
 
 ### Open and Close Long Position ###
 
-The following `open_close_long_position` shows required windows,
-enters the maximum share size, and prepares a buy order.  If the order
-is placed, then it prepares a sell order for repayment.
+The following `open_close_long_position` shows the required windows
+and prepares a buy order with the maximum share size.  If the order is
+placed, then it prepares a sell order for repayment.
 
 ``` python
 open_close_long_position = [
