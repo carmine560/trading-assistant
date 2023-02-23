@@ -158,9 +158,8 @@ py trading_assistant.py -e [ACTION]
 
 ### Show or Hide Watchlists Window on Middle Click ###
 
-The following example `show_hide_watchlists_on_click` shows or hides
-the Watchlists window on the middle click while Hyper SBI 2 is
-running.
+The following `show_hide_watchlists_on_click` shows or hides the
+Watchlists window on the middle click while Hyper SBI 2 is running.
 
 ``` python
 show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
@@ -171,8 +170,8 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 
 ### Login ###
 
-The following example `login` waits for the Login window to show and
-clicks the Login button.
+The following `login` waits for the Login window to show and clicks
+the Login button.
 
 ``` python
 login = [
@@ -190,7 +189,7 @@ login = [
 
 ### Replace Watchlist with Market Data on Website ###
 
-The following example `watch_active_stocks` replaces the stocks in the
+The following `watch_active_stocks` replaces the stocks in the
 Watchlists window with new ones scraped from the current market data
 above.
 
@@ -202,7 +201,7 @@ watch_active_stocks = [
     ('copy_symbols_from_market_data',),
     ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('click', '44, 96'),             # select the first watchlist.
-    ('click', '1668, 41'),           # click the List button.
+    ('click', '1668, 41'),           # select the List view.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
@@ -212,23 +211,23 @@ watch_active_stocks = [
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
-    ('click', '1729, 41'),           # click the Tile button.
+    ('click', '1729, 41'),           # select the Tile view.
     ('press_key', 'tab, 5'),         # focus on the number of columns input.
     ('press_key', '6'),              # enter 6.
     ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # open the menu.
     ('press_key', 'home'),           # move to the first item.
-    ('press_key', 'down, 2'),        # select Five Minutes.
+    ('press_key', 'down, 2'),        # select the 5-minute time frame.
     ('press_key', 'enter'),          # close the menu.
-    ('click', '415, 95'),            # select One Day.
+    ('click', '415, 95'),            # select the 1-day date range.
     # back the cursor to the previous position.
     ('back_to',)]
 ```
 
 ### Replace Watchlist with Hyper SBI 2 Ranking ###
 
-The following example `watch_tick_count` replaces the stocks in the
-Watchlists window with new ones recognized in the Rankings window.
+The following `watch_tick_count` replaces the stocks in the Watchlists
+window with new ones recognized in the Rankings window.
 
 > **Note** The Rankings window is updated in real-time, but text
 > recognition is not as accurate as the scraped market data above.
@@ -246,7 +245,7 @@ watch_tick_count = [
     ('copy_symbols_from_numeric_column', '327, 153, 54, 691'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
     ('click', '44, 122'),            # select the second watchlist.
-    ('click', '1668, 41'),           # click the List button.
+    ('click', '1668, 41'),           # select the List view.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
@@ -256,23 +255,23 @@ watch_tick_count = [
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
-    ('click', '1729, 41'),           # click the Tile button.
+    ('click', '1729, 41'),           # select the Tile view.
     ('press_key', 'tab, 5'),         # focus on the number of columns input.
     ('press_key', '6'),              # enter 6.
     ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # open the menu.
     ('press_key', 'home'),           # move to the first item.
-    ('press_key', 'down, 2'),        # select Five Minutes.
+    ('press_key', 'down, 2'),        # select the 5-minute time frame.
     ('press_key', 'enter'),          # close the menu.
-    ('click', '415, 95'),            # select One Day.
+    ('click', '415, 95'),            # select the 1-day date range.
     # back the cursor to the previous position.
     ('back_to',)]
 ```
 
 ### Toggle between Stocks ###
 
-The following example `toggle_between_stocks` toggles between the
-specified stocks.
+The following `toggle_between_stocks` toggles between the specified
+stocks.
 
 ``` python
 toggle_between_stocks = [
@@ -292,9 +291,9 @@ toggle_between_stocks = [
 
 ### Open and Close Long Position ###
 
-The following example `open_close_long_position` shows required
-windows, enters the maximum share size, and prepares a buy order.  If
-the order is placed, then it prepares a sell order for repayment.
+The following `open_close_long_position` shows required windows,
+enters the maximum share size, and prepares a buy order.  If the order
+is placed, then it prepares a sell order for repayment.
 
 ``` python
 open_close_long_position = [
