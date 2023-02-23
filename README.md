@@ -213,6 +213,14 @@ watch_active_stocks = [
     ('press_key', 'enter'),          # confirm the registration.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('click', '1729, 41'),           # click the Tile button.
+    ('press_key', 'tab, 5'),         # focus on the number of columns input.
+    ('press_key', '6'),              # enter 6.
+    ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
+    ('press_hotkeys', 'alt, down'),  # open the menu.
+    ('press_key', 'home'),           # move to the first item.
+    ('press_key', 'down, 2'),        # select Five Minutes.
+    ('press_key', 'enter'),          # close the menu.
+    ('click', '415, 95'),            # select One Day.
     # back the cursor to the previous position.
     ('back_to',)]
 ```
@@ -249,6 +257,14 @@ watch_tick_count = [
     ('press_key', 'enter'),          # confirm the registration.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('click', '1729, 41'),           # click the Tile button.
+    ('press_key', 'tab, 5'),         # focus on the number of columns input.
+    ('press_key', '6'),              # enter 6.
+    ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
+    ('press_hotkeys', 'alt, down'),  # open the menu.
+    ('press_key', 'home'),           # move to the first item.
+    ('press_key', 'down, 2'),        # select Five Minutes.
+    ('press_key', 'enter'),          # close the menu.
+    ('click', '415, 95'),            # select One Day.
     # back the cursor to the previous position.
     ('back_to',)]
 ```
