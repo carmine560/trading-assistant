@@ -214,8 +214,10 @@ watch_active_stocks = [
     ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('click', '1729, 41'),           # select the Tile view.
+
+    # Optional Commands
     ('press_key', 'tab, 5'),         # focus on the number of columns input.
     ('press_key', '6'),              # enter 6.
     ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
@@ -224,6 +226,7 @@ watch_active_stocks = [
     ('press_key', 'down, 2'),        # select the 5-minute time frame.
     ('press_key', 'enter'),          # close the menu.
     ('click', '415, 95'),            # select the 1-day date range.
+    ('click', '503, 70'),            # click the Chart button.
     # back the cursor to the previous position.
     ('back_to',)]
 ```
@@ -258,8 +261,10 @@ watch_tick_count = [
     ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
+    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
     ('click', '1729, 41'),           # select the Tile view.
+
+    # Optional Commands
     ('press_key', 'tab, 5'),         # focus on the number of columns input.
     ('press_key', '6'),              # enter 6.
     ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
@@ -268,6 +273,7 @@ watch_tick_count = [
     ('press_key', 'down, 2'),        # select the 5-minute time frame.
     ('press_key', 'enter'),          # close the menu.
     ('click', '415, 95'),            # select the 1-day date range.
+    ('click', '503, 70'),            # click the Chart button.
     # back the cursor to the previous position.
     ('back_to',)]
 ```
