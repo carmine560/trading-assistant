@@ -161,17 +161,21 @@ py trading_assistant.py -e [ACTION]
 The following `show_hide_watchlists_on_click` shows or hides the
 Watchlists window on the middle click while Hyper SBI 2 is running.
 
+> **Note** This example contains no coordinates or images and can be
+> tested immediately in many environments.
+
 ``` python
 show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 ```
-
-> **Note** This example contains no coordinates or images and can be
-> tested immediately in many environments.
 
 ### Login ###
 
 The following `login` waits for the Login window to show and clicks
 the Login button.
+
+> **Note** These examples are tested in the following environment:
+> 1080p, a maximized Watchlists window, a left-snapped Summary window,
+> and a right-snapped Chart window.
 
 ``` python
 login = [
@@ -186,10 +190,6 @@ login = [
     ('wait_for_period', '1'),        # wait for 1 second.
     ('hide_window', '登録銘柄')]     # hide the Watchlists window.
 ```
-
-> **Note** These examples are tested in the following environment:
-> 1080p, a maximized Watchlists window, a left-snapped Summary window,
-> and a right-snapped Chart window.
 
 ### Replace Watchlist with Market Data on Website ###
 
