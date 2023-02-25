@@ -141,6 +141,8 @@ py trading_assistant.py -e [ACTION]
 
 ### Options ###
 
+  * `-p`: set a process name (this requires its configurations;
+    default: `HYPERSBI2`)
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
   * `-M [ACTION]`: create or modify an action and create a shortcut to
@@ -150,8 +152,6 @@ py trading_assistant.py -e [ACTION]
     and a shortcut to it
   * `-I`: create or modify a startup script and create a shortcut to
     it
-  * `-P`: set a process name (this requires its configurations;
-    default: `HYPERSBI2`)
   * `-B`: set an arbitrary cash balance
   * `-C`: set the cash balance region and the index of the price
   * `-L`: set the price limit region and the index of the price

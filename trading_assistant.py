@@ -48,6 +48,10 @@ def main():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     parser.add_argument(
+        '-p', default='HYPERSBI2', metavar='PROCESS_NAME',
+        help='set a process name '
+        '(this requires its configurations; default: %(default)s)')
+    parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
     parser.add_argument(
@@ -62,13 +66,9 @@ def main():
     group.add_argument(
         '-T', const='LIST_ACTIONS', metavar='SCRIPT_BASE | ACTION', nargs='?',
         help=('delete a startup script or an action and a shortcut to it'))
-    group.add_argument(
+    parser.add_argument(
         '-I', action='store_true',
         help=('create or modify a startup script and create a shortcut to it'))
-    parser.add_argument(
-        '-P', default='HYPERSBI2', metavar='PROCESS_NAME',
-        help='set a process name '
-        '(this requires its configurations; default: %(default)s)')
     parser.add_argument(
         '-B', action='store_true',
         help='set an arbitrary cash balance')
@@ -80,8 +80,12 @@ def main():
         help=('set the price limit region and the index of the price'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
-    trade = Trade(args.P)
+    trade = Trade(args.p)
     config = configure(trade)
+    if not config.has_section(trade.process_name):
+        print('section', trade.process_name, 'does not exist')
+        sys.exit(1)
+
     gui_callbacks = gui_interactions.GuiCallbacks()
 
     if args.r:
@@ -180,7 +184,7 @@ def configure(trade):
         'closing_prices':
         os.path.join('${Common:market_directory}', 'closing_prices_')}
     config['Startup Script'] = {
-        'pre_start_options': '-r -d',
+        'pre_start_options': '-rd',
         'post_start_options': '',
         'running_options': ''}
     config['HYPERSBI2'] = {
@@ -252,48 +256,6 @@ def configure(trade):
                 sys.exit(1)
 
     return config
-
-def create_startup_script(trade, config):
-    section = config['Startup Script']
-    pre_start_options = section['pre_start_options']
-    post_start_options = section['post_start_options']
-    running_options = section['running_options']
-
-    if pre_start_options:
-        pre_start_options = \
-            list(map(str.strip, section['pre_start_options'].split(',')))
-    if post_start_options:
-        post_start_options = \
-            list(map(str.strip, section['post_start_options'].split(',')))
-    if running_options:
-        running_options = \
-            list(map(str.strip, section['running_options'].split(',')))
-
-    with open(trade.startup_script, 'w') as f:
-        lines = []
-        lines.append('if (Get-Process "' + trade.process_name
-                     + '" -ErrorAction SilentlyContinue)\n{\n')
-        for i in range(len(running_options)):
-            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + running_options[i]
-                         + '" -NoNewWindow\n')
-
-        lines.append('}\nelse\n{\n')
-        for i in range(len(pre_start_options)):
-            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + pre_start_options[i]
-                         + '" -NoNewWindow\n')
-
-        lines.append('    Start-Process "'
-                     + config[trade.process_name]['executable']
-                     + '" -NoNewWindow\n')
-        for i in range(len(post_start_options)):
-            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + post_start_options[i]
-                         + '" -NoNewWindow\n')
-
-        lines.append('}\n')
-        f.writelines(lines)
 
 def save_customer_margin_ratios(trade, config):
     global pd
@@ -566,6 +528,48 @@ def execute_action(trade, config, gui_callbacks, action):
             pyautogui.write(alt_symbol)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
+
+def create_startup_script(trade, config):
+    section = config['Startup Script']
+    pre_start_options = section['pre_start_options']
+    post_start_options = section['post_start_options']
+    running_options = section['running_options']
+
+    if pre_start_options:
+        pre_start_options = \
+            list(map(str.strip, section['pre_start_options'].split(',')))
+    if post_start_options:
+        post_start_options = \
+            list(map(str.strip, section['post_start_options'].split(',')))
+    if running_options:
+        running_options = \
+            list(map(str.strip, section['running_options'].split(',')))
+
+    with open(trade.startup_script, 'w') as f:
+        lines = []
+        lines.append('if (Get-Process "' + trade.process_name
+                     + '" -ErrorAction SilentlyContinue)\n{\n')
+        for i in range(len(running_options)):
+            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
+                         + __file__ + '`" ' + running_options[i]
+                         + '" -NoNewWindow\n')
+
+        lines.append('}\nelse\n{\n')
+        for i in range(len(pre_start_options)):
+            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
+                         + __file__ + '`" ' + pre_start_options[i]
+                         + '" -NoNewWindow\n')
+
+        lines.append('    Start-Process "'
+                     + config[trade.process_name]['executable']
+                     + '" -NoNewWindow\n')
+        for i in range(len(post_start_options)):
+            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
+                         + __file__ + '`" ' + post_start_options[i]
+                         + '" -NoNewWindow\n')
+
+        lines.append('}\n')
+        f.writelines(lines)
 
 def calculate_share_size(trade, config, position):
     fixed_cash_balance = \
