@@ -66,17 +66,21 @@ def main():
         '-I', action='store_true',
         help=('create or modify a startup script and create a shortcut to it'))
     parser.add_argument(
+        '-P', default='HYPERSBI2', metavar='PROCESS_NAME',
+        help='set a process name '
+        '(this requires its configurations; default: %(default)s)')
+    parser.add_argument(
         '-B', action='store_true',
-        help='configure a cash balance')
+        help='set an arbitrary cash balance')
     parser.add_argument(
         '-C', action='store_true',
-        help=('configure the cash balance region and the index of the price'))
+        help=('set the cash balance region and the index of the price'))
     parser.add_argument(
         '-L', action='store_true',
-        help=('configure the price limit region and the index of the price'))
+        help=('set the price limit region and the index of the price'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
-    trade = Trade('HYPERSBI2')
+    trade = Trade(args.P)
     config = configure(trade)
     gui_callbacks = gui_interactions.GuiCallbacks()
 
