@@ -152,9 +152,9 @@ py trading_assistant.py -e [ACTION]
     it
   * `-P`: set a process name (this requires its configurations;
     default: HYPERSBI2)
-  * `-B`: configure a cash balance
-  * `-C`: configure the cash balance region and the index of the price
-  * `-L`: configure the price limit region and the index of the price
+  * `-B`: set an arbitrary cash balance
+  * `-C`: set the cash balance region and the index of the price
+  * `-L`: set the price limit region and the index of the price
 
 ## Action Examples ##
 
