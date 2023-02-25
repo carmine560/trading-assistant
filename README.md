@@ -150,6 +150,8 @@ py trading_assistant.py -e [ACTION]
     and a shortcut to it
   * `-I`: create or modify a startup script and create a shortcut to
     it
+  * `-P`: set a process name (this requires its configurations;
+    default: HYPERSBI2)
   * `-B`: configure a cash balance
   * `-C`: configure the cash balance region and the index of the price
   * `-L`: configure the price limit region and the index of the price
