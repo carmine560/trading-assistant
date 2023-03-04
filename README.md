@@ -124,7 +124,6 @@ ACTION = [
     # wait for prices to be displayed in a region.
     ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'),
     ('wait_for_window', 'TITLE_REGEX'), # wait for a window.
-    ('write_alt_symbol', 'SYMBOL_1, SYMBOL_2'), # write the alternative symbol.
     ('write_share_size',),           # write the calculated share size.
 
     # Optional Command
@@ -278,27 +277,6 @@ watch_tick_count = [
     ('click', '503, 70'),            # click the Chart button.
     # back the cursor to the previous position.
     ('back_to',)]
-```
-
-### Toggle between Stocks ###
-
-The following `toggle_between_stocks` toggles between the specified
-stocks.
-
-``` python
-toggle_between_stocks = [
-    ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
-    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
-    ('click', '54, 45'),             # focus on the Symbol text box.
-    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    # get the symbol from the Summary window.
-    ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
-    ('write_alt_symbol', '8306, 8308'), # write the alternative symbol.
-    ('press_key', 'enter'),          # press the Enter key.
-    # back the cursor to the previous position.
-    ('back_to',),
-    ('wait_for_period', '1.2'),      # wait for 1.2 seconds.
-    ('press_key', 'esc')]            # close the symbol drop-down menu.
 ```
 
 ### Open and Close Long Position ###

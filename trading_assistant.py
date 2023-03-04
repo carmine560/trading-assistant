@@ -518,14 +518,6 @@ def execute_action(trade, config, gui_callbacks, action):
             recognize_text(config[trade.process_name], *arguments)
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(gui_callbacks, arguments)
-        elif command == 'write_alt_symbol':
-            symbols = list(map(str.strip, arguments.split(',')))
-            if symbols[0] == trade.symbol:
-                alt_symbol = symbols[1]
-            else:
-                alt_symbol = symbols[0]
-
-            pyautogui.write(alt_symbol)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
 
