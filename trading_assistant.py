@@ -227,7 +227,9 @@ def configure(trade):
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0',
         'current_date': str(date.today()),
-        'current_number_of_trades': '0'}
+        'current_number_of_trades': '0',
+        'screenshot_directory':
+        os.path.join(os.path.expanduser('~'), 'Downloads')}
     config['Actions'] = {
         'minimize_all_windows': [('press_hotkeys', 'win, m')],
         'show_hide_watchlists': [('show_hide_window', '登録銘柄')],
@@ -508,6 +510,21 @@ def execute_action(trade, config, gui_callbacks, action):
             arguments = list(map(str.strip, arguments.split(',')))
             engine.say(config[arguments[0]][arguments[1]])
             engine.runAndWait()
+        elif command == 'take_screenshot':
+            from PIL import ImageGrab
+
+            section = config['Trading']
+            previous_date = date.fromisoformat(section['current_date'])
+            current_date = date.today()
+            base = str(current_date)
+            if previous_date == current_date:
+                base += f"-{int(section['current_number_of_trades']):02}"
+            if trade.symbol:
+                base += '-' + trade.symbol
+
+            base += '-screenshot.png'
+            image = ImageGrab.grab()
+            image.save(os.path.join(section['screenshot_directory'], base))
         elif command == 'wait_for_key':
             if not gui_interactions.wait_for_key(gui_callbacks, arguments):
                 return

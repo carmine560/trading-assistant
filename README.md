@@ -119,6 +119,8 @@ ACTION = [
     # show or hide a window on the middle click.
     ('show_hide_window_on_click', 'TITLE_REGEX')
     ('show_window', 'TITLE_REGEX'),  # show a window.
+    # take a screenshot with the number of trades and symbol as the filename.
+    ('take_screenshot',),
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
     ('wait_for_period', 'PERIOD'),   # wait for a period.
     # wait for prices to be displayed in a region.
@@ -212,10 +214,10 @@ watch_active_stocks = [
     ('press_key', 'del'),            # delete them.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     ('click', '1729, 41'),           # select the Tile view.
 
     # Optional Commands
@@ -259,10 +261,10 @@ watch_tick_count = [
     ('press_key', 'del'),            # delete them.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('press_key', 'enter'),          # confirm the deletion.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
-    ('wait_for_period', '0.4'),      # wait for 0.4 seconds.
+    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     ('click', '1729, 41'),           # select the Tile view.
 
     # Optional Commands
@@ -321,6 +323,8 @@ open_close_long_position = [
     # back the cursor to the previous position.
     ('back_to',),
     ('count_trades',),               # count the number of trades for the day.
+    # take a screenshot with the number of trades and symbol as the filename.
+    ('take_screenshot',),
     ('speak_config', 'Trading, number_of_trades')] # speak the number above.
 ```
 
