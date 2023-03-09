@@ -513,6 +513,8 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'take_screenshot':
             from PIL import ImageGrab
 
+            pyautogui.hotkey('alt', 'printscreen')
+            image = ImageGrab.grabclipboard()
             section = config['Trading']
             previous_date = date.fromisoformat(section['current_date'])
             current_date = date.today()
@@ -523,7 +525,6 @@ def execute_action(trade, config, gui_callbacks, action):
                 base += '-' + trade.symbol
 
             base += '-screenshot.png'
-            image = ImageGrab.grab()
             image.save(os.path.join(section['screenshot_directory'], base))
         elif command == 'wait_for_key':
             if not gui_interactions.wait_for_key(gui_callbacks, arguments):
