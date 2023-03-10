@@ -183,7 +183,7 @@ the Login button.
 ``` python
 login = [
     # locate the Login button in the region, and click it.
-    ('click_widget', '\path\to\login.png, 890, 510, 140, 31'),
+    ('click_widget', '\path\to\login.png, 889, 507, 142, 33'),
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
@@ -252,7 +252,7 @@ watch_tick_count = [
     ('click', '315, 65'),            # click the Prime Market button.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     # recognize a numeric column and copy symbols to the clipboard.
-    ('copy_symbols_from_numeric_column', '327, 153, 54, 691'),
+    ('copy_symbols_from_numeric_column', '327, 151, 54, 691'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
     ('click', '44, 122'),            # select the second watchlist.
     ('click', '1668, 41'),           # select the List view.
@@ -292,32 +292,32 @@ open_close_long_position = [
     # Open Long Position
     ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
     ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
-    ('click', '207, 729'),           # select the New Order tab.
-    ('click', '540, 801'),           # focus on the Share Size text box.
+    ('click', '208, 727'),           # select the New Order tab.
+    ('click', '541, 799'),           # focus on the Share Size text box.
     # open the transaction classification drop-down menu.
-    ('click', '230, 753'),
+    ('click', '231, 751'),
     ('press_key', 'end'),            # select Day Trading on Margin.
     ('press_key', 'enter'),          # close the menu.
-    ('click', '540, 801'),           # refocus on the Share Size text box.
+    ('click', '541, 799'),           # refocus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     # get the symbol from the Summary window.
     ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
     ('calculate_share_size', 'long'), # calculate the share size.
     ('write_share_size',),           # write the calculated share size.
-    ('click', '476, 823'),           # click the Market Order button.
+    ('click', '476, 821'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     ('beep', '1000, 100'),           # notify completion.
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # wait for space input.
-    ('wait_for_prices', '201, 958, 468, 19, 0'), # wait for the execution.
+    ('wait_for_prices', '201, 955, 470, 21, 0'), # wait for the execution.
 
     # Close Long Position
-    ('click', '291, 729'),           # select the Repayment tab.
-    ('click', '603, 844'),           # focus on the Share Size text box.
+    ('click', '292, 727'),           # select the Repayment tab.
+    ('click', '604, 842'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('write_share_size',),           # write the calculated share size.
-    ('click', '454, 936'),           # click the Market Order button.
+    ('click', '454, 934'),           # click the Market Order button.
     ('press_key', 'tab, 5'),         # focus on the Sell Order button.
     ('beep', '1000, 100'),           # notify completion.
     # back the cursor to the previous position.
