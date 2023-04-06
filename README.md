@@ -16,7 +16,7 @@ an action consisting of a sequence of commands, this script:
     trading
   * manipulates widgets to prepare your order
 
-> **Warning**: This script is currently under heavy development.
+> **Warning** This script is currently under heavy development.
 > Changes in functionality can occur at any time.
 
 ## Prerequisites ##
@@ -72,8 +72,8 @@ py trading_assistant.py -I
 Configure the cash balance and (optional) price limit regions on Hyper
 SBI 2 so that Tesseract recognizes these prices.  This script only
 references a price limit if the previous closing price does not exist
-in the market data above.  Because a region may have multiple prices,
-specify the index of the price you are referring to.  A
+in the market data above.  Because a region may have more than one
+price, specify the index of the price you are referring to.  A
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
 configuration file saves these configurations.
 
@@ -164,7 +164,7 @@ The following `show_hide_watchlists_on_click` action shows or hides
 the Watchlists window on the middle click while Hyper SBI 2 is
 running.
 
-> **Note**: This example contains no coordinates or images and can be
+> **Note** This example contains no coordinates or images and can be
 > tested immediately in many environments.
 
 ``` python
@@ -176,7 +176,7 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 The following `login` action waits for the Login window to show and
 clicks its button.
 
-> **Note**: I tested these examples in an environment with 1080p, a
+> **Note** I tested these examples in an environment with 1080p, a
 > maximized Watchlists window, a left-snapped Summary window, and a
 > right-snapped Chart window.
 
@@ -200,7 +200,7 @@ The following `watch_active_stocks` action replaces the stocks in the
 Watchlists window with new ones scraped from the current market data
 above.
 
-> **Note**: The free market data provided by Kabutan has a 20-minute
+> **Note** The free market data provided by Kabutan has a 20-minute
 > delay.
 
 ``` python
@@ -240,8 +240,8 @@ watch_active_stocks = [
 The following `watch_tick_count` action replaces the stocks in the
 Watchlists window with new ones recognized in the Rankings window.
 
-> **Note**: Hyper SBI updates the Rankings window in real-time, but
-> the text recognition by Tesseract is not as accurate as the scraped
+> **Note** Hyper SBI updates the Rankings window in real-time, but the
+> text recognition by Tesseract is not as accurate as the scraped
 > market data above.
 
 ``` python
