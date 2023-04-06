@@ -176,7 +176,7 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 The following `login` action waits for the Login window to show and
 clicks its button.
 
-> **Note** I tested these examples in an environment with 1080p, a
+> **Note** These examples underwent in an environment with 1080p, a
 > maximized Watchlists window, a left-snapped Summary window, and a
 > right-snapped Chart window.
 
