@@ -6,17 +6,17 @@ on margin using Hyper SBI 2 -->
 <!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui
 pynput pyttsx3 -->
 
-`trading_assistant.py` assists in discretionary day trading of stocks
-on margin using [Hyper SBI
+A `trading_assistant.py` Python script assists in discretionary day
+trading of stocks on margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining
-an action consisting of a sequence of commands, this script executes:
+an action consisting of a sequence of commands, this script:
 
-  * showing required windows
-  * calculating the maximum share size for a market order on margin
+  * shows required windows
+  * calculates the maximum share size for a market order on margin
     trading
-  * manipulating widgets to prepare your order
+  * manipulates widgets to prepare your order
 
-> **Warning** This script is currently under heavy development.
+> **Warning**: This script is currently under heavy development.
 > Changes in functionality can occur at any time.
 
 ## Prerequisites ##
@@ -58,10 +58,10 @@ To calculate a maximum share size, save customer margin ratios from
 [*SBI Securities Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and the previous market data from [*Most Active Stocks Today —
-Kabutan*](https://kabutan.jp/warning/?mode=2_9&market=1) in advance.
-The following option creates a startup script
+Kabutan*](https://kabutan.jp/warning/?mode=2_9&market=1).  The
+following option creates a
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1`
-that processes them and starts Hyper SBI 2.
+startup script that processes them and starts Hyper SBI 2.
 
 ``` powershell
 py trading_assistant.py -I
@@ -70,12 +70,12 @@ py trading_assistant.py -I
 ### Configure Cash Balance and Price Limit Regions ###
 
 Configure the cash balance and (optional) price limit regions on Hyper
-SBI 2 so that Tesseract recognizes these prices.  A price limit is
-only referenced if the previous closing price does not exist in the
-market data above.  Because there can be multiple prices in a region,
-specify the index of the price.  These configurations are saved in the
-configuration file
-`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`.
+SBI 2 so that Tesseract recognizes these prices.  This script only
+references a price limit if the previous closing price does not exist
+in the market data above.  Because a region may have multiple prices,
+specify the index of the price you are referring to.  A
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
+configuration file saves these configurations.
 
 ``` powershell
 py trading_assistant.py -C
@@ -84,16 +84,15 @@ py trading_assistant.py -L
 
 ### Create or Modify Action ###
 
-Create or modify an action to be processed by this script.
+Create or modify an action for processing by this script.
 
 ``` powershell
 py trading_assistant.py -M [ACTION]
 ```
 
-Then insert, modify, or delete each command of the action.  An action
-is a list of sequential commands, and a command is a tuple of itself
-and its arguments.  These actions are saved in the configuration file.
-Possible commands are:
+An action is a list of sequential tuples, and each tuple consists of a
+command and its arguments.  The configuration file saves these
+actions.  Possible commands are:
 
 ``` python
 ACTION = [
@@ -161,10 +160,11 @@ py trading_assistant.py -e [ACTION]
 
 ### Show or Hide Watchlists Window on Middle Click ###
 
-The following `show_hide_watchlists_on_click` shows or hides the
-Watchlists window on the middle click while Hyper SBI 2 is running.
+The following `show_hide_watchlists_on_click` action shows or hides
+the Watchlists window on the middle click while Hyper SBI 2 is
+running.
 
-> **Note** This example contains no coordinates or images and can be
+> **Note**: This example contains no coordinates or images and can be
 > tested immediately in many environments.
 
 ``` python
@@ -173,12 +173,12 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 
 ### Login ###
 
-The following `login` waits for the Login window to show and clicks
-the Login button.
+The following `login` action waits for the Login window to show and
+clicks its button.
 
-> **Note** These examples are tested in the following environment:
-> 1080p, a maximized Watchlists window, a left-snapped Summary window,
-> and a right-snapped Chart window.
+> **Note**: I tested these examples in an environment with 1080p, a
+> maximized Watchlists window, a left-snapped Summary window, and a
+> right-snapped Chart window.
 
 ``` python
 login = [
@@ -196,11 +196,12 @@ login = [
 
 ### Replace Watchlist with Market Data on Website ###
 
-The following `watch_active_stocks` replaces the stocks in the
+The following `watch_active_stocks` action replaces the stocks in the
 Watchlists window with new ones scraped from the current market data
 above.
 
-> **Note** Kabutan's free market data has a 20-minute delay.
+> **Note**: The free market data provided by Kabutan has a 20-minute
+> delay.
 
 ``` python
 watch_active_stocks = [
@@ -236,11 +237,12 @@ watch_active_stocks = [
 
 ### Replace Watchlist with Hyper SBI 2 Ranking ###
 
-The following `watch_tick_count` replaces the stocks in the Watchlists
-window with new ones recognized in the Rankings window.
+The following `watch_tick_count` action replaces the stocks in the
+Watchlists window with new ones recognized in the Rankings window.
 
-> **Note** The Rankings window is updated in real-time, but text
-> recognition is not as accurate as the scraped market data above.
+> **Note**: Hyper SBI updates the Rankings window in real-time, but
+> the text recognition by Tesseract is not as accurate as the scraped
+> market data above.
 
 ``` python
 watch_tick_count = [
@@ -283,9 +285,9 @@ watch_tick_count = [
 
 ### Open and Close Long Position ###
 
-The following `open_close_long_position` shows the required windows
-and prepares a buy order with the maximum share size.  If the order is
-placed, then it prepares a sell order for repayment.
+The following `open_close_long_position` action shows the required
+windows and waits for a buy order with the maximum share size.  If you
+place the order, it prepares a sell order for repayment.
 
 ``` python
 open_close_long_position = [
@@ -355,4 +357,4 @@ open_close_long_position = [
 ## Link ##
 
   * [*Python Scripting to Assist in Day Trading on Margin Using Hyper
-    SBI 2*](): a blog post for more details.
+    SBI 2*](): a blog post for more details
