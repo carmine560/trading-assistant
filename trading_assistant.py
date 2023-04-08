@@ -213,7 +213,8 @@ def configure(trade):
                               '口座情報',                    # Account
                               'ニュース',                    # News
                               '取引ポップアップ',            # Trading
-                              '通知設定'),                   # Notifications
+                              '通知設定',                    # Notifications
+                              '全板\s.*\((\d{4})\)'),        # Full Order Book
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '4',
