@@ -183,7 +183,7 @@ clicks its button.
 ``` python
 login = [
     # locate the Login button in the region, and click it.
-    ('click_widget', '\path\to\login.png, 889, 507, 142, 33'),
+    ('click_widget', '\path\to\login.png, 759, 320, 402, 381'),
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
@@ -254,7 +254,7 @@ watch_tick_count = [
     ('click', '315, 65'),            # click the Prime Market button.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     # recognize a numeric column and copy symbols to the clipboard.
-    ('copy_symbols_from_numeric_column', '327, 151, 54, 691'),
+    ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
     ('click', '44, 122'),            # select the second watchlist.
     ('click', '1668, 41'),           # select the List view.
