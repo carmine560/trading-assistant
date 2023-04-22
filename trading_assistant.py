@@ -217,12 +217,8 @@ def configure(trade):
                               '全板\s.*\((\d{4})\)'),        # Full Order Book
         'cash_balance_region': '0, 0, 0, 0, 0',
         'price_limit_region': '0, 0, 0, 0, 0',
-        'image_magnification': '4',
-        'binarization_threshold': '128',
-        'dark_target_color': '(0, 0, 255)',
-        'dark_replacement_color': '(0, 0, 0)',
-        'light_target_color': '(0, 255, 255)',
-        'light_replacement_color': '(255, 255, 255)'}
+        'image_magnification': '2',
+        'binarization_threshold': '128'}
     config['Trading'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0',
@@ -629,13 +625,6 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
     image_magnification = int(section['image_magnification'])
     binarization_threshold = int(section['binarization_threshold'])
     currently_dark_theme = section.getboolean('currently_dark_theme')
-    if currently_dark_theme:
-        target_color = ast.literal_eval(section['dark_target_color'])
-        replacement_color = ast.literal_eval(section['dark_replacement_color'])
-    else:
-        target_color = ast.literal_eval(section['light_target_color'])
-        replacement_color = ast.literal_eval(
-            section['light_replacement_color'])
 
     if text_type == 'integers':
         config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
@@ -653,11 +642,6 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
                                  Image.LANCZOS)
             image = image.point(lambda p:
                                 255 if p > binarization_threshold else 0)
-            pixel_data = image.load()
-            for image_y in range(image.size[1]):
-                for image_x in range(image.size[0]):
-                    if pixel_data[image_x, image_y] == target_color:
-                        pixel_data[image_x, image_y] = replacement_color
             if currently_dark_theme:
                 image = ImageOps.invert(image)
 
