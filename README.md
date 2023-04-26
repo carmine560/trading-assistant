@@ -296,11 +296,6 @@ open_close_long_position = [
     ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
     ('click', '208, 727'),           # select the New Order tab.
     ('click', '541, 799'),           # focus on the Share Size text box.
-    # open the transaction classification drop-down menu.
-    ('click', '231, 751'),
-    ('press_key', 'end'),            # select Day Trading on Margin.
-    ('press_key', 'enter'),          # close the menu.
-    ('click', '541, 799'),           # refocus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     # get the symbol from the Summary window.
     ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
@@ -325,8 +320,6 @@ open_close_long_position = [
     # back the cursor to the previous position.
     ('back_to',),
     ('count_trades',),               # count the number of trades for the day.
-    # take a screenshot with the number of trades and symbol as the filename.
-    ('take_screenshot',),
     ('speak_config', 'Trading, number_of_trades')] # speak the number above.
 ```
 
