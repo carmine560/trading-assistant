@@ -37,7 +37,7 @@ and uses the following packages:
   * [pynput](https://github.com/moses-palmer/pynput) to monitor
     keyboard input
   * (optional) [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to
-    speak a configuration
+    speak seconds until an event and a configuration
 
 Install each package as needed.  For example:
 
@@ -145,6 +145,7 @@ py trading_assistant.py -e [ACTION]
     default: `HYPERSBI2`)
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
+  * `-s`: speak seconds until an event
   * `-M [ACTION]`: create or modify an action and create a shortcut to
     it
   * `-e [ACTION]`: execute an action

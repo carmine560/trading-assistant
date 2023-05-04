@@ -56,6 +56,9 @@ def main():
     parser.add_argument(
         '-d', action='store_true',
         help='save the previous market data')
+    parser.add_argument(
+        '-s', action='store_true',
+        help='speak seconds until an event')
     group.add_argument(
         '-M', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help=('create or modify an action and create a shortcut to it'))
@@ -91,6 +94,8 @@ def main():
         save_customer_margin_ratios(trade, config)
     if args.d:
         save_market_data(config)
+    if args.s:
+        start_speak_seconds_until_event(config)
     if args.M == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
     elif args.M:
@@ -222,10 +227,12 @@ def configure(trade):
     config['Trading'] = {
         'fixed_cash_balance': '0',
         'utilization_ratio': '1.0',
-        'current_date': str(date.today()),
-        'current_number_of_trades': '0',
+        'event_time': '09:00:00',
+        'seconds_until_event': '60, 30',
         'screenshot_directory':
-        os.path.join(os.path.expanduser('~'), 'Downloads')}
+        os.path.join(os.path.expanduser('~'), 'Downloads'),
+        'current_date': str(date.today()),
+        'current_number_of_trades': '0'}
     config['Actions'] = {
         'minimize_all_windows': [('press_hotkeys', 'win, m')],
         'show_hide_watchlists': [('show_hide_window', '登録銘柄')],
@@ -265,20 +272,18 @@ def save_customer_margin_ratios(trade, config):
     url = section['url']
     symbol_header = section['symbol_header']
     regulation_header = section['regulation_header']
-    header = section['header']
+    header = ast.literal_eval(section['header'])
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
     customer_margin_ratios = section['customer_margin_ratios']
 
     if get_latest(config, update_time, time_zone, customer_margin_ratios):
-        dfs = pd.DataFrame()
         try:
             dfs = pd.read_html(url, match=regulation_header, header=0)
         except Exception as e:
             print(e)
             sys.exit(1)
 
-        header = ast.literal_eval(header)
         for index, df in enumerate(dfs):
             if tuple(df.columns.values) == header:
                 df = dfs[index][[symbol_header, regulation_header]]
@@ -411,6 +416,45 @@ def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
                 return latest
         else:
             return latest
+
+def start_speak_seconds_until_event(config):
+    from multiprocessing import Process
+
+    section = config['Trading']
+    event_time = tuple(map(int, re.split(':', section['event_time'])))
+    seconds_until_event = list(map(int,
+                                   section['seconds_until_event'].split(',')))
+
+    process = Process(target=speak_seconds_until_event,
+                      args=(event_time, seconds_until_event))
+    process.start()
+
+def speak_seconds_until_event(event_time, seconds_until_event):
+    from datetime import datetime, timedelta
+
+    import pyttsx3
+
+    event_datetime = datetime.now().replace(
+        hour=event_time[0], minute=event_time[1], second=event_time[2],
+        microsecond=0)
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+    engine.setProperty('voice', voices[1].id)
+
+    while True:
+        delta = event_datetime - datetime.now()
+        seconds_until_event = \
+            [i for i in seconds_until_event if i < delta.total_seconds()]
+        if len(seconds_until_event):
+            seconds = max(seconds_until_event)
+            if timedelta(seconds=seconds) <= delta \
+               < timedelta(seconds=seconds + 1):
+                engine.say(str(seconds) + ' seconds')
+                engine.runAndWait()
+
+            time.sleep(1)
+        else:
+            break
 
 def execute_action(trade, config, gui_callbacks, action):
     commands = ast.literal_eval(config['Actions'][action])

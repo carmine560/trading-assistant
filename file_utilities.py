@@ -32,6 +32,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
                     sys.exit(1)
 
             if number_of_backups > 0:
+                # FIXME
                 backups = os.listdir(backup_directory)
                 excess = len(backups) - number_of_backups
                 if excess > 0:
