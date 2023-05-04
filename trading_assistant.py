@@ -313,7 +313,6 @@ def save_market_data(config, clipboard=False):
     price_header = section['price_header']
     closing_prices = section['closing_prices']
 
-    # TODO
     if clipboard:
         latest = True
     else:

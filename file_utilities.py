@@ -32,8 +32,10 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
                     sys.exit(1)
 
             if number_of_backups > 0:
-                # FIXME
-                backups = os.listdir(backup_directory)
+                pattern = os.path.splitext(os.path.basename(source))[0] \
+                    + r'-\d{8}T\d{6}' + os.path.splitext(source)[1]
+                backups = [f for f in os.listdir(backup_directory)
+                           if re.match(pattern, f)]
                 excess = len(backups) - number_of_backups
                 if excess > 0:
                     for f in backups[:excess]:
