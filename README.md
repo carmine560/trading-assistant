@@ -144,7 +144,7 @@ Execute an action saved in the configuration file.
 py trading_assistant.py -e [ACTION]
 ```
 
-### Schedules ###
+### Schedule Actions ###
 
 You can schedule the actions above as the following configurations:
 
