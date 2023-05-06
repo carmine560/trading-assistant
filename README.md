@@ -95,13 +95,15 @@ command and its arguments.  The configuration file saves these
 actions.  Possible commands are:
 
 ``` python
+[Actions]
 ACTION = [
     # back the cursor to the previous position.
     ('back_to',),
     ('beep', 'FREQUENCY, DURATION'), # beep.
     ('calculate_share_size', 'POSITION'), # calculate a share size.
     ('click', 'X, Y'),               # click.
-    # locate a widget image in a region, and click it.
+    # locate a widget image in a region and click on it, assuming that it is in
+    # the same directory as the configuration file.
     ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'),
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
@@ -128,7 +130,9 @@ ACTION = [
     ('write_share_size',),           # write the calculated share size.
 
     # Optional Command
-    ('speak_config', 'SECTION, KEY')] # speak a configuration.
+    ('speak_config', 'SECTION, KEY'), # speak a configuration.
+    # speak seconds until an event.
+    ('speak_seconds_until_event', 'EVENT_TIME')]
 ```
 
 ### Execute Action ###
@@ -139,13 +143,29 @@ Execute an action saved in the configuration file.
 py trading_assistant.py -e [ACTION]
 ```
 
+### Schedules ###
+
+You can schedule the actions above as the following configurations:
+
+``` python
+[Schedules]
+SCHEDULE = ('SCHEDULE_TIME', 'ACTION')
+...
+```
+
+Then run the scheduler.
+
+``` powershell
+py trading_assistant.py -s
+```
+
 ### Options ###
 
   * `-p`: set a process name (this requires its configurations;
     default: `HYPERSBI2`)
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
-  * `-s`: speak seconds until an event
+  * `-s`: run the scheduler
   * `-M [ACTION]`: create or modify an action and create a shortcut to
     it
   * `-e [ACTION]`: execute an action
@@ -184,7 +204,7 @@ clicks its button.
 ``` python
 login = [
     # locate the Login button in the region, and click it.
-    ('click_widget', '\path\to\login.png, 759, 320, 402, 381'),
+    ('click_widget', 'login.png, 759, 320, 402, 381'),
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.

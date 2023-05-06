@@ -58,7 +58,7 @@ def main():
         help='save the previous market data')
     parser.add_argument(
         '-s', action='store_true',
-        help='speak seconds until an event')
+        help='run the scheduler')
     group.add_argument(
         '-M', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help=('create or modify an action and create a shortcut to it'))
@@ -95,7 +95,12 @@ def main():
     if args.d:
         save_market_data(config)
     if args.s:
-        start_speak_seconds_until_event(config)
+        from multiprocessing import Process
+
+        process = Process(
+            target=run_scheduler,
+            args=(trade, config, gui_callbacks, trade.process_name + '.exe'))
+        process.start()
     if args.M == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
     elif args.M:
@@ -151,8 +156,8 @@ def main():
             icon_directory=trade.config_directory)
     if args.B:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_option(config, 'Trading', 'fixed_cash_balance',
-                                    trade.config_file)
+        configuration.modify_option(config, trade.process_name,
+                                    'fixed_cash_balance', trade.config_file)
     if args.C:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configuration.modify_option(config, trade.process_name,
@@ -167,17 +172,19 @@ def main():
 def configure(trade):
     config = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation())
-    config['Common'] = {
+    config['General'] = {
         'market_directory': trade.market_directory,
-        'config_directory': trade.config_directory}
+        'config_directory': trade.config_directory,
+        'screenshot_directory':
+        os.path.join(os.path.expanduser('~'), 'Downloads')}
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'market_holidays':
-        os.path.join('${Common:market_directory}', 'market_holidays.csv'),
+        os.path.join('${General:market_directory}', 'market_holidays.csv'),
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
-        'opening_time': '9:00:00',
+        'opening_time': '09:00:00',
         'closing_time': '15:30:00',
         'delay': '20',
         'time_zone': 'Asia/Tokyo',
@@ -186,14 +193,14 @@ def configure(trade):
         'symbol_header': 'コード',
         'price_header': '株価',
         'closing_prices':
-        os.path.join('${Common:market_directory}', 'closing_prices_')}
+        os.path.join('${General:market_directory}', 'closing_prices_')}
     config['Startup Script'] = {
         'pre_start_options': '-rd',
         'post_start_options': '',
         'running_options': ''}
     config['HYPERSBI2'] = {
         'update_time': '20:00:00',
-        'time_zone': 'Asia/Tokyo',
+        'time_zone': '${Market Data:time_zone}',
         'url': 'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
@@ -201,7 +208,7 @@ def configure(trade):
         'customer_margin_ratio': '委託保証金率',
         'suspended': '新規建停止',
         'customer_margin_ratios':
-        os.path.join('${Common:config_directory}',
+        os.path.join('${General:config_directory}',
                      'customer_margin_ratios.csv'),
         'executable':
         r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
@@ -220,24 +227,31 @@ def configure(trade):
                               '取引ポップアップ',            # Trading
                               '通知設定',                    # Notifications
                               '全板\s.*\((\d{4})\)'),        # Full Order Book
+        'fixed_cash_balance': '0',
         'cash_balance_region': '0, 0, 0, 0, 0',
+        'utilization_ratio': '1.0',
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '2',
         'binarization_threshold': '128'}
-    config['Trading'] = {
-        'fixed_cash_balance': '0',
-        'utilization_ratio': '1.0',
-        'event_time': '09:00:00',
-        'seconds_until_event': '60, 30',
-        'screenshot_directory':
-        os.path.join(os.path.expanduser('~'), 'Downloads'),
-        'current_date': str(date.today()),
-        'current_number_of_trades': '0'}
     config['Actions'] = {
         'minimize_all_windows': [('press_hotkeys', 'win, m')],
         'show_hide_watchlists': [('show_hide_window', '登録銘柄')],
         'show_hide_watchlists_on_click':
-        [('show_hide_window_on_click', '登録銘柄')]}
+        [('show_hide_window_on_click', '登録銘柄')],
+        'speak_seconds_until_open':
+        [('speak_seconds_until_event', '${Market Data:opening_time}')],
+        'toggle_manual_recording': [('press_hotkeys', 'alt, f9')]}
+    config['Schedules'] = {
+        'speak_60_seconds_until_open':
+        ('08:59:00', 'speak_seconds_until_open'),
+        'speak_30_seconds_until_open':
+        ('08:59:30', 'speak_seconds_until_open'),
+        # TODO
+        'start_manual_recording': ('08:50:00', 'toggle_manual_recording'),
+        'stop_manual_recording': ('10:00:00', 'toggle_manual_recording')}
+    config['Variables'] = {
+        'current_date': str(date.today()),
+        'current_number_of_trades': '0'}
     config.read(trade.config_file, encoding='utf-8')
 
     if trade.process_name == 'HYPERSBI2':
@@ -251,8 +265,8 @@ def configure(trade):
         else:                   # Dark as a fallback
             config[trade.process_name]['currently_dark_theme'] = 'True'
 
-    for directory in [config['Common']['market_directory'],
-                      config['Common']['config_directory']]:
+    for directory in [config['General']['market_directory'],
+                      config['General']['config_directory']]:
         if not os.path.isdir(directory):
             try:
                 os.makedirs(directory)
@@ -416,44 +430,34 @@ def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
         else:
             return latest
 
-def start_speak_seconds_until_event(config):
-    from multiprocessing import Process
+def run_scheduler(trade, config, gui_callbacks, image_name):
+    import sched
+    import subprocess
 
-    section = config['Trading']
-    event_time = tuple(map(int, re.split(':', section['event_time'])))
-    seconds_until_event = list(map(int,
-                                   section['seconds_until_event'].split(',')))
+    scheduler = sched.scheduler(time.time, time.sleep)
+    schedules = []
 
-    process = Process(target=speak_seconds_until_event,
-                      args=(event_time, seconds_until_event))
-    process.start()
+    section = config['Schedules']
+    for option in section:
+        schedule_time, action = ast.literal_eval(section[option])
+        schedule_time = time.strptime(time.strftime('%Y-%m-%d ')
+                                      + schedule_time, '%Y-%m-%d %H:%M:%S')
+        schedule_time = time.mktime(schedule_time)
+        if schedule_time > time.time():
+            schedule = scheduler.enterabs(
+                schedule_time, 1, execute_action,
+                argument=(trade, config, gui_callbacks, action))
+            schedules.append(schedule)
 
-def speak_seconds_until_event(event_time, seconds_until_event):
-    from datetime import datetime, timedelta
-
-    import pyttsx3
-
-    event_datetime = datetime.now().replace(
-        hour=event_time[0], minute=event_time[1], second=event_time[2],
-        microsecond=0)
-    engine = pyttsx3.init()
-    voices = engine.getProperty('voices')
-    engine.setProperty('voice', voices[1].id)
-
-    while True:
-        delta = event_datetime - datetime.now()
-        seconds_until_event = \
-            [i for i in seconds_until_event if i < delta.total_seconds()]
-        if len(seconds_until_event):
-            seconds = max(seconds_until_event)
-            if timedelta(seconds=seconds) <= delta \
-               < timedelta(seconds=seconds + 1):
-                engine.say(str(seconds) + ' seconds')
-                engine.runAndWait()
-
+    while scheduler.queue:
+        output = subprocess.check_output(['tasklist', '/fi',
+                                          'imagename eq ' + image_name])
+        if re.search(image_name, str(output)):
+            scheduler.run(False)
             time.sleep(1)
         else:
-            break
+            for schedule in schedules:
+                scheduler.cancel(schedule)
 
 def execute_action(trade, config, gui_callbacks, action):
     commands = ast.literal_eval(config['Actions'][action])
@@ -477,7 +481,8 @@ def execute_action(trade, config, gui_callbacks, action):
                 pyautogui.click(coordinates)
         elif command == 'click_widget':
             arguments = arguments.split(',')
-            image = ','.join(arguments[:-4])
+            image = os.path.join(config['General']['config_directory'],
+                                 ','.join(arguments[:-4]))
             region = arguments[-4:len(arguments)]
             gui_interactions.click_widget(gui_callbacks, image, *region)
         elif command == 'copy_symbols_from_market_data':
@@ -495,7 +500,7 @@ def execute_action(trade, config, gui_callbacks, action):
             win32clipboard.SetClipboardText(' '.join(split_string))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
-            section = config['Trading']
+            section = config['Variables']
             previous_date = date.fromisoformat(section['current_date'])
             current_date = date.today()
             if previous_date == current_date:
@@ -546,15 +551,32 @@ def execute_action(trade, config, gui_callbacks, action):
             engine = pyttsx3.init()
             voices = engine.getProperty('voices')
             engine.setProperty('voice', voices[1].id)
+
             arguments = list(map(str.strip, arguments.split(',')))
             engine.say(config[arguments[0]][arguments[1]])
+            engine.runAndWait()
+        elif command == 'speak_seconds_until_event':
+            import math
+
+            import pyttsx3
+
+            event_time = time.strptime(time.strftime('%Y-%m-%d ') + arguments,
+                                       '%Y-%m-%d %H:%M:%S')
+            event_time = time.mktime(event_time)
+
+            # TODO
+            engine = pyttsx3.init()
+            voices = engine.getProperty('voices')
+            engine.setProperty('voice', voices[1].id)
+
+            engine.say(str(math.ceil(event_time - time.time())) + ' seconds')
             engine.runAndWait()
         elif command == 'take_screenshot':
             from PIL import ImageGrab
 
             pyautogui.hotkey('alt', 'printscreen')
             image = ImageGrab.grabclipboard()
-            section = config['Trading']
+            section = config['Variables']
             previous_date = date.fromisoformat(section['current_date'])
             current_date = date.today()
             base = str(current_date)
@@ -564,7 +586,8 @@ def execute_action(trade, config, gui_callbacks, action):
                 base += '-' + trade.symbol
 
             base += '-screenshot.png'
-            image.save(os.path.join(section['screenshot_directory'], base))
+            image.save(os.path.join(config['General']['screenshot_directory'],
+                                    base))
         elif command == 'wait_for_key':
             if not gui_interactions.wait_for_key(gui_callbacks, arguments):
                 return
@@ -621,21 +644,18 @@ def create_startup_script(trade, config):
         f.writelines(lines)
 
 def calculate_share_size(trade, config, position):
-    fixed_cash_balance = \
-        int(config['Trading']['fixed_cash_balance'].replace(',', '') or 0)
+    section = config[trade.process_name]
+    fixed_cash_balance = int(section['fixed_cash_balance'].replace(',', '')
+                             or 0)
     if fixed_cash_balance > 0:
         trade.cash_balance = fixed_cash_balance
     else:
-        region = list(map(int,
-                          config[trade.process_name]['cash_balance_region']
-                          .split(',')))
-        trade.cash_balance = recognize_text(config[trade.process_name],
-                                            *region)
+        region = list(map(int, section['cash_balance_region'] .split(',')))
+        trade.cash_balance = recognize_text(section, *region)
 
     customer_margin_ratio = 0.31
     try:
-        with open(config[trade.process_name]['customer_margin_ratios'], 'r') \
-             as f:
+        with open(section['customer_margin_ratios'], 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == trade.symbol:
@@ -647,7 +667,7 @@ def calculate_share_size(trade, config, position):
     except OSError as e:
         print(e)
 
-    utilization_ratio = float(config['Trading']['utilization_ratio'])
+    utilization_ratio = float(section['utilization_ratio'])
     price_limit = get_price_limit(trade, config)
     trading_unit = 100
     share_size = int(trade.cash_balance * utilization_ratio
