@@ -341,7 +341,7 @@ open_close_long_position = [
     # back the cursor to the previous position.
     ('back_to',),
     ('count_trades',),               # count the number of trades for the day.
-    ('speak_config', 'Trading, number_of_trades')] # speak the number above.
+    ('speak_config', 'Variables, number_of_trades')] # speak the number above.
 ```
 
 ## Appendix ##
