@@ -210,8 +210,7 @@ def configure(trade):
         'customer_margin_ratios':
         os.path.join('${General:config_directory}',
                      'customer_margin_ratios.csv'),
-        'executable':
-        r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe',
+        'executable': '',
         'title': 'Hyper SBI 2 Assistant',
         'clickable_windows': ('お知らせ',                    # Announcements
                               '個別銘柄\s.*\((\d{4})\)',     # Summary
@@ -242,12 +241,12 @@ def configure(trade):
         [('speak_seconds_until_event', '${Market Data:opening_time}')],
         'toggle_manual_recording': [('press_hotkeys', 'alt, f9')]}
     config['Schedules'] = {
+        # TODO
+        'start_manual_recording': ('08:50:00', 'toggle_manual_recording'),
         'speak_60_seconds_until_open':
         ('08:59:00', 'speak_seconds_until_open'),
         'speak_30_seconds_until_open':
         ('08:59:30', 'speak_seconds_until_open'),
-        # TODO
-        'start_manual_recording': ('08:50:00', 'toggle_manual_recording'),
         'stop_manual_recording': ('10:00:00', 'toggle_manual_recording')}
     config['Variables'] = {
         'current_date': str(date.today()),
@@ -255,15 +254,30 @@ def configure(trade):
     config.read(trade.config_file, encoding='utf-8')
 
     if trade.process_name == 'HYPERSBI2':
+        section = config[trade.process_name]
+
+        location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
+                                    'SBI Securities', trade.process_name,
+                                    'location.dat')
+        try:
+            with open(location_dat, 'r') as f:
+                location = f.read()
+        except OSError as e:
+            print(e)
+
+        section['executable'] = os.path.normpath(
+            os.path.join(location, trade.process_name + '.exe'))
+
         theme_config = configparser.ConfigParser()
-        theme_config_file = os.path.join(os.path.expandvars('%APPDATA%'),
-                                         'SBI Securities/HYPERSBI2/theme.ini')
-        theme_config.read(theme_config_file)
+        theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
+                                 'SBI Securities', trade.process_name,
+                                 'theme.ini')
+        theme_config.read(theme_ini)
         if theme_config.has_option('General', 'theme') \
            and theme_config['General']['theme'] == 'Light':
-            config[trade.process_name]['currently_dark_theme'] = 'False'
+            section['currently_dark_theme'] = 'False'
         else:                   # Dark as a fallback
-            config[trade.process_name]['currently_dark_theme'] = 'True'
+            section['currently_dark_theme'] = 'True'
 
     for directory in [config['General']['market_directory'],
                       config['General']['config_directory']]:
@@ -564,7 +578,6 @@ def execute_action(trade, config, gui_callbacks, action):
                                        '%Y-%m-%d %H:%M:%S')
             event_time = time.mktime(event_time)
 
-            # TODO
             engine = pyttsx3.init()
             voices = engine.getProperty('voices')
             engine.setProperty('voice', voices[1].id)
