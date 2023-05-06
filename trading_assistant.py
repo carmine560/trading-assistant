@@ -261,12 +261,11 @@ def configure(trade):
                                     'location.dat')
         try:
             with open(location_dat, 'r') as f:
-                location = f.read()
+                section['executable'] = os.path.normpath(
+                    os.path.join(f.read(), trade.process_name + '.exe'))
         except OSError as e:
             print(e)
-
-        section['executable'] = os.path.normpath(
-            os.path.join(location, trade.process_name + '.exe'))
+            section['executable'] = r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'
 
         theme_config = configparser.ConfigParser()
         theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
