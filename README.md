@@ -15,6 +15,7 @@ an action consisting of a sequence of commands, this script:
   * calculates the maximum share size for a market order on margin
     trading
   * manipulates widgets to prepare your order
+  * also schedules these actions
 
 > **Warning** This script is currently under heavy development.
 > Changes in functionality can occur at any time.

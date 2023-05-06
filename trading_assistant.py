@@ -265,7 +265,9 @@ def configure(trade):
                     os.path.join(f.read(), trade.process_name + '.exe'))
         except OSError as e:
             print(e)
-            section['executable'] = r'$${Env:ProgramFiles(x86)}\SBI SECURITIES\HYPERSBI2\HYPERSBI2.exe'
+            section['executable'] = os.path.join(
+                r'$${Env:ProgramFiles(x86)}\SBI SECURITIES',
+                trade.process_name, trade.process_name + '.exe')
 
         theme_config = configparser.ConfigParser()
         theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
