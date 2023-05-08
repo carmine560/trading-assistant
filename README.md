@@ -129,7 +129,7 @@ ACTION = [
 
     # Boolean Command
     # execute an ACTION if writing a file is a BOOL value.
-    ('writing_file', BOOL, ACTION),
+    ('writing_file', 'BOOL', ACTION),
 
     # Optional commands
     ('speak_config', 'SECTION, KEY'), # speak a configuration.
