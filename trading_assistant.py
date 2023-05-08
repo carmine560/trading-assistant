@@ -37,7 +37,7 @@ class Trade:
         self.symbol = ''
         self.share_size = 0
 
-        self.engine = None
+        self.speech_engine = None
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
@@ -246,13 +246,11 @@ def configure(trade):
         [('show_hide_window_on_click', '登録銘柄')],
         'speak_seconds_until_open':
         [('speak_seconds_until_event', '${Market Data:opening_time}')],
-        # TODO
         'start_manual_recording':
         [('writing_file', 'False', [('press_hotkeys', 'alt, f9')])],
         'stop_manual_recording':
         [('writing_file', 'True', [('press_hotkeys', 'alt, f9')])]}
     config['Schedules'] = {
-        # TODO
         'start_new_manual_recording': ('08:50:00', 'start_manual_recording'),
         'speak_60_seconds_until_open':
         ('08:59:00', 'speak_seconds_until_open'),
@@ -464,15 +462,15 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
     schedules = []
 
     section = config['Schedules']
-    speak = False
+    speech = False
     for option in section:
         schedule_time, action = ast.literal_eval(section[option])
         schedule_time = time.strptime(time.strftime('%Y-%m-%d ')
                                       + schedule_time, '%Y-%m-%d %H:%M:%S')
         schedule_time = time.mktime(schedule_time)
         if schedule_time > time.time():
-            if action in ['speak_seconds_until_open']:
-                speak = True
+            if action in ['speak_config', 'speak_seconds_until_open']:
+                speech = True
 
             schedule = scheduler.enterabs(
                 schedule_time, 1, execute_action,
@@ -480,12 +478,8 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
                           ast.literal_eval(config['Actions'][action])))
             schedules.append(schedule)
 
-    if speak:
-        import pyttsx3
-
-        trade.engine = pyttsx3.init()
-        voices = trade.engine.getProperty('voices')
-        trade.engine.setProperty('voice', voices[1].id)
+    if speech:
+        initialize_speech_engine(trade)
 
     while scheduler.queue:
         output = subprocess.check_output(['tasklist', '/fi',
@@ -625,33 +619,24 @@ def execute_action(trade, config, gui_callbacks, action):
                == ast.literal_eval(arguments) and len(action[index]) == 3:
                 execute_action(trade, config, gui_callbacks, action[index][2])
 
-        # Optional commands
+        # Optional Commands
         elif command == 'speak_config':
-            import pyttsx3
-
-            engine = pyttsx3.init()
-            voices = engine.getProperty('voices')
-            engine.setProperty('voice', voices[1].id)
+            initialize_speech_engine(trade)
 
             arguments = list(map(str.strip, arguments.split(',')))
-            engine.say(config[arguments[0]][arguments[1]])
-            engine.runAndWait()
+            trade.speech_engine.say(config[arguments[0]][arguments[1]])
+            trade.speech_engine.runAndWait()
         elif command == 'speak_seconds_until_event':
             import math
 
-            if not trade.engine:
-                import pyttsx3
-
-                trade.engine = pyttsx3.init()
-                voices = trade.engine.getProperty('voices')
-                trade.engine.setProperty('voice', voices[1].id)
+            initialize_speech_engine(trade)
 
             event_time = time.strptime(time.strftime('%Y-%m-%d ') + arguments,
                                        '%Y-%m-%d %H:%M:%S')
             event_time = time.mktime(event_time)
-            trade.engine.say(str(math.ceil(event_time - time.time()))
-                             + ' seconds')
-            trade.engine.runAndWait()
+            trade.speech_engine.say(str(math.ceil(event_time - time.time()))
+                                    + ' seconds')
+            trade.speech_engine.runAndWait()
 
         else:
             print(command + ' is not a recognized command')
@@ -868,6 +853,14 @@ def get_price_limit(trade, config):
         price_limit = recognize_text(config[trade.process_name], *region,
                                      text_type='decimal_numbers')
     return price_limit
+
+def initialize_speech_engine(trade):
+    if not trade.speech_engine:
+        import pyttsx3
+
+        trade.speech_engine = pyttsx3.init()
+        voices = trade.speech_engine.getProperty('voices')
+        trade.speech_engine.setProperty('voice', voices[1].id)
 
 if __name__ == '__main__':
     main()
