@@ -1,44 +1,41 @@
 # trading-assistant #
 
-<!-- Python script that assists in discretionary day trading of stocks
-on margin using Hyper SBI 2 -->
+<!-- Python script that assists in discretionary day trading of stocks on
+margin using Hyper SBI 2 -->
 
-<!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui
-pynput pyttsx3 -->
+<!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui pynput
+pyttsx3 -->
 
-A `trading_assistant.py` Python script assists in discretionary day
-trading of stocks on margin using [Hyper SBI
-2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining
-an action consisting of a sequence of commands, this script:
+A `trading_assistant.py` Python script assists in discretionary day trading of
+stocks on margin using [Hyper SBI
+2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining an
+action consisting of a sequence of commands, this script:
 
   * shows required windows
-  * calculates the maximum share size for a market order on margin
-    trading
+  * calculates the maximum share size for a market order on margin trading
   * manipulates widgets to prepare your order
   * also schedules these actions
 
-> **Warning** This script is currently under heavy development.
-> Changes in functionality can occur at any time.
+> **Warning** This script is currently under heavy development.  Changes in
+> functionality can occur at any time.
 
 ## Prerequisites ##
 
 This script has been tested in [Python for
-Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2
-and uses the following packages:
+Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 and uses
+the following packages:
 
-  * [pandas](https://pandas.pydata.org/) to save customer margin
-    ratios and the previous market data from websites
-  * [pywin32](https://github.com/mhammond/pywin32) to access the
-    Windows APIs
+  * [pandas](https://pandas.pydata.org/) to save customer margin ratios and the
+    previous market data from websites
+  * [pywin32](https://github.com/mhammond/pywin32) to access the Windows APIs
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
-    [Tesseract](https://tesseract-ocr.github.io/) to recognize prices
-    on Hyper SBI 2
-  * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html)
-    to automate interactions with Hyper SBI 2
-  * [pynput](https://github.com/moses-palmer/pynput) to monitor
-    keyboard input
-  * (optional) [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to
-    speak seconds until an event and a configuration
+    [Tesseract](https://tesseract-ocr.github.io/) to recognize prices on Hyper
+    SBI 2
+  * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html) to
+    automate interactions with Hyper SBI 2
+  * [pynput](https://github.com/moses-palmer/pynput) to monitor keyboard input
+  * (optional) [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak
+    seconds until an event and a configuration
 
 Install each package as needed.  For example:
 
@@ -55,14 +52,14 @@ pip install pynput
 
 ### Create Startup Script ###
 
-To calculate a maximum share size, save customer margin ratios from
-[*Stocks Subject to Margin
+To calculate a maximum share size, save customer margin ratios from [*Stocks
+Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and the previous market data from [*Most Active Stocks
-Today*](https://kabutan.jp/warning/?mode=2_9&market=1) beforehand.
-The following option creates a
-`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1`
-startup script that processes them and starts Hyper SBI 2.
+Today*](https://kabutan.jp/warning/?mode=2_9&market=1) beforehand.  The
+following option creates a
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1` startup
+script that processes them and starts Hyper SBI 2.
 
 ``` powershell
 py trading_assistant.py -I
@@ -70,11 +67,11 @@ py trading_assistant.py -I
 
 ### Configure Cash Balance and Price Limit Regions ###
 
-Configure the cash balance and (optional) price limit regions on Hyper
-SBI 2 so that Tesseract recognizes these prices.  This script only
-references a price limit if the previous closing price does not exist
-in the market data above.  Because a region may have more than one
-price, specify the index of the price you are referring to.  A
+Configure the cash balance and (optional) price limit regions on Hyper SBI 2 so
+that Tesseract recognizes these prices.  This script only references a price
+limit if the previous closing price does not exist in the market data above.
+Because a region may have more than one price, specify the index of the price
+you are referring to.  A
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
 configuration file saves these configurations.
 
@@ -91,9 +88,9 @@ Create or modify an action for processing by this script.
 py trading_assistant.py -M [ACTION]
 ```
 
-An action is a list of sequential tuples, and each tuple consists of a
-command and its arguments.  The configuration file saves these
-actions.  Possible commands are:
+An action is a list of sequential tuples, and each tuple consists of a command
+and its arguments.  The configuration file saves these actions.  Possible
+commands are:
 
 ``` python
 [Actions]
@@ -130,7 +127,11 @@ ACTION = [
     ('wait_for_window', 'TITLE_REGEX'), # wait for a window.
     ('write_share_size',),           # write the calculated share size.
 
-    # Optional Command
+    # Boolean Command
+    # execute an ACTION if writing a file is a BOOL value.
+    ('writing_file', BOOL, ACTION),
+
+    # Optional commands
     ('speak_config', 'SECTION, KEY'), # speak a configuration.
     # speak seconds until an event.
     ('speak_seconds_until_event', 'EVENT_TIME')]
@@ -146,7 +147,7 @@ py trading_assistant.py -e [ACTION]
 
 ### Schedule Actions ###
 
-You can schedule the actions above as the following configurations:
+You can also schedule the actions above as the following configurations:
 
 ``` python
 [Schedules]
@@ -162,18 +163,16 @@ py trading_assistant.py -s
 
 ### Options ###
 
-  * `-p`: set a process name (this requires its configurations;
-    default: `HYPERSBI2`)
+  * `-p`: set a process name (this requires its configurations; default:
+    `HYPERSBI2`)
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
   * `-s`: run the scheduler
-  * `-M [ACTION]`: create or modify an action and create a shortcut to
-    it
+  * `-M [ACTION]`: create or modify an action and create a shortcut to it
   * `-e [ACTION]`: execute an action
-  * `-T [SCRIPT_BASE | ACTION]`: delete a startup script or an action
-    and a shortcut to it
-  * `-I`: create or modify a startup script and create a shortcut to
-    it
+  * `-T [SCRIPT_BASE | ACTION]`: delete a startup script or an action and a
+    shortcut to it
+  * `-I`: create or modify a startup script and create a shortcut to it
   * `-B`: set an arbitrary cash balance
   * `-C`: set the cash balance region and the index of the price
   * `-L`: set the price limit region and the index of the price
@@ -182,12 +181,11 @@ py trading_assistant.py -s
 
 ### Show or Hide Watchlists Window on Middle Click ###
 
-The following `show_hide_watchlists_on_click` action shows or hides
-the Watchlists window on the middle click while Hyper SBI 2 is
-running.
+The following `show_hide_watchlists_on_click` action shows or hides the
+Watchlists window on the middle click while Hyper SBI 2 is running.
 
-> **Note** This example contains no coordinates or images and can be
-> tested immediately in many environments.
+> **Note** This example contains no coordinates or images and can be tested
+> immediately in many environments.
 
 ``` python
 show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
@@ -195,12 +193,12 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 
 ### Login ###
 
-The following `login` action waits for the Login window to show and
-clicks its button.
+The following `login` action waits for the Login window to show and clicks its
+button.
 
-> **Note** These examples underwent in an environment with 1080p, a
-> maximized Watchlists window, a left-snapped Summary window, and a
-> right-snapped Chart window.
+> **Note** These examples underwent in an environment with 1080p, a maximized
+> Watchlists window, a left-snapped Summary window, and a right-snapped Chart
+> window.
 
 ``` python
 login = [
@@ -219,11 +217,9 @@ login = [
 ### Replace Watchlist with Market Data on Website ###
 
 The following `watch_active_stocks` action replaces the stocks in the
-Watchlists window with new ones scraped from the current market data
-above.
+Watchlists window with new ones scraped from the current market data above.
 
-> **Note** The free market data provided by Kabutan has a 20-minute
-> delay.
+> **Note** The free market data provided by Kabutan has a 20-minute delay.
 
 ``` python
 watch_active_stocks = [
@@ -259,12 +255,11 @@ watch_active_stocks = [
 
 ### Replace Watchlist with Hyper SBI 2 Ranking ###
 
-The following `watch_tick_count` action replaces the stocks in the
-Watchlists window with new ones recognized in the Rankings window.
+The following `watch_tick_count` action replaces the stocks in the Watchlists
+window with new ones recognized in the Rankings window.
 
-> **Note** Hyper SBI updates the Rankings window in real-time, but the
-> text recognition by Tesseract is not as accurate as the scraped
-> market data above.
+> **Note** Hyper SBI updates the Rankings window in real-time, but the text
+> recognition by Tesseract is not as accurate as the scraped market data above.
 
 ``` python
 watch_tick_count = [
@@ -307,9 +302,9 @@ watch_tick_count = [
 
 ### Open and Close Long Position ###
 
-The following `open_close_long_position` action shows the required
-windows and waits for a buy order with the maximum share size.  If you
-place the order, it prepares a sell order for repayment.
+The following `open_close_long_position` action shows the required windows and
+waits for a buy order with the maximum share size.  If you place the order, it
+prepares a sell order for repayment.
 
 ``` python
 open_close_long_position = [
@@ -372,5 +367,5 @@ open_close_long_position = [
 
 ## Link ##
 
-  * [*Python Scripting to Assist in Day Trading on Margin Using Hyper
-    SBI 2*](): a blog post for more details
+  * [*Python Scripting to Assist in Day Trading on Margin Using Hyper SBI
+    2*](): a blog post for more details

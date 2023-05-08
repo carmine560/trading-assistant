@@ -187,3 +187,12 @@ def get_program_group(program_group_base=None):
     program_group = os.path.join(shell.SpecialFolders('Programs'),
                                  program_group_base)
     return program_group
+
+def writing_file(target_path):
+    import time
+
+    if os.path.exists(target_path) \
+       and time.time() - os.path.getmtime(target_path) < 1:
+        return True
+    else:
+        return False

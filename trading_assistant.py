@@ -123,7 +123,8 @@ def main():
     if args.e == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
     elif args.e:
-        execute_action(trade, config, gui_callbacks, args.e)
+        execute_action(trade, config, gui_callbacks,
+                       ast.literal_eval(config['Actions'][args.e]))
     if args.T == 'LIST_ACTIONS':
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
@@ -176,7 +177,11 @@ def configure(trade):
         'market_directory': trade.market_directory,
         'config_directory': trade.config_directory,
         'screenshot_directory':
-        os.path.join(os.path.expanduser('~'), 'Downloads')}
+        os.path.join(os.path.expanduser('~'), 'Pictures'),
+        'screencast_directory':
+        os.path.join(os.path.expanduser('~'), r'Videos\Desktop'),
+        'screencast_pattern':
+        r'Desktop \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d{2}\.mp4'}
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'market_holidays':
@@ -239,15 +244,19 @@ def configure(trade):
         [('show_hide_window_on_click', '登録銘柄')],
         'speak_seconds_until_open':
         [('speak_seconds_until_event', '${Market Data:opening_time}')],
-        'toggle_manual_recording': [('press_hotkeys', 'alt, f9')]}
+        # TODO
+        'start_manual_recording':
+        [('writing_file', 'False', [('press_hotkeys', 'alt, f9')])],
+        'stop_manual_recording':
+        [('writing_file', 'True', [('press_hotkeys', 'alt, f9')])]}
     config['Schedules'] = {
         # TODO
-        'start_manual_recording': ('08:50:00', 'toggle_manual_recording'),
+        'start_new_manual_recording': ('08:50:00', 'start_manual_recording'),
         'speak_60_seconds_until_open':
         ('08:59:00', 'speak_seconds_until_open'),
         'speak_30_seconds_until_open':
         ('08:59:30', 'speak_seconds_until_open'),
-        'stop_manual_recording': ('10:00:00', 'toggle_manual_recording')}
+        'stop_current_manual_recording': ('10:00:00', 'stop_manual_recording')}
     config['Variables'] = {
         'current_date': str(date.today()),
         'current_number_of_trades': '0'}
@@ -461,7 +470,8 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
         if schedule_time > time.time():
             schedule = scheduler.enterabs(
                 schedule_time, 1, execute_action,
-                argument=(trade, config, gui_callbacks, action))
+                argument=(trade, config, gui_callbacks,
+                          ast.literal_eval(config['Actions'][action])))
             schedules.append(schedule)
 
     while scheduler.queue:
@@ -475,11 +485,11 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
                 scheduler.cancel(schedule)
 
 def execute_action(trade, config, gui_callbacks, action):
-    commands = ast.literal_eval(config['Actions'][action])
-    for i in range(len(commands)):
-        command = commands[i][0]
-        if len(commands[i]) == 2:
-            arguments = commands[i][1]
+    for index in range(len(action)):
+        command = action[index][0]
+        if len(action[index]) >= 2:
+            arguments = action[index][1]
+
         if command == 'back_to':
             pyautogui.moveTo(trade.previous_position)
         elif command == 'beep':
@@ -560,31 +570,6 @@ def execute_action(trade, config, gui_callbacks, action):
             win32gui.EnumWindows(gui_interactions.show_hide_window, arguments)
         elif command == 'show_window':
             win32gui.EnumWindows(gui_interactions.show_window, arguments)
-        elif command == 'speak_config':
-            import pyttsx3
-
-            engine = pyttsx3.init()
-            voices = engine.getProperty('voices')
-            engine.setProperty('voice', voices[1].id)
-
-            arguments = list(map(str.strip, arguments.split(',')))
-            engine.say(config[arguments[0]][arguments[1]])
-            engine.runAndWait()
-        elif command == 'speak_seconds_until_event':
-            import math
-
-            import pyttsx3
-
-            event_time = time.strptime(time.strftime('%Y-%m-%d ') + arguments,
-                                       '%Y-%m-%d %H:%M:%S')
-            event_time = time.mktime(event_time)
-
-            engine = pyttsx3.init()
-            voices = engine.getProperty('voices')
-            engine.setProperty('voice', voices[1].id)
-
-            engine.say(str(math.ceil(event_time - time.time())) + ' seconds')
-            engine.runAndWait()
         elif command == 'take_screenshot':
             from PIL import ImageGrab
 
@@ -614,6 +599,50 @@ def execute_action(trade, config, gui_callbacks, action):
             gui_interactions.wait_for_window(gui_callbacks, arguments)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
+
+        # Boolean Command
+        elif command == 'writing_file':
+            section = config['General']
+            screencast_directory = section['screencast_directory']
+            screencast_pattern = section['screencast_pattern']
+            files = [f for f in os.listdir(screencast_directory)
+                           if re.fullmatch(screencast_pattern, f)]
+            latest = os.path.join(screencast_directory, files[-1])
+            if file_utilities.writing_file(latest) \
+               == ast.literal_eval(arguments) and len(action[index]) == 3:
+                execute_action(trade, config, gui_callbacks, action[index][2])
+
+        # Optional commands
+        elif command == 'speak_config':
+            import pyttsx3
+
+            engine = pyttsx3.init()
+            voices = engine.getProperty('voices')
+            engine.setProperty('voice', voices[1].id)
+
+            arguments = list(map(str.strip, arguments.split(',')))
+            engine.say(config[arguments[0]][arguments[1]])
+            engine.runAndWait()
+        elif command == 'speak_seconds_until_event':
+            import math
+
+            import pyttsx3
+
+            event_time = time.strptime(time.strftime('%Y-%m-%d ') + arguments,
+                                       '%Y-%m-%d %H:%M:%S')
+            event_time = time.mktime(event_time)
+
+            # TODO
+            engine = pyttsx3.init()
+            voices = engine.getProperty('voices')
+            engine.setProperty('voice', voices[1].id)
+
+            engine.say(str(math.ceil(event_time - time.time())) + ' seconds')
+            engine.runAndWait()
+
+        else:
+            print(command + ' is not a recognized command')
+            sys.exit(1)
 
 def create_startup_script(trade, config):
     section = config['Startup Script']
