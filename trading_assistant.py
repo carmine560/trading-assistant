@@ -37,6 +37,8 @@ class Trade:
         self.symbol = ''
         self.share_size = 0
 
+        self.engine = None
+
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
@@ -462,17 +464,28 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
     schedules = []
 
     section = config['Schedules']
+    speak = False
     for option in section:
         schedule_time, action = ast.literal_eval(section[option])
         schedule_time = time.strptime(time.strftime('%Y-%m-%d ')
                                       + schedule_time, '%Y-%m-%d %H:%M:%S')
         schedule_time = time.mktime(schedule_time)
         if schedule_time > time.time():
+            if action in ['speak_seconds_until_open']:
+                speak = True
+
             schedule = scheduler.enterabs(
                 schedule_time, 1, execute_action,
                 argument=(trade, config, gui_callbacks,
                           ast.literal_eval(config['Actions'][action])))
             schedules.append(schedule)
+
+    if speak:
+        import pyttsx3
+
+        trade.engine = pyttsx3.init()
+        voices = trade.engine.getProperty('voices')
+        trade.engine.setProperty('voice', voices[1].id)
 
     while scheduler.queue:
         output = subprocess.check_output(['tasklist', '/fi',
@@ -626,19 +639,19 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'speak_seconds_until_event':
             import math
 
-            import pyttsx3
+            if not trade.engine:
+                import pyttsx3
+
+                trade.engine = pyttsx3.init()
+                voices = trade.engine.getProperty('voices')
+                trade.engine.setProperty('voice', voices[1].id)
 
             event_time = time.strptime(time.strftime('%Y-%m-%d ') + arguments,
                                        '%Y-%m-%d %H:%M:%S')
             event_time = time.mktime(event_time)
-
-            # TODO
-            engine = pyttsx3.init()
-            voices = engine.getProperty('voices')
-            engine.setProperty('voice', voices[1].id)
-
-            engine.say(str(math.ceil(event_time - time.time())) + ' seconds')
-            engine.runAndWait()
+            trade.engine.say(str(math.ceil(event_time - time.time()))
+                             + ' seconds')
+            trade.engine.runAndWait()
 
         else:
             print(command + ' is not a recognized command')
