@@ -131,7 +131,7 @@ ACTION = [
     # execute an ACTION if writing a file is a BOOL value.
     ('writing_file', 'BOOL', ACTION),
 
-    # Optional commands
+    # Optional Commands
     ('speak_config', 'SECTION, KEY'), # speak a configuration.
     # speak seconds until an event.
     ('speak_seconds_until_event', 'EVENT_TIME')]
