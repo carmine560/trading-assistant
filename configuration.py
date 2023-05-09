@@ -1,3 +1,4 @@
+import ast
 import os
 import sys
 
@@ -38,7 +39,7 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
 
         if answer == 'modify':
             if re.sub('\s+', '', config[section][option])[0:2] == '[(':
-                modify_tuples(config, section, option, config_file)
+                modify_tuple_option(config, section, option, config_file)
             else:
                 value = config[section][option]
                 value = input(value_prompt + ': ').strip() or value
@@ -55,78 +56,22 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
             config.write(f)
             return True
 
-# TODO
-def modify_tuples(config, section, option, config_file, key_prompt='key',
-                  value_prompt='value', end_of_list_prompt='end of list',
-                  positioning_keys=[]):
-    import ast
-
-    create = False
+def modify_tuple_option(config, section, option, config_file, key_prompt='key',
+                        value_prompt='value', end_of_list_prompt='end of list',
+                        boolean_keys=[], positioning_keys=[]):
+    created = False
     if not config.has_section(section):
         config[section] = {}
     if not config.has_option(section, option):
-        create = True
+        created = True
         config[section][option] = '[]'
 
-    i = 0
-    tuples = ast.literal_eval(config[section][option])
-    global ANSI_DEFAULT
-    global ANSI_ANNOTATION
-    global ANSI_RESET
-    if sys.platform == 'win32':
-        os.system('color')
-    while i <= len(tuples):
-        if create:
-            answer = tidy_answer(['insert', 'quit'])
-        else:
-            if i < len(tuples):
-                print(ANSI_DEFAULT + str(tuples[i]) + ANSI_RESET)
-                answer = tidy_answer(['insert', 'modify', 'empty', 'delete',
-                                      'quit'])
-            else:
-                print(ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
-                answer = tidy_answer(['insert', 'quit'])
-
-        if answer == 'insert':
-            key = input(key_prompt + ': ').strip()
-            if any(k == key for k in positioning_keys):
-                value = configure_position(answer)
-            else:
-                value = input(value_prompt + ': ').strip()
-            if value:
-                tuples.insert(i, (key, value))
-            else:
-                tuples.insert(i, (key,))
-        elif answer == 'modify':
-            key = tuples[i][0]
-            if len(tuples[i]) == 2:
-                value = tuples[i][1]
-            elif len(tuples[i]) == 1:
-                value = ''
-
-            key = input(key_prompt + ' ' + ANSI_DEFAULT + key + ANSI_RESET
-                        + ': ').strip() or key
-            if any(k == key for k in positioning_keys):
-                value = configure_position(answer, value)
-            elif len(tuples[i]) == 2:
-                value = input(value_prompt + ' ' + ANSI_DEFAULT + value
-                              + ANSI_RESET + ': ').strip() or value
-            else:
-                value = input(value_prompt + ': ').strip()
-            if value:
-                tuples[i] = (key, value)
-            else:
-                tuples[i] = (key,)
-        elif answer == 'empty':
-            tuples[i] = (tuples[i][0],)
-        elif answer == 'delete':
-            del tuples[i]
-            i -= 1
-        elif answer == 'quit':
-            i = len(tuples)
-
-        i += 1
-
+    tuples = modify_tuples(ast.literal_eval(config[section][option]),
+                           created, key_prompt=key_prompt,
+                           value_prompt=value_prompt,
+                           end_of_list_prompt=end_of_list_prompt,
+                           boolean_keys=boolean_keys,
+                           positioning_keys=positioning_keys)
     if tuples:
         config[section][option] = str(tuples)
         check_config_directory(config_file)
@@ -137,7 +82,7 @@ def modify_tuples(config, section, option, config_file, key_prompt='key',
         delete_option(config, section, option, config_file)
         return False
 
-def tidy_answer(answers):
+def tidy_answer(answers, level=0):
     initialism = ''
 
     previous_initialism = ''
@@ -163,7 +108,7 @@ def tidy_answer(answers):
             else:
                 prompt = prompt + '/' + highlighted_word
 
-    answer = input(prompt).strip().lower()
+    answer = input('    ' * level + prompt).strip().lower()
     if answer:
         if not answer[0] in initialism:
             answer = ''
@@ -172,6 +117,105 @@ def tidy_answer(answers):
                 if initialism[index] == answer[0]:
                     answer = answers[index]
     return answer
+
+def modify_tuples(tuples, created, level=0, key_prompt='key',
+                  value_prompt='value', end_of_list_prompt='end of list',
+                  boolean_keys=[], positioning_keys=[]):
+    global ANSI_DEFAULT
+    global ANSI_ANNOTATION
+    global ANSI_RESET
+    if sys.platform == 'win32':
+        os.system('color')
+
+    index = 0
+    while index <= len(tuples):
+        if created:
+            print('    ' * level
+                  + ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
+            answer = tidy_answer(['insert', 'quit'], level=level)
+        else:
+            if index < len(tuples):
+                print('    ' * level
+                      + ANSI_DEFAULT + str(tuples[index]) + ANSI_RESET)
+                answer = tidy_answer(['insert', 'modify', 'empty', 'delete',
+                                      'quit'], level=level)
+            else:
+                print('    ' * level
+                      + ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
+                answer = tidy_answer(['insert', 'quit'], level=level)
+
+        if answer == 'insert':
+            key = input('    ' * level + key_prompt + ': ').strip()
+            if any(k == key for k in boolean_keys):
+                value = input('    ' * level + value_prompt + ': ').strip()
+                level += 1
+                nested_tuples = modify_tuples(
+                    [], True, level=level, key_prompt=key_prompt,
+                    value_prompt=value_prompt,
+                    end_of_list_prompt=end_of_list_prompt,
+                    boolean_keys=boolean_keys,
+                    positioning_keys=positioning_keys)
+                level -= 1
+                tuples.insert(index, (key, value, nested_tuples))
+            elif any(k == key for k in positioning_keys):
+                value = configure_position(answer)
+                tuples.insert(index, (key, value))
+            else:
+                value = input('    ' * level + value_prompt + ': ').strip()
+                if value:
+                    tuples.insert(index, (key, value))
+                else:
+                    tuples.insert(index, (key,))
+        elif answer == 'modify':
+            key = tuples[index][0]
+            if len(tuples[index]) == 3:
+                value = tuples[index][1]
+                nested_tuples = tuples[index][2]
+            elif len(tuples[index]) == 2:
+                value = tuples[index][1]
+            elif len(tuples[index]) == 1:
+                value = ''
+
+            key = input('    ' * level + key_prompt + ' '
+                        + ANSI_DEFAULT + key + ANSI_RESET
+                        + ': ').strip() or key
+            if any(k == key for k in boolean_keys):
+                value = input('    ' * level + value_prompt + ' '
+                              + ANSI_DEFAULT + value + ANSI_RESET
+                              + ': ').strip() or value
+                level += 1
+                nested_tuples = modify_tuples(
+                    nested_tuples, created, level=level, key_prompt=key_prompt,
+                    value_prompt=value_prompt,
+                    end_of_list_prompt=end_of_list_prompt,
+                    boolean_keys=boolean_keys,
+                    positioning_keys=positioning_keys)
+                level -= 1
+                tuples[index] = (key, value, nested_tuples)
+            elif any(k == key for k in positioning_keys):
+                value = configure_position(answer, value)
+                tuples[index] = (key, value)
+            elif len(tuples[index]) == 2:
+                value = input('    ' * level + value_prompt + ' '
+                              + ANSI_DEFAULT + value + ANSI_RESET
+                              + ': ').strip() or value
+            else:
+                value = input('    ' * level + value_prompt + ': ').strip()
+                if value:
+                    tuples[index] = (key, value)
+                else:
+                    tuples[index] = (key,)
+        elif answer == 'empty':
+            tuples[index] = (tuples[index][0],)
+        elif answer == 'delete':
+            del tuples[index]
+            index -= 1
+        elif answer == 'quit':
+            index = len(tuples)
+
+        index += 1
+
+    return tuples
 
 def configure_position(answer, value=''):
     import time

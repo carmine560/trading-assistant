@@ -107,11 +107,12 @@ def main():
         configuration.list_section(config, 'Actions')
     elif args.M:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        if configuration.modify_tuples(config, 'Actions', args.M,
-                                       trade.config_file, key_prompt='command',
-                                       value_prompt='arguments',
-                                       end_of_list_prompt='end of commands',
-                                       positioning_keys=['click', 'move_to']):
+        if configuration.modify_tuple_option(
+                config, 'Actions', args.M, trade.config_file,
+                key_prompt='command', value_prompt='arguments',
+                end_of_list_prompt='end of commands',
+                boolean_keys=['writing_file'],
+                positioning_keys=['click', 'move_to']):
             # To pin the shortcut to the Taskbar, specify an
             # executable file as the argument target_path.
             file_utilities.create_shortcut(
