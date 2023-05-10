@@ -102,7 +102,7 @@ ACTION = [
     ('click', 'X, Y'),               # click.
     # locate a widget image in a region and click on it, assuming that it is in
     # the same directory as the configuration file.
-    ('click_widget', 'IMAGE, X, Y, WIDTH, HEIGHT'),
+    ('click_widget', 'IMAGE', 'X, Y, WIDTH, HEIGHT'),
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     # recognize a numeric column and copy symbols to the clipboard.
@@ -203,7 +203,7 @@ button.
 ``` python
 login = [
     # locate the Login button in the region, and click it.
-    ('click_widget', 'login.png, 759, 320, 402, 381'),
+    ('click_widget', 'login.png', '759, 320, 402, 381'),
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.

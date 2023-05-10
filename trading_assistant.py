@@ -110,7 +110,7 @@ def main():
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         if configuration.modify_tuple_option(
                 config, 'Actions', args.M, trade.config_file,
-                key_prompt='command', value_prompt='arguments',
+                key_prompt='command', value_prompt='argument',
                 end_of_list_prompt='end of commands',
                 boolean_keys=['writing_file'],
                 positioning_keys=['click', 'move_to']):
@@ -497,37 +497,38 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
 def execute_action(trade, config, gui_callbacks, action):
     for index in range(len(action)):
         command = action[index][0]
-        if len(action[index]) >= 2:
-            arguments = action[index][1]
+        if len(action[index]) > 1:
+            argument = action[index][1]
+        if len(action[index]) > 2:
+            additional_argument = action[index][2]
 
         if command == 'back_to':
             pyautogui.moveTo(trade.previous_position)
         elif command == 'beep':
             import winsound
 
-            winsound.Beep(*ast.literal_eval(arguments))
+            winsound.Beep(*ast.literal_eval(argument))
         elif command == 'calculate_share_size':
-            calculate_share_size(trade, config, arguments)
+            calculate_share_size(trade, config, argument)
         elif command == 'click':
-            coordinates = ast.literal_eval(arguments)
+            coordinates = ast.literal_eval(argument)
             if gui_callbacks.swapped:
                 pyautogui.rightClick(coordinates)
             else:
                 pyautogui.click(coordinates)
         elif command == 'click_widget':
-            arguments = arguments.split(',')
             image = os.path.join(config['General']['config_directory'],
-                                 ','.join(arguments[:-4]))
-            region = arguments[-4:len(arguments)]
+                                 argument)
+            region = ast.literal_eval(additional_argument)
             gui_interactions.click_widget(gui_callbacks, image, *region)
         elif command == 'copy_symbols_from_market_data':
             save_market_data(config, clipboard=True)
         elif command == 'copy_symbols_from_numeric_column':
             import win32clipboard
 
-            arguments = list(map(int, arguments.split(',')))
+            argument = ast.literal_eval(argument)
             split_string = recognize_text(config[trade.process_name],
-                                          *arguments, None,
+                                          *argument, None,
                                           text_type='numeric_column')
 
             win32clipboard.OpenClipboard()
@@ -549,22 +550,22 @@ def execute_action(trade, config, gui_callbacks, action):
             with open(trade.config_file, 'w', encoding='utf-8') as f:
                 config.write(f)
         elif command == 'get_symbol':
-            win32gui.EnumWindows(trade.get_symbol, arguments)
+            win32gui.EnumWindows(trade.get_symbol, argument)
         elif command == 'hide_parent_window':
             win32gui.EnumWindows(gui_interactions.hide_parent_window,
-                                 arguments)
+                                 argument)
         elif command == 'hide_window':
-            win32gui.EnumWindows(gui_interactions.hide_window, arguments)
+            win32gui.EnumWindows(gui_interactions.hide_window, argument)
         elif command == 'move_to':
-            pyautogui.moveTo(ast.literal_eval(arguments))
+            pyautogui.moveTo(ast.literal_eval(argument))
         elif command == 'press_hotkeys':
-            keys = list(map(str.strip, arguments.split(',')))
+            keys = tuple(map(str.strip, argument.split(',')))
             pyautogui.hotkey(*keys)
         elif command == 'press_key':
-            arguments = list(map(str.strip, arguments.split(',')))
-            key = arguments[0]
-            if len(arguments) >= 2:
-                presses = int(arguments[1])
+            argument = tuple(map(str.strip, argument.split(',')))
+            key = argument[0]
+            if len(argument) > 1:
+                presses = int(argument[1])
             else:
                 presses = 1
 
@@ -573,11 +574,11 @@ def execute_action(trade, config, gui_callbacks, action):
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
             gui_interactions.show_hide_window_on_click(
-                gui_callbacks, trade.process_name + '.exe', arguments)
+                gui_callbacks, trade.process_name + '.exe', argument)
         elif command == 'show_hide_window':
-            win32gui.EnumWindows(gui_interactions.show_hide_window, arguments)
+            win32gui.EnumWindows(gui_interactions.show_hide_window, argument)
         elif command == 'show_window':
-            win32gui.EnumWindows(gui_interactions.show_window, arguments)
+            win32gui.EnumWindows(gui_interactions.show_window, argument)
         elif command == 'take_screenshot':
             from PIL import ImageGrab
 
@@ -596,15 +597,15 @@ def execute_action(trade, config, gui_callbacks, action):
             image.save(os.path.join(config['General']['screenshot_directory'],
                                     base))
         elif command == 'wait_for_key':
-            if not gui_interactions.wait_for_key(gui_callbacks, arguments):
+            if not gui_interactions.wait_for_key(gui_callbacks, argument):
                 return
         elif command == 'wait_for_period':
-            time.sleep(float(arguments))
+            time.sleep(float(argument))
         elif command == 'wait_for_prices':
-            arguments = list(map(int, arguments.split(',')))
-            recognize_text(config[trade.process_name], *arguments)
+            argument = ast.literal_eval(argument)
+            recognize_text(config[trade.process_name], *argument)
         elif command == 'wait_for_window':
-            gui_interactions.wait_for_window(gui_callbacks, arguments)
+            gui_interactions.wait_for_window(gui_callbacks, argument)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
 
@@ -617,22 +618,24 @@ def execute_action(trade, config, gui_callbacks, action):
                            if re.fullmatch(screencast_pattern, f)]
             latest = os.path.join(screencast_directory, files[-1])
             if file_utilities.writing_file(latest) \
-               == ast.literal_eval(arguments) and len(action[index]) == 3:
-                execute_action(trade, config, gui_callbacks, action[index][2])
+               == ast.literal_eval(argument):
+                execute_action(trade, config, gui_callbacks,
+                               additional_argument)
 
         # Optional Commands
         elif command == 'speak_config':
             initialize_speech_engine(trade)
 
-            arguments = list(map(str.strip, arguments.split(',')))
-            trade.speech_engine.say(config[arguments[0]][arguments[1]])
+            # TODO
+            argument = list(map(str.strip, argument.split(',')))
+            trade.speech_engine.say(config[argument[0]][argument[1]])
             trade.speech_engine.runAndWait()
         elif command == 'speak_seconds_until_event':
             import math
 
             initialize_speech_engine(trade)
 
-            event_time = time.strptime(time.strftime('%Y-%m-%d ') + arguments,
+            event_time = time.strptime(time.strftime('%Y-%m-%d ') + argument,
                                        '%Y-%m-%d %H:%M:%S')
             event_time = time.mktime(event_time)
             trade.speech_engine.say(str(math.ceil(event_time - time.time()))
