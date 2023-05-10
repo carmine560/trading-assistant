@@ -87,10 +87,11 @@ def main():
     trade = Trade(args.p)
     config = configure(trade)
     if not config.has_section(trade.process_name):
-        print('section', trade.process_name, 'does not exist')
+        print(trade.process_name, 'section does not exist')
         sys.exit(1)
 
-    gui_callbacks = gui_interactions.GuiCallbacks()
+    gui_callbacks = gui_interactions.GuiCallbacks(
+        ast.literal_eval(config[trade.process_name]['interactive_windows']))
 
     if args.r:
         save_customer_margin_ratios(trade, config)
@@ -220,20 +221,21 @@ def configure(trade):
                      'customer_margin_ratios.csv'),
         'executable': '',
         'title': 'Hyper SBI 2 Assistant',
-        'clickable_windows': ('お知らせ',                    # Announcements
-                              '個別銘柄\s.*\((\d{4})\)',     # Summary
-                              '登録銘柄',                    # Watchlists
-                              '保有証券',                    # Holdings
-                              '注文一覧',                    # Order Status
-                              '個別チャート\s.*\((\d{4})\)', # Chart
-                              'マーケット',                  # Markets
-                              'ランキング',                  # Rankings
-                              '銘柄一覧',                    # Stock Lists
-                              '口座情報',                    # Account
-                              'ニュース',                    # News
-                              '取引ポップアップ',            # Trading
-                              '通知設定',                    # Notifications
-                              '全板\s.*\((\d{4})\)'),        # Full Order Book
+        'interactive_windows': (
+            'お知らせ',                    # Announcements
+            '個別銘柄\s.*\((\d{4})\)',     # Summary
+            '登録銘柄',                    # Watchlists
+            '保有証券',                    # Holdings
+            '注文一覧',                    # Order Status
+            '個別チャート\s.*\((\d{4})\)', # Chart
+            'マーケット',                  # Markets
+            'ランキング',                  # Rankings
+            '銘柄一覧',                    # Stock Lists
+            '口座情報',                    # Account
+            'ニュース',                    # News
+            '取引ポップアップ',            # Trading
+            '通知設定',                    # Notifications
+            '全板\s.*\((\d{4})\)'),        # Full Order Book
         'fixed_cash_balance': '0',
         'cash_balance_region': '0, 0, 0, 0, 0',
         'utilization_ratio': '1.0',
@@ -570,8 +572,6 @@ def execute_action(trade, config, gui_callbacks, action):
             if key == 'tab':
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
-            gui_callbacks.clickable_windows = ast.literal_eval(
-                config[trade.process_name]['clickable_windows'])
             gui_interactions.show_hide_window_on_click(
                 gui_callbacks, trade.process_name + '.exe', arguments)
         elif command == 'show_hide_window':

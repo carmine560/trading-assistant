@@ -11,12 +11,12 @@ import win32api
 import win32gui
 
 class GuiCallbacks:
-    def __init__(self):
+    def __init__(self, interactive_windows):
+        self.interactive_windows = interactive_windows
         self.swapped = win32api.GetSystemMetrics(23)
         self.moved_focus = 0
 
         # enumerate_windows_on_click
-        self.clickable_windows = ()
         self.callback = None
         self.extra = ''
 
@@ -28,23 +28,29 @@ class GuiCallbacks:
         self.exist = []
 
     def enumerate_windows_on_click(self, x, y, button, pressed):
-        if button == mouse.Button.middle:
-            if not pressed:
-                current_window = \
-                    win32gui.GetWindowText(win32gui.GetForegroundWindow())
-                for title_regex in self.clickable_windows:
-                    if re.fullmatch(title_regex, current_window):
-                        win32gui.EnumWindows(self.callback, self.extra)
+        if button == mouse.Button.middle and not pressed:
+            if self.is_interactive_window():
+                win32gui.EnumWindows(self.callback, self.extra)
 
     def compare_keys_on_release(self, key):
         if hasattr(key, 'char') and key.char == self.key:
-            self.released = True
-            return False
+            if self.is_interactive_window():
+                self.released = True
+                return False
         elif key == self.key:
-            self.released = True
-            return False
+            if self.is_interactive_window():
+                self.released = True
+                return False
         elif key == keyboard.Key.esc:
-            return False
+            if self.is_interactive_window():
+                return False
+
+    def is_interactive_window(self):
+        foreground_window = \
+            win32gui.GetWindowText(win32gui.GetForegroundWindow())
+        for title_regex in self.interactive_windows:
+            if re.fullmatch(title_regex, foreground_window):
+                return True
 
     def check_for_window(self, hwnd, title_regex):
         if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):

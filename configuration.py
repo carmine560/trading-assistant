@@ -27,6 +27,7 @@ def modify_section(config, section, config_file):
             if not modify_option(config, section, option, config_file):
                 break
 
+# TODO
 def modify_option(config, section, option, config_file, value_prompt='value'):
     import re
 
