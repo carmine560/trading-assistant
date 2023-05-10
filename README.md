@@ -132,7 +132,7 @@ ACTION = [
     ('writing_file', 'BOOL', ACTION),
 
     # Optional Commands
-    ('speak_config', 'SECTION, KEY'), # speak a configuration.
+    ('speak_config', 'SECTION', 'KEY'), # speak a configuration.
     # speak seconds until an event.
     ('speak_seconds_until_event', 'EVENT_TIME')]
 ```

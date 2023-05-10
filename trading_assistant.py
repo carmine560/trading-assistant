@@ -625,16 +625,12 @@ def execute_action(trade, config, gui_callbacks, action):
         # Optional Commands
         elif command == 'speak_config':
             initialize_speech_engine(trade)
-
-            # TODO
-            argument = list(map(str.strip, argument.split(',')))
-            trade.speech_engine.say(config[argument[0]][argument[1]])
+            trade.speech_engine.say(config[argument][additional_argument])
             trade.speech_engine.runAndWait()
         elif command == 'speak_seconds_until_event':
             import math
 
             initialize_speech_engine(trade)
-
             event_time = time.strptime(time.strftime('%Y-%m-%d ') + argument,
                                        '%Y-%m-%d %H:%M:%S')
             event_time = time.mktime(event_time)
@@ -654,36 +650,33 @@ def create_startup_script(trade, config):
 
     if pre_start_options:
         pre_start_options = \
-            list(map(str.strip, section['pre_start_options'].split(',')))
+            tuple(map(str.strip, section['pre_start_options'].split(',')))
     if post_start_options:
         post_start_options = \
-            list(map(str.strip, section['post_start_options'].split(',')))
+            tuple(map(str.strip, section['post_start_options'].split(',')))
     if running_options:
         running_options = \
-            list(map(str.strip, section['running_options'].split(',')))
+            tuple(map(str.strip, section['running_options'].split(',')))
 
     with open(trade.startup_script, 'w') as f:
         lines = []
         lines.append('if (Get-Process "' + trade.process_name
                      + '" -ErrorAction SilentlyContinue)\n{\n')
-        for i in range(len(running_options)):
+        for option in running_options:
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + running_options[i]
-                         + '" -NoNewWindow\n')
+                         + __file__ + '`" ' + option + '" -NoNewWindow\n')
 
         lines.append('}\nelse\n{\n')
-        for i in range(len(pre_start_options)):
+        for option in pre_start_options:
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + pre_start_options[i]
-                         + '" -NoNewWindow\n')
+                         + __file__ + '`" ' + option + '" -NoNewWindow\n')
 
         lines.append('    Start-Process "'
                      + config[trade.process_name]['executable']
                      + '" -NoNewWindow\n')
-        for i in range(len(post_start_options)):
+        for option in post_start_options:
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + post_start_options[i]
-                         + '" -NoNewWindow\n')
+                         + __file__ + '`" ' + option + '" -NoNewWindow\n')
 
         lines.append('}\n')
         f.writelines(lines)
@@ -695,7 +688,7 @@ def calculate_share_size(trade, config, position):
     if fixed_cash_balance > 0:
         trade.cash_balance = fixed_cash_balance
     else:
-        region = list(map(int, section['cash_balance_region'] .split(',')))
+        region = ast.literal_eval(section['cash_balance_region'])
         trade.cash_balance = recognize_text(section, *region)
 
     customer_margin_ratio = 0.31
@@ -851,10 +844,9 @@ def get_price_limit(trade, config):
         else:
             price_limit = closing_price + 10000000
     else:
-        region = list(map(int,
-                          config[trade.process_name]['price_limit_region']
-                          .split(',')))
-        price_limit = recognize_text(config[trade.process_name], *region,
+        section = config[trade.process_name]
+        region = ast.literal_eval(section['price_limit_region'])
+        price_limit = recognize_text(section, *region,
                                      text_type='decimal_numbers')
     return price_limit
 
