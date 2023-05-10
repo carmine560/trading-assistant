@@ -21,14 +21,15 @@ def list_section(config, section):
         for option in config[section]:
             print(option)
 
-def modify_section(config, section, config_file):
+def modify_section(config, section, config_file, boolean_keys=[]):
     if config.has_section(section):
         for option in config[section]:
-            if not modify_option(config, section, option, config_file):
+            if not modify_option(config, section, option, config_file,
+                                 boolean_keys=boolean_keys):
                 break
 
-# TODO
-def modify_option(config, section, option, config_file, value_prompt='value'):
+def modify_option(config, section, option, config_file, value_prompt='value',
+                  boolean_keys=[]):
     import re
 
     global ANSI_DEFAULT
@@ -40,7 +41,8 @@ def modify_option(config, section, option, config_file, value_prompt='value'):
 
         if answer == 'modify':
             if re.sub('\s+', '', config[section][option])[0:2] == '[(':
-                modify_tuple_option(config, section, option, config_file)
+                modify_tuple_option(config, section, option, config_file,
+                                    boolean_keys=boolean_keys)
             else:
                 value = config[section][option]
                 value = input(value_prompt + ': ').strip() or value
