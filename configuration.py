@@ -21,18 +21,14 @@ def list_section(config, section):
         for option in config[section]:
             print(option)
 
-def modify_section(config, section, config_file, boolean_keys=[],
-                   additional_value_keys=[], no_value_keys=[]):
+def modify_section(config, section, config_file, keys={}):
     if config.has_section(section):
         for option in config[section]:
             if not modify_option(config, section, option, config_file,
-                                 boolean_keys=boolean_keys,
-                                 additional_value_keys=additional_value_keys,
-                                 no_value_keys=no_value_keys):
+                                 keys=keys):
                 break
 
-def modify_option(config, section, option, config_file, value_prompt='value',
-                  boolean_keys=[], additional_value_keys=[], no_value_keys=[]):
+def modify_option(config, section, option, config_file, prompts={}, keys={}):
     import re
 
     if config.has_option(section, option):
@@ -42,14 +38,12 @@ def modify_option(config, section, option, config_file, value_prompt='value',
 
         if answer == 'modify':
             if re.sub('\s+', '', config[section][option])[0:2] == '[(':
-                modify_tuple_option(
-                    config, section, option, config_file,
-                    boolean_keys=boolean_keys,
-                    additional_value_keys=additional_value_keys,
-                    no_value_keys=no_value_keys)
+                modify_tuple_option(config, section, option, config_file,
+                                    keys=keys)
             else:
                 config[section][option] = modify_data(
-                    value_prompt, data=config[section][option])
+                    prompts.get('value', 'value'),
+                    data=config[section][option])
         elif answer == 'empty':
             config[section][option] = ''
         elif answer == 'default':
@@ -62,12 +56,8 @@ def modify_option(config, section, option, config_file, value_prompt='value',
             config.write(f)
             return True
 
-def modify_tuple_option(config, section, option, config_file, key_prompt='key',
-                        value_prompt='value',
-                        additional_value_prompt='additional value',
-                        end_of_list_prompt='end of list', boolean_keys=[],
-                        additional_value_keys=[], no_value_keys=[],
-                        positioning_keys=[]):
+def modify_tuple_option(config, section, option, config_file, prompts={},
+                        keys={}):
     created = False
     if not config.has_section(section):
         config[section] = {}
@@ -76,14 +66,7 @@ def modify_tuple_option(config, section, option, config_file, key_prompt='key',
         config[section][option] = '[]'
 
     tuples = modify_tuples(ast.literal_eval(config[section][option]),
-                           created, key_prompt=key_prompt,
-                           value_prompt=value_prompt,
-                           additional_value_prompt=additional_value_prompt,
-                           end_of_list_prompt=end_of_list_prompt,
-                           boolean_keys=boolean_keys,
-                           additional_value_keys=additional_value_keys,
-                           no_value_keys=no_value_keys,
-                           positioning_keys=positioning_keys)
+                           created, prompts=prompts, keys=keys)
     if tuples:
         config[section][option] = str(tuples)
         check_config_directory(config_file)
@@ -95,12 +78,18 @@ def modify_tuple_option(config, section, option, config_file, key_prompt='key',
         delete_option(config, section, option, config_file)
         return False
 
-def modify_tuples(tuples, created, level=0, key_prompt='key',
-                  value_prompt='value',
-                  additional_value_prompt='additional value',
-                  end_of_list_prompt='end of list', boolean_keys=[],
-                  additional_value_keys=[], no_value_keys=[],
-                  positioning_keys=[]):
+def modify_tuples(tuples, created, level=0, prompts={}, keys={}):
+    key_prompt = prompts.get('key', 'key')
+    value_prompt = prompts.get('value', 'value')
+    additional_value_prompt = prompts.get('additional_value',
+                                          'additional value')
+    end_of_list_prompt = prompts.get('end_of_list', 'end of list')
+
+    boolean_keys = keys.get('boolean', ())
+    additional_value_keys = keys.get('additional_value', ())
+    no_value_keys = keys.get('no_value', ())
+    positioning_keys = keys.get('positioning', ())
+
     if sys.platform == 'win32':
         os.system('color')
 
@@ -126,15 +115,8 @@ def modify_tuples(tuples, created, level=0, key_prompt='key',
             if any(k == key for k in boolean_keys):
                 value = modify_data(value_prompt, level=level)
                 level += 1
-                additional_value = modify_tuples(
-                    [], True, level=level, key_prompt=key_prompt,
-                    value_prompt=value_prompt,
-                    additional_value_prompt=additional_value_prompt,
-                    end_of_list_prompt=end_of_list_prompt,
-                    boolean_keys=boolean_keys,
-                    additional_value_keys=additional_value_keys,
-                    no_value_keys=no_value_keys,
-                    positioning_keys=positioning_keys)
+                additional_value = modify_tuples([], True, level=level,
+                                                 prompts=prompts, keys=keys)
                 level -= 1
                 tuples.insert(index, (key, value, additional_value))
             elif any(k == key for k in additional_value_keys):
@@ -164,15 +146,9 @@ def modify_tuples(tuples, created, level=0, key_prompt='key',
             if any(k == key for k in boolean_keys):
                 value = modify_data(value_prompt, level=level, data=value)
                 level += 1
-                additional_value = modify_tuples(
-                    additional_value, created, level=level,
-                    key_prompt=key_prompt, value_prompt=value_prompt,
-                    additional_value_prompt=additional_value_prompt,
-                    end_of_list_prompt=end_of_list_prompt,
-                    boolean_keys=boolean_keys,
-                    additional_value_keys=additional_value_keys,
-                    no_value_keys=no_value_keys,
-                    positioning_keys=positioning_keys)
+                additional_value = modify_tuples(additional_value, created,
+                                                 level=level, prompts=prompts,
+                                                 keys=keys)
                 level -= 1
                 tuples[index] = (key, value, additional_value)
             elif any(k == key for k in additional_value_keys):

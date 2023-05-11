@@ -110,15 +110,15 @@ def main():
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         if configuration.modify_tuple_option(
                 config, 'Actions', args.M, trade.config_file,
-                key_prompt='command', value_prompt='argument',
-                additional_value_prompt='additional argument',
-                end_of_list_prompt='end of commands',
-                boolean_keys=['writing_file'],
-                additional_value_keys=['click_widget', 'speak_config'],
-                no_value_keys=['back_to', 'copy_symbols_from_market_data',
-                               'count_trades', 'take_screenshot',
-                               'write_share_size'],
-                positioning_keys=['click', 'move_to']):
+                prompts={'key': 'command', 'value': 'argument',
+                         'additional_value': 'additional argument',
+                         'end_of_list': 'end of commands'},
+                keys={'boolean': ('writing_file',),
+                      'additional_value': ('click_widget', 'speak_config'),
+                      'no_value': ('back_to', 'copy_symbols_from_market_data',
+                                   'count_trades', 'take_screenshot',
+                                   'write_share_size'),
+                      'positioning': ('click', 'move_to')}):
             # To pin the shortcut to the Taskbar, specify an
             # executable file as the argument target_path.
             file_utilities.create_shortcut(
@@ -172,12 +172,14 @@ def main():
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configuration.modify_option(config, trade.process_name,
                                     'cash_balance_region', trade.config_file,
-                                    value_prompt='x, y, width, height, index')
+                                    prompts={'value':
+                                             'x, y, width, height, index'})
     if args.L:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configuration.modify_option(config, trade.process_name,
                                     'price_limit_region', trade.config_file,
-                                    value_prompt='x, y, width, height, index')
+                                    prompts={'value':
+                                             'x, y, width, height, index'})
 
 def configure(trade):
     config = configparser.ConfigParser(
