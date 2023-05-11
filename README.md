@@ -73,7 +73,7 @@ limit if the previous closing price does not exist in the market data above.
 Because a region may have more than one price, specify the index of the price
 you are referring to.  A
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
-configuration file saves these configurations.
+configuration file stores these configurations.
 
 ``` powershell
 py trading_assistant.py -C
@@ -89,7 +89,7 @@ py trading_assistant.py -M [ACTION]
 ```
 
 An action is a list of sequential tuples, and each tuple consists of a command
-and its arguments.  The configuration file saves these actions.  Possible
+and its arguments.  The configuration file stores these actions.  Possible
 commands are:
 
 ``` python
@@ -112,8 +112,8 @@ ACTION = [
     ('hide_parent_window', 'TITLE_REGEX'), # hide a parent window.
     ('hide_window', 'TITLE_REGEX'),  # hide a window.
     ('move_to', 'X, Y'),             # move the cursor to a position.
-    ('press_hotkeys', 'KEY, ...'),   # press hotkeys.
-    ('press_key', 'KEY, PRESSES'),   # press a key.
+    ('press_hotkeys', 'KEY[, ...]'), # press hotkeys.
+    ('press_key', 'KEY[, PRESSES]'), # press a key.
     ('show_hide_window', 'TITLE_REGEX'), # show or hide a window.
     # show or hide a window on the middle click.
     ('show_hide_window_on_click', 'TITLE_REGEX')
