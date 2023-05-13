@@ -2,6 +2,70 @@ import os
 import re
 import sys
 
+def archive_encrypt_directory(source, output_directory):
+    import io
+    import tarfile
+
+    import gnupg
+
+    tar_stream = io.BytesIO()
+    with tarfile.open(fileobj=tar_stream, mode='w:xz') as tar:
+        tar.add(source, arcname=os.path.basename(source))
+
+    tar_stream.seek(0)
+    gpg = gnupg.GPG()
+    # TODO
+    fingerprint = gpg.list_keys(True)[0]['fingerprint']
+    output = os.path.join(output_directory,
+                          os.path.basename(source) + '.tar.xz.gpg')
+    # TODO
+    gpg.encrypt_file(tar_stream, fingerprint, output=output)
+
+def decrypt_extract_file(source, output_directory):
+    import io
+    import shutil
+    import tarfile
+
+    import gnupg
+
+    gpg = gnupg.GPG()
+    with open(source, 'rb') as f:
+        decrypted_data = gpg.decrypt_file(f)
+
+    tar_stream = io.BytesIO(decrypted_data.data)
+    with tarfile.open(fileobj=tar_stream, mode='r:xz') as tar:
+        root = os.path.join(output_directory, tar.getmembers()[0].name)
+        backup = root + '.bak'
+
+        if os.path.isdir(root):
+            if os.path.isdir(backup):
+                try:
+                    shutil.rmtree(backup)
+                except Exception as e:
+                    print(e)
+                    sys.exit(1)
+            elif os.path.isfile(backup):
+                print(backup, 'file exists')
+                sys.exit(1)
+
+            os.rename(root, backup)
+        elif os.path.isfile(root):
+            print(root, 'file exists')
+            sys.exit(1)
+
+        try:
+            tar.extractall(path=output_directory)
+        except Exception as e:
+            print(e)
+            sys.exit(1)
+
+        if os.path.isdir(backup):
+            try:
+                shutil.rmtree(backup)
+            except Exception as e:
+                print(e)
+                sys.exit(1)
+
 def backup_file(source, backup_directory=None, number_of_backups=-1):
     from datetime import datetime
     import shutil

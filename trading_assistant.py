@@ -646,7 +646,7 @@ def execute_action(trade, config, gui_callbacks, action):
             trade.speech_engine.runAndWait()
 
         else:
-            print(command + ' is not a recognized command')
+            print(command, 'is not a recognized command')
             sys.exit(1)
 
 def create_startup_script(trade, config):

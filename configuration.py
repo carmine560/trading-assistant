@@ -32,8 +32,8 @@ def modify_option(config, section, option, config_file, prompts={}, keys={}):
     import re
 
     if config.has_option(section, option):
-        print(option + ' = '
-              + ANSI_DEFAULT + config[section][option] + ANSI_RESET)
+        print(option, '=',
+              ANSI_DEFAULT + config[section][option] + ANSI_RESET)
         answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
