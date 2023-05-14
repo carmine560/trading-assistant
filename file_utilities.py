@@ -2,7 +2,7 @@ import os
 import re
 import sys
 
-def archive_encrypt_directory(source, output_directory):
+def archive_encrypt_directory(source, output_directory, fingerprint=''):
     import io
     import tarfile
 
@@ -14,8 +14,9 @@ def archive_encrypt_directory(source, output_directory):
 
     tar_stream.seek(0)
     gpg = gnupg.GPG()
-    # TODO
-    fingerprint = gpg.list_keys(True)[0]['fingerprint']
+    if not fingerprint:
+        fingerprint = gpg.list_keys()[0]['fingerprint']
+
     output = os.path.join(output_directory,
                           os.path.basename(source) + '.tar.xz.gpg')
     # TODO
