@@ -163,8 +163,8 @@ py trading_assistant.py -s
 
 ### Options ###
 
-  * `-p`: set a process name (this requires its configurations; default:
-    `HYPERSBI2`)
+  * `-P`: set a brokerage and a process [defaults: ('SBI Securities',
+    'HYPERSBI2')]
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
   * `-s`: run the scheduler

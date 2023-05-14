@@ -18,14 +18,16 @@ import file_utilities
 import gui_interactions
 
 class Trade:
-    def __init__(self, process_name):
+    def __init__(self, brokerage, process):
         config_directory = os.path.join(
             os.path.expandvars('%LOCALAPPDATA%'),
             os.path.basename(os.path.dirname(__file__)))
         self.market_directory = os.path.join(config_directory, 'market')
-        self.process_name = process_name
+        self.brokerage = brokerage
+        self.process = process
+        # TODO
         self.config_directory = os.path.join(config_directory,
-                                             self.process_name)
+                                             self.process)
         self.script_base = os.path.splitext(os.path.basename(__file__))[0]
         self.config_file = os.path.join(self.config_directory,
                                         self.script_base + '.ini')
@@ -49,9 +51,9 @@ def main():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     parser.add_argument(
-        '-p', default='HYPERSBI2', metavar='PROCESS_NAME',
-        help='set a process name '
-        '(this requires its configurations; default: %(default)s)')
+        '-P', default=('SBI Securities', 'HYPERSBI2'),
+        metavar=('BROKERAGE', 'PROCESS'), nargs=2,
+        help='set a brokerage and a process [defaults: %(default)s]')
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -84,14 +86,14 @@ def main():
         help=('set the price limit region and the index of the price'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
-    trade = Trade(args.p)
+    trade = Trade(*args.P)
     config = configure(trade)
-    if not config.has_section(trade.process_name):
-        print(trade.process_name, 'section does not exist')
+    if not config.has_section(trade.process):
+        print(trade.process, 'section does not exist')
         sys.exit(1)
 
     gui_callbacks = gui_interactions.GuiCallbacks(
-        ast.literal_eval(config[trade.process_name]['interactive_windows']))
+        ast.literal_eval(config[trade.process]['interactive_windows']))
 
     if args.r:
         save_customer_margin_ratios(trade, config)
@@ -102,7 +104,7 @@ def main():
 
         process = Process(
             target=run_scheduler,
-            args=(trade, config, gui_callbacks, trade.process_name + '.exe'))
+            args=(trade, config, gui_callbacks, trade.process + '.exe'))
         process.start()
     if args.M == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
@@ -123,11 +125,11 @@ def main():
             # executable file as the argument target_path.
             file_utilities.create_shortcut(
                 args.M, 'py.exe', '"' + __file__ + '" -e ' + args.M,
-                program_group_base=config[trade.process_name]['title'],
+                program_group_base=config[trade.process]['title'],
                 icon_directory=trade.config_directory)
         else:
             file_utilities.delete_shortcut(
-                args.M, program_group_base=config[trade.process_name]['title'],
+                args.M, program_group_base=config[trade.process]['title'],
                 icon_directory=trade.config_directory)
     if args.e == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
@@ -152,7 +154,7 @@ def main():
                                         trade.config_file)
 
         file_utilities.delete_shortcut(
-            args.T, program_group_base=config[trade.process_name]['title'],
+            args.T, program_group_base=config[trade.process]['title'],
             icon_directory=trade.config_directory)
     if args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
@@ -162,21 +164,21 @@ def main():
         file_utilities.create_shortcut(
             trade.script_base, 'powershell.exe',
             '-WindowStyle Hidden -File "' + trade.startup_script + '"',
-            program_group_base=config[trade.process_name]['title'],
+            program_group_base=config[trade.process]['title'],
             icon_directory=trade.config_directory)
     if args.B:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_option(config, trade.process_name,
+        configuration.modify_option(config, trade.process,
                                     'fixed_cash_balance', trade.config_file)
     if args.C:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_option(config, trade.process_name,
+        configuration.modify_option(config, trade.process,
                                     'cash_balance_region', trade.config_file,
                                     prompts={'value':
                                              'x, y, width, height, index'})
     if args.L:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_option(config, trade.process_name,
+        configuration.modify_option(config, trade.process,
                                     'price_limit_region', trade.config_file,
                                     prompts={'value':
                                              'x, y, width, height, index'})
@@ -210,11 +212,12 @@ def configure(trade):
         'price_header': '株価',
         'closing_prices':
         os.path.join('${General:market_directory}', 'closing_prices_')}
+    # TODO
     config['Startup Script'] = {
         'pre_start_options': '-rd',
         'post_start_options': '',
         'running_options': ''}
-    config['HYPERSBI2'] = {
+    config['SBI Securities Customer Margin Ratios'] = {
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
         'url': 'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
@@ -225,7 +228,8 @@ def configure(trade):
         'suspended': '新規建停止',
         'customer_margin_ratios':
         os.path.join('${General:config_directory}',
-                     'customer_margin_ratios.csv'),
+                     'customer_margin_ratios.csv')}
+    config['HYPERSBI2'] = {
         'executable': '',
         'title': 'Hyper SBI 2 Assistant',
         'interactive_windows': (
@@ -249,6 +253,7 @@ def configure(trade):
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '2',
         'binarization_threshold': '128'}
+    # TODO
     config['Actions'] = {
         'minimize_all_windows': [('press_hotkeys', 'win, m')],
         'show_hide_watchlists': [('show_hide_window', '登録銘柄')],
@@ -260,6 +265,7 @@ def configure(trade):
         [('writing_file', 'False', [('press_hotkeys', 'alt, f9')])],
         'stop_manual_recording':
         [('writing_file', 'True', [('press_hotkeys', 'alt, f9')])]}
+    # TODO
     config['Schedules'] = {
         'start_new_manual_recording': ('08:50:00', 'start_manual_recording'),
         'speak_60_seconds_until_open':
@@ -272,26 +278,25 @@ def configure(trade):
         'current_number_of_trades': '0'}
     config.read(trade.config_file, encoding='utf-8')
 
-    if trade.process_name == 'HYPERSBI2':
-        section = config[trade.process_name]
+    if trade.process == 'HYPERSBI2':
+        section = config[trade.process]
 
         location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
-                                    'SBI Securities', trade.process_name,
+                                    trade.brokerage, trade.process,
                                     'location.dat')
         try:
             with open(location_dat, 'r') as f:
                 section['executable'] = os.path.normpath(
-                    os.path.join(f.read(), trade.process_name + '.exe'))
+                    os.path.join(f.read(), trade.process + '.exe'))
         except OSError as e:
             print(e)
             section['executable'] = os.path.join(
                 r'$${Env:ProgramFiles(x86)}\SBI SECURITIES',
-                trade.process_name, trade.process_name + '.exe')
+                trade.process, trade.process + '.exe')
 
         theme_config = configparser.ConfigParser()
         theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
-                                 'SBI Securities', trade.process_name,
-                                 'theme.ini')
+                                 trade.brokerage, trade.process, 'theme.ini')
         theme_config.read(theme_ini)
         if theme_config.has_option('General', 'theme') \
            and theme_config['General']['theme'] == 'Light':
@@ -314,7 +319,7 @@ def save_customer_margin_ratios(trade, config):
     global pd
     import pandas as pd
 
-    section = config[trade.process_name]
+    section = config[trade.brokerage + ' ' + trade.process]
     update_time = section['update_time']
     time_zone = section['time_zone']
     url = section['url']
@@ -534,10 +539,8 @@ def execute_action(trade, config, gui_callbacks, action):
             import win32clipboard
 
             argument = ast.literal_eval(argument)
-            split_string = recognize_text(config[trade.process_name],
-                                          *argument, None,
-                                          text_type='numeric_column')
-
+            split_string = recognize_text(config[trade.process], *argument,
+                                          None, text_type='numeric_column')
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(' '.join(split_string))
@@ -581,7 +584,7 @@ def execute_action(trade, config, gui_callbacks, action):
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
             gui_interactions.show_hide_window_on_click(
-                gui_callbacks, trade.process_name + '.exe', argument)
+                gui_callbacks, trade.process + '.exe', argument)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, argument)
         elif command == 'show_window':
@@ -610,7 +613,7 @@ def execute_action(trade, config, gui_callbacks, action):
             time.sleep(float(argument))
         elif command == 'wait_for_prices':
             argument = ast.literal_eval(argument)
-            recognize_text(config[trade.process_name], *argument)
+            recognize_text(config[trade.process], *argument)
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(gui_callbacks, argument)
         elif command == 'write_share_size':
@@ -667,7 +670,7 @@ def create_startup_script(trade, config):
 
     with open(trade.startup_script, 'w') as f:
         lines = []
-        lines.append('if (Get-Process "' + trade.process_name
+        lines.append('if (Get-Process "' + trade.process
                      + '" -ErrorAction SilentlyContinue)\n{\n')
         for option in running_options:
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
@@ -679,7 +682,7 @@ def create_startup_script(trade, config):
                          + __file__ + '`" ' + option + '" -NoNewWindow\n')
 
         lines.append('    Start-Process "'
-                     + config[trade.process_name]['executable']
+                     + config[trade.process]['executable']
                      + '" -NoNewWindow\n')
         for option in post_start_options:
             lines.append('    Start-Process "py.exe" -ArgumentList "`"'
@@ -689,7 +692,7 @@ def create_startup_script(trade, config):
         f.writelines(lines)
 
 def calculate_share_size(trade, config, position):
-    section = config[trade.process_name]
+    section = config[trade.process]
     fixed_cash_balance = int(section['fixed_cash_balance'].replace(',', '')
                              or 0)
     if fixed_cash_balance > 0:
@@ -699,8 +702,11 @@ def calculate_share_size(trade, config, position):
         trade.cash_balance = recognize_text(section, *region)
 
     customer_margin_ratio = 0.31
+    customer_margin_ratios = (
+        config[trade.brokerage + ' Customer Margin Ratios']
+        ['customer_margin_ratios'])
     try:
-        with open(section['customer_margin_ratios'], 'r') as f:
+        with open(customer_margin_ratios, 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == trade.symbol:
@@ -851,7 +857,7 @@ def get_price_limit(trade, config):
         else:
             price_limit = closing_price + 10000000
     else:
-        section = config[trade.process_name]
+        section = config[trade.process]
         region = ast.literal_eval(section['price_limit_region'])
         price_limit = recognize_text(section, *region,
                                      text_type='decimal_numbers')
