@@ -19,20 +19,29 @@ import gui_interactions
 
 class Trade:
     def __init__(self, brokerage, process):
+        self.brokerage = brokerage
+        self.process = process
         config_directory = os.path.join(
             os.path.expandvars('%LOCALAPPDATA%'),
             os.path.basename(os.path.dirname(__file__)))
         self.market_directory = os.path.join(config_directory, 'market')
-        self.brokerage = brokerage
-        self.process = process
-        # TODO
-        self.config_directory = os.path.join(config_directory,
-                                             self.process)
+        self.resource_directory = os.path.join(config_directory,
+                                               self.process)
         self.script_base = os.path.splitext(os.path.basename(__file__))[0]
-        self.config_file = os.path.join(self.config_directory,
+        self.config_file = os.path.join(config_directory,
                                         self.script_base + '.ini')
-        self.startup_script = os.path.join(self.config_directory,
+        self.customer_margin_ratios = os.path.join(
+            self.resource_directory, 'customer_margin_ratios.csv')
+        self.startup_script = os.path.join(self.resource_directory,
                                            self.script_base + '.ps1')
+
+        for directory in [self.market_directory, self.resource_directory]:
+            if not os.path.isdir(directory):
+                try:
+                    os.makedirs(directory)
+                except OSError as e:
+                    print(e)
+                    sys.exit(1)
 
         self.previous_position = pyautogui.position()
         self.cash_balance = 0
@@ -126,11 +135,11 @@ def main():
             file_utilities.create_shortcut(
                 args.M, 'py.exe', '"' + __file__ + '" -e ' + args.M,
                 program_group_base=config[trade.process]['title'],
-                icon_directory=trade.config_directory)
+                icon_directory=trade.resource_directory)
         else:
             file_utilities.delete_shortcut(
                 args.M, program_group_base=config[trade.process]['title'],
-                icon_directory=trade.config_directory)
+                icon_directory=trade.resource_directory)
     if args.e == 'LIST_ACTIONS':
         configuration.list_section(config, 'Actions')
     elif args.e:
@@ -155,7 +164,7 @@ def main():
 
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process]['title'],
-            icon_directory=trade.config_directory)
+            icon_directory=trade.resource_directory)
     if args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configuration.modify_section(config, 'Startup Script',
@@ -165,7 +174,7 @@ def main():
             trade.script_base, 'powershell.exe',
             '-WindowStyle Hidden -File "' + trade.startup_script + '"',
             program_group_base=config[trade.process]['title'],
-            icon_directory=trade.config_directory)
+            icon_directory=trade.resource_directory)
     if args.B:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         configuration.modify_option(config, trade.process,
@@ -187,8 +196,6 @@ def configure(trade):
     config = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation())
     config['General'] = {
-        'market_directory': trade.market_directory,
-        'config_directory': trade.config_directory,
         'screenshot_directory':
         os.path.join(os.path.expanduser('~'), 'Pictures'),
         'screencast_directory':
@@ -198,7 +205,7 @@ def configure(trade):
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'market_holidays':
-        os.path.join('${General:market_directory}', 'market_holidays.csv'),
+        os.path.join(trade.market_directory, 'market_holidays.csv'),
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
@@ -211,7 +218,7 @@ def configure(trade):
         'symbol_header': 'コード',
         'price_header': '株価',
         'closing_prices':
-        os.path.join('${General:market_directory}', 'closing_prices_')}
+        os.path.join(trade.market_directory, 'closing_prices_')}
     # TODO
     config['Startup Script'] = {
         'pre_start_options': '-rd',
@@ -225,10 +232,7 @@ def configure(trade):
         'regulation_header': '規制内容',
         'header': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
         'customer_margin_ratio': '委託保証金率',
-        'suspended': '新規建停止',
-        'customer_margin_ratios':
-        os.path.join('${General:config_directory}',
-                     'customer_margin_ratios.csv')}
+        'suspended': '新規建停止'}
     config['HYPERSBI2'] = {
         'executable': '',
         'title': 'Hyper SBI 2 Assistant',
@@ -304,22 +308,13 @@ def configure(trade):
         else:                   # Dark as a fallback
             section['currently_dark_theme'] = 'True'
 
-    for directory in [config['General']['market_directory'],
-                      config['General']['config_directory']]:
-        if not os.path.isdir(directory):
-            try:
-                os.makedirs(directory)
-            except OSError as e:
-                print(e)
-                sys.exit(1)
-
     return config
 
 def save_customer_margin_ratios(trade, config):
     global pd
     import pandas as pd
 
-    section = config[trade.brokerage + ' ' + trade.process]
+    section = config[trade.brokerage + ' Customer Margin Ratios']
     update_time = section['update_time']
     time_zone = section['time_zone']
     url = section['url']
@@ -328,9 +323,9 @@ def save_customer_margin_ratios(trade, config):
     header = ast.literal_eval(section['header'])
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
-    customer_margin_ratios = section['customer_margin_ratios']
 
-    if get_latest(config, update_time, time_zone, customer_margin_ratios):
+    if get_latest(config, update_time, time_zone,
+                  trade.customer_margin_ratios):
         try:
             dfs = pd.read_html(url, match=regulation_header, header=0)
         except Exception as e:
@@ -349,7 +344,7 @@ def save_customer_margin_ratios(trade, config):
         df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
                                       r'0.\1', inplace=True, regex=True)
 
-        df.to_csv(customer_margin_ratios, header=False, index=False)
+        df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
 def save_market_data(config, clipboard=False):
     global pd
@@ -529,8 +524,7 @@ def execute_action(trade, config, gui_callbacks, action):
             else:
                 pyautogui.click(coordinates)
         elif command == 'click_widget':
-            image = os.path.join(config['General']['config_directory'],
-                                 argument)
+            image = os.path.join(trade.resource_directory, argument)
             region = ast.literal_eval(additional_argument)
             gui_interactions.click_widget(gui_callbacks, image, *region)
         elif command == 'copy_symbols_from_market_data':
@@ -702,11 +696,8 @@ def calculate_share_size(trade, config, position):
         trade.cash_balance = recognize_text(section, *region)
 
     customer_margin_ratio = 0.31
-    customer_margin_ratios = (
-        config[trade.brokerage + ' Customer Margin Ratios']
-        ['customer_margin_ratios'])
     try:
-        with open(customer_margin_ratios, 'r') as f:
+        with open(trade.customer_margin_ratios, 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == trade.symbol:
