@@ -116,11 +116,11 @@ def main():
             args=(trade, config, gui_callbacks, trade.process + '.exe'))
         process.start()
     if args.M == 'LIST_ACTIONS':
-        configuration.list_section(config, 'Actions')
+        configuration.list_section(config, trade.process + ' Actions')
     elif args.M:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         if configuration.modify_tuple_option(
-                config, 'Actions', args.M, trade.config_file,
+                config, trade.process + ' Actions', args.M, trade.config_file,
                 prompts={'key': 'command', 'value': 'argument',
                          'additional_value': 'additional argument',
                          'end_of_list': 'end of commands'},
@@ -141,14 +141,15 @@ def main():
                 args.M, program_group_base=config[trade.process]['title'],
                 icon_directory=trade.resource_directory)
     if args.e == 'LIST_ACTIONS':
-        configuration.list_section(config, 'Actions')
+        configuration.list_section(config, trade.process + ' Actions')
     elif args.e:
         execute_action(trade, config, gui_callbacks,
-                       ast.literal_eval(config['Actions'][args.e]))
+                       ast.literal_eval(
+                           config[trade.process + ' Actions'][args.e]))
     if args.T == 'LIST_ACTIONS':
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
-            configuration.list_section(config, 'Actions')
+            configuration.list_section(config, trade.process + ' Actions')
     elif args.T:
         if args.T == trade.script_base \
            and os.path.exists(trade.startup_script):
@@ -159,15 +160,15 @@ def main():
                 sys.exit(1)
         else:
             file_utilities.backup_file(trade.config_file, number_of_backups=8)
-            configuration.delete_option(config, 'Actions', args.T,
-                                        trade.config_file)
+            configuration.delete_option(config, trade.process + ' Actions',
+                                        args.T, trade.config_file)
 
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
     if args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_section(config, 'Startup Script',
+        configuration.modify_section(config, trade.process + ' Startup Script',
                                      trade.config_file)
         create_startup_script(trade, config)
         file_utilities.create_shortcut(
@@ -219,11 +220,6 @@ def configure(trade):
         'price_header': '株価',
         'closing_prices':
         os.path.join(trade.market_directory, 'closing_prices_')}
-    # TODO
-    config['Startup Script'] = {
-        'pre_start_options': '-rd',
-        'post_start_options': '',
-        'running_options': ''}
     config['SBI Securities Customer Margin Ratios'] = {
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
@@ -257,8 +253,11 @@ def configure(trade):
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '2',
         'binarization_threshold': '128'}
-    # TODO
-    config['Actions'] = {
+    config['HYPERSBI2 Startup Script'] = {
+        'pre_start_options': '-rd',
+        'post_start_options': '',
+        'running_options': ''}
+    config['HYPERSBI2 Actions'] = {
         'minimize_all_windows': [('press_hotkeys', 'win, m')],
         'show_hide_watchlists': [('show_hide_window', '登録銘柄')],
         'show_hide_watchlists_on_click':
@@ -269,8 +268,7 @@ def configure(trade):
         [('writing_file', 'False', [('press_hotkeys', 'alt, f9')])],
         'stop_manual_recording':
         [('writing_file', 'True', [('press_hotkeys', 'alt, f9')])]}
-    # TODO
-    config['Schedules'] = {
+    config['HYPERSBI2 Schedules'] = {
         'start_new_manual_recording': ('08:50:00', 'start_manual_recording'),
         'speak_60_seconds_until_open':
         ('08:59:00', 'speak_seconds_until_open'),
@@ -471,7 +469,7 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
     scheduler = sched.scheduler(time.time, time.sleep)
     schedules = []
 
-    section = config['Schedules']
+    section = config[trade.process + ' Schedules']
     speech = False
     for option in section:
         schedule_time, action = ast.literal_eval(section[option])
@@ -485,7 +483,8 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
             schedule = scheduler.enterabs(
                 schedule_time, 1, execute_action,
                 argument=(trade, config, gui_callbacks,
-                          ast.literal_eval(config['Actions'][action])))
+                          ast.literal_eval(
+                              config[trade.process + ' Actions'][action])))
             schedules.append(schedule)
 
     if speech:
@@ -647,20 +646,20 @@ def execute_action(trade, config, gui_callbacks, action):
             sys.exit(1)
 
 def create_startup_script(trade, config):
-    section = config['Startup Script']
+    section = config[trade.process + ' Startup Script']
     pre_start_options = section['pre_start_options']
     post_start_options = section['post_start_options']
     running_options = section['running_options']
 
-    if pre_start_options:
-        pre_start_options = \
-            tuple(map(str.strip, section['pre_start_options'].split(',')))
-    if post_start_options:
-        post_start_options = \
-            tuple(map(str.strip, section['post_start_options'].split(',')))
-    if running_options:
-        running_options = \
-            tuple(map(str.strip, section['running_options'].split(',')))
+    pre_start_options = \
+        tuple(map(str.strip, pre_start_options.split(','))) \
+        if pre_start_options else ()
+    post_start_options = \
+        tuple(map(str.strip, post_start_options.split(','))) \
+        if post_start_options else ()
+    running_options = \
+        tuple(map(str.strip, running_options.split(','))) \
+        if running_options else ()
 
     with open(trade.startup_script, 'w') as f:
         lines = []
