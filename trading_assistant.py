@@ -132,7 +132,8 @@ def main():
                       'additional_value': ('click_widget', 'speak_config'),
                       'no_value': ('back_to', 'copy_symbols_from_market_data',
                                    'count_trades', 'take_screenshot',
-                                   'write_share_size'),
+                                   'write_share_size',
+                                   'speak_cpu_utilization'),
                       'positioning': ('click', 'move_to')}):
             # To pin the shortcut to the Taskbar, specify an
             # executable file as the argument target_path.
@@ -476,7 +477,8 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
                                       + schedule_time, '%Y-%m-%d %H:%M:%S')
         schedule_time = time.mktime(schedule_time)
         if schedule_time > time.time():
-            if action in ['speak_config', 'speak_seconds_until_open']:
+            if action in ['speak_config', 'speak_cpu_utilization',
+                          'speak_seconds_until_open']:
                 speech = True
 
             schedule = scheduler.enterabs(
@@ -628,6 +630,13 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'speak_config':
             initialize_speech_engine(trade)
             trade.speech_engine.say(config[argument][additional_argument])
+            trade.speech_engine.runAndWait()
+        elif command == 'speak_cpu_utilization':
+            import psutil
+
+            initialize_speech_engine(trade)
+            trade.speech_engine.say(str(round(psutil.cpu_percent(interval=1)))
+                                    + '%')
             trade.speech_engine.runAndWait()
         elif command == 'speak_seconds_until_event':
             import math

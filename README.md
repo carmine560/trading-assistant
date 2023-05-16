@@ -36,6 +36,8 @@ the following packages:
   * [pynput](https://github.com/moses-palmer/pynput) to monitor keyboard input
   * (optional) [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak
     seconds until an event and a configuration
+  * (optional) [psutil](https://github.com/giampaolo/psutil) to calculate CPU
+    utilization
 
 Install each package as needed.  For example:
 
@@ -133,6 +135,7 @@ ACTION = [
 
     # Optional Commands
     ('speak_config', 'SECTION', 'KEY'), # speak a configuration.
+    ('speak_cpu_utilization',),      # speak CPU utilization.
     # speak seconds until an event.
     ('speak_seconds_until_event', 'EVENT_TIME')]
 ```
