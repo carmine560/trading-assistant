@@ -24,12 +24,16 @@ class Trade:
         config_directory = os.path.join(
             os.path.expandvars('%LOCALAPPDATA%'),
             os.path.basename(os.path.dirname(__file__)))
-        self.market_directory = os.path.join(config_directory, 'market')
-        self.resource_directory = os.path.join(config_directory,
-                                               self.process)
         self.script_base = os.path.splitext(os.path.basename(__file__))[0]
         self.config_file = os.path.join(config_directory,
                                         self.script_base + '.ini')
+        self.market_directory = os.path.join(config_directory, 'market')
+        self.market_holidays = os.path.join(self.market_directory,
+                                            'market_holidays.csv')
+        self.closing_prices = os.path.join(self.market_directory,
+                                           'closing_prices_')
+        self.resource_directory = os.path.join(config_directory,
+                                               self.process)
         self.customer_margin_ratios = os.path.join(
             self.resource_directory, 'customer_margin_ratios.csv')
         self.startup_script = os.path.join(self.resource_directory,
@@ -107,7 +111,7 @@ def main():
     if args.r:
         save_customer_margin_ratios(trade, config)
     if args.d:
-        save_market_data(config)
+        save_market_data(trade, config)
     if args.s:
         from multiprocessing import Process
 
@@ -205,8 +209,6 @@ def configure(trade):
         r'Desktop \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d{2}\.mp4'}
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
-        'market_holidays':
-        os.path.join(trade.market_directory, 'market_holidays.csv'),
         'date_header': '日付',
         'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
@@ -217,9 +219,7 @@ def configure(trade):
         'url': 'https://kabutan.jp/warning/?mode=2_9&market=1',
         'number_of_pages': '2',
         'symbol_header': 'コード',
-        'price_header': '株価',
-        'closing_prices':
-        os.path.join(trade.market_directory, 'closing_prices_')}
+        'price_header': '株価'}
     config['SBI Securities Customer Margin Ratios'] = {
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
@@ -322,7 +322,7 @@ def save_customer_margin_ratios(trade, config):
     customer_margin_ratio = section['customer_margin_ratio']
     suspended = section['suspended']
 
-    if get_latest(config, update_time, time_zone,
+    if get_latest(config, trade.market_holidays, update_time, time_zone,
                   trade.customer_margin_ratios):
         try:
             dfs = pd.read_html(url, match=regulation_header, header=0)
@@ -344,7 +344,7 @@ def save_customer_margin_ratios(trade, config):
 
         df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
-def save_market_data(config, clipboard=False):
+def save_market_data(trade, config, clipboard=False):
     global pd
     import pandas as pd
 
@@ -357,21 +357,20 @@ def save_market_data(config, clipboard=False):
     number_of_pages = int(section['number_of_pages'])
     symbol_header = section['symbol_header']
     price_header = section['price_header']
-    closing_prices = section['closing_prices']
 
     if clipboard:
         latest = True
     else:
         paths = []
         for i in range(1, 10):
-            paths.append(closing_prices + str(i) + '.csv')
+            paths.append(trade.closing_prices + str(i) + '.csv')
 
         opening_time = (pd.Timestamp(opening_time, tz=time_zone)
                         + pd.Timedelta(minutes=delay)).strftime('%X')
         closing_time = (pd.Timestamp(closing_time, tz=time_zone)
                         + pd.Timedelta(minutes=delay)).strftime('%X')
-        latest = get_latest(config, closing_time, time_zone, *paths,
-                            volatile_time=opening_time)
+        latest = get_latest(config, trade.market_holidays, closing_time,
+                            time_zone, *paths, volatile_time=opening_time)
 
     if latest:
         dfs = []
@@ -397,15 +396,15 @@ def save_market_data(config, clipboard=False):
         for i in range(1, 10):
             subset = df.loc[df[symbol_header].astype(str).str.match(
                 str(i) + '\d{3}5?$')]
-            subset.to_csv(closing_prices + str(i) + '.csv', header=False,
+            subset.to_csv(trade.closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
-def get_latest(config, update_time, time_zone, *paths, volatile_time=None):
+def get_latest(config, market_holidays, update_time, time_zone, *paths,
+               volatile_time=None):
     import requests
 
     section = config['Market Holidays']
     url = section['url']
-    market_holidays = section['market_holidays']
     date_header = section['date_header']
     date_format = section['date_format']
 
@@ -527,7 +526,7 @@ def execute_action(trade, config, gui_callbacks, action):
             region = ast.literal_eval(additional_argument)
             gui_interactions.click_widget(gui_callbacks, image, *region)
         elif command == 'copy_symbols_from_market_data':
-            save_market_data(config, clipboard=True)
+            save_market_data(trade, config, clipboard=True)
         elif command == 'copy_symbols_from_numeric_column':
             import win32clipboard
 
@@ -767,8 +766,7 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
 def get_price_limit(trade, config):
     closing_price = 0.0
     try:
-        with open(config['Market Data']['closing_prices'] + trade.symbol[0]
-                  + '.csv', 'r') as f:
+        with open(trade.closing_prices + trade.symbol[0] + '.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == trade.symbol:
