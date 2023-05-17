@@ -132,8 +132,7 @@ def main():
                       'additional_value': ('click_widget', 'speak_config'),
                       'no_value': ('back_to', 'copy_symbols_from_market_data',
                                    'count_trades', 'take_screenshot',
-                                   'write_share_size',
-                                   'speak_cpu_utilization'),
+                                   'write_share_size'),
                       'positioning': ('click', 'move_to')}):
             # To pin the shortcut to the Taskbar, specify an
             # executable file as the argument target_path.
@@ -635,8 +634,8 @@ def execute_action(trade, config, gui_callbacks, action):
             import psutil
 
             initialize_speech_engine(trade)
-            trade.speech_engine.say(str(round(psutil.cpu_percent(interval=1)))
-                                    + '%')
+            trade.speech_engine.say(
+                str(round(psutil.cpu_percent(interval=float(argument)))) + '%')
             trade.speech_engine.runAndWait()
         elif command == 'speak_seconds_until_event':
             import math

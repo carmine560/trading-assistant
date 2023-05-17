@@ -135,7 +135,8 @@ ACTION = [
 
     # Optional Commands
     ('speak_config', 'SECTION', 'KEY'), # speak a configuration.
-    ('speak_cpu_utilization',),      # speak CPU utilization.
+    # calculate CPU utilization for an interval and speak it.
+    ('speak_cpu_utilization', 'INTERVAL'),
     # speak seconds until an event.
     ('speak_seconds_until_event', 'EVENT_TIME')]
 ```
