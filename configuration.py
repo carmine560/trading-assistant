@@ -7,15 +7,6 @@ ANSI_ANNOTATION = '\033[33m'
 ANSI_HIGHLIGHT = '\033[4m'
 ANSI_RESET = '\033[m'
 
-def check_config_directory(config_file):
-    config_directory = os.path.dirname(config_file)
-    if not os.path.isdir(config_directory):
-        try:
-            os.mkdir(config_directory)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
 def list_section(config, section):
     if config.has_section(section):
         for option in config[section]:
@@ -51,7 +42,6 @@ def modify_option(config, section, option, config_file, prompts={}, keys={}):
         elif answer == 'quit':
             return False
 
-        check_config_directory(config_file)
         with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)
             return True
@@ -69,7 +59,6 @@ def modify_tuple_option(config, section, option, config_file, prompts={},
                            created, prompts=prompts, keys=keys)
     if tuples:
         config[section][option] = str(tuples)
-        check_config_directory(config_file)
         with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)
         return True
@@ -257,6 +246,5 @@ def configure_position(answer, value=''):
 def delete_option(config, section, option, config_file):
     if config.has_option(section, option):
         config.remove_option(section, option)
-        check_config_directory(config_file)
         with open(config_file, 'w', encoding='utf-8') as f:
             config.write(f)

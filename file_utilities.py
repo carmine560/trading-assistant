@@ -76,13 +76,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
             backup_directory = os.path.join(os.path.dirname(source), 'backups')
 
         if number_of_backups:
-            if not os.path.isdir(backup_directory):
-                try:
-                    os.makedirs(backup_directory)
-                except OSError as e:
-                    print(e)
-                    sys.exit(1)
-
+            check_directory(backup_directory)
             backup = os.path.join(
                 backup_directory,
                 os.path.splitext(os.path.basename(source))[0]
@@ -116,6 +110,14 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
                 except Exception as e:
                     print(e)
                     sys.exit(1)
+
+def check_directory(directory):
+    if not os.path.isdir(directory):
+        try:
+            os.makedirs(directory)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
 
 # TODO
 def create_icon(basename, icon_directory=None):
@@ -189,15 +191,9 @@ def create_shortcut(basename, target_path, arguments, program_group_base=None,
                     icon_directory=None, hotkey=None):
     import win32com.client
 
-    shell = win32com.client.Dispatch('WScript.Shell')
     program_group = get_program_group(program_group_base)
-    if not os.path.isdir(program_group):
-        try:
-            os.mkdir(program_group)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
+    check_directory(program_group)
+    shell = win32com.client.Dispatch('WScript.Shell')
     title = re.sub('[\W_]+', ' ', basename).strip().title()
     shortcut = shell.CreateShortCut(os.path.join(program_group,
                                                  title + '.lnk'))

@@ -21,31 +21,27 @@ class Trade:
     def __init__(self, brokerage, process):
         self.brokerage = brokerage
         self.process = process
-        config_directory = os.path.join(
+        self.config_directory = os.path.join(
             os.path.expandvars('%LOCALAPPDATA%'),
             os.path.basename(os.path.dirname(__file__)))
         self.script_base = os.path.splitext(os.path.basename(__file__))[0]
-        self.config_file = os.path.join(config_directory,
+        self.config_file = os.path.join(self.config_directory,
                                         self.script_base + '.ini')
-        self.market_directory = os.path.join(config_directory, 'market')
+        self.market_directory = os.path.join(self.config_directory, 'market')
         self.market_holidays = os.path.join(self.market_directory,
                                             'market_holidays.csv')
         self.closing_prices = os.path.join(self.market_directory,
                                            'closing_prices_')
-        self.resource_directory = os.path.join(config_directory,
+        self.resource_directory = os.path.join(self.config_directory,
                                                self.process)
         self.customer_margin_ratios = os.path.join(
             self.resource_directory, 'customer_margin_ratios.csv')
         self.startup_script = os.path.join(self.resource_directory,
                                            self.script_base + '.ps1')
 
-        for directory in [self.market_directory, self.resource_directory]:
-            if not os.path.isdir(directory):
-                try:
-                    os.makedirs(directory)
-                except OSError as e:
-                    print(e)
-                    sys.exit(1)
+        for directory in [self.config_directory, self.market_directory,
+                          self.resource_directory]:
+            file_utilities.check_directory(directory)
 
         self.previous_position = pyautogui.position()
         self.cash_balance = 0
@@ -549,7 +545,6 @@ def execute_action(trade, config, gui_callbacks, action):
                 section['current_date'] = str(date.today())
                 section['current_number_of_trades'] = '1'
 
-            configuration.check_config_directory(trade.config_file)
             with open(trade.config_file, 'w', encoding='utf-8') as f:
                 config.write(f)
         elif command == 'get_symbol':

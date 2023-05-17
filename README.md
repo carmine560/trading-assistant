@@ -35,7 +35,7 @@ the following packages:
     automate interactions with Hyper SBI 2
   * [pynput](https://github.com/moses-palmer/pynput) to monitor keyboard input
   * (optional) [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak
-    seconds until an event and a configuration
+    information
   * (optional) [psutil](https://github.com/giampaolo/psutil) to calculate CPU
     utilization
 
@@ -134,7 +134,7 @@ ACTION = [
     ('writing_file', 'BOOL', ACTION),
 
     # Optional Commands
-    ('speak_config', 'SECTION', 'KEY'), # speak a configuration.
+    ('speak_config', 'SECTION', 'OPTION'), # speak a configuration.
     # calculate CPU utilization for an interval and speak it.
     ('speak_cpu_utilization', 'INTERVAL'),
     # speak seconds until an event.
