@@ -249,7 +249,18 @@ def get_program_group(program_group_base=None):
                                  program_group_base)
     return program_group
 
-def writing_file(target_path):
+def is_running(process):
+    import subprocess
+
+    image = process + '.exe'
+    output = subprocess.check_output(['tasklist', '/fi',
+                                      'imagename eq ' + image])
+    if re.search(image, str(output)):
+        return True
+    else:
+        return False
+
+def is_writing(target_path):
     import time
 
     if os.path.exists(target_path) \

@@ -124,7 +124,7 @@ def main():
                 prompts={'key': 'command', 'value': 'argument',
                          'additional_value': 'additional argument',
                          'end_of_list': 'end of commands'},
-                keys={'boolean': ('writing_file',),
+                keys={'boolean': ('is_recording',),
                       'additional_value': ('click_widget', 'speak_config'),
                       'no_value': ('back_to', 'copy_symbols_from_market_data',
                                    'count_trades', 'take_screenshot',
@@ -261,9 +261,9 @@ def configure(trade):
         'speak_seconds_until_open':
         [('speak_seconds_until_event', '${Market Data:opening_time}')],
         'start_manual_recording':
-        [('writing_file', 'False', [('press_hotkeys', 'alt, f9')])],
+        [('is_recording', 'False', [('press_hotkeys', 'alt, f9')])],
         'stop_manual_recording':
-        [('writing_file', 'True', [('press_hotkeys', 'alt, f9')])]}
+        [('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]}
     config['HYPERSBI2 Schedules'] = {
         'start_new_manual_recording': ('08:50:00', 'start_manual_recording'),
         'speak_60_seconds_until_open':
@@ -457,7 +457,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         else:
             return latest
 
-def run_scheduler(trade, config, gui_callbacks, image_name):
+def run_scheduler(trade, config, gui_callbacks, image):
     import sched
     import subprocess
 
@@ -488,8 +488,8 @@ def run_scheduler(trade, config, gui_callbacks, image_name):
 
     while scheduler.queue:
         output = subprocess.check_output(['tasklist', '/fi',
-                                          'imagename eq ' + image_name])
-        if re.search(image_name, str(output)):
+                                          'imagename eq ' + image])
+        if re.search(image, str(output)):
             scheduler.run(False)
             time.sleep(1)
         else:
@@ -608,15 +608,14 @@ def execute_action(trade, config, gui_callbacks, action):
             pyautogui.write(str(trade.share_size))
 
         # Boolean Command
-        elif command == 'writing_file':
+        elif command == 'is_recording':
             section = config['General']
             screencast_directory = section['screencast_directory']
             screencast_pattern = section['screencast_pattern']
             files = [f for f in os.listdir(screencast_directory)
                            if re.fullmatch(screencast_pattern, f)]
             latest = os.path.join(screencast_directory, files[-1])
-            if file_utilities.writing_file(latest) \
-               == ast.literal_eval(argument):
+            if file_utilities.is_writing(latest) == ast.literal_eval(argument):
                 execute_action(trade, config, gui_callbacks,
                                additional_argument)
 

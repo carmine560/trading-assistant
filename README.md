@@ -130,8 +130,8 @@ ACTION = [
     ('write_share_size',),           # write the calculated share size.
 
     # Boolean Command
-    # execute an ACTION if writing a file is a BOOL value.
-    ('writing_file', 'BOOL', ACTION),
+    # execute an ACTION if recording a screencast is a BOOL value.
+    ('is_recording', 'BOOL', ACTION),
 
     # Optional Commands
     ('speak_config', 'SECTION', 'OPTION'), # speak a configuration.

@@ -99,13 +99,13 @@ def show_hide_window(hwnd, title_regex):
             win32gui.ShowWindow(hwnd, 6)
         return
 
-def show_hide_window_on_click(gui_callbacks, image_name, title_regex,
+def show_hide_window_on_click(gui_callbacks, image, title_regex,
                               callback=show_hide_window):
     gui_callbacks.callback = callback
     gui_callbacks.extra = title_regex
     with mouse.Listener(on_click=gui_callbacks.enumerate_windows_on_click) \
          as listener:
-        thread = Thread(target=check_process, args=(image_name, listener))
+        thread = Thread(target=check_process, args=(image, listener))
         thread.start()
         listener.join()
 
@@ -140,11 +140,11 @@ def wait_for_window(gui_callbacks, title_regex):
         win32gui.EnumWindows(gui_callbacks.check_for_window, title_regex)
         time.sleep(0.001)
 
-def check_process(image_name, listener):
+def check_process(image, listener):
     while True:
         output = subprocess.check_output(['tasklist', '/fi',
-                                          'imagename eq ' + image_name])
-        if re.search(image_name, str(output)):
+                                          'imagename eq ' + image])
+        if re.search(image, str(output)):
             time.sleep(1)
         else:
             listener.stop()
