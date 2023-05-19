@@ -42,9 +42,8 @@ def modify_option(config, section, option, config_file, prompts={}, keys={}):
         elif answer == 'quit':
             return False
 
-        with open(config_file, 'w', encoding='utf-8') as f:
-            config.write(f)
-            return True
+        write_config(config, config_file)
+        return True
 
 def modify_tuple_option(config, section, option, config_file, prompts={},
                         keys={}):
@@ -59,11 +58,9 @@ def modify_tuple_option(config, section, option, config_file, prompts={},
                            created, prompts=prompts, keys=keys)
     if tuples:
         config[section][option] = str(tuples)
-        with open(config_file, 'w', encoding='utf-8') as f:
-            config.write(f)
+        write_config(config, config_file)
         return True
     else:
-        # TODO
         delete_option(config, section, option, config_file)
         return False
 
@@ -246,5 +243,8 @@ def configure_position(answer, value=''):
 def delete_option(config, section, option, config_file):
     if config.has_option(section, option):
         config.remove_option(section, option)
-        with open(config_file, 'w', encoding='utf-8') as f:
-            config.write(f)
+        write_config(config, config_file)
+
+def write_config(config, config_file):
+    with open(config_file, 'w', encoding='utf-8') as f:
+        config.write(f)
