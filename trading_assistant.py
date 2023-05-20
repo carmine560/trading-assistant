@@ -18,7 +18,74 @@ import file_utilities
 import gui_interactions
 
 class Trade:
+    """A class to represent a trade.
+
+    Attributes:
+        brokerage : name of the brokerage
+        process : name of the process
+        config_directory : directory path for configuration files
+        script_base : base name of the script
+        config_file : configuration file path
+        market_directory : directory path for market related files
+        market_holidays : market holidays file path
+        closing_prices : closing prices file path
+        resource_directory : directory path for resource files
+        customer_margin_ratios : customer margin ratios file path
+        startup_script : startup script file path
+        previous_position : previous position of the cursor
+        cash_balance : cash balance
+        symbol : symbol of the stock
+        share_size : share size
+        speech_engine : speech engine object, None by default
+
+    Methods:
+        __init__(self, brokerage, process):
+            Initializes a class object.
+
+            Args:
+                brokerage: name of the brokerage
+                process: name of the process
+
+            Returns:
+                None
+
+        get_symbol(self, hwnd, title_regex):
+            Get symbol from window title.
+
+            Args:
+                hwnd: Window handle
+                title_regex: Regular expression to match the window
+                title
+
+            Returns:
+                None
+
+            Sets:
+    """
     def __init__(self, brokerage, process):
+        """Initialize a class object.
+
+        Args:
+            brokerage: name of the brokerage
+            process: name of the process
+
+        Attributes:
+            brokerage : name of the brokerage
+            process : name of the process
+            config_directory : directory path for configuration files
+            script_base : base name of the script
+            config_file : configuration file path
+            market_directory : directory path for market related files
+            market_holidays : market holidays file path
+            closing_prices : closing prices file path
+            resource_directory : directory path for resource files
+            customer_margin_ratios : customer margin ratios file path
+            startup_script : startup script file path
+            previous_position : previous position of the cursor
+            cash_balance : cash balance
+            symbol : symbol of the stock
+            share_size : share size
+            speech_engine : speech engine object, None by default"""
         self.brokerage = brokerage
         self.process = process
         self.config_directory = os.path.join(
@@ -51,12 +118,33 @@ class Trade:
         self.speech_engine = None
 
     def get_symbol(self, hwnd, title_regex):
+        """Get symbol from window title.
+
+        Args:
+            hwnd: Window handle
+            title_regex: Regular expression to match the window title
+
+        Returns:
+            None
+
+        Sets:
+            symbol: Symbol extracted from the window title"""
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
             self.symbol = matched.group(1)
             return
 
 def main():
+    """The main function of the program.
+
+    Args:
+        None
+
+    Returns:
+        None
+
+    Raises:
+        None"""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     parser.add_argument(
@@ -194,6 +282,17 @@ def main():
                                              'x, y, width, height, index'})
 
 def configure(trade):
+    """Configures the trade settings.
+
+    Args:
+        trade: Trade object containing the configuration file and
+        process information.
+
+    Returns:
+        A ConfigParser object containing the configuration settings.
+
+    Raises:
+        OSError: If location.dat file cannot be read."""
     config = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation())
     config['General'] = {
@@ -305,6 +404,14 @@ def configure(trade):
     return config
 
 def save_customer_margin_ratios(trade, config):
+    """Save customer margin ratios to a CSV file.
+
+    Args:
+        trade: Trade object
+        config: Configuration object
+
+    Returns:
+        None"""
     global pd
     import pandas as pd
 
@@ -341,6 +448,19 @@ def save_customer_margin_ratios(trade, config):
         df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
 def save_market_data(trade, config, clipboard=False):
+    """Save market data.
+
+    Args:
+        trade: an instance of Trade class
+        config: a dictionary containing configuration details
+        clipboard: a boolean indicating whether to copy data to
+        clipboard or not
+
+    Returns:
+        None
+
+    Raises:
+        None"""
     global pd
     import pandas as pd
 
@@ -397,6 +517,23 @@ def save_market_data(trade, config, clipboard=False):
 
 def get_latest(config, market_holidays, update_time, time_zone, *paths,
                volatile_time=None):
+    """Get the latest timestamp.
+
+    Args:
+        config: A dictionary containing configuration details.
+        market_holidays: A path to the market holidays file.
+        update_time: A string representing the time of day when the web
+        page is updated.
+        time_zone: A string representing the time zone.
+        *paths: A variable number of paths.
+        volatile_time: A string representing a volatile time.
+
+    Returns:
+        The latest timestamp.
+
+    Raises:
+        Exception: If the request to the URL fails.
+        ValueError: If the market holidays file does not exist."""
     import requests
 
     section = config['Market Holidays']
@@ -458,6 +595,19 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
             return latest
 
 def run_scheduler(trade, config, gui_callbacks, image):
+    """Runs a scheduler for a given trade.
+
+    Args:
+        trade : trade to be scheduled
+        config : configuration for the scheduler
+        gui_callbacks : callbacks for the GUI
+        image : image to be run
+
+    Returns:
+        None
+
+    Raises:
+        None"""
     import sched
     import subprocess
 
@@ -497,6 +647,22 @@ def run_scheduler(trade, config, gui_callbacks, image):
                 scheduler.cancel(schedule)
 
 def execute_action(trade, config, gui_callbacks, action):
+    """Execute an action based on a list of commands.
+
+    Args:
+        trade: an instance of Trade class
+        config: a configparser object
+        gui_callbacks: a GUI callback object
+        action: a list of commands to execute
+
+    Returns:
+        None
+
+    Raises:
+        NotImplementedError: If the animal is silent and no sound is
+        provided
+        ValueError: If s1 or s2 is None
+    """
     for index in range(len(action)):
         command = action[index][0]
         if len(action[index]) > 1:
@@ -647,6 +813,17 @@ def execute_action(trade, config, gui_callbacks, action):
             sys.exit(1)
 
 def create_startup_script(trade, config):
+    """Creates a startup script for a trade.
+
+    Args:
+        trade: A trade object
+        config: A configuration object
+
+    Returns:
+        None
+
+    Raises:
+        None"""
     section = config[trade.process + ' Startup Script']
     pre_start_options = section['pre_start_options']
     post_start_options = section['post_start_options']
@@ -686,6 +863,19 @@ def create_startup_script(trade, config):
         f.writelines(lines)
 
 def calculate_share_size(trade, config, position):
+    """Calculate share size for a trade.
+
+    Args:
+        trade: Trade object
+        config: Configuration object
+        position: Position of the trade ('long' or 'short')
+
+    Returns:
+        None
+
+    Raises:
+        SystemExit: If share size is 0 or position is 'short' and share
+        size is greater than 50 times trading unit."""
     section = config[trade.process]
     fixed_cash_balance = int(section['fixed_cash_balance'].replace(',', '')
                              or 0)
@@ -723,6 +913,23 @@ def calculate_share_size(trade, config, position):
     trade.share_size = share_size
 
 def recognize_text(section, x, y, width, height, index, text_type='integers'):
+    """Recognize text from an image.
+
+    Args:
+        section: A dictionary containing configuration parameters.
+        x: The x-coordinate of the top left corner of the image.
+        y: The y-coordinate of the top left corner of the image.
+        width: The width of the image.
+        height: The height of the image.
+        index: The index of the string to return.
+        text_type: The type of text to recognize. Default is 'integers'.
+
+    Returns:
+        If index is None, returns a list of recognized
+        strings. Otherwise, returns the string at the given index.
+
+    Raises:
+        NotImplementedError: If the animal is silent."""
     from PIL import Image
     from PIL import ImageGrab
     from PIL import ImageOps
@@ -766,6 +973,25 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
         return split_string[int(index)]
 
 def get_price_limit(trade, config):
+    """Get the price limit for a trade.
+
+    Args:
+        trade : Trade object
+        config : Configuration object
+
+    Returns:
+        The price limit for the trade
+
+    Raises:
+        OSError: If there is an error opening the file containing
+        closing prices
+
+    Notes:
+        This function reads the closing price for the trade's symbol
+        from a CSV file and calculates the price limit based on the
+        closing price. If the closing price is not available, it uses
+        OCR to recognize the price limit from a screenshot of the
+        trading platform."""
     closing_price = 0.0
     try:
         with open(trade.closing_prices + trade.symbol[0] + '.csv', 'r') as f:
@@ -854,6 +1080,17 @@ def get_price_limit(trade, config):
     return price_limit
 
 def initialize_speech_engine(trade):
+    """Initialize speech engine for text-to-speech conversion.
+
+    Args:
+        trade: An object representing a trade
+
+    Returns:
+        None
+
+    Raises:
+        ImportError: If pyttsx3 module is not installed
+    """
     if not trade.speech_engine:
         import pyttsx3
 

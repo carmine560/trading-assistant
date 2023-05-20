@@ -8,11 +8,37 @@ ANSI_HIGHLIGHT = '\033[4m'
 ANSI_RESET = '\033[m'
 
 def list_section(config, section):
+    """List all options in a section of a configuration file.
+
+    Args:
+        config: A configparser object representing the configuration
+        file
+        section: The name of the section to list options from
+
+    Returns:
+        None
+
+    Raises:
+        None"""
     if config.has_section(section):
         for option in config[section]:
             print(option)
 
 def modify_section(config, section, config_file, keys={}):
+    """Modify a section in a configuration file.
+
+    Args:
+        config: ConfigParser object representing the configuration file
+        section: name of the section to modify
+        config_file: path to the configuration file
+        keys: dictionary containing the keys to modify and their new
+        values
+
+    Returns:
+        None
+
+    Raises:
+        None"""
     if config.has_section(section):
         for option in config[section]:
             if not modify_option(config, section, option, config_file,
@@ -20,6 +46,21 @@ def modify_section(config, section, config_file, keys={}):
                 break
 
 def modify_option(config, section, option, config_file, prompts={}, keys={}):
+    """Modifies an option in a configuration file.
+
+    Args:
+        config (ConfigParser): The configuration object.
+        section (str): The section in which the option is located.
+        option (str): The option to modify.
+        config_file (str): The path to the configuration file.
+        prompts (dict): A dictionary of prompts to display to the user.
+        keys (dict): A dictionary of keys to use for modifying tuples.
+
+    Returns:
+        True if the option was modified successfully, False otherwise.
+
+    Raises:
+        N/A"""
     import re
 
     if config.has_option(section, option):
@@ -47,6 +88,21 @@ def modify_option(config, section, option, config_file, prompts={}, keys={}):
 
 def modify_tuple_option(config, section, option, config_file, prompts={},
                         keys={}):
+    """Modify a tuple option in a configuration file.
+
+    Args:
+        config (ConfigParser): configuration object
+        section (str): section name in the configuration file
+        option (str): option name in the configuration file
+        config_file (str): path to the configuration file
+        prompts (dict): dictionary of prompts to display to the user
+        keys (dict): dictionary of keys to use for the tuple
+
+    Returns:
+        True if the tuple was modified successfully, False otherwise
+
+    Raises:
+        None"""
     created = False
     if not config.has_section(section):
         config[section] = {}
@@ -65,6 +121,21 @@ def modify_tuple_option(config, section, option, config_file, prompts={},
         return False
 
 def modify_tuples(tuples, created, level=0, prompts={}, keys={}):
+    """Modifies a list of tuples.
+
+    Args:
+        tuples: A list of tuples to be modified.
+        created: A boolean value indicating whether the list is being
+        created or not.
+        level: An integer indicating the level of the list.
+        prompts: A dictionary containing prompts for different keys.
+        keys: A dictionary containing different types of keys.
+
+    Returns:
+        The modified list of tuples.
+
+    Raises:
+        None."""
     key_prompt = prompts.get('key', 'key')
     value_prompt = prompts.get('value', 'value')
     additional_value_prompt = prompts.get('additional_value',
@@ -167,6 +238,18 @@ def modify_tuples(tuples, created, level=0, prompts={}, keys={}):
     return tuples
 
 def modify_data(prompt, level=0, data=''):
+    """Modify data.
+
+    Args:
+        prompt (str): The prompt to display to the user.
+        level (int, optional): The level of indentation. Defaults to 0.
+        data (str, optional): The data to modify. Defaults to ''.
+
+    Returns:
+        str: The modified data.
+
+    Raises:
+        No specific exceptions are raised."""
     if data:
         data = input('    ' * level + prompt + ' '
                      + ANSI_DEFAULT + data + ANSI_RESET + ': ').strip() or data
@@ -175,6 +258,16 @@ def modify_data(prompt, level=0, data=''):
     return data
 
 def tidy_answer(answers, level=0):
+    """Tidy up user input by highlighting the first letter of each word
+    and prompting the user for an answer.
+
+    Args:
+        answers: A list of possible answers
+        level: The indentation level for the prompt (default 0)
+
+    Returns:
+        The user's answer as a string, or an empty string if the answer
+        does not match any of the possible answers."""
     initialism = ''
 
     previous_initialism = ''
@@ -209,6 +302,18 @@ def tidy_answer(answers, level=0):
     return answer
 
 def configure_position(answer, value=''):
+    """Configures the position of the mouse cursor.
+
+    Args:
+        answer (str): The answer to the prompt. Can be 'insert' or
+        'modify'.
+        value (str): The value to modify. Default is an empty string.
+
+    Returns:
+        str: The new value of the position of the mouse cursor.
+
+    Raises:
+        None."""
     import time
 
     import pyautogui
@@ -241,10 +346,34 @@ def configure_position(answer, value=''):
         return value
 
 def delete_option(config, section, option, config_file):
+    """Delete an option from a configuration file.
+
+    Args:
+        config (ConfigParser): The configuration object
+        section (str): The section of the option to be deleted
+        option (str): The option to be deleted
+        config_file (str): The path to the configuration file
+
+    Returns:
+        None
+
+    Raises:
+        None"""
     if config.has_option(section, option):
         config.remove_option(section, option)
         write_config(config, config_file)
 
 def write_config(config, config_file):
+    """Writes a configuration to a file.
+
+    Args:
+        config: A configuration object.
+        config_file: A file path to write the configuration to.
+
+    Returns:
+        None
+
+    Raises:
+        IOError: If the file cannot be opened or written to."""
     with open(config_file, 'w', encoding='utf-8') as f:
         config.write(f)
