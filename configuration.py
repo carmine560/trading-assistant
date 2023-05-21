@@ -46,18 +46,21 @@ def modify_section(config, section, config_file, keys={}):
                 break
 
 def modify_option(config, section, option, config_file, prompts={}, keys={}):
-    """Modifies an option in a configuration file.
+    """Modify an option in a configuration file.
 
     Args:
-        config (ConfigParser): The configuration object.
-        section (str): The section in which the option is located.
+        config (ConfigParser): The configuration object to modify.
+        section (str): The section of the configuration file containing
+        the option.
         option (str): The option to modify.
         config_file (str): The path to the configuration file.
         prompts (dict): A dictionary of prompts to display to the user.
-        keys (dict): A dictionary of keys to use for modifying tuples.
+        keys (dict): A dictionary of keys to use when modifying the
+        option.
 
     Returns:
-        True if the option was modified successfully, False otherwise.
+        bool: True if the option was successfully modified, False
+        otherwise.
 
     Raises:
         N/A"""
@@ -66,7 +69,11 @@ def modify_option(config, section, option, config_file, prompts={}, keys={}):
     if config.has_option(section, option):
         print(option, '=',
               ANSI_DEFAULT + config[section][option] + ANSI_RESET)
-        answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
+        try:
+            boolean_value = config[section].getboolean(option)
+            answer = tidy_answer(['toggle', 'default', 'quit'])
+        except ValueError:
+            answer = tidy_answer(['modify', 'default', 'quit'])
 
         if answer == 'modify':
             if re.sub('\s+', '', config[section][option])[0:2] == '[(':
@@ -76,8 +83,8 @@ def modify_option(config, section, option, config_file, prompts={}, keys={}):
                 config[section][option] = modify_data(
                     prompts.get('value', 'value'),
                     data=config[section][option])
-        elif answer == 'empty':
-            config[section][option] = ''
+        elif answer == 'toggle':
+            config[section][option] = str(not boolean_value)
         elif answer == 'default':
             config.remove_option(section, option)
         elif answer == 'quit':
