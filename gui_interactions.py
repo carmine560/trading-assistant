@@ -1,6 +1,5 @@
 from threading import Thread
 import re
-import subprocess
 import sys
 import time
 
@@ -299,19 +298,17 @@ def wait_for_window(gui_callbacks, title_regex):
         time.sleep(0.001)
 
 def check_process(process, listener):
-    """Check if a process is running and stop a listener.
+    """Check if a process is running and stop the listener when it is
+    not.
 
     Args:
-        process: name of the process to check
-        listener: listener to stop if the process is not running
+        process: The process to check
+        listener: The listener to stop when the process is not
+        running"""
+    import process_utilities
 
-    Returns:
-        None"""
-    image = process + '.exe'
     while True:
-        output = subprocess.check_output(['tasklist', '/fi',
-                                          'imagename eq ' + image])
-        if re.search(image, str(output)):
+        if process_utilities.is_running(process):
             time.sleep(1)
         else:
             listener.stop()

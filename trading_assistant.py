@@ -598,10 +598,10 @@ def run_scheduler(trade, config, gui_callbacks, process):
     """Runs a scheduler for a given trade.
 
     Args:
-        trade: Trade object
-        config: Configuration object
-        gui_callbacks: Callbacks for GUI
-        process: Process object
+        trade: The trade to run the scheduler for
+        config: The configuration for the scheduler
+        gui_callbacks: Callbacks for the GUI
+        process: The process to run the scheduler for
 
     Returns:
         None
@@ -609,20 +609,14 @@ def run_scheduler(trade, config, gui_callbacks, process):
     Raises:
         None
 
-    Imports:
-        sched
-        subprocess
-
-    Variables:
-        scheduler : a scheduler object
-        schedules : a list of schedules
-        section : a section of the configuration file
-        speech : a boolean indicating whether speech is enabled or not
-
-    Raises:
-        None"""
+    Note:
+        This function uses the sched module to schedule events. The
+        events are read from the configuration file and entered into the
+        scheduler. The scheduler is run until all events have been
+        executed or the process is stopped."""
     import sched
-    import subprocess
+
+    import process_utilities
 
     scheduler = sched.scheduler(time.time, time.sleep)
     schedules = []
@@ -650,7 +644,7 @@ def run_scheduler(trade, config, gui_callbacks, process):
         initialize_speech_engine(trade)
 
     while scheduler.queue:
-        if file_utilities.is_running(process):
+        if process_utilities.is_running(process):
             scheduler.run(False)
             time.sleep(1)
         else:
