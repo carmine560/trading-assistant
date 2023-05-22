@@ -8,14 +8,13 @@ import re
 import sys
 import time
 
-from pynput import keyboard
 import pyautogui
-import pytesseract
 import win32gui
 
 import configuration
 import file_utilities
 import gui_interactions
+import process_utilities
 
 class Trade:
     """A class to represent a trade.
@@ -598,10 +597,10 @@ def run_scheduler(trade, config, gui_callbacks, process):
     """Runs a scheduler for a given trade.
 
     Args:
-        trade: The trade to run the scheduler for
-        config: The configuration for the scheduler
-        gui_callbacks: Callbacks for the GUI
-        process: The process to run the scheduler for
+        trade : trade object
+        config : configuration object
+        gui_callbacks : GUI callbacks object
+        process : process object
 
     Returns:
         None
@@ -610,13 +609,13 @@ def run_scheduler(trade, config, gui_callbacks, process):
         None
 
     Note:
-        This function uses the sched module to schedule events. The
-        events are read from the configuration file and entered into the
-        scheduler. The scheduler is run until all events have been
+        This function uses the sched module to schedule actions for a
+        given trade. It reads the schedule times and actions from the
+        configuration file and schedules them using the scheduler. If
+        the action requires speech, it initializes the speech
+        engine. The scheduler runs until all scheduled actions have been
         executed or the process is stopped."""
     import sched
-
-    import process_utilities
 
     scheduler = sched.scheduler(time.time, time.sleep)
     schedules = []
@@ -939,23 +938,25 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
     """Recognize text from an image.
 
     Args:
-        section: A dictionary containing configuration parameters.
-        x: The x-coordinate of the top left corner of the image.
-        y: The y-coordinate of the top left corner of the image.
-        width: The width of the image.
-        height: The height of the image.
-        index: The index of the string to return.
-        text_type: The type of text to recognize. Default is 'integers'.
+        section: dictionary containing configuration parameters
+        x: x-coordinate of the top left corner of the image
+        y: y-coordinate of the top left corner of the image
+        width: width of the image
+        height: height of the image
+        index: index of the string to return
+        text_type: type of text to recognize. Default is 'integers'
 
     Returns:
         If index is None, returns a list of recognized
         strings. Otherwise, returns the string at the given index.
 
     Raises:
-        NotImplementedError: If the animal is silent."""
+        ImportError: If the required libraries are not installed
+        Exception: If the image cannot be processed"""
     from PIL import Image
     from PIL import ImageGrab
     from PIL import ImageOps
+    import pytesseract
 
     image_magnification = int(section['image_magnification'])
     binarization_threshold = int(section['binarization_threshold'])
