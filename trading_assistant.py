@@ -135,15 +135,15 @@ class Trade:
             return
 
 def main():
-    """The main function of the program.
+    """The main function of a program.
+
+    This function parses command line arguments and performs various
+    actions based on the arguments provided.
 
     Args:
         None
 
     Returns:
-        None
-
-    Raises:
         None"""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
@@ -201,7 +201,7 @@ def main():
 
         process = Process(
             target=run_scheduler,
-            args=(trade, config, gui_callbacks, trade.process + '.exe'))
+            args=(trade, config, gui_callbacks, trade.process))
         process.start()
     if args.M == 'LIST_ACTIONS':
         configuration.list_section(config, trade.process + ' Actions')
@@ -594,17 +594,30 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         else:
             return latest
 
-def run_scheduler(trade, config, gui_callbacks, image):
+def run_scheduler(trade, config, gui_callbacks, process):
     """Runs a scheduler for a given trade.
 
     Args:
-        trade : trade to be scheduled
-        config : configuration for the scheduler
-        gui_callbacks : callbacks for the GUI
-        image : image to be run
+        trade: Trade object
+        config: Configuration object
+        gui_callbacks: Callbacks for GUI
+        process: Process object
 
     Returns:
         None
+
+    Raises:
+        None
+
+    Imports:
+        sched
+        subprocess
+
+    Variables:
+        scheduler : a scheduler object
+        schedules : a list of schedules
+        section : a section of the configuration file
+        speech : a boolean indicating whether speech is enabled or not
 
     Raises:
         None"""
@@ -637,9 +650,7 @@ def run_scheduler(trade, config, gui_callbacks, image):
         initialize_speech_engine(trade)
 
     while scheduler.queue:
-        output = subprocess.check_output(['tasklist', '/fi',
-                                          'imagename eq ' + image])
-        if re.search(image, str(output)):
+        if file_utilities.is_running(process):
             scheduler.run(False)
             time.sleep(1)
         else:
@@ -647,22 +658,40 @@ def run_scheduler(trade, config, gui_callbacks, image):
                 scheduler.cancel(schedule)
 
 def execute_action(trade, config, gui_callbacks, action):
-    """Execute an action based on a list of commands.
+    """Execute an action.
 
     Args:
-        trade: an instance of Trade class
-        config: a configparser object
-        gui_callbacks: a GUI callback object
-        action: a list of commands to execute
+        trade: An instance of the Trade class
+        config: A dictionary containing configuration information
+        gui_callbacks: An instance of the GuiCallbacks class
+        action: A list of commands to execute
 
     Returns:
         None
 
     Raises:
-        NotImplementedError: If the animal is silent and no sound is
-        provided
-        ValueError: If s1 or s2 is None
-    """
+        NotImplementedError: If the animal is silent and the 'says'
+        command is called
+
+    Commands:
+        back_to: Move the mouse to the previous position
+        beep: Play a beep sound
+        calculate_share_size: Calculate the share size
+        click: Click the mouse at the given coordinates
+        click_widget: Click a widget on the screen
+        copy_symbols_from_market_data: Copy symbols from market data
+        copy_symbols_from_numeric_column: Copy symbols from a numeric
+        column
+        count_trades: Count the number of trades
+        get_symbol: Get the symbol
+        hide_parent_window: Hide the parent window
+        hide_window: Hide the window
+        move_to: Move the mouse to the given coordinates
+        press_hotkeys: Press the given hotkeys
+        press_key: Press the given key
+        show_hide_window_on_click: Show or hide a window on click
+        show_hide_window: Show or hide a window
+        show_window"""
     for index in range(len(action)):
         command = action[index][0]
         if len(action[index]) > 1:
@@ -738,7 +767,7 @@ def execute_action(trade, config, gui_callbacks, action):
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
             gui_interactions.show_hide_window_on_click(
-                gui_callbacks, trade.process + '.exe', argument)
+                gui_callbacks, trade.process, argument)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, argument)
         elif command == 'show_window':

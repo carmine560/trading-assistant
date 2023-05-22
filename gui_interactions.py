@@ -216,24 +216,28 @@ def show_hide_window(hwnd, title_regex):
             win32gui.ShowWindow(hwnd, 6)
         return
 
-def show_hide_window_on_click(gui_callbacks, image, title_regex,
+def show_hide_window_on_click(gui_callbacks, process, title_regex,
                               callback=show_hide_window):
     """Show or hide a window on click.
 
     Args:
-        gui_callbacks: object of class GuiCallbacks
-        image: image to be checked
-        title_regex: regular expression to match the title of the window
-        callback: callback function to be called on click (default:
-        show_hide_window)
+        gui_callbacks: An object of GuiCallbacks class.
+        process: A process to check.
+        title_regex: A regular expression to match the title of the
+        window.
+        callback: A function to call when the window is clicked. Default
+        is show_hide_window.
 
     Returns:
+        None
+
+    Raises:
         None"""
     gui_callbacks.callback = callback
     gui_callbacks.extra = title_regex
     with mouse.Listener(on_click=gui_callbacks.enumerate_windows_on_click) \
          as listener:
-        thread = Thread(target=check_process, args=(image, listener))
+        thread = Thread(target=check_process, args=(process, listener))
         thread.start()
         listener.join()
 
@@ -294,18 +298,16 @@ def wait_for_window(gui_callbacks, title_regex):
         win32gui.EnumWindows(gui_callbacks.check_for_window, title_regex)
         time.sleep(0.001)
 
-def check_process(image, listener):
-    """Check if a process is running.
+def check_process(process, listener):
+    """Check if a process is running and stop a listener.
 
     Args:
-        image: name of the process to check
-        listener: listener object to stop the process
+        process: name of the process to check
+        listener: listener to stop if the process is not running
 
     Returns:
-        None
-
-    Raises:
         None"""
+    image = process + '.exe'
     while True:
         output = subprocess.check_output(['tasklist', '/fi',
                                           'imagename eq ' + image])
