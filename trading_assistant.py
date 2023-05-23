@@ -20,35 +20,29 @@ class Trade:
     """A class to represent a trade.
 
     Attributes:
-        brokerage : name of the brokerage
-        process : name of the process
-        config_directory : directory path for configuration files
-        script_base : base name of the script
-        config_file : configuration file path
-        market_directory : directory path for market related files
-        market_holidays : market holidays file path
-        closing_prices : closing prices file path
-        resource_directory : directory path for resource files
-        customer_margin_ratios : customer margin ratios file path
-        startup_script : startup script file path
-        previous_position : previous position of the cursor
-        cash_balance : cash balance
-        symbol : symbol of the stock
-        share_size : share size
-        speech_engine : speech engine object, None by default
+        brokerage : the brokerage used for the trade
+        process : the process used for the trade
+        config_directory : the directory where the configuration files
+        are stored
+        script_base : the base name of the script
+        config_file : the configuration file for the script
+        market_directory : the directory where the market files are
+        stored
+        market_holidays : the file containing market holidays
+        closing_prices : the file containing closing prices
+        resource_directory : the directory where the resource files are
+        stored
+        customer_margin_ratios : the file containing customer margin
+        ratios
+        startup_script : the script to start the trade
+        previous_position : the previous position of the mouse
+        cash_balance : the cash balance of the trade
+        symbol : the symbol of the trade
+        share_size : the share size of the trade
+        speech_engine : the speech engine used for the trade
 
     Methods:
-        __init__(self, brokerage, process):
-            Initializes a class object.
-
-            Args:
-                brokerage: name of the brokerage
-                process: name of the process
-
-            Returns:
-                None
-
-        get_symbol(self, hwnd, title_regex):
+        get_symbol(hwnd, title_regex):
             Get symbol from window title.
 
             Args:
@@ -60,9 +54,9 @@ class Trade:
                 None
 
             Sets:
-    """
+                symbol: Symbol extracted from the window title"""
     def __init__(self, brokerage, process):
-        """Initialize a class object.
+        """A function to initialize an object.
 
         Args:
             brokerage: name of the brokerage
@@ -72,19 +66,21 @@ class Trade:
             brokerage : name of the brokerage
             process : name of the process
             config_directory : directory path for configuration files
-            script_base : base name of the script
-            config_file : configuration file path
-            market_directory : directory path for market related files
-            market_holidays : market holidays file path
-            closing_prices : closing prices file path
+            script_base : name of the script file
+            config_file : path of the configuration file
+            market_directory : directory path for market files
+            market_holidays : path of the market holidays file
+            closing_prices : path of the closing prices file
             resource_directory : directory path for resource files
-            customer_margin_ratios : customer margin ratios file path
-            startup_script : startup script file path
-            previous_position : previous position of the cursor
+            customer_margin_ratios : path of the customer margin ratios
+            file
+            startup_script : path of the startup script file
+            previous_position : previous position of the mouse
             cash_balance : cash balance
             symbol : symbol of the stock
-            share_size : share size
-            speech_engine : speech engine object, None by default"""
+            share_size : share size of the stock
+            speech_engine : speech engine used for text-to-speech
+            conversion"""
         self.brokerage = brokerage
         self.process = process
         self.config_directory = os.path.join(
@@ -104,6 +100,7 @@ class Trade:
             self.resource_directory, 'customer_margin_ratios.csv')
         self.startup_script = os.path.join(self.resource_directory,
                                            self.script_base + '.ps1')
+        # TODO
 
         for directory in [self.config_directory, self.market_directory,
                           self.resource_directory]:
@@ -281,17 +278,14 @@ def main():
                                              'x, y, width, height, index'})
 
 def configure(trade):
-    """Configures the trade settings.
+    """Configures the trade.
 
     Args:
-        trade: Trade object containing the configuration file and
-        process information.
+        trade: An object representing the trade
 
     Returns:
-        A ConfigParser object containing the configuration settings.
-
-    Raises:
-        OSError: If location.dat file cannot be read."""
+        A ConfigParser object containing the configuration information
+        for the trade."""
     config = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation())
     config['General'] = {
@@ -349,26 +343,10 @@ def configure(trade):
         'binarization_threshold': '128'}
     config['HYPERSBI2 Startup Script'] = {
         'pre_start_options': '-rd',
-        'post_start_options': '',
+        'post_start_options': '-s',
         'running_options': ''}
-    config['HYPERSBI2 Actions'] = {
-        'minimize_all_windows': [('press_hotkeys', 'win, m')],
-        'show_hide_watchlists': [('show_hide_window', '登録銘柄')],
-        'show_hide_watchlists_on_click':
-        [('show_hide_window_on_click', '登録銘柄')],
-        'speak_seconds_until_open':
-        [('speak_seconds_until_event', '${Market Data:opening_time}')],
-        'start_manual_recording':
-        [('is_recording', 'False', [('press_hotkeys', 'alt, f9')])],
-        'stop_manual_recording':
-        [('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]}
-    config['HYPERSBI2 Schedules'] = {
-        'start_new_manual_recording': ('08:50:00', 'start_manual_recording'),
-        'speak_60_seconds_until_open':
-        ('08:59:00', 'speak_seconds_until_open'),
-        'speak_30_seconds_until_open':
-        ('08:59:30', 'speak_seconds_until_open'),
-        'stop_current_manual_recording': ('10:00:00', 'stop_manual_recording')}
+    config['HYPERSBI2 Actions'] = {}
+    config['HYPERSBI2 Schedules'] = {}
     config['Variables'] = {
         'current_date': str(date.today()),
         'current_number_of_trades': '0'}
@@ -594,13 +572,13 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
             return latest
 
 def run_scheduler(trade, config, gui_callbacks, process):
-    """Runs a scheduler for a given trade.
+    """Runs a scheduler for a trade.
 
     Args:
-        trade : trade object
-        config : configuration object
-        gui_callbacks : GUI callbacks object
-        process : process object
+        trade: Trade object
+        config: Configuration object
+        gui_callbacks: GUI callback functions
+        process: Process object
 
     Returns:
         None
@@ -610,11 +588,11 @@ def run_scheduler(trade, config, gui_callbacks, process):
 
     Note:
         This function uses the sched module to schedule actions for a
-        given trade. It reads the schedule times and actions from the
-        configuration file and schedules them using the scheduler. If
-        the action requires speech, it initializes the speech
-        engine. The scheduler runs until all scheduled actions have been
-        executed or the process is stopped."""
+        trade. It reads the schedules and actions from the configuration
+        object and schedules them using the sched module. It also checks
+        if the actions require speech and initializes the speech engine
+        if required. The scheduler runs until all the scheduled actions
+        have been executed or the process is stopped."""
     import sched
 
     scheduler = sched.scheduler(time.time, time.sleep)
@@ -624,19 +602,20 @@ def run_scheduler(trade, config, gui_callbacks, process):
     speech = False
     for option in section:
         schedule_time, action = ast.literal_eval(section[option])
+        action = ast.literal_eval(config[trade.process + ' Actions'][action])
         schedule_time = time.strptime(time.strftime('%Y-%m-%d ')
                                       + schedule_time, '%Y-%m-%d %H:%M:%S')
         schedule_time = time.mktime(schedule_time)
         if schedule_time > time.time():
-            if action in ['speak_config', 'speak_cpu_utilization',
-                          'speak_seconds_until_open']:
-                speech = True
+            for index in range(len(action)):
+                command = action[index][0]
+                if command in ('speak_config', 'speak_cpu_utilization',
+                               'speak_string', 'speak_seconds_until_time'):
+                    speech = True
 
             schedule = scheduler.enterabs(
                 schedule_time, 1, execute_action,
-                argument=(trade, config, gui_callbacks,
-                          ast.literal_eval(
-                              config[trade.process + ' Actions'][action])))
+                argument=(trade, config, gui_callbacks, action))
             schedules.append(schedule)
 
     if speech:
@@ -651,40 +630,16 @@ def run_scheduler(trade, config, gui_callbacks, process):
                 scheduler.cancel(schedule)
 
 def execute_action(trade, config, gui_callbacks, action):
-    """Execute an action.
+    """Execute an action based on a list of commands.
 
     Args:
-        trade: An instance of the Trade class
-        config: A dictionary containing configuration information
-        gui_callbacks: An instance of the GuiCallbacks class
-        action: A list of commands to execute
+        trade: an instance of a trade object
+        config: a dictionary containing configuration information
+        gui_callbacks: a dictionary containing GUI callback functions
+        action: a list of commands to execute
 
     Returns:
-        None
-
-    Raises:
-        NotImplementedError: If the animal is silent and the 'says'
-        command is called
-
-    Commands:
-        back_to: Move the mouse to the previous position
-        beep: Play a beep sound
-        calculate_share_size: Calculate the share size
-        click: Click the mouse at the given coordinates
-        click_widget: Click a widget on the screen
-        copy_symbols_from_market_data: Copy symbols from market data
-        copy_symbols_from_numeric_column: Copy symbols from a numeric
-        column
-        count_trades: Count the number of trades
-        get_symbol: Get the symbol
-        hide_parent_window: Hide the parent window
-        hide_window: Hide the window
-        move_to: Move the mouse to the given coordinates
-        press_hotkeys: Press the given hotkeys
-        press_key: Press the given key
-        show_hide_window_on_click: Show or hide a window on click
-        show_hide_window: Show or hide a window
-        show_window"""
+        None"""
     for index in range(len(action)):
         command = action[index][0]
         if len(action[index]) > 1:
@@ -765,6 +720,24 @@ def execute_action(trade, config, gui_callbacks, action):
             win32gui.EnumWindows(gui_interactions.show_hide_window, argument)
         elif command == 'show_window':
             win32gui.EnumWindows(gui_interactions.show_window, argument)
+        elif command == 'speak_config':
+            speak_text(trade, config[argument][additional_argument])
+        elif command == 'speak_cpu_utilization':
+            import psutil
+
+            speak_text(trade,
+                       str(round(psutil.cpu_percent(interval=float(argument))))
+                       + '%')
+        elif command == 'speak_string':
+            speak_text(trade, argument)
+        elif command == 'speak_seconds_until_time':
+            import math
+
+            event_time = time.strptime(time.strftime('%Y-%m-%d ') + argument,
+                                       '%Y-%m-%d %H:%M:%S')
+            event_time = time.mktime(event_time)
+            speak_text(trade,
+                       str(math.ceil(event_time - time.time())) + ' seconds')
         elif command == 'take_screenshot':
             from PIL import ImageGrab
 
@@ -806,29 +779,6 @@ def execute_action(trade, config, gui_callbacks, action):
             if file_utilities.is_writing(latest) == ast.literal_eval(argument):
                 execute_action(trade, config, gui_callbacks,
                                additional_argument)
-
-        # Optional Commands
-        elif command == 'speak_config':
-            initialize_speech_engine(trade)
-            trade.speech_engine.say(config[argument][additional_argument])
-            trade.speech_engine.runAndWait()
-        elif command == 'speak_cpu_utilization':
-            import psutil
-
-            initialize_speech_engine(trade)
-            trade.speech_engine.say(
-                str(round(psutil.cpu_percent(interval=float(argument)))) + '%')
-            trade.speech_engine.runAndWait()
-        elif command == 'speak_seconds_until_event':
-            import math
-
-            initialize_speech_engine(trade)
-            event_time = time.strptime(time.strftime('%Y-%m-%d ') + argument,
-                                       '%Y-%m-%d %H:%M:%S')
-            event_time = time.mktime(event_time)
-            trade.speech_engine.say(str(math.ceil(event_time - time.time()))
-                                    + ' seconds')
-            trade.speech_engine.runAndWait()
 
         else:
             print(command, 'is not a recognized command')
@@ -1121,6 +1071,19 @@ def initialize_speech_engine(trade):
         trade.speech_engine = pyttsx3.init()
         voices = trade.speech_engine.getProperty('voices')
         trade.speech_engine.setProperty('voice', voices[1].id)
+
+def speak_text(trade, text):
+    """Speaks the given text using the speech engine of the given trade.
+
+    Args:
+        trade : trade object containing the speech engine
+        text : text to be spoken
+
+    Returns:
+        None"""
+    initialize_speech_engine(trade)
+    trade.speech_engine.say(text)
+    trade.speech_engine.runAndWait()
 
 if __name__ == '__main__':
     main()

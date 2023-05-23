@@ -34,10 +34,8 @@ the following packages:
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html) to
     automate interactions with Hyper SBI 2
   * [pynput](https://github.com/moses-palmer/pynput) to monitor keyboard input
-  * (optional) [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak
-    information
-  * (optional) [psutil](https://github.com/giampaolo/psutil) to calculate CPU
-    utilization
+  * [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak information
+  * [psutil](https://github.com/giampaolo/psutil) to calculate CPU utilization
 
 Install each package as needed.  For example:
 
@@ -48,6 +46,8 @@ winget install UB-Mannheim.TesseractOCR
 pip install pytesseract
 pip install pyautogui
 pip install pynput
+pip install pyttsx3
+pip install psutil
 ```
 
 ## Usage ##
@@ -120,6 +120,12 @@ ACTION = [
     # show or hide a window on the middle click.
     ('show_hide_window_on_click', 'TITLE_REGEX')
     ('show_window', 'TITLE_REGEX'),  # show a window.
+    ('speak_config', 'SECTION', 'OPTION'), # speak a configuration.
+    # calculate CPU utilization for an interval and speak it.
+    ('speak_cpu_utilization', 'INTERVAL'),
+    ('speak_string', 'STRING'),      # speak a string.
+    # speak seconds until a specific time.
+    ('speak_seconds_until_time', '%H:%M:%S'),
     # take a screenshot with the number of trades and symbol as the filename.
     ('take_screenshot',),
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
@@ -131,15 +137,7 @@ ACTION = [
 
     # Boolean Command
     # execute an ACTION if recording a screencast is a BOOL value.
-    ('is_recording', 'BOOL', ACTION),
-
-    # Optional Commands
-    ('speak_config', 'SECTION', 'OPTION'), # speak a configuration.
-    # calculate CPU utilization for an interval and speak it.
-    ('speak_cpu_utilization', 'INTERVAL'),
-    # TODO
-    # speak seconds until an event.
-    ('speak_seconds_until_event', '%H:%M:%S')]
+    ('is_recording', 'BOOL', ACTION)]
 ```
 
 ### Execute Action ###
@@ -201,9 +199,9 @@ show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 The following `login` action waits for the Login window to show and clicks its
 button.
 
-> **Note** These examples underwent in an environment with 1080p, a maximized
-> Watchlists window, a left-snapped Summary window, and a right-snapped Chart
-> window.
+> **Note** These examples below underwent in an environment with 1080p
+> resolution, a maximized Watchlists window, a left-snapped Summary window, and
+> a right-snapped Chart window.
 
 ``` ini
 login = [
@@ -325,7 +323,8 @@ open_close_long_position = [
     ('write_share_size',),           # write the calculated share size.
     ('click', '476, 821'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
-    ('beep', '1000, 100'),           # notify completion.
+    # notify you of the readiness of a buy order.
+    ('speak_string', 'long'),
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # wait for space input.
@@ -338,18 +337,18 @@ open_close_long_position = [
     ('write_share_size',),           # write the calculated share size.
     ('click', '454, 934'),           # click the Market Order button.
     ('press_key', 'tab, 5'),         # focus on the Sell Order button.
-    ('beep', '1000, 100'),           # notify completion.
-    # back the cursor to the previous position.
-    ('back_to',),
     ('count_trades',),               # count the number of trades for the day.
-    ('speak_config', 'Variables, number_of_trades')] # speak the number above.
+    # speak the number above and notify you of the readiness of a sell order.
+    ('speak_config', 'Variables', 'number_of_trades'),
+    # back the cursor to the previous position.
+    ('back_to',)]
 ```
 
 ## Schedule Examples ##
 
 ### Start and Stop Manual Recording ###
 
-The following actions and schedules start and stop manual recording a
+The following actions and schedules start and stop manual recording of a
 screencast using Nvidia ShadowPlay.
 
 ``` ini
@@ -366,6 +365,38 @@ stop_manual_recording = [
 start_new_manual_recording = ('08:50:00', 'start_manual_recording')
 # trigger the stop_manual_recording action at 10:00:00.
 stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
+```
+
+### Speak CPU Utilization ###
+
+The following action and schedule calculate CPU utilization and speak it.
+
+``` ini
+[HYPERSBI2 Actions]
+speak_cpu_utilization = [
+    # calculate CPU utilization for 1 second and speak it.
+    ('speak_cpu_utilization', '1')]
+
+[HYPERSBI2 Schedules]
+# trigger the speak_cpu_utilization action at 08:50:10.
+speak_cpu_utilization = ('08:50:10', 'speak_cpu_utilization')
+```
+
+### Speak the Number of Seconds until the Open ###
+
+The following action and schedules speak the number of seconds until the open.
+
+``` ini
+[HYPERSBI2 Actions]
+speak_seconds_until_open = [
+    # speak seconds until the open.
+    ('speak_seconds_until_time', '${Market Data:opening_time}')]
+
+[HYPERSBI2 Schedules]
+# trigger the speak_seconds_until_open action at 08:59:00.
+speak_60_seconds_until_open = ('08:59:00', 'speak_seconds_until_open')
+# trigger the speak_seconds_until_open action at 08:59:30.
+speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 ```
 
 ## Appendix ##
