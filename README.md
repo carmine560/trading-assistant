@@ -94,8 +94,8 @@ An action is a list of sequential tuples, and each tuple consists of a command
 and its arguments.  The configuration file stores these actions.  Possible
 commands are:
 
-``` python
-[Actions]
+``` ini
+[HYPERSBI2 Actions]
 ACTION = [
     # back the cursor to the previous position.
     ('back_to',),
@@ -137,8 +137,9 @@ ACTION = [
     ('speak_config', 'SECTION', 'OPTION'), # speak a configuration.
     # calculate CPU utilization for an interval and speak it.
     ('speak_cpu_utilization', 'INTERVAL'),
+    # TODO
     # speak seconds until an event.
-    ('speak_seconds_until_event', 'EVENT_TIME')]
+    ('speak_seconds_until_event', '%H:%M:%S')]
 ```
 
 ### Execute Action ###
@@ -153,9 +154,9 @@ py trading_assistant.py -e [ACTION]
 
 You can also schedule the actions above as the following configurations:
 
-``` python
-[Schedules]
-SCHEDULE = ('SCHEDULE_TIME', 'ACTION')
+``` ini
+[HYPERSBI2 Schedules]
+SCHEDULE = ('%H:%M:%S', 'ACTION')
 ...
 ```
 
@@ -191,7 +192,7 @@ Watchlists window on the middle click while Hyper SBI 2 is running.
 > **Note** This example contains no coordinates or images and can be tested
 > immediately in many environments.
 
-``` python
+``` ini
 show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 ```
 
@@ -204,7 +205,7 @@ button.
 > Watchlists window, a left-snapped Summary window, and a right-snapped Chart
 > window.
 
-``` python
+``` ini
 login = [
     # locate the Login button in the region, and click it.
     ('click_widget', 'login.png', '759, 320, 402, 381'),
@@ -225,7 +226,7 @@ Watchlists window with new ones scraped from the current market data above.
 
 > **Note** The free market data provided by Kabutan has a 20-minute delay.
 
-``` python
+``` ini
 watch_active_stocks = [
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
@@ -265,7 +266,7 @@ window with new ones recognized in the Rankings window.
 > **Note** Hyper SBI updates the Rankings window in real-time, but the text
 > recognition by Tesseract is not as accurate as the scraped market data above.
 
-``` python
+``` ini
 watch_tick_count = [
     ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
@@ -310,7 +311,7 @@ The following `open_close_long_position` action shows the required windows and
 waits for a buy order with the maximum share size.  If you place the order, it
 prepares a sell order for repayment.
 
-``` python
+``` ini
 open_close_long_position = [
     # Open Long Position
     ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
@@ -342,6 +343,29 @@ open_close_long_position = [
     ('back_to',),
     ('count_trades',),               # count the number of trades for the day.
     ('speak_config', 'Variables, number_of_trades')] # speak the number above.
+```
+
+## Schedule Examples ##
+
+### Start and Stop Manual Recording ###
+
+The following actions and schedules start and stop manual recording a
+screencast using Nvidia ShadowPlay.
+
+``` ini
+[HYPERSBI2 Actions]
+start_manual_recording = [
+    # start a new recording if one is not already in progress.
+    ('is_recording', 'False', [('press_hotkeys', 'alt, f9')])]
+stop_manual_recording = [
+    # stop a recording if one is currently in progress.
+    ('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]
+
+[HYPERSBI2 Schedules]
+# trigger the start_manual_recording action at 08:50:00.
+start_new_manual_recording = ('08:50:00', 'start_manual_recording')
+# trigger the stop_manual_recording action at 10:00:00.
+stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
 ```
 
 ## Appendix ##

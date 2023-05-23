@@ -481,9 +481,9 @@ def save_market_data(trade, config, clipboard=False):
             paths.append(trade.closing_prices + str(i) + '.csv')
 
         opening_time = (pd.Timestamp(opening_time, tz=time_zone)
-                        + pd.Timedelta(minutes=delay)).strftime('%X')
+                        + pd.Timedelta(minutes=delay)).strftime('%H:%M:%S')
         closing_time = (pd.Timestamp(closing_time, tz=time_zone)
-                        + pd.Timedelta(minutes=delay)).strftime('%X')
+                        + pd.Timedelta(minutes=delay)).strftime('%H:%M:%S')
         latest = get_latest(config, trade.market_holidays, closing_time,
                             time_zone, *paths, volatile_time=opening_time)
 
