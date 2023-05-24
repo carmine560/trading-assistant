@@ -20,43 +20,41 @@ class Trade:
     """A class to represent a trade.
 
     Attributes:
-        brokerage : the brokerage used for the trade
-        process : the process used for the trade
-        config_directory : the directory where the configuration files
-        are stored
-        script_base : the base name of the script
-        config_file : the configuration file for the script
-        market_directory : the directory where the market files are
-        stored
-        market_holidays : the file containing market holidays
-        closing_prices : the file containing closing prices
-        resource_directory : the directory where the resource files are
-        stored
-        customer_margin_ratios : the file containing customer margin
-        ratios
-        startup_script : the script to start the trade
-        previous_position : the previous position of the mouse
-        cash_balance : the cash balance of the trade
-        symbol : the symbol of the trade
-        share_size : the share size of the trade
-        speech_engine : the speech engine used for the trade
+        brokerage : name of the brokerage
+        process : name of the process
+        config_directory : directory path for configuration files
+        script_base : base name of the script
+        config_file : configuration file path
+        market_directory : directory path for market related files
+        market_holidays : market holidays file path
+        closing_prices : closing prices file path
+        resource_directory : directory path for resource files
+        customer_margin_ratios : customer margin ratios file path
+        startup_script : startup script file path
+        previous_position : previous position of the cursor
+        cash_balance : cash balance
+        symbol : symbol of the trade
+        share_size : share size
+        speech_engine : speech engine object
 
     Methods:
-        get_symbol(hwnd, title_regex):
-            Get symbol from window title.
+        get_symbol(hwnd, title_regex) : Extracts symbol from the window
+        title.
 
-            Args:
-                hwnd: Window handle
-                title_regex: Regular expression to match the window
-                title
+    Args:
+        hwnd : window handle
+        title_regex : regular expression to match the window title
 
-            Returns:
-                None
+    Returns:
+        None
 
-            Sets:
-                symbol: Symbol extracted from the window title"""
+    Sets:
+        symbol : symbol extracted from the window title
+
+    Raises:
+        None"""
     def __init__(self, brokerage, process):
-        """A function to initialize an object.
+        """Initialize a class with several attributes.
 
         Args:
             brokerage: name of the brokerage
@@ -65,22 +63,29 @@ class Trade:
         Attributes:
             brokerage : name of the brokerage
             process : name of the process
-            config_directory : directory path for configuration files
-            script_base : name of the script file
-            config_file : path of the configuration file
-            market_directory : directory path for market files
-            market_holidays : path of the market holidays file
-            closing_prices : path of the closing prices file
-            resource_directory : directory path for resource files
-            customer_margin_ratios : path of the customer margin ratios
+            config_directory : directory where the configuration files
+            are stored
+            script_base : base name of the script
+            config_file : path to the configuration file
+            market_directory : directory where the market files are
+            stored
+            market_holidays : path to the market holidays file
+            closing_prices : path to the closing prices file
+            resource_directory : directory where the resource files are
+            stored
+            customer_margin_ratios : path to the customer margin ratios
             file
-            startup_script : path of the startup script file
-            previous_position : previous position of the mouse
+            startup_script : path to the startup script
+            customer_margin_ratio_section : section name for customer
+            margin ratios
+            startup_script_section : section name for startup script
+            action_section : section name for actions
+            schedule_section : section name for schedules
+            previous_position : previous position of the cursor
             cash_balance : cash balance
             symbol : symbol of the stock
-            share_size : share size of the stock
-            speech_engine : speech engine used for text-to-speech
-            conversion"""
+            share_size : number of shares
+            speech_engine : speech engine used"""
         self.brokerage = brokerage
         self.process = process
         self.config_directory = os.path.join(
@@ -100,11 +105,16 @@ class Trade:
             self.resource_directory, 'customer_margin_ratios.csv')
         self.startup_script = os.path.join(self.resource_directory,
                                            self.script_base + '.ps1')
-        # TODO
 
         for directory in [self.config_directory, self.market_directory,
                           self.resource_directory]:
             file_utilities.check_directory(directory)
+
+        self.customer_margin_ratio_section = \
+            self.brokerage + ' Customer Margin Ratios'
+        self.startup_script_section = self.process + ' Startup Script'
+        self.action_section = self.process + ' Actions'
+        self.schedule_section = self.process + ' Schedules'
 
         self.previous_position = pyautogui.position()
         self.cash_balance = 0
@@ -131,15 +141,15 @@ class Trade:
             return
 
 def main():
-    """The main function of a program.
-
-    This function parses command line arguments and performs various
-    actions based on the arguments provided.
+    """Main function for executing the trading program.
 
     Args:
         None
 
     Returns:
+        None
+
+    Raises:
         None"""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
@@ -195,16 +205,15 @@ def main():
     if args.s:
         from multiprocessing import Process
 
-        process = Process(
-            target=run_scheduler,
-            args=(trade, config, gui_callbacks, trade.process))
+        process = Process(target=run_scheduler,
+                          args=(trade, config, gui_callbacks, trade.process))
         process.start()
     if args.M == 'LIST_ACTIONS':
-        configuration.list_section(config, trade.process + ' Actions')
+        configuration.list_section(config, trade.action_section)
     elif args.M:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
         if configuration.modify_tuple_option(
-                config, trade.process + ' Actions', args.M, trade.config_file,
+                config, trade.action_section, args.M, trade.config_file,
                 prompts={'key': 'command', 'value': 'argument',
                          'additional_value': 'additional argument',
                          'end_of_list': 'end of commands'},
@@ -225,15 +234,14 @@ def main():
                 args.M, program_group_base=config[trade.process]['title'],
                 icon_directory=trade.resource_directory)
     if args.e == 'LIST_ACTIONS':
-        configuration.list_section(config, trade.process + ' Actions')
+        configuration.list_section(config, trade.action_section)
     elif args.e:
         execute_action(trade, config, gui_callbacks,
-                       ast.literal_eval(
-                           config[trade.process + ' Actions'][args.e]))
+                       ast.literal_eval(config[trade.action_section][args.e]))
     if args.T == 'LIST_ACTIONS':
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
-            configuration.list_section(config, trade.process + ' Actions')
+            configuration.list_section(config, trade.action_section)
     elif args.T:
         if args.T == trade.script_base \
            and os.path.exists(trade.startup_script):
@@ -244,15 +252,15 @@ def main():
                 sys.exit(1)
         else:
             file_utilities.backup_file(trade.config_file, number_of_backups=8)
-            configuration.delete_option(config, trade.process + ' Actions',
-                                        args.T, trade.config_file)
+            configuration.delete_option(config, trade.action_section, args.T,
+                                        trade.config_file)
 
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
     if args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_section(config, trade.process + ' Startup Script',
+        configuration.modify_section(config, trade.startup_script_section,
                                      trade.config_file)
         create_startup_script(trade, config)
         file_utilities.create_shortcut(
@@ -381,7 +389,7 @@ def configure(trade):
     return config
 
 def save_customer_margin_ratios(trade, config):
-    """Save customer margin ratios to a CSV file.
+    """Save customer margin ratios.
 
     Args:
         trade: Trade object
@@ -392,7 +400,7 @@ def save_customer_margin_ratios(trade, config):
     global pd
     import pandas as pd
 
-    section = config[trade.brokerage + ' Customer Margin Ratios']
+    section = config[trade.customer_margin_ratio_section]
     update_time = section['update_time']
     time_zone = section['time_zone']
     url = section['url']
@@ -572,37 +580,29 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
             return latest
 
 def run_scheduler(trade, config, gui_callbacks, process):
-    """Runs a scheduler for a trade.
+    """Runs a scheduler for a given trade.
 
     Args:
-        trade: Trade object
-        config: Configuration object
-        gui_callbacks: GUI callback functions
-        process: Process object
+        trade : trade object
+        config : configuration object
+        gui_callbacks : GUI callback functions
+        process : process object
 
     Returns:
         None
 
     Raises:
-        None
-
-    Note:
-        This function uses the sched module to schedule actions for a
-        trade. It reads the schedules and actions from the configuration
-        object and schedules them using the sched module. It also checks
-        if the actions require speech and initializes the speech engine
-        if required. The scheduler runs until all the scheduled actions
-        have been executed or the process is stopped."""
+        None"""
     import sched
 
     scheduler = sched.scheduler(time.time, time.sleep)
     schedules = []
 
-    section = config[trade.process + ' Schedules']
+    section = config[trade.schedule_section]
     speech = False
     for option in section:
         schedule_time, action = ast.literal_eval(section[option])
-        action = ast.literal_eval(config[trade.process + ' Actions'][action])
+        action = ast.literal_eval(config[trade.action_section][action])
         schedule_time = time.strptime(time.strftime('%Y-%m-%d ')
                                       + schedule_time, '%Y-%m-%d %H:%M:%S')
         schedule_time = time.mktime(schedule_time)
@@ -785,18 +785,19 @@ def execute_action(trade, config, gui_callbacks, action):
             sys.exit(1)
 
 def create_startup_script(trade, config):
-    """Creates a startup script for a trade.
+    """Creates a startup script for a given trade and configuration.
 
     Args:
-        trade: A trade object
-        config: A configuration object
+        trade: A trade object containing information about the trade
+        config: A configuration object containing information about the
+        configuration
 
     Returns:
         None
 
     Raises:
         None"""
-    section = config[trade.process + ' Startup Script']
+    section = config[trade.startup_script_section]
     pre_start_options = section['pre_start_options']
     post_start_options = section['post_start_options']
     running_options = section['running_options']

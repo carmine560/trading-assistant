@@ -155,7 +155,6 @@ You can also schedule the actions above as the following configurations:
 ``` ini
 [HYPERSBI2 Schedules]
 SCHEDULE = ('%H:%M:%S', 'ACTION')
-...
 ```
 
 Then run the scheduler.
