@@ -141,20 +141,19 @@ class Trade:
             return
 
 def main():
-    """The main function of a program that performs various actions
-    based on command line arguments.
+    """Main function to execute various actions based on command line
+    arguments.
 
     Args:
         None
 
     Returns:
+        None
+
+    Raises:
         None"""
     parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group()
-    parser.add_argument(
-        '-P', default=('SBI Securities', 'HYPERSBI2'),
-        metavar=('BROKERAGE', 'PROCESS'), nargs=2,
-        help='set a brokerage and a process [defaults: %(default)s]')
+    actions = parser.add_mutually_exclusive_group()
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -164,18 +163,22 @@ def main():
     parser.add_argument(
         '-s', action='store_true',
         help='run the scheduler')
-    group.add_argument(
+    actions.add_argument(
         '-M', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help=('create or modify an action and create a shortcut to it'))
-    group.add_argument(
+    actions.add_argument(
         '-e', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help='execute an action')
-    group.add_argument(
+    actions.add_argument(
         '-T', const='LIST_ACTIONS', metavar='SCRIPT_BASE | ACTION', nargs='?',
         help=('delete a startup script or an action and a shortcut to it'))
     parser.add_argument(
         '-I', action='store_true',
         help=('create or modify a startup script and create a shortcut to it'))
+    parser.add_argument(
+        '-P', default=('SBI Securities', 'HYPERSBI2'),
+        metavar=('BROKERAGE', 'PROCESS'), nargs=2,
+        help='set a brokerage and a process [defaults: %(default)s]')
     parser.add_argument(
         '-B', action='store_true',
         help='set an arbitrary cash balance')
@@ -185,6 +188,9 @@ def main():
     parser.add_argument(
         '-L', action='store_true',
         help=('set the price limit region and the index of the price'))
+    parser.add_argument(
+        '-S', action='store_true',
+        help='configure schedules and exit')
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade(*args.P)
@@ -304,6 +310,14 @@ def main():
                 backup_function=file_utilities.backup_file,
                 backup_parameters={'number_of_backups': 8},
                 prompts={'value': 'x, y, width, height, index'}):
+            sys.exit(1)
+    if args.S:
+        if configuration.modify_section(
+                config, trade.schedule_section, trade.config_file,
+                backup_function=file_utilities.backup_file,
+                backup_parameters={'number_of_backups': 8}):
+            sys.exit()
+        else:
             sys.exit(1)
 
 def configure(trade):

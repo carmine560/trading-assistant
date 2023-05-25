@@ -157,16 +157,8 @@ You can also schedule the actions above as the following configurations:
 SCHEDULE = ('%H:%M:%S', 'ACTION')
 ```
 
-Then run the scheduler.
-
-``` powershell
-py trading_assistant.py -s
-```
-
 ### Options ###
 
-  * `-P BROKERAGE PROCESS`: set a brokerage and a process [default: `SBI
-    Securities` and `HYPERSBI2`]
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
   * `-s`: run the scheduler
@@ -175,9 +167,12 @@ py trading_assistant.py -s
   * `-T [SCRIPT_BASE | ACTION]`: delete a startup script or an action and a
     shortcut to it
   * `-I`: create or modify a startup script and create a shortcut to it
+  * `-P BROKERAGE PROCESS`: set a brokerage and a process [default: `SBI
+    Securities` and `HYPERSBI2`]
   * `-B`: set an arbitrary cash balance
   * `-C`: set the cash balance region and the index of the price
   * `-L`: set the price limit region and the index of the price
+  * `-S`: configure schedules and exit
 
 ## Action Examples ##
 
