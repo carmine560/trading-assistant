@@ -141,15 +141,12 @@ class Trade:
             return
 
 def main():
-    """Main function for executing the trading program.
+    """The main function for a trading program.
 
     Args:
         None
 
     Returns:
-        None
-
-    Raises:
         None"""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
@@ -260,30 +257,35 @@ def main():
             icon_directory=trade.resource_directory)
     if args.I:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_section(config, trade.startup_script_section,
-                                     trade.config_file)
-        create_startup_script(trade, config)
-        file_utilities.create_shortcut(
-            trade.script_base, 'powershell.exe',
-            '-WindowStyle Hidden -File "' + trade.startup_script + '"',
-            program_group_base=config[trade.process]['title'],
-            icon_directory=trade.resource_directory)
+        if configuration.modify_section(config, trade.startup_script_section,
+                                        trade.config_file):
+            create_startup_script(trade, config)
+            file_utilities.create_shortcut(
+                trade.script_base, 'powershell.exe',
+                '-WindowStyle Hidden -File "' + trade.startup_script + '"',
+                program_group_base=config[trade.process]['title'],
+                icon_directory=trade.resource_directory)
+        else:
+            sys.exit(1)
     if args.B:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_option(config, trade.process,
-                                    'fixed_cash_balance', trade.config_file)
+        if not configuration.modify_option(
+                config, trade.process, 'fixed_cash_balance',
+                trade.config_file):
+            sys.exit(1)
     if args.C:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_option(config, trade.process,
-                                    'cash_balance_region', trade.config_file,
-                                    prompts={'value':
-                                             'x, y, width, height, index'})
+        if not configuration.modify_option(
+                config, trade.process, 'cash_balance_region',
+                trade.config_file,
+                prompts={'value': 'x, y, width, height, index'}):
+            sys.exit(1)
     if args.L:
         file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        configuration.modify_option(config, trade.process,
-                                    'price_limit_region', trade.config_file,
-                                    prompts={'value':
-                                             'x, y, width, height, index'})
+        if not configuration.modify_option(
+                config, trade.process, 'price_limit_region', trade.config_file,
+                prompts={'value': 'x, y, width, height, index'}):
+            sys.exit(1)
 
 def configure(trade):
     """Configures the trade.
@@ -630,13 +632,13 @@ def run_scheduler(trade, config, gui_callbacks, process):
                 scheduler.cancel(schedule)
 
 def execute_action(trade, config, gui_callbacks, action):
-    """Execute an action based on a list of commands.
+    """Execute an action.
 
     Args:
-        trade: an instance of a trade object
-        config: a dictionary containing configuration information
-        gui_callbacks: a dictionary containing GUI callback functions
-        action: a list of commands to execute
+        trade: An instance of the Trade class
+        config: A dictionary containing configuration information
+        gui_callbacks: A dictionary containing GUI callback functions
+        action: A list of commands to execute
 
     Returns:
         None"""
@@ -715,7 +717,8 @@ def execute_action(trade, config, gui_callbacks, action):
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window_on_click':
             gui_interactions.show_hide_window_on_click(
-                gui_callbacks, trade.process, argument)
+                gui_callbacks, trade.process, argument,
+                process_utilities.is_running)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, argument)
         elif command == 'show_window':

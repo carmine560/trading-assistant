@@ -216,27 +216,27 @@ def show_hide_window(hwnd, title_regex):
         return
 
 def show_hide_window_on_click(gui_callbacks, process, title_regex,
-                              callback=show_hide_window):
-    """Show or hide a window on click.
+                              is_running_function, callback=show_hide_window):
+    """Show or hide a window on mouse click.
 
     Args:
-        gui_callbacks: An object of GuiCallbacks class.
-        process: A process to check.
+        gui_callbacks: A callback function to be called on mouse click
+        process: A process to be checked
         title_regex: A regular expression to match the title of the
-        window.
-        callback: A function to call when the window is clicked. Default
-        is show_hide_window.
+        window
+        is_running_function: A function to check if the process is
+        running
+        callback: A function to be called on mouse click. Default is
+        show_hide_window.
 
     Returns:
-        None
-
-    Raises:
-        None"""
+        None."""
     gui_callbacks.callback = callback
     gui_callbacks.extra = title_regex
     with mouse.Listener(on_click=gui_callbacks.enumerate_windows_on_click) \
          as listener:
-        thread = Thread(target=check_process, args=(process, listener))
+        thread = Thread(target=check_process,
+                        args=(is_running_function, process, listener))
         thread.start()
         listener.join()
 
@@ -297,18 +297,19 @@ def wait_for_window(gui_callbacks, title_regex):
         win32gui.EnumWindows(gui_callbacks.check_for_window, title_regex)
         time.sleep(0.001)
 
-def check_process(process, listener):
-    """Check if a process is running and stop the listener when it is
-    not.
+def check_process(is_running_function, process, listener):
+    """Check if a process is running.
 
     Args:
-        process: The process to check
-        listener: The listener to stop when the process is not
-        running"""
-    import process_utilities
+        is_running_function: A function that returns True if the process
+        is running, False otherwise.
+        process: The process to check.
+        listener: An object that listens to the process.
 
+    Returns:
+        None."""
     while True:
-        if process_utilities.is_running(process):
+        if is_running_function(process):
             time.sleep(1)
         else:
             listener.stop()

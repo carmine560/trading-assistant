@@ -29,41 +29,46 @@ def modify_section(config, section, config_file, keys={}):
 
     Args:
         config: ConfigParser object representing the configuration file
-        section: name of the section to modify
-        config_file: path to the configuration file
-        keys: dictionary containing the keys to modify and their new
-        values
+        section: Name of the section to be modified
+        config_file: Path to the configuration file
+        keys: Dictionary containing key-value pairs to be updated in the
+        section
 
     Returns:
-        None
+        True if the section is modified successfully, False otherwise
 
     Raises:
         None"""
     if config.has_section(section):
         for option in config[section]:
-            if not modify_option(config, section, option, config_file,
-                                 keys=keys):
-                break
+            result = modify_option(config, section, option, config_file,
+                                   keys=keys)
+            if result == 'quit' or result == False:
+                return result
+        return True
+    else:
+        print(section, 'section does not exist')
+        return False
 
 def modify_option(config, section, option, config_file, prompts={}, keys={}):
-    """Modify an option in a configuration file.
+    """Modifies an option in a configuration file.
 
     Args:
-        config (ConfigParser): The configuration object to modify.
-        section (str): The section of the configuration file containing
-        the option.
-        option (str): The option to modify.
+        config (ConfigParser): A ConfigParser object representing the
+        configuration file.
+        section (str): The section in which the option is located.
+        option (str): The option to be modified.
         config_file (str): The path to the configuration file.
-        prompts (dict): A dictionary of prompts to display to the user.
-        keys (dict): A dictionary of keys to use when modifying the
+        prompts (dict): A dictionary containing prompts for modifying
+        the option.
+        keys (dict): A dictionary containing keys for modifying the
         option.
 
     Returns:
-        bool: True if the option was successfully modified, False
-        otherwise.
+        True if the option was successfully modified, False otherwise.
 
     Raises:
-        N/A"""
+        ValueError: If the value of the option is not a boolean."""
     import re
 
     if config.has_option(section, option):
@@ -88,10 +93,13 @@ def modify_option(config, section, option, config_file, prompts={}, keys={}):
         elif answer == 'default':
             config.remove_option(section, option)
         elif answer == 'quit':
-            return False
+            return answer
 
         write_config(config, config_file)
         return True
+    else:
+        print(option, 'option does not exist')
+        return False
 
 def modify_tuple_option(config, section, option, config_file, prompts={},
                         keys={}):
