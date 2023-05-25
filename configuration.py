@@ -11,18 +11,18 @@ def list_section(config, section):
     """List all options in a section of a configuration file.
 
     Args:
-        config: A configparser object representing the configuration
-        file
-        section: The name of the section to list options from
+        config: ConfigParser object representing the configuration file
+        section: Name of the section to list options from
 
     Returns:
-        None
-
-    Raises:
-        None"""
+        True if the section exists and has options, False otherwise."""
     if config.has_section(section):
         for option in config[section]:
             print(option)
+        return True
+    else:
+        print(section, 'section does not exist')
+        return False
 
 def modify_section(config, section, config_file, backup_function=None,
                    backup_parameters=None, keys={}):
@@ -385,17 +385,18 @@ def delete_option(config, section, option, config_file, backup_function=None,
     """Deletes an option from a configuration file.
 
     Args:
-        config: configparser object representing the configuration file
-        section: section in which the option is located
-        option: option to be deleted
-        config_file: path to the configuration file
-        backup_function: function to be called before deleting the
-        option (optional)
-        backup_parameters: parameters to be passed to the backup
-        function (optional)
+        config: ConfigParser object representing the configuration file
+        section: Section of the configuration file where the option is
+        located
+        option: Option to be deleted
+        config_file: Path to the configuration file
+        backup_function: Function to backup the configuration file
+        before deleting the option
+        backup_parameters: Parameters to be passed to the backup
+        function
 
     Returns:
-        None
+        True if the option was deleted successfully, False otherwise
 
     Raises:
         None"""
@@ -405,6 +406,10 @@ def delete_option(config, section, option, config_file, backup_function=None,
     if config.has_option(section, option):
         config.remove_option(section, option)
         write_config(config, config_file)
+        return True
+    else:
+        print(option, 'option does not exist')
+        return False
 
 def write_config(config, config_file):
     """Writes a configuration to a file.

@@ -141,16 +141,13 @@ class Trade:
             return
 
 def main():
-    """This is a main function that takes command line arguments and
-    performs various actions based on the arguments.
+    """The main function of a program that performs various actions
+    based on command line arguments.
 
     Args:
         None
 
     Returns:
-        None
-
-    Raises:
         None"""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
@@ -195,22 +192,30 @@ def main():
     if not config.has_section(trade.process):
         print(trade.process, 'section does not exist')
         sys.exit(1)
-
-    gui_callbacks = gui_interactions.GuiCallbacks(
-        ast.literal_eval(config[trade.process]['interactive_windows']))
+    else:
+        gui_callbacks = gui_interactions.GuiCallbacks(
+            ast.literal_eval(config[trade.process]['interactive_windows']))
 
     if args.r:
-        save_customer_margin_ratios(trade, config)
+        if config.has_section(trade.customer_margin_ratio_section):
+            save_customer_margin_ratios(trade, config)
+        else:
+            sys.exit(1)
     if args.d:
         save_market_data(trade, config)
     if args.s:
-        from multiprocessing import Process
+        if config.has_section(trade.schedule_section):
+            from multiprocessing import Process
 
-        process = Process(target=run_scheduler,
-                          args=(trade, config, gui_callbacks, trade.process))
-        process.start()
+            process = Process(
+                target=run_scheduler,
+                args=(trade, config, gui_callbacks, trade.process))
+            process.start()
+        else:
+            sys.exit(1)
     if args.M == 'LIST_ACTIONS':
-        configuration.list_section(config, trade.action_section)
+        if not configuration.list_section(config, trade.action_section):
+            sys.exit(1)
     elif args.M:
         if configuration.modify_tuple_option(
                 config, trade.action_section, args.M, trade.config_file,
@@ -236,14 +241,20 @@ def main():
                 args.M, program_group_base=config[trade.process]['title'],
                 icon_directory=trade.resource_directory)
     if args.e == 'LIST_ACTIONS':
-        configuration.list_section(config, trade.action_section)
+        if not configuration.list_section(config, trade.action_section):
+            sys.exit(1)
     elif args.e:
-        execute_action(trade, config, gui_callbacks,
-                       ast.literal_eval(config[trade.action_section][args.e]))
+        if config.has_section(trade.action_section):
+            execute_action(
+                trade, config, gui_callbacks,
+                ast.literal_eval(config[trade.action_section][args.e]))
+        else:
+            sys.exit(1)
     if args.T == 'LIST_ACTIONS':
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
-            configuration.list_section(config, trade.action_section)
+        if not configuration.list_section(config, trade.action_section):
+            sys.exit(1)
     elif args.T:
         if args.T == trade.script_base \
            and os.path.exists(trade.startup_script):
@@ -251,7 +262,6 @@ def main():
                 os.remove(trade.startup_script)
             except OSError as e:
                 print(e)
-                sys.exit(1)
         else:
             configuration.delete_option(
                 config, trade.action_section, args.T, trade.config_file,
