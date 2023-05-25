@@ -141,12 +141,16 @@ class Trade:
             return
 
 def main():
-    """The main function for a trading program.
+    """This is a main function that takes command line arguments and
+    performs various actions based on the arguments.
 
     Args:
         None
 
     Returns:
+        None
+
+    Raises:
         None"""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
@@ -208,9 +212,10 @@ def main():
     if args.M == 'LIST_ACTIONS':
         configuration.list_section(config, trade.action_section)
     elif args.M:
-        file_utilities.backup_file(trade.config_file, number_of_backups=8)
         if configuration.modify_tuple_option(
                 config, trade.action_section, args.M, trade.config_file,
+                backup_function=file_utilities.backup_file,
+                backup_parameters={'number_of_backups': 8},
                 prompts={'key': 'command', 'value': 'argument',
                          'additional_value': 'additional argument',
                          'end_of_list': 'end of commands'},
@@ -248,17 +253,19 @@ def main():
                 print(e)
                 sys.exit(1)
         else:
-            file_utilities.backup_file(trade.config_file, number_of_backups=8)
-            configuration.delete_option(config, trade.action_section, args.T,
-                                        trade.config_file)
+            configuration.delete_option(
+                config, trade.action_section, args.T, trade.config_file,
+                backup_function=file_utilities.backup_file,
+                backup_parameters={'number_of_backups': 8})
 
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
     if args.I:
-        file_utilities.backup_file(trade.config_file, number_of_backups=8)
-        if configuration.modify_section(config, trade.startup_script_section,
-                                        trade.config_file):
+        if configuration.modify_section(
+                config, trade.startup_script_section, trade.config_file,
+                backup_function=file_utilities.backup_file,
+                backup_parameters={'number_of_backups': 8}):
             create_startup_script(trade, config)
             file_utilities.create_shortcut(
                 trade.script_base, 'powershell.exe',
@@ -268,22 +275,24 @@ def main():
         else:
             sys.exit(1)
     if args.B:
-        file_utilities.backup_file(trade.config_file, number_of_backups=8)
         if not configuration.modify_option(
-                config, trade.process, 'fixed_cash_balance',
-                trade.config_file):
+                config, trade.process, 'fixed_cash_balance', trade.config_file,
+                backup_function=file_utilities.backup_file,
+                backup_parameters={'number_of_backups': 8}):
             sys.exit(1)
     if args.C:
-        file_utilities.backup_file(trade.config_file, number_of_backups=8)
         if not configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
                 trade.config_file,
+                backup_function=file_utilities.backup_file,
+                backup_parameters={'number_of_backups': 8},
                 prompts={'value': 'x, y, width, height, index'}):
             sys.exit(1)
     if args.L:
-        file_utilities.backup_file(trade.config_file, number_of_backups=8)
         if not configuration.modify_option(
                 config, trade.process, 'price_limit_region', trade.config_file,
+                backup_function=file_utilities.backup_file,
+                backup_parameters={'number_of_backups': 8},
                 prompts={'value': 'x, y, width, height, index'}):
             sys.exit(1)
 

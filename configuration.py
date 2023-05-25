@@ -24,21 +24,26 @@ def list_section(config, section):
         for option in config[section]:
             print(option)
 
-def modify_section(config, section, config_file, keys={}):
-    """Modify a section in a configuration file.
+def modify_section(config, section, config_file, backup_function=None,
+                   backup_parameters=None, keys={}):
+    """Modifies a section of a configuration file.
 
     Args:
-        config: ConfigParser object representing the configuration file
-        section: Name of the section to be modified
-        config_file: Path to the configuration file
-        keys: Dictionary containing key-value pairs to be updated in the
-        section
+        config : configparser object representing the configuration file
+        section : name of the section to modify
+        config_file : path to the configuration file
+        backup_function : function to backup the configuration file
+        backup_parameters : parameters to pass to the backup function
+        keys : dictionary of keys to modify in the section
 
     Returns:
-        True if the section is modified successfully, False otherwise
+        True if the section was modified successfully, False otherwise
 
     Raises:
         None"""
+    if backup_function:
+        backup_function(config_file, **backup_parameters)
+
     if config.has_section(section):
         for option in config[section]:
             result = modify_option(config, section, option, config_file,
@@ -50,26 +55,34 @@ def modify_section(config, section, config_file, keys={}):
         print(section, 'section does not exist')
         return False
 
-def modify_option(config, section, option, config_file, prompts={}, keys={}):
+def modify_option(config, section, option, config_file, backup_function=None,
+                  backup_parameters=None, prompts={}, keys={}):
     """Modifies an option in a configuration file.
 
     Args:
-        config (ConfigParser): A ConfigParser object representing the
-        configuration file.
-        section (str): The section in which the option is located.
-        option (str): The option to be modified.
-        config_file (str): The path to the configuration file.
-        prompts (dict): A dictionary containing prompts for modifying
-        the option.
-        keys (dict): A dictionary containing keys for modifying the
-        option.
+        config (ConfigParser): configuration object
+        section (str): section of the configuration file
+        option (str): option to modify
+        config_file (str): path to the configuration file
+        backup_function (function, optional): function to backup the
+        configuration file. Defaults to None.
+        backup_parameters (dict, optional): parameters to pass to the
+        backup function. Defaults to None.
+        prompts (dict, optional): prompts to display to the
+        user. Defaults to {}.
+        keys (dict, optional): keys to use for modifying tuple
+        options. Defaults to {}.
 
     Returns:
-        True if the option was successfully modified, False otherwise.
+        bool or str: True if the option was modified, False if the
+        option does not exist, or 'quit' if the user chooses to quit.
 
     Raises:
-        ValueError: If the value of the option is not a boolean."""
+        NotImplementedError: If the animal is silent."""
     import re
+
+    if backup_function:
+        backup_function(config_file, **backup_parameters)
 
     if config.has_option(section, option):
         print(option, '=',
@@ -101,23 +114,30 @@ def modify_option(config, section, option, config_file, prompts={}, keys={}):
         print(option, 'option does not exist')
         return False
 
-def modify_tuple_option(config, section, option, config_file, prompts={},
-                        keys={}):
+def modify_tuple_option(config, section, option, config_file,
+                        backup_function=None, backup_parameters=None,
+                        prompts={}, keys={}):
     """Modify a tuple option in a configuration file.
 
     Args:
-        config (ConfigParser): configuration object
-        section (str): section name in the configuration file
-        option (str): option name in the configuration file
-        config_file (str): path to the configuration file
-        prompts (dict): dictionary of prompts to display to the user
-        keys (dict): dictionary of keys to use for the tuple
+        config : ConfigParser object
+        section : section in the configuration file
+        option : option in the section
+        config_file : path to the configuration file
+        backup_function : function to backup the configuration file
+        backup_parameters : parameters to pass to the backup function
+        prompts : dictionary of prompts for the user
+        keys : dictionary of keys for the tuples
 
     Returns:
-        True if the tuple was modified successfully, False otherwise
+        True if the tuples were modified and the configuration file was
+        written, False otherwise
 
     Raises:
         None"""
+    if backup_function:
+        backup_function(config_file, **backup_parameters)
+
     created = False
     if not config.has_section(section):
         config[section] = {}
@@ -360,20 +380,28 @@ def configure_position(answer, value=''):
     else:
         return value
 
-def delete_option(config, section, option, config_file):
-    """Delete an option from a configuration file.
+def delete_option(config, section, option, config_file, backup_function=None,
+                  backup_parameters=None):
+    """Deletes an option from a configuration file.
 
     Args:
-        config (ConfigParser): The configuration object
-        section (str): The section of the option to be deleted
-        option (str): The option to be deleted
-        config_file (str): The path to the configuration file
+        config: configparser object representing the configuration file
+        section: section in which the option is located
+        option: option to be deleted
+        config_file: path to the configuration file
+        backup_function: function to be called before deleting the
+        option (optional)
+        backup_parameters: parameters to be passed to the backup
+        function (optional)
 
     Returns:
         None
 
     Raises:
         None"""
+    if backup_function:
+        backup_function(config_file, **backup_parameters)
+
     if config.has_option(section, option):
         config.remove_option(section, option)
         write_config(config, config_file)
