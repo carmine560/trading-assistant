@@ -185,6 +185,7 @@ Watchlists window on the middle click while Hyper SBI 2 is running.
 > immediately in many environments.
 
 ``` ini
+[HYPERSBI2 Actions]
 show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
 ```
 
@@ -198,6 +199,7 @@ button.
 > a right-snapped Chart window.
 
 ``` ini
+[HYPERSBI2 Actions]
 login = [
     # locate the Login button in the region, and click it.
     ('click_widget', 'login.png', '759, 320, 402, 381'),
@@ -219,6 +221,7 @@ Watchlists window with new ones scraped from the current market data above.
 > **Note** The free market data provided by Kabutan has a 20-minute delay.
 
 ``` ini
+[HYPERSBI2 Actions]
 watch_active_stocks = [
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
@@ -259,6 +262,7 @@ window with new ones recognized in the Rankings window.
 > recognition by Tesseract is not as accurate as the scraped market data above.
 
 ``` ini
+[HYPERSBI2 Actions]
 watch_tick_count = [
     ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
@@ -304,6 +308,7 @@ waits for a buy order with the maximum share size.  If you place the order, it
 prepares a sell order for repayment.
 
 ``` ini
+[HYPERSBI2 Actions]
 open_close_long_position = [
     # Open Long Position
     ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
@@ -336,6 +341,15 @@ open_close_long_position = [
     ('speak_config', 'Variables', 'number_of_trades'),
     # back the cursor to the previous position.
     ('back_to',)]
+```
+
+## Startup Script Example ##
+
+``` ini
+[HYPERSBI2 Startup Script]
+pre_start_options = -rde minimize_all_windows
+post_start_options = -e login, -se show_hide_watchlists_on_click
+running_options = -e show_hide_watchlists
 ```
 
 ## Schedule Examples ##

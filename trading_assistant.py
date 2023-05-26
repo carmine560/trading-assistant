@@ -226,7 +226,7 @@ def main():
         if not configuration.list_section(config, trade.action_section):
             sys.exit(1)
     elif args.M:
-        if configuration.modify_tuple_option(
+        if configuration.modify_tuple_list(
                 config, trade.action_section, args.M, trade.config_file,
                 **backup_file,
                 prompts={'key': 'command', 'value': 'argument',

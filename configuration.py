@@ -2,10 +2,14 @@ import ast
 import os
 import sys
 
+INDENT = '    '
 ANSI_DEFAULT = '\033[32m'
 ANSI_ANNOTATION = '\033[33m'
 ANSI_HIGHLIGHT = '\033[4m'
 ANSI_RESET = '\033[m'
+
+if sys.platform == 'win32':
+    os.system('color')
 
 def list_section(config, section):
     """List all options in a section of a configuration file.
@@ -24,6 +28,7 @@ def list_section(config, section):
         print(section, 'section does not exist')
         return False
 
+# TODO: insert
 def modify_section(config, section, config_file, backup_function=None,
                    backup_parameters=None, keys={}):
     """Modifies a section of a configuration file.
@@ -57,27 +62,25 @@ def modify_section(config, section, config_file, backup_function=None,
 
 def modify_option(config, section, option, config_file, backup_function=None,
                   backup_parameters=None, prompts={}, keys={}):
-    """Modifies an option in a configuration file.
+    """Modify an option in a configuration file.
 
     Args:
         config (ConfigParser): configuration object
-        section (str): section of the configuration file
-        option (str): option to modify
+        section (str): section name in the configuration file
+        option (str): option name in the configuration file
         config_file (str): path to the configuration file
-        backup_function (function, optional): function to backup the
-        configuration file. Defaults to None.
-        backup_parameters (dict, optional): parameters to pass to the
-        backup function. Defaults to None.
-        prompts (dict, optional): prompts to display to the
-        user. Defaults to {}.
-        keys (dict, optional): keys to use for modifying tuple
-        options. Defaults to {}.
+        backup_function (function): function to backup the configuration
+        file
+        backup_parameters (dict): parameters to pass to the backup
+        function
+        prompts (dict): dictionary of prompts to display to the user
+        keys (dict): dictionary of keys to use for modifying the data
 
     Returns:
-        bool or str: True if the option was modified, False if the
-        option does not exist, or 'quit' if the user chooses to quit.
+        True if the option was modified, False otherwise
 
     Raises:
+        ValueError: If the option value is not a boolean value.
         NotImplementedError: If the animal is silent."""
     import re
 
@@ -94,9 +97,12 @@ def modify_option(config, section, option, config_file, backup_function=None,
             answer = tidy_answer(['modify', 'default', 'quit'])
 
         if answer == 'modify':
-            if re.sub('\s+', '', config[section][option])[0:2] == '[(':
-                modify_tuple_option(config, section, option, config_file,
-                                    keys=keys)
+            if re.sub('\s+', '', config[section][option])[:2] == '[(':
+                modify_tuple_list(config, section, option, config_file,
+                                  keys=keys)
+            elif re.sub('\s+', '', config[section][option])[:1] == '(':
+                config[section][option] = modify_tuple(config[section][option],
+                                                       False)
             else:
                 config[section][option] = modify_data(
                     prompts.get('value', 'value'),
@@ -114,39 +120,40 @@ def modify_option(config, section, option, config_file, backup_function=None,
         print(option, 'option does not exist')
         return False
 
-def modify_tuple_option(config, section, option, config_file,
-                        backup_function=None, backup_parameters=None,
-                        prompts={}, keys={}):
-    """Modify a tuple option in a configuration file.
+def modify_tuple_list(config, section, option, config_file,
+                      backup_function=None, backup_parameters=None, prompts={},
+                      keys={}):
+    """Modify a list of tuples in a configuration file.
 
     Args:
         config : ConfigParser object
-        section : section in the configuration file
+        section : section of the configuration file
         option : option in the section
         config_file : path to the configuration file
         backup_function : function to backup the configuration file
-        backup_parameters : parameters to pass to the backup function
-        prompts : dictionary of prompts for the user
-        keys : dictionary of keys for the tuples
+        backup_parameters : parameters for the backup function
+        prompts : dictionary of prompts for user input
+        keys : dictionary of keys for user input
 
     Returns:
-        True if the tuples were modified and the configuration file was
-        written, False otherwise
+        True if the list of tuples was modified, False otherwise
 
     Raises:
-        None"""
+        ValueError: If the option is not a list of tuples
+        IOError: If the configuration file cannot be written to
+    """
     if backup_function:
         backup_function(config_file, **backup_parameters)
 
-    created = False
+    is_created = False
     if not config.has_section(section):
         config[section] = {}
     if not config.has_option(section, option):
-        created = True
+        is_created = True
         config[section][option] = '[]'
 
     tuples = modify_tuples(ast.literal_eval(config[section][option]),
-                           created, prompts=prompts, keys=keys)
+                           is_created, prompts=prompts, keys=keys)
     if tuples:
         config[section][option] = str(tuples)
         write_config(config, config_file)
@@ -155,22 +162,19 @@ def modify_tuple_option(config, section, option, config_file,
         delete_option(config, section, option, config_file)
         return False
 
-def modify_tuples(tuples, created, level=0, prompts={}, keys={}):
-    """Modifies a list of tuples.
+def modify_tuples(tuples, is_created, level=0, prompts={}, keys={}):
+    """Modify tuples.
 
     Args:
-        tuples: A list of tuples to be modified.
-        created: A boolean value indicating whether the list is being
-        created or not.
-        level: An integer indicating the level of the list.
-        prompts: A dictionary containing prompts for different keys.
-        keys: A dictionary containing different types of keys.
+        tuples: a list of tuples to be modified
+        is_created: a boolean value indicating whether the tuples are
+        being created or not
+        level: an integer indicating the level of indentation
+        prompts: a dictionary containing prompts for various keys
+        keys: a dictionary containing keys for various types of values
 
     Returns:
-        The modified list of tuples.
-
-    Raises:
-        None."""
+        The modified list of tuples."""
     key_prompt = prompts.get('key', 'key')
     value_prompt = prompts.get('value', 'value')
     additional_value_prompt = prompts.get('additional_value',
@@ -182,25 +186,17 @@ def modify_tuples(tuples, created, level=0, prompts={}, keys={}):
     no_value_keys = keys.get('no_value', ())
     positioning_keys = keys.get('positioning', ())
 
-    if sys.platform == 'win32':
-        os.system('color')
-
     index = 0
     while index <= len(tuples):
-        if created:
-            print('    ' * level
+        if is_created or index == len(tuples):
+            print(INDENT * level
                   + ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
             answer = tidy_answer(['insert', 'quit'], level=level)
         else:
-            if index < len(tuples):
-                print('    ' * level
-                      + ANSI_DEFAULT + str(tuples[index]) + ANSI_RESET)
-                answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
-                                     level=level)
-            else:
-                print('    ' * level
-                      + ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
-                answer = tidy_answer(['insert', 'quit'], level=level)
+            print(INDENT * level
+                  + ANSI_DEFAULT + str(tuples[index]) + ANSI_RESET)
+            answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
+                                 level=level)
 
         if answer == 'insert':
             key = modify_data(key_prompt, level=level)
@@ -238,7 +234,7 @@ def modify_tuples(tuples, created, level=0, prompts={}, keys={}):
             if any(k == key for k in boolean_keys):
                 value = modify_data(value_prompt, level=level, data=value)
                 level += 1
-                additional_value = modify_tuples(additional_value, created,
+                additional_value = modify_tuples(additional_value, is_created,
                                                  level=level, prompts=prompts,
                                                  keys=keys)
                 level -= 1
@@ -272,6 +268,53 @@ def modify_tuples(tuples, created, level=0, prompts={}, keys={}):
 
     return tuples
 
+def modify_tuple(data, is_created, prompts={}):
+    """Modify a tuple.
+
+    Args:
+        data: A string representation of the tuple to be modified
+        is_created: A boolean indicating whether the tuple is being
+        created or modified
+        prompts: A dictionary containing prompts to be used for user
+        input. The following keys are supported:
+            - value: prompt for the value to be inserted
+            - end_of_list: prompt for the end of the list
+
+    Returns:
+        A string representation of the modified tuple
+
+    Raises:
+        No explicit exception raised, but modify_data() function called
+        within this function may raise exceptions."""
+    data = list(ast.literal_eval(data))
+    value_prompt = prompts.get('value', 'value')
+    end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
+
+    index = 0
+    while index <= len(data):
+        if is_created or index == len(data):
+            print(ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
+            answer = tidy_answer(['insert', 'quit'])
+        else:
+            print(ANSI_DEFAULT + str(data[index]) + ANSI_RESET)
+            answer = tidy_answer(['insert', 'modify', 'delete', 'quit'])
+
+        if answer == 'insert':
+            value = modify_data(value_prompt)
+            if value:
+                data.insert(index, value)
+        elif answer == 'modify':
+            data[index] = modify_data(value_prompt, data=data[index])
+        elif answer == 'delete':
+            del data[index]
+            index -= 1
+        elif answer == 'quit':
+            index = len(data)
+
+        index += 1
+
+    return str(tuple(data))
+
 def modify_data(prompt, level=0, data=''):
     """Modify data.
 
@@ -286,10 +329,10 @@ def modify_data(prompt, level=0, data=''):
     Raises:
         No specific exceptions are raised."""
     if data:
-        data = input('    ' * level + prompt + ' '
+        data = input(INDENT * level + prompt + ' '
                      + ANSI_DEFAULT + data + ANSI_RESET + ': ').strip() or data
     else:
-        data = input('    ' * level + prompt + ': ').strip()
+        data = input(INDENT * level + prompt + ': ').strip()
     return data
 
 def tidy_answer(answers, level=0):
@@ -326,7 +369,7 @@ def tidy_answer(answers, level=0):
             else:
                 prompt = prompt + '/' + highlighted_word
 
-    answer = input('    ' * level + prompt).strip().lower()
+    answer = input(INDENT * level + prompt).strip().lower()
     if answer:
         if not answer[0] in initialism:
             answer = ''

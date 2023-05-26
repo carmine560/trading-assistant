@@ -233,7 +233,7 @@ def create_icon(basename, icon_directory=None):
     elif len(acronym) >= 3:
         font = ImageFont.truetype('consolab.ttf', 180)
 
-        upper = acronym[0:2]
+        upper = acronym[:2]
         offset_x, offset_y, text_width, text_height = \
             draw.textbbox((0, 0), upper, font=font)
         draw.text(((image_width - text_width) / 2, -offset_y), upper,
