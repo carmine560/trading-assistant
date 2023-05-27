@@ -88,8 +88,7 @@ def modify_option(config, section, option, config_file, backup_function=None,
         backup_function(config_file, **backup_parameters)
 
     if config.has_option(section, option):
-        print(option, '=',
-              ANSI_DEFAULT + config[section][option] + ANSI_RESET)
+        print(option, '=', ANSI_DEFAULT + config[section][option] + ANSI_RESET)
         try:
             boolean_value = config[section].getboolean(option)
             answer = tidy_answer(['toggle', 'default', 'quit'])
@@ -102,7 +101,7 @@ def modify_option(config, section, option, config_file, backup_function=None,
                                   keys=keys)
             elif re.sub('\s+', '', config[section][option])[:1] == '(':
                 config[section][option] = modify_tuple(config[section][option],
-                                                       False)
+                                                       False, level=1)
             else:
                 config[section][option] = modify_data(
                     prompts.get('value', 'value'),
@@ -166,12 +165,13 @@ def modify_tuples(tuples, is_created, level=0, prompts={}, keys={}):
     """Modify tuples.
 
     Args:
-        tuples: a list of tuples to be modified
-        is_created: a boolean value indicating whether the tuples are
-        being created or not
-        level: an integer indicating the level of indentation
-        prompts: a dictionary containing prompts for various keys
-        keys: a dictionary containing keys for various types of values
+        tuples: A list of tuples to be modified.
+        is_created: A boolean indicating whether the tuples are being
+        created or modified.
+        level: An integer indicating the level of indentation.
+        prompts: A dictionary containing prompts for different keys.
+        keys: A dictionary containing keys for different types of
+        values.
 
     Returns:
         The modified list of tuples."""
@@ -216,7 +216,7 @@ def modify_tuples(tuples, is_created, level=0, prompts={}, keys={}):
             elif any(k == key for k in no_value_keys):
                 tuples.insert(index, (key,))
             elif any(k == key for k in positioning_keys):
-                value = configure_position(answer)
+                value = configure_position(answer, level=level)
                 tuples.insert(index, (key, value))
             else:
                 value = modify_data(value_prompt, level=level)
@@ -252,7 +252,7 @@ def modify_tuples(tuples, is_created, level=0, prompts={}, keys={}):
             elif any(k == key for k in no_value_keys):
                 tuples[index] = (key,)
             elif any(k == key for k in positioning_keys):
-                value = configure_position(answer, value)
+                value = configure_position(answer, level=level, value=value)
                 tuples[index] = (key, value)
             else:
                 value = modify_data(value_prompt, level=level, data=value)
@@ -268,24 +268,20 @@ def modify_tuples(tuples, is_created, level=0, prompts={}, keys={}):
 
     return tuples
 
-def modify_tuple(data, is_created, prompts={}):
+def modify_tuple(data, is_created, level=0, prompts={}):
     """Modify a tuple.
 
     Args:
-        data: A string representation of the tuple to be modified
-        is_created: A boolean indicating whether the tuple is being
-        created or modified
-        prompts: A dictionary containing prompts to be used for user
-        input. The following keys are supported:
-            - value: prompt for the value to be inserted
-            - end_of_list: prompt for the end of the list
+        data (str): A string representation of the tuple to be modified.
+        is_created (bool): A flag indicating whether the tuple is being
+        created or modified.
+        level (int): The level of indentation for printing prompts.
+        prompts (dict): A dictionary containing prompts for user
+        input. The keys are 'value' for the prompt for entering a new
+        value, and 'end_of_list' for the prompt for the end of the list.
 
     Returns:
-        A string representation of the modified tuple
-
-    Raises:
-        No explicit exception raised, but modify_data() function called
-        within this function may raise exceptions."""
+        str: A string representation of the modified tuple."""
     data = list(ast.literal_eval(data))
     value_prompt = prompts.get('value', 'value')
     end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
@@ -293,18 +289,22 @@ def modify_tuple(data, is_created, prompts={}):
     index = 0
     while index <= len(data):
         if is_created or index == len(data):
-            print(ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
-            answer = tidy_answer(['insert', 'quit'])
+            print(INDENT * level
+                  + ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
+            answer = tidy_answer(['insert', 'quit'], level=level)
         else:
-            print(ANSI_DEFAULT + str(data[index]) + ANSI_RESET)
-            answer = tidy_answer(['insert', 'modify', 'delete', 'quit'])
+            print(INDENT * level
+                  + ANSI_DEFAULT + str(data[index]) + ANSI_RESET)
+            answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
+                                 level=level)
 
         if answer == 'insert':
-            value = modify_data(value_prompt)
+            value = modify_data(value_prompt, level=level)
             if value:
                 data.insert(index, value)
         elif answer == 'modify':
-            data[index] = modify_data(value_prompt, data=data[index])
+            data[index] = modify_data(value_prompt, level=level,
+                                      data=data[index])
         elif answer == 'delete':
             del data[index]
             index -= 1
@@ -316,21 +316,27 @@ def modify_tuple(data, is_created, prompts={}):
     return str(tuple(data))
 
 def modify_data(prompt, level=0, data=''):
-    """Modify data.
+    """A function to modify data.
 
     Args:
-        prompt (str): The prompt to display to the user.
-        level (int, optional): The level of indentation. Defaults to 0.
-        data (str, optional): The data to modify. Defaults to ''.
+        prompt : the prompt to display to the user
+        level : the indentation level of the prompt (default 0)
+        data : the data to modify (default '')
 
     Returns:
-        str: The modified data.
+        The modified data
 
     Raises:
-        No specific exceptions are raised."""
+        ImportError: If prompt_toolkit is not installed"""
+    from prompt_toolkit import prompt as pt_prompt
+    from prompt_toolkit.completion import WordCompleter
+    from prompt_toolkit.shortcuts import CompleteStyle
+
     if data:
-        data = input(INDENT * level + prompt + ' '
-                     + ANSI_DEFAULT + data + ANSI_RESET + ': ').strip() or data
+        completer = WordCompleter([data])
+        data = pt_prompt(INDENT * level + prompt + ': ', completer=completer,
+                         complete_style=CompleteStyle.READLINE_LIKE).strip() \
+                         or data
     else:
         data = input(INDENT * level + prompt + ': ').strip()
     return data
@@ -379,31 +385,40 @@ def tidy_answer(answers, level=0):
                     answer = answers[index]
     return answer
 
-def configure_position(answer, value=''):
-    """Configures the position of the mouse cursor.
+def configure_position(answer, level=0, value=''):
+    """Configures the position of an input.
 
     Args:
-        answer (str): The answer to the prompt. Can be 'insert' or
-        'modify'.
-        value (str): The value to modify. Default is an empty string.
+        answer (str): The answer to the input prompt.
+        level (int): The level of indentation.
+        value (str): The value of the input prompt.
 
     Returns:
-        str: The new value of the position of the mouse cursor.
+        The configured position.
 
     Raises:
-        None."""
+        ImportError: If the prompt_toolkit module is not installed.
+        NotImplementedError: If silent animals are not supported."""
     import time
 
+    from prompt_toolkit import ANSI
+    from prompt_toolkit import prompt as pt_prompt
+    from prompt_toolkit.completion import WordCompleter
+    from prompt_toolkit.shortcuts import CompleteStyle
     import pyautogui
     import win32api
 
-    if answer == 'insert':
-        value = input('input/'
-                      + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + 'lick: ').strip()
-    elif answer == 'modify':
-        value = input('input/' + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + 'lick '
-                      + ANSI_DEFAULT + value + ANSI_RESET + ': ').strip() \
-                      or value
+    if answer == 'modify' and value:
+        completer = WordCompleter([value])
+        value = pt_prompt(
+            ANSI(INDENT * level
+                 + 'input/' + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + + 'lick: '),
+            completer=completer,
+            complete_style=CompleteStyle.READLINE_LIKE).strip() or value
+    else:
+        value = input(
+            INDENT * level
+            + 'input/' + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + 'lick: ').strip()
 
     if value and value[0].lower() == 'c':
         previous_key_state = win32api.GetKeyState(0x01)

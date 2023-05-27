@@ -4,7 +4,7 @@
 margin using Hyper SBI 2 -->
 
 <!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui pynput
-pyttsx3 -->
+pyttsx3 python-prompt-toolkit -->
 
 A `trading_assistant.py` Python script assists in discretionary day trading of
 stocks on margin using [Hyper SBI
@@ -36,6 +36,8 @@ the following packages:
   * [pynput](https://github.com/moses-palmer/pynput) to monitor keyboard input
   * [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak information
   * [psutil](https://github.com/giampaolo/psutil) to calculate CPU utilization
+  * [prompt_toolkit](https://python-prompt-toolkit.readthedocs.io/en/master/index.html)
+    to complete possible values or a previous value in configuring
 
 Install each package as needed.  For example:
 
@@ -48,6 +50,7 @@ pip install pyautogui
 pip install pynput
 pip install pyttsx3
 pip install psutil
+pip install prompt_toolkit
 ```
 
 ## Usage ##
