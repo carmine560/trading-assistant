@@ -348,10 +348,24 @@ open_close_long_position = [
 
 ## Startup Script Example ##
 
+The following actions and options configure the processing of Hyper SBI 2
+before and after startup and during running.
+
 ``` ini
+[HYPERSBI2 Actions]
+minimize_all_windows = [
+    ('press_hotkeys', 'win, m')]     # minimize all windows.
+show_hide_watchlists = [
+    ('show_hide_window', '登録銘柄')] # show or hide the Watchlists window.
+
 [HYPERSBI2 Startup Script]
+# save customer margin ratios and the previous market data and execute the
+# minimize_all_windows action above.
 pre_start_options = -rde minimize_all_windows
+# execute the login action mentioned in the previous section, then execute the
+# show_hide_watchlists_on_click action and run the scheduler.
 post_start_options = -e login, -se show_hide_watchlists_on_click
+# execute the show_hide_window action above.
 running_options = -e show_hide_watchlists
 ```
 
