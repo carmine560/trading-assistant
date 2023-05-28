@@ -334,35 +334,46 @@ def modify_tuple(data, is_created, level=0, prompts={}):
     return str(tuple(data))
 
 def modify_data(prompt, level=0, data='', all_data=[]):
-    """Modify data.
+    """Modify data based on user input.
 
     Args:
         prompt (str): The prompt to display to the user.
-        level (int): The indentation level.
-        data (str): The default value for the data.
-        all_data (list): A list of all possible values for the data.
+        level (int): The indentation level of the prompt.
+        data (str): The default value to use if the user does not
+        provide input.
+        all_data (list): A list of all possible values for the user to
+        choose from.
 
     Returns:
         The modified data.
 
     Raises:
-        ImportError: If the prompt_toolkit module is not installed."""
-    from prompt_toolkit import prompt as pt_prompt
-    from prompt_toolkit.completion import WordCompleter
-    from prompt_toolkit.shortcuts import CompleteStyle
+        ImportError: If prompt_toolkit is not installed."""
+    has_prompt_toolkit = True
+    try:
+        from prompt_toolkit import prompt as pt_prompt
+        from prompt_toolkit.completion import WordCompleter
+        from prompt_toolkit.shortcuts import CompleteStyle
+    except ImportError:
+        has_prompt_toolkit = False
 
     completer = None
-    if all_data:
-        completer = WordCompleter(all_data, ignore_case=True)
-    elif data:
-        completer = WordCompleter([data])
+    if has_prompt_toolkit:
+        if all_data:
+            completer = WordCompleter(all_data, ignore_case=True)
+        elif data:
+            completer = WordCompleter([data])
 
+    prompt_prefix = INDENT * level + prompt
     if completer:
-        data = pt_prompt(INDENT * level + prompt + ': ', completer=completer,
-                         complete_style=CompleteStyle.READLINE_LIKE).strip() \
-                         or data
+        data = pt_prompt(
+            prompt_prefix + ': ', completer=completer,
+            complete_style=CompleteStyle.READLINE_LIKE).strip() or data
+    elif data:
+        data = input(prompt_prefix + ' '
+                     + ANSI_DEFAULT + data + ANSI_RESET + ': ').strip() or data
     else:
-        data = input(INDENT * level + prompt + ': ').strip()
+        data = input(prompt_prefix + ': ').strip()
     return data
 
 def tidy_answer(answers, level=0):
@@ -410,39 +421,45 @@ def tidy_answer(answers, level=0):
     return answer
 
 def configure_position(answer, level=0, value=''):
-    """Configures the position of an input.
+    """Configure the position of an object.
 
     Args:
-        answer (str): The answer to the input prompt.
-        level (int): The level of indentation.
-        value (str): The value of the input prompt.
+        answer (str): The answer to the prompt.
+        level (int, optional): The level of indentation. Defaults to 0.
+        value (str, optional): The value of the prompt. Defaults to ''.
 
     Returns:
-        The configured position.
+        str: The coordinates of the object or the value of the prompt.
 
     Raises:
-        ImportError: If the prompt_toolkit module is not installed.
-        NotImplementedError: If silent animals are not supported."""
+        ImportError: If prompt_toolkit is not installed."""
     import time
 
-    from prompt_toolkit import ANSI
-    from prompt_toolkit import prompt as pt_prompt
-    from prompt_toolkit.completion import WordCompleter
-    from prompt_toolkit.shortcuts import CompleteStyle
     import pyautogui
     import win32api
 
+    has_prompt_toolkit = True
+    try:
+        from prompt_toolkit import ANSI
+        from prompt_toolkit import prompt as pt_prompt
+        from prompt_toolkit.completion import WordCompleter
+        from prompt_toolkit.shortcuts import CompleteStyle
+    except ImportError:
+        has_prompt_toolkit = False
+
+    prompt_prefix = f'{INDENT * level}input/{ANSI_HIGHLIGHT}c{ANSI_RESET}'
     if answer == 'modify' and value:
-        completer = WordCompleter([value])
-        value = pt_prompt(
-            ANSI(INDENT * level
-                 + 'input/' + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + + 'lick: '),
-            completer=completer,
-            complete_style=CompleteStyle.READLINE_LIKE).strip() or value
+        if has_prompt_toolkit:
+            completer = WordCompleter([value])
+            value = pt_prompt(
+                ANSI(prompt_prefix + 'lick: '), completer=completer,
+                complete_style=CompleteStyle.READLINE_LIKE).strip() or value
+        else:
+            value = input(prompt_prefix + 'lick '
+                          + ANSI_DEFAULT + value + ANSI_RESET + ': ').strip() \
+                          or value
     else:
-        value = input(
-            INDENT * level
-            + 'input/' + ANSI_HIGHLIGHT + 'c' + ANSI_RESET + 'lick: ').strip()
+        value = input(prompt_prefix + 'lick: ').strip()
 
     if value and value[0].lower() == 'c':
         previous_key_state = win32api.GetKeyState(0x01)
