@@ -312,6 +312,8 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
     data = list(ast.literal_eval(data))
     value_prompt = prompts.get('value', 'value')
     end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
+    element_index = tuple_info.get('element_index')
+    possible_values = tuple_info.get('possible_values')
 
     index = 0
     while index <= len(data):
@@ -326,9 +328,7 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
                                  level=level)
 
         if answer == 'insert':
-            if tuple_info:
-                element_index = tuple_info.get('element_index')
-                possible_values = tuple_info.get('possible_values')
+            if index == element_index and possible_values:
                 value = modify_data(value_prompt, level=level,
                                     all_data=possible_values)
             else:
@@ -336,9 +336,7 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
             if value:
                 data.insert(index, value)
         elif answer == 'modify':
-            if tuple_info:
-                element_index = tuple_info.get('element_index')
-                possible_values = tuple_info.get('possible_values')
+            if index == element_index and possible_values:
                 data[index] = modify_data(value_prompt, level=level,
                                           all_data=possible_values)
             else:
