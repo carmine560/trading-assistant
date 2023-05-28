@@ -348,8 +348,8 @@ open_close_long_position = [
 
 ## Startup Script Example ##
 
-The following actions and options configure the processing of Hyper SBI 2
-before and after startup and during running.
+The following actions and options configure the processing of Hyper SBI 2 pre-
+and post-startup and during running.
 
 ``` ini
 [HYPERSBI2 Actions]
@@ -452,4 +452,5 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 ## Link ##
 
   * [*Python Scripting to Assist in Day Trading on Margin Using Hyper SBI
-    2*](): a blog post for more details
+    2*](): a blog post about computing the maximum share size for a market
+    order on margin trading

@@ -3,6 +3,7 @@ import argparse
 import ast
 import configparser
 import csv
+import inspect
 import os
 import re
 import sys
@@ -22,70 +23,68 @@ class Trade:
     Attributes:
         brokerage : name of the brokerage
         process : name of the process
-        config_directory : directory path for configuration files
+        config_directory : directory where configuration files are
+        stored
         script_base : base name of the script
         config_file : configuration file path
-        market_directory : directory path for market related files
-        market_holidays : market holidays file path
-        closing_prices : closing prices file path
-        resource_directory : directory path for resource files
-        customer_margin_ratios : customer margin ratios file path
-        startup_script : startup script file path
+        market_directory : directory where market data is stored
+        market_holidays : path to market holidays file
+        closing_prices : path to closing prices file
+        resource_directory : directory where resources are stored
+        customer_margin_ratios : path to customer margin ratios file
+        startup_script : path to startup script file
+        customer_margin_ratio_section : section name for customer margin
+        ratios in configuration file
+        startup_script_section : section name for startup script in
+        configuration file
+        action_section : section name for actions in configuration file
+        schedule_section : section name for schedules in configuration
+        file
+        categorized_keys : categorized keys extracted from
+        execute_action function
+        cash_balance : cash balance of the trade
         previous_position : previous position of the cursor
-        cash_balance : cash balance
+        share_size : share size of the trade
+        speech_engine : speech engine used for text-to-speech conversion
         symbol : symbol of the trade
-        share_size : share size
-        speech_engine : speech engine object
 
     Methods:
-        get_symbol(hwnd, title_regex) : Extracts symbol from the window
-        title.
-
-    Args:
-        hwnd : window handle
-        title_regex : regular expression to match the window title
-
-    Returns:
-        None
-
-    Sets:
-        symbol : symbol extracted from the window title
-
-    Raises:
-        None"""
+        get_symbol(hwnd, title_regex):
+            Get symbol"""
     def __init__(self, brokerage, process):
-        """Initialize a class with several attributes.
+        """A class constructor to initialize an object of the class.
 
         Args:
-            brokerage: name of the brokerage
-            process: name of the process
+            brokerage : name of the brokerage
+            process : name of the process
 
         Attributes:
             brokerage : name of the brokerage
             process : name of the process
-            config_directory : directory where the configuration files
-            are stored
-            script_base : base name of the script
-            config_file : path to the configuration file
-            market_directory : directory where the market files are
-            stored
-            market_holidays : path to the market holidays file
-            closing_prices : path to the closing prices file
-            resource_directory : directory where the resource files are
-            stored
-            customer_margin_ratios : path to the customer margin ratios
+            config_directory : directory path for the configuration
+            filesscript_base : name of the script file
+            config_file : path of the configuration file
+            market_directory : directory path for the market files
+            market_holidays : path of the market holidays file
+            closing_prices : path of the closing prices file
+            resource_directory : directory path for the resource files
+            customer_margin_ratios : path of the customer margin ratios
             file
-            startup_script : path to the startup script
+            startup_script : path of the startup script file
             customer_margin_ratio_section : section name for customer
-            margin ratios
-            startup_script_section : section name for startup script
-            action_section : section name for actions
-            schedule_section : section name for schedules
-            previous_position : previous position of the cursor
+            margin ratios in the configuration file
+            startup_script_section : section name for startup script in
+            the configuration file
+            action_section : section name for actions in the
+            configuration file
+            schedule_section : section name for schedules in the
+            configuration file
+            categorized_keys : dictionary containing categorized keys
             cash_balance : cash balance
-            symbol : symbol of the stock
-            share_size : number of shares
-            speech_engine : speech engine used"""
+            previous_position : previous position of the mouse cursor
+            share_size : share size
+            speech_engine : speech engine object
+            symbol"""
         self.brokerage = brokerage
         self.process = process
         self.config_directory = os.path.join(
@@ -115,13 +114,21 @@ class Trade:
         self.startup_script_section = self.process + ' Startup Script'
         self.action_section = self.process + ' Actions'
         self.schedule_section = self.process + ' Schedules'
+        self.categorized_keys = {
+            'all_keys': file_utilities.extract_commands(
+                inspect.getsource(execute_action)),
+            'boolean_keys': ('is_recording',),
+            'additional_value_keys': ('click_widget', 'speak_config'),
+            'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
+                              'count_trades', 'take_screenshot',
+                              'write_share_size'),
+            'positioning_keys': ('click', 'move_to')}
 
-        self.previous_position = pyautogui.position()
         self.cash_balance = 0
-        self.symbol = ''
+        self.previous_position = pyautogui.position()
         self.share_size = 0
-
         self.speech_engine = None
+        self.symbol = ''
 
     def get_symbol(self, hwnd, title_regex):
         """Get symbol from window title.
@@ -232,12 +239,7 @@ def main():
                 prompts={'key': 'command', 'value': 'argument',
                          'additional_value': 'additional argument',
                          'end_of_list': 'end of commands'},
-                keys={'boolean': ('is_recording',),
-                      'additional_value': ('click_widget', 'speak_config'),
-                      'no_value': ('back_to', 'copy_symbols_from_market_data',
-                                   'count_trades', 'take_screenshot',
-                                   'write_share_size'),
-                      'positioning': ('click', 'move_to')}):
+                categorized_keys=trade.categorized_keys):
             # To pin the shortcut to the Taskbar, specify an
             # executable file as the argument target_path.
             file_utilities.create_shortcut(
@@ -306,7 +308,6 @@ def main():
                 prompts={'value': 'x, y, width, height, index'}):
             sys.exit(1)
     if args.S:
-        # TODO: modify_tuple()
         if configuration.modify_section(config, trade.schedule_section,
                                         trade.config_file, **backup_file):
             sys.exit()

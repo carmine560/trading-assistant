@@ -34,7 +34,7 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
 
     output = os.path.join(output_directory,
                           os.path.basename(source) + '.tar.xz.gpg')
-    # TODO
+    # TODO: reduce file size.
     gpg.encrypt_file(tar_stream, fingerprint, output=output)
 
 def decrypt_extract_file(source, output_directory):
@@ -166,7 +166,7 @@ def check_directory(directory):
             print(e)
             sys.exit(1)
 
-# TODO
+# TODO: replace the font.
 def create_icon(basename, icon_directory=None):
     """Creates an icon file from a given basename.
 
@@ -372,3 +372,32 @@ def is_writing(target_path):
         return True
     else:
         return False
+
+def extract_commands(source, command='command'):
+    """Extracts commands from source code.
+
+    Args:
+        source : str
+            The source code to extract commands from.
+        command : str, optional
+            The name of the command to extract. Default is 'command'.
+
+    Returns:
+        A list of commands extracted from the source code.
+
+    Raises:
+        None."""
+    import ast
+
+    commands = []
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.If):
+            test = node.test
+            if isinstance(test, ast.Compare):
+                left = test.left
+                if isinstance(left, ast.Name) and left.id == command:
+                    comparator = test.comparators[0]
+                    if isinstance(comparator, ast.Constant):
+                        commands.append(comparator.value)
+    return commands
