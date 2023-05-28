@@ -26,65 +26,63 @@ class Trade:
         config_directory : directory where configuration files are
         stored
         script_base : base name of the script
-        config_file : configuration file path
+        config_file : path to the configuration file
         market_directory : directory where market data is stored
-        market_holidays : path to market holidays file
-        closing_prices : path to closing prices file
+        market_holidays : path to the market holidays file
+        closing_prices : path to the closing prices file
         resource_directory : directory where resources are stored
-        customer_margin_ratios : path to customer margin ratios file
-        startup_script : path to startup script file
+        customer_margin_ratios : path to the customer margin ratios file
+        startup_script : path to the startup script
         customer_margin_ratio_section : section name for customer margin
-        ratios in configuration file
-        startup_script_section : section name for startup script in
+        ratios in the configuration file
+        startup_script_section : section name for startup script in the
         configuration file
-        action_section : section name for actions in configuration file
-        schedule_section : section name for schedules in configuration
+        action_section : section name for actions in the configuration
         file
-        categorized_keys : categorized keys extracted from
-        execute_action function
-        cash_balance : cash balance of the trade
-        previous_position : previous position of the cursor
-        share_size : share size of the trade
-        speech_engine : speech engine used for text-to-speech conversion
-        symbol : symbol of the trade
+        actions : list of actions
+        categorized_keys : dictionary of categorized keys
+        schedule_section : section name for schedules in the
+        configuration file
+        cash_balance : cash balance
+        previous_position : previous position of the mouse cursor
+        share_size : share size
+        speech_engine : speech engine
+        symbol : symbol extracted from the window title
 
     Methods:
         get_symbol(hwnd, title_regex):
-            Get symbol"""
+    """
     def __init__(self, brokerage, process):
-        """A class constructor to initialize an object of the class.
+        """A function to initialize an object with various attributes.
 
         Args:
-            brokerage : name of the brokerage
-            process : name of the process
+            brokerage: name of the brokerage
+            process: name of the process
 
         Attributes:
             brokerage : name of the brokerage
             process : name of the process
-            config_directory : directory path for the configuration
-            filesscript_base : name of the script file
-            config_file : path of the configuration file
-            market_directory : directory path for the market files
-            market_holidays : path of the market holidays file
-            closing_prices : path of the closing prices file
-            resource_directory : directory path for the resource files
-            customer_margin_ratios : path of the customer margin ratios
-            file
-            startup_script : path of the startup script file
+            config_directory : directory path for configuration files
+            script_base : base name of the script
+            config_file : configuration file path
+            market_directory : directory path for market data
+            market_holidays : market holidays file path
+            closing_prices : closing prices file path
+            resource_directory : directory path for resources
+            customer_margin_ratios : customer margin ratios file path
+            startup_script : startup script file path
             customer_margin_ratio_section : section name for customer
-            margin ratios in the configuration file
-            startup_script_section : section name for startup script in
-            the configuration file
-            action_section : section name for actions in the
-            configuration file
-            schedule_section : section name for schedules in the
-            configuration file
-            categorized_keys : dictionary containing categorized keys
-            cash_balance : cash balance
-            previous_position : previous position of the mouse cursor
-            share_size : share size
-            speech_engine : speech engine object
-            symbol"""
+            margin ratios
+            startup_script_section : section name for startup script
+            action_section : section name for actions
+            actions : list of actions
+            categorized_keys : dictionary of categorized keys
+            schedule_section : section name for schedules
+            cash_balance : cash balance of the object
+            previous_position : previous position of the object
+            share_size : share size of the object
+            speech_engine : speech engine of the object
+            symbol : symbol of the object"""
         self.brokerage = brokerage
         self.process = process
         self.config_directory = os.path.join(
@@ -113,7 +111,7 @@ class Trade:
             self.brokerage + ' Customer Margin Ratios'
         self.startup_script_section = self.process + ' Startup Script'
         self.action_section = self.process + ' Actions'
-        self.schedule_section = self.process + ' Schedules'
+        self.actions = []
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
@@ -123,6 +121,7 @@ class Trade:
                               'count_trades', 'take_screenshot',
                               'write_share_size'),
             'positioning_keys': ('click', 'move_to')}
+        self.schedule_section = self.process + ' Schedules'
 
         self.cash_balance = 0
         self.previous_position = pyautogui.position()
@@ -160,7 +159,7 @@ def main():
     Raises:
         None"""
     parser = argparse.ArgumentParser()
-    actions = parser.add_mutually_exclusive_group()
+    action_group = parser.add_mutually_exclusive_group()
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -170,13 +169,13 @@ def main():
     parser.add_argument(
         '-s', action='store_true',
         help='run the scheduler')
-    actions.add_argument(
+    action_group.add_argument(
         '-M', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help=('create or modify an action and create a shortcut to it'))
-    actions.add_argument(
+    action_group.add_argument(
         '-e', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help='execute an action')
-    actions.add_argument(
+    action_group.add_argument(
         '-T', const='LIST_ACTIONS', metavar='SCRIPT_BASE | ACTION', nargs='?',
         help=('delete a startup script or an action and a shortcut to it'))
     parser.add_argument(
@@ -208,6 +207,9 @@ def main():
     else:
         gui_callbacks = gui_interactions.GuiCallbacks(
             ast.literal_eval(config[trade.process]['interactive_windows']))
+    if config.has_section(trade.action_section):
+        for option in config[trade.action_section]:
+            trade.actions.append(option)
 
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
@@ -308,8 +310,10 @@ def main():
                 prompts={'value': 'x, y, width, height, index'}):
             sys.exit(1)
     if args.S:
-        if configuration.modify_section(config, trade.schedule_section,
-                                        trade.config_file, **backup_file):
+        if configuration.modify_section(
+                config, trade.schedule_section, trade.config_file,
+                **backup_file, tuple_info={'element_index': 1,
+                                           'possible_values': trade.actions}):
             sys.exit()
         else:
             sys.exit(1)

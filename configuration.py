@@ -30,21 +30,22 @@ def list_section(config, section):
 
 # TODO: insert options.
 def modify_section(config, section, config_file, backup_function=None,
-                   backup_parameters=None, categorized_keys={}):
-    """Modify a section in a configuration file.
+                   backup_parameters=None, categorized_keys={}, tuple_info={}):
+    """Modifies a section in a configuration file.
 
     Args:
-        config (ConfigParser): Configuration object
-        section (str): Name of the section to be modified
-        config_file (str): Path to the configuration file
-        backup_function (function): Function to backup the configuration
-        file
-        backup_parameters (dict): Parameters to be passed to the backup
+        config (configparser.ConfigParser): The configuration object
+        section (str): The section to modify
+        config_file (str): The path to the configuration file
+        backup_function (function): A function to backup the
+        configuration file
+        backup_parameters (dict): Parameters to pass to the backup
         function
-        categorized_keys (dict): Dictionary of categorized keys
+        categorized_keys (dict): A dictionary of keys to categories
+        tuple_info (dict): A dictionary of keys to tuple information
 
     Returns:
-        True if the section is modified successfully, False otherwise
+        True if the section was modified successfully, False otherwise
 
     Raises:
         None"""
@@ -54,7 +55,8 @@ def modify_section(config, section, config_file, backup_function=None,
     if config.has_section(section):
         for option in config[section]:
             result = modify_option(config, section, option, config_file,
-                                   categorized_keys=categorized_keys)
+                                   categorized_keys=categorized_keys,
+                                   tuple_info=tuple_info)
             if result == 'quit' or result == False:
                 return result
         return True
@@ -63,27 +65,35 @@ def modify_section(config, section, config_file, backup_function=None,
         return False
 
 def modify_option(config, section, option, config_file, backup_function=None,
-                  backup_parameters=None, prompts={}, categorized_keys={}):
+                  backup_parameters=None, prompts={}, categorized_keys={},
+                  tuple_info={}):
     """Modify an option in a configuration file.
 
     Args:
-        config : ConfigParser object representing the configuration file
-        section : name of the section in which the option is located
-        option : name of the option to be modified
-        config_file : path to the configuration file
-        backup_function : function to be called to backup the
-        configuration file
-        backup_parameters : parameters to be passed to the backup
-        function
-        prompts : dictionary of prompts to be displayed to the user
-        categorized_keys : dictionary of categorized keys
+        config: A configparser object representing the configuration
+        file.
+        section: The section of the configuration file that contains the
+        option.
+        option: The option to modify.
+        config_file: The path to the configuration file.
+        backup_function: A function to backup the configuration file
+        before modification. Default is None.
+        backup_parameters: A dictionary of parameters to pass to the
+        backup function. Default is None.
+        prompts: A dictionary of prompts to display to the user. Default
+        is an empty dictionary.
+        categorized_keys: A dictionary of categorized keys. Default is
+        an empty dictionary.
+        tuple_info: A dictionary of information about tuples. Default is
+        an empty dictionary.
 
     Returns:
-        True if the option was modified successfully, False otherwise
+        True if the option was modified, False if the option does not
+        exist.
 
     Raises:
-        ValueError: If the value of the option is not a boolean
-        value."""
+        ValueError: If the configuration file is not valid.
+        NotImplementedError: If silent animals are not supported."""
     import re
 
     if backup_function:
@@ -103,7 +113,8 @@ def modify_option(config, section, option, config_file, backup_function=None,
                                   categorized_keys=categorized_keys)
             elif re.sub('\s+', '', config[section][option])[:1] == '(':
                 config[section][option] = modify_tuple(config[section][option],
-                                                       False, level=1)
+                                                       False, level=1,
+                                                       tuple_info=tuple_info)
             else:
                 config[section][option] = modify_data(
                     prompts.get('value', 'value'),
@@ -284,20 +295,20 @@ def modify_tuples(tuples, is_created, level=0, prompts={},
 
     return tuples
 
-def modify_tuple(data, is_created, level=0, prompts={}):
+def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
     """Modify a tuple.
 
     Args:
-        data (str): A string representation of the tuple to be modified.
-        is_created (bool): A flag indicating whether the tuple is being
-        created or modified.
-        level (int): The level of indentation for printing prompts.
-        prompts (dict): A dictionary containing prompts for user
-        input. The keys are 'value' for the prompt for entering a new
-        value, and 'end_of_list' for the prompt for the end of the list.
+        data: a string representation of the tuple to be modified
+        is_created: a boolean indicating whether the tuple is being
+        created or modified
+        level: an integer indicating the level of indentation for the
+        output
+        prompts: a dictionary containing prompts for user input
+        tuple_info: a dictionary containing information about the tuple
 
     Returns:
-        str: A string representation of the modified tuple."""
+        A string representation of the modified tuple."""
     data = list(ast.literal_eval(data))
     value_prompt = prompts.get('value', 'value')
     end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
@@ -315,14 +326,24 @@ def modify_tuple(data, is_created, level=0, prompts={}):
                                  level=level)
 
         if answer == 'insert':
-            # TODO: add all_keys
-            value = modify_data(value_prompt, level=level)
+            if tuple_info:
+                element_index = tuple_info.get('element_index')
+                possible_values = tuple_info.get('possible_values')
+                value = modify_data(value_prompt, level=level,
+                                    all_data=possible_values)
+            else:
+                value = modify_data(value_prompt, level=level)
             if value:
                 data.insert(index, value)
         elif answer == 'modify':
-            # TODO: add all_keys
-            data[index] = modify_data(value_prompt, level=level,
-                                      data=data[index])
+            if tuple_info:
+                element_index = tuple_info.get('element_index')
+                possible_values = tuple_info.get('possible_values')
+                data[index] = modify_data(value_prompt, level=level,
+                                          all_data=possible_values)
+            else:
+                data[index] = modify_data(value_prompt, level=level,
+                                          data=data[index])
         elif answer == 'delete':
             del data[index]
             index -= 1
@@ -447,19 +468,19 @@ def configure_position(answer, level=0, value=''):
     except ImportError:
         has_prompt_toolkit = False
 
-    prompt_prefix = f'{INDENT * level}input/{ANSI_HIGHLIGHT}c{ANSI_RESET}'
+    prompt_prefix = f'{INDENT * level}input/{ANSI_HIGHLIGHT}c{ANSI_RESET}lick'
     if answer == 'modify' and value:
         if has_prompt_toolkit:
             completer = WordCompleter([value])
             value = pt_prompt(
-                ANSI(prompt_prefix + 'lick: '), completer=completer,
+                ANSI(prompt_prefix + ': '), completer=completer,
                 complete_style=CompleteStyle.READLINE_LIKE).strip() or value
         else:
-            value = input(prompt_prefix + 'lick '
+            value = input(prompt_prefix + ' '
                           + ANSI_DEFAULT + value + ANSI_RESET + ': ').strip() \
                           or value
     else:
-        value = input(prompt_prefix + 'lick: ').strip()
+        value = input(prompt_prefix + ': ').strip()
 
     if value and value[0].lower() == 'c':
         previous_key_state = win32api.GetKeyState(0x01)
