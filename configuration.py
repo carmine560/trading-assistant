@@ -328,7 +328,8 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
                                  level=level)
 
         if answer == 'insert':
-            if index == element_index and possible_values:
+            if ((element_index == -1 or element_index == index)
+                and possible_values):
                 value = modify_data(value_prompt, level=level,
                                     all_data=possible_values)
             else:
@@ -336,7 +337,8 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
             if value:
                 data.insert(index, value)
         elif answer == 'modify':
-            if index == element_index and possible_values:
+            if ((element_index == -1 or element_index == index)
+                and possible_values):
                 data[index] = modify_data(value_prompt, level=level,
                                           all_data=possible_values)
             else:
