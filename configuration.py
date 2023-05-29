@@ -258,8 +258,8 @@ def modify_tuples(tuples, is_created, level=0, prompts={},
             key = modify_data(key_prompt, level=level, data=key,
                               all_data=all_keys)
             if any(k == key for k in boolean_keys):
-                # TODO: toggle
-                value = modify_data(value_prompt, level=level, data=value)
+                value = modify_data(value_prompt, level=level,
+                                    all_data=['True', 'False'])
                 level += 1
                 additional_value = modify_tuples(
                     additional_value, is_created, level=level, prompts=prompts,
