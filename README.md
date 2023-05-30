@@ -91,7 +91,7 @@ py trading_assistant.py -L
 Create or modify an action for processing by this script.
 
 ``` powershell
-py trading_assistant.py -M [ACTION]
+py trading_assistant.py -A [ACTION]
 ```
 
 An action is a list of sequential tuples, and each tuple consists of a command
@@ -149,7 +149,7 @@ ACTION = [
 Execute an action saved in the configuration file.
 
 ``` powershell
-py trading_assistant.py -e [ACTION]
+py trading_assistant.py -a [ACTION]
 ```
 
 ### Schedule Actions ###
@@ -163,20 +163,20 @@ SCHEDULE = ('%H:%M:%S', 'ACTION')
 
 ### Options ###
 
+  * `-P BROKERAGE PROCESS`: set a brokerage and a process [default: `SBI
+    Securities` and `HYPERSBI2`]
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
   * `-s`: run the scheduler
-  * `-M [ACTION]`: create or modify an action and create a shortcut to it
-  * `-e [ACTION]`: execute an action
-  * `-T [SCRIPT_BASE | ACTION]`: delete a startup script or an action and a
-    shortcut to it
-  * `-I`: create or modify a startup script and create a shortcut to it
-  * `-P BROKERAGE PROCESS`: set a brokerage and a process [default: `SBI
-    Securities` and `HYPERSBI2`]
-  * `-B`: set an arbitrary cash balance
-  * `-C`: set the cash balance region and the index of the price
-  * `-L`: set the price limit region and the index of the price
+  * `-a [ACTION]`: execute an action
+  * `-I`: configure a startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit
+  * `-A [ACTION]`: configure an action, create a shortcut to it, and exit
+  * `-C`: configure the cash balance region and the index of the price
+  * `-B`: configure an arbitrary cash balance
+  * `-L`: configure the price limit region and the index of the price
+  * `-T [SCRIPT_BASE | ACTION]`: delete a startup script or an action, delete a
+    shortcut to it, and exit
 
 ## Action Examples ##
 
@@ -362,12 +362,12 @@ show_hide_watchlists = [
 [HYPERSBI2 Startup Script]
 # save customer margin ratios and the previous market data and execute the
 # minimize_all_windows action above.
-pre_start_options = -rde minimize_all_windows
+pre_start_options = -rda minimize_all_windows
 # execute the login action mentioned in the previous section, then execute the
 # show_hide_watchlists_on_click action and run the scheduler.
-post_start_options = -e login, -se show_hide_watchlists_on_click
+post_start_options = -a login, -sa show_hide_watchlists_on_click
 # execute the show_hide_window action above.
-running_options = -e show_hide_watchlists
+running_options = -a show_hide_watchlists
 ```
 
 ## Schedule Examples ##

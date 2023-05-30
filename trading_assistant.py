@@ -158,8 +158,14 @@ def main():
 
     Raises:
         None"""
+    execute_action_flag = '-a'
+
     parser = argparse.ArgumentParser()
-    action_group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group()
+    parser.add_argument(
+        '-P', default=('SBI Securities', 'HYPERSBI2'),
+        metavar=('BROKERAGE', 'PROCESS'), nargs=2,
+        help='set a brokerage and a process [defaults: %(default)s]')
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -169,38 +175,96 @@ def main():
     parser.add_argument(
         '-s', action='store_true',
         help='run the scheduler')
-    action_group.add_argument(
-        '-M', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
-        help=('create or modify an action and create a shortcut to it'))
-    action_group.add_argument(
-        '-e', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
+    parser.add_argument(
+        execute_action_flag, const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help='execute an action')
-    action_group.add_argument(
-        '-T', const='LIST_ACTIONS', metavar='SCRIPT_BASE | ACTION', nargs='?',
-        help=('delete a startup script or an action and a shortcut to it'))
-    parser.add_argument(
+    group.add_argument(
         '-I', action='store_true',
-        help=('create or modify a startup script and create a shortcut to it'))
-    parser.add_argument(
-        '-P', default=('SBI Securities', 'HYPERSBI2'),
-        metavar=('BROKERAGE', 'PROCESS'), nargs=2,
-        help='set a brokerage and a process [defaults: %(default)s]')
-    parser.add_argument(
-        '-B', action='store_true',
-        help='set an arbitrary cash balance')
-    parser.add_argument(
-        '-C', action='store_true',
-        help=('set the cash balance region and the index of the price'))
-    parser.add_argument(
-        '-L', action='store_true',
-        help=('set the price limit region and the index of the price'))
-    parser.add_argument(
+        help=('configure a startup script, create a shortcut to it, and exit'))
+    group.add_argument(
         '-S', action='store_true',
         help='configure schedules and exit')
+    group.add_argument(
+        '-A', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
+        help=('configure an action, create a shortcut to it, and exit'))
+    group.add_argument(
+        '-C', action='store_true',
+        help=('configure the cash balance region and exit'))
+    group.add_argument(
+        '-B', action='store_true',
+        help='configure an arbitrary cash balance and exit')
+    group.add_argument(
+        '-L', action='store_true',
+        help=('configure the price limit region and exit'))
+    group.add_argument(
+        '-T', const='LIST_ACTIONS', metavar='SCRIPT_BASE | ACTION', nargs='?',
+        help=('delete a startup script or an action, delete a shortcut to it, '
+              'and exit'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade(*args.P)
-    config = configure(trade)
+    backup_file = {'backup_function': file_utilities.backup_file,
+                   'backup_parameters': {'number_of_backups': 8}}
+
+    if args.I or args.S or args.A or args.C or args.B or args.L:
+        config = configure(trade, interpolation=False)
+        if args.I and configuration.modify_section(
+                config, trade.startup_script_section, trade.config_file,
+                **backup_file):
+            create_startup_script(trade, config)
+            file_utilities.create_shortcut(
+                trade.script_base, 'powershell.exe',
+                '-WindowStyle Hidden -File "' + trade.startup_script + '"',
+                program_group_base=config[trade.process]['title'],
+                icon_directory=trade.resource_directory)
+            return
+        elif args.S and configuration.modify_section(
+                config, trade.schedule_section, trade.config_file,
+                **backup_file, tuple_info={'element_index': 1,
+                                           'possible_values': trade.actions}):
+            return
+        elif (args.A == 'LIST_ACTIONS'
+              and configuration.list_section(config, trade.action_section)):
+            return
+        elif args.A:
+            if configuration.modify_tuple_list(
+                    config, trade.action_section, args.A, trade.config_file,
+                    **backup_file,
+                    prompts={'key': 'command', 'value': 'argument',
+                             'additional_value': 'additional argument',
+                             'end_of_list': 'end of commands'},
+                    categorized_keys=trade.categorized_keys):
+                # To pin the shortcut to the Taskbar, specify an
+                # executable file as the target_path argument.
+                file_utilities.create_shortcut(
+                    args.A, 'py.exe',
+                    '"' + __file__ + '" ' + execute_action_flag + ' ' + args.A,
+                    program_group_base=config[trade.process]['title'],
+                    icon_directory=trade.resource_directory)
+            else:
+                file_utilities.delete_shortcut(
+                    args.A, program_group_base=config[trade.process]['title'],
+                    icon_directory=trade.resource_directory)
+            return
+        elif args.C and configuration.modify_option(
+                config, trade.process, 'cash_balance_region',
+                trade.config_file, **backup_file,
+                prompts={'value': 'x, y, width, height, index'}):
+            return
+        elif args.B and configuration.modify_option(
+                config, trade.process, 'fixed_cash_balance', trade.config_file,
+                **backup_file):
+            return
+        elif args.L and configuration.modify_option(
+                config, trade.process, 'price_limit_region', trade.config_file,
+                **backup_file,
+                prompts={'value': 'x, y, width, height, index'}):
+            return
+
+        sys.exit(1)
+    else:
+        config = configure(trade)
+
     if not config.has_section(trade.process):
         print(trade.process, 'section does not exist')
         sys.exit(1)
@@ -210,9 +274,6 @@ def main():
     if config.has_section(trade.action_section):
         for option in config[trade.action_section]:
             trade.actions.append(option)
-
-    backup_file = {'backup_function': file_utilities.backup_file,
-                   'backup_parameters': {'number_of_backups': 8}}
 
     if args.r:
         if config.has_section(trade.customer_margin_ratio_section):
@@ -231,35 +292,15 @@ def main():
             process.start()
         else:
             sys.exit(1)
-    if args.M == 'LIST_ACTIONS':
+    if args.a == 'LIST_ACTIONS':
         if not configuration.list_section(config, trade.action_section):
             sys.exit(1)
-    elif args.M:
-        if configuration.modify_tuple_list(
-                config, trade.action_section, args.M, trade.config_file,
-                **backup_file,
-                prompts={'key': 'command', 'value': 'argument',
-                         'additional_value': 'additional argument',
-                         'end_of_list': 'end of commands'},
-                categorized_keys=trade.categorized_keys):
-            # To pin the shortcut to the Taskbar, specify an
-            # executable file as the argument target_path.
-            file_utilities.create_shortcut(
-                args.M, 'py.exe', '"' + __file__ + '" -e ' + args.M,
-                program_group_base=config[trade.process]['title'],
-                icon_directory=trade.resource_directory)
-        else:
-            file_utilities.delete_shortcut(
-                args.M, program_group_base=config[trade.process]['title'],
-                icon_directory=trade.resource_directory)
-    if args.e == 'LIST_ACTIONS':
-        if not configuration.list_section(config, trade.action_section):
-            sys.exit(1)
-    elif args.e:
+        return
+    elif args.a:
         if config.has_section(trade.action_section):
             execute_action(
                 trade, config, gui_callbacks,
-                ast.literal_eval(config[trade.action_section][args.e]))
+                ast.literal_eval(config[trade.action_section][args.a]))
         else:
             sys.exit(1)
     if args.T == 'LIST_ACTIONS':
@@ -267,6 +308,7 @@ def main():
             print(trade.script_base)
         if not configuration.list_section(config, trade.action_section):
             sys.exit(1)
+        return
     elif args.T:
         if args.T == trade.script_base \
            and os.path.exists(trade.startup_script):
@@ -281,54 +323,26 @@ def main():
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
-    if args.I:
-        if configuration.modify_section(config, trade.startup_script_section,
-                                        trade.config_file, **backup_file):
-            create_startup_script(trade, config)
-            file_utilities.create_shortcut(
-                trade.script_base, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + trade.startup_script + '"',
-                program_group_base=config[trade.process]['title'],
-                icon_directory=trade.resource_directory)
-        else:
-            sys.exit(1)
-    if args.B:
-        if not configuration.modify_option(
-                config, trade.process, 'fixed_cash_balance', trade.config_file,
-                **backup_file):
-            sys.exit(1)
-    if args.C:
-        if not configuration.modify_option(
-                config, trade.process, 'cash_balance_region',
-                trade.config_file, **backup_file,
-                prompts={'value': 'x, y, width, height, index'}):
-            sys.exit(1)
-    if args.L:
-        if not configuration.modify_option(
-                config, trade.process, 'price_limit_region', trade.config_file,
-                **backup_file,
-                prompts={'value': 'x, y, width, height, index'}):
-            sys.exit(1)
-    if args.S:
-        if configuration.modify_section(
-                config, trade.schedule_section, trade.config_file,
-                **backup_file, tuple_info={'element_index': 1,
-                                           'possible_values': trade.actions}):
-            sys.exit()
-        else:
-            sys.exit(1)
+        return
 
-def configure(trade):
+def configure(trade, interpolation=True):
     """Configures the trade.
 
     Args:
-        trade: An object representing the trade
+        trade: Trade object
+        interpolation: If True, enables interpolation. Default is True.
 
     Returns:
-        A ConfigParser object containing the configuration information
-        for the trade."""
-    config = configparser.ConfigParser(
-        interpolation=configparser.ExtendedInterpolation())
+        ConfigParser object containing the configuration.
+
+    Raises:
+        NotImplementedError: If silent animals are used."""
+    if interpolation:
+        config = configparser.ConfigParser(
+            interpolation=configparser.ExtendedInterpolation())
+    else:
+        config = configparser.ConfigParser()
+
     config['General'] = {
         'screenshot_directory':
         os.path.join(os.path.expanduser('~'), 'Pictures'),
@@ -339,7 +353,7 @@ def configure(trade):
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'date_header': '日付',
-        'date_format': '%Y/%m/%d'}
+        'date_format': '%%Y/%%m/%%d'}
     config['Market Data'] = {
         'opening_time': '09:00:00',
         'closing_time': '15:30:00',
@@ -557,7 +571,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
     section = config['Market Holidays']
     url = section['url']
     date_header = section['date_header']
-    date_format = section['date_format']
+    date_format = re.sub('%%', '%', section['date_format'])
 
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
     if os.path.exists(market_holidays):
