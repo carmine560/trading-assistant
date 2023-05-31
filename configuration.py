@@ -11,19 +11,28 @@ ANSI_RESET = '\033[m'
 if sys.platform == 'win32':
     os.system('color')
 
-def list_section(config, section):
-    """List all options in a section of a configuration file.
+def list_section(config, section, is_printable=False):
+    """List options in a section of a configuration file.
 
     Args:
         config: ConfigParser object representing the configuration file
         section: Name of the section to list options from
+        is_printable: Whether to print the options or not (default is
+        False)
 
     Returns:
-        True if the section exists and has options, False otherwise."""
+        A list of options in the specified section
+
+    Raises:
+        None"""
+    options = []
     if config.has_section(section):
         for option in config[section]:
-            print(option)
-        return True
+            if is_printable:
+                print(option)
+
+            options.append(option)
+        return options
     else:
         print(section, 'section does not exist')
         return False

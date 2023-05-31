@@ -23,60 +23,61 @@ class Trade:
     Attributes:
         brokerage : name of the brokerage
         process : name of the process
-        config_directory : directory where configuration files are
-        stored
+        config_directory : directory for configuration files
         script_base : base name of the script
-        config_file : path to the configuration file
-        market_directory : directory where market data is stored
-        market_holidays : path to the market holidays file
-        closing_prices : path to the closing prices file
-        resource_directory : directory where resources are stored
-        customer_margin_ratios : path to the customer margin ratios file
-        startup_script : path to the startup script
+        config_file : configuration file path
+        market_directory : directory for market data
+        market_holidays : market holidays file path
+        closing_prices : closing prices file path
+        resource_directory : directory for resources
+        customer_margin_ratios : customer margin ratios file path
+        startup_script : startup script file path
         customer_margin_ratio_section : section name for customer margin
-        ratios in the configuration file
-        startup_script_section : section name for startup script in the
-        configuration file
-        action_section : section name for actions in the configuration
-        file
-        actions : list of actions
-        categorized_keys : dictionary of categorized keys
-        schedule_section : section name for schedules in the
-        configuration file
+        ratios
+        startup_script_section : section name for startup script
+        action_section : section name for actions
+        categorized_keys : categorized keys
+        schedule_section : section name for schedules
         cash_balance : cash balance
-        previous_position : previous position of the mouse cursor
+        previous_position : previous mouse position
         share_size : share size
         speech_engine : speech engine
         symbol : symbol extracted from the window title
 
     Methods:
-        get_symbol(hwnd, title_regex):
-    """
+        get_symbol(hwnd, title_regex) : Extracts symbol from the window
+        title
+
+    Args:
+        brokerage : name of the brokerage
+        process : name of the process"""
     def __init__(self, brokerage, process):
-        """A function to initialize an object with various attributes.
+        """A function to initialize an object of a class.
 
         Args:
-            brokerage: name of the brokerage
-            process: name of the process
+            brokerage : name of the brokerage
+            process : name of the process
 
         Attributes:
             brokerage : name of the brokerage
             process : name of the process
-            config_directory : directory path for configuration files
-            script_base : base name of the script
+            config_directory : directory where the configuration file is
+            stored
+            script_base : base name of the script file
             config_file : configuration file path
-            market_directory : directory path for market data
-            market_holidays : market holidays file path
-            closing_prices : closing prices file path
-            resource_directory : directory path for resources
-            customer_margin_ratios : customer margin ratios file path
-            startup_script : startup script file path
+            market_directory : directory where market data is stored
+            market_holidays : path of the market holidays file
+            closing_prices : path of the closing prices file
+            resource_directory : directory where resource files are
+            stored
+            customer_margin_ratios : path of the customer margin ratios
+            file
+            startup_script : path of the startup script file
             customer_margin_ratio_section : section name for customer
             margin ratios
             startup_script_section : section name for startup script
             action_section : section name for actions
-            actions : list of actions
-            categorized_keys : dictionary of categorized keys
+            categorized_keys : dictionary containing categorized keys
             schedule_section : section name for schedules
             cash_balance : cash balance of the object
             previous_position : previous position of the object
@@ -111,7 +112,6 @@ class Trade:
             self.brokerage + ' Customer Margin Ratios'
         self.startup_script_section = self.process + ' Startup Script'
         self.action_section = self.process + ' Actions'
-        self.actions = []
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
@@ -208,10 +208,6 @@ def main():
 
     if args.I or args.S or args.A or args.C or args.B or args.L:
         config = configure(trade, interpolation=False)
-        # TODO: trade.actions vs list_section
-        if config.has_section(trade.action_section):
-            for option in config[trade.action_section]:
-                trade.actions.append(option)
         if args.I and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_file,
                 **backup_file):
@@ -227,10 +223,12 @@ def main():
                 **backup_file, is_inserting=True, value_format='tuple',
                 prompts={'end_of_list': 'end of commands'},
                 tuple_info={'element_index': 1,
-                            'possible_values': trade.actions}):
+                            'possible_values': configuration.list_section(
+                                config, trade.action_section)}):
             return
         elif (args.A == 'LIST_ACTIONS'
-              and configuration.list_section(config, trade.action_section)):
+              and configuration.list_section(config, trade.action_section,
+                                             is_printable=True)):
             return
         elif args.A:
             if configuration.modify_tuple_list(
@@ -299,7 +297,8 @@ def main():
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
     if args.a == 'LIST_ACTIONS':
-        if not configuration.list_section(config, trade.action_section):
+        if not configuration.list_section(config, trade.action_section,
+                                          is_printable=True):
             sys.exit(1)
         return
     elif args.a:
@@ -313,7 +312,8 @@ def main():
     if args.T == 'LIST_ACTIONS':
         if os.path.exists(trade.startup_script):
             print(trade.script_base)
-        if not configuration.list_section(config, trade.action_section):
+        if not configuration.list_section(config, trade.action_section,
+                                          is_printable=True):
             sys.exit(1)
         return
     elif args.T:
