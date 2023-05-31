@@ -208,6 +208,10 @@ def main():
 
     if args.I or args.S or args.A or args.C or args.B or args.L:
         config = configure(trade, interpolation=False)
+        # TODO: trade.actions vs list_section
+        if config.has_section(trade.action_section):
+            for option in config[trade.action_section]:
+                trade.actions.append(option)
         if args.I and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_file,
                 **backup_file):
@@ -220,8 +224,10 @@ def main():
             return
         elif args.S and configuration.modify_section(
                 config, trade.schedule_section, trade.config_file,
-                **backup_file, tuple_info={'element_index': 1,
-                                           'possible_values': trade.actions}):
+                **backup_file, is_inserting=True, value_format='tuple',
+                prompts={'end_of_list': 'end of commands'},
+                tuple_info={'element_index': 1,
+                            'possible_values': trade.actions}):
             return
         elif (args.A == 'LIST_ACTIONS'
               and configuration.list_section(config, trade.action_section)):
@@ -271,14 +277,13 @@ def main():
     else:
         gui_callbacks = gui_interactions.GuiCallbacks(
             ast.literal_eval(config[trade.process]['interactive_windows']))
-    if config.has_section(trade.action_section):
-        for option in config[trade.action_section]:
-            trade.actions.append(option)
 
     if args.r:
         if config.has_section(trade.customer_margin_ratio_section):
             save_customer_margin_ratios(trade, config)
         else:
+            print(trade.customer_margin_ratio_section,
+                  'section does not exist')
             sys.exit(1)
     if args.d:
         save_market_data(trade, config)
@@ -291,6 +296,7 @@ def main():
                 args=(trade, config, gui_callbacks, trade.process))
             process.start()
         else:
+            print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
     if args.a == 'LIST_ACTIONS':
         if not configuration.list_section(config, trade.action_section):
@@ -302,6 +308,7 @@ def main():
                 trade, config, gui_callbacks,
                 ast.literal_eval(config[trade.action_section][args.a]))
         else:
+            print(trade.action_section, 'section does not exist')
             sys.exit(1)
     if args.T == 'LIST_ACTIONS':
         if os.path.exists(trade.startup_script):

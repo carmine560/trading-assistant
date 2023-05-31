@@ -28,27 +28,37 @@ def list_section(config, section):
         print(section, 'section does not exist')
         return False
 
-# TODO: insert options.
 def modify_section(config, section, config_file, backup_function=None,
-                   backup_parameters=None, categorized_keys={}, tuple_info={}):
+                   backup_parameters=None, is_inserting=False,
+                   value_format='string', prompts={}, categorized_keys={},
+                   tuple_info={}):
     """Modifies a section in a configuration file.
 
     Args:
-        config (configparser.ConfigParser): The configuration object
+        config (ConfigParser): The configuration object
         section (str): The section to modify
         config_file (str): The path to the configuration file
-        backup_function (function): A function to backup the
-        configuration file
-        backup_parameters (dict): Parameters to pass to the backup
-        function
-        categorized_keys (dict): A dictionary of keys to categories
-        tuple_info (dict): A dictionary of keys to tuple information
+        backup_function (function, optional): A function to backup the
+        configuration file. Defaults to None.
+        backup_parameters (dict, optional): Parameters to pass to the
+        backup function. Defaults to None.
+        is_inserting (bool, optional): Whether to insert a new
+        option. Defaults to False.
+        value_format (str, optional): The format of the value to
+        modify. Defaults to 'string'.
+        prompts (dict, optional): Prompts to display to the
+        user. Defaults to {}.
+        categorized_keys (dict, optional): Categorized keys. Defaults to
+        {}.
+        tuple_info (dict, optional): Information about tuples. Defaults
+        to {}.
 
     Returns:
-        True if the section was modified successfully, False otherwise
+        bool: True if the section was modified successfully, False
+        otherwise.
 
     Raises:
-        None"""
+        NotImplementedError: If the animal is silent."""
     if backup_function:
         backup_function(config_file, **backup_parameters)
 
@@ -59,6 +69,31 @@ def modify_section(config, section, config_file, backup_function=None,
                                    tuple_info=tuple_info)
             if result == 'quit' or result == False:
                 return result
+
+        if is_inserting:
+            end_of_list_prompt = prompts.get('end_of_list', 'end of section')
+            is_inserted = False
+            while is_inserting:
+                print(ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
+                answer = tidy_answer(['insert'])
+                if answer == 'insert':
+                    option = modify_data('option')
+                    if value_format == 'string':
+                        config[section][option] = modify_data('value')
+                        if config[section][option]:
+                            is_inserted = True
+                    elif value_format == 'tuple':
+                        config[section][option] = '()'
+                        config[section][option] = modify_tuple(
+                            config[section][option], True, level=1,
+                            tuple_info=tuple_info)
+                        if config[section][option] != '()':
+                            is_inserted = True
+                else:
+                    is_inserting = False
+            if is_inserted:
+                write_config(config, config_file)
+
         return True
     else:
         print(section, 'section does not exist')
@@ -426,12 +461,10 @@ def tidy_answer(answers, level=0):
                 mnemonics, ANSI_HIGHLIGHT + mnemonics + ANSI_RESET, 1)
             if word_index == 0:
                 prompt = highlighted_word
-            elif word_index == len(answers) - 1:
-                prompt = prompt + '/' + highlighted_word + ': '
             else:
                 prompt = prompt + '/' + highlighted_word
 
-    answer = input(INDENT * level + prompt).strip().lower()
+    answer = input(INDENT * level + prompt + ': ').strip().lower()
     if answer:
         if not answer[0] in initialism:
             answer = ''
