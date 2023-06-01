@@ -401,3 +401,48 @@ def extract_commands(source, command='command'):
                     if isinstance(comparator, ast.Constant):
                         commands.append(comparator.value)
     return commands
+
+def create_completion(script_base, options, values, interpreter, completion):
+    """Create a bash completion script for a given script.
+
+    Args:
+        script_base: The base name of the script
+        options: A list of options to be completed
+        values: A list of values to be completed
+        interpreter: The interpreter to use for the completion
+        completion: The file path to write the completion script to
+
+    Returns:
+        None"""
+    options_str = ' '.join(options)
+    values_str = ' '.join(values)
+    expression_str = ' || '.join(f'$previous == {option}'
+                                 for option in options)
+    completion_str = f'''_{script_base}()
+{{
+    local script current previous options values
+    script=${{COMP_WORDS[1]}}
+    current=${{COMP_WORDS[COMP_CWORD]}}
+    previous=${{COMP_WORDS[COMP_CWORD-1]}}
+    options="{options_str}"
+    values="{values_str}"
+
+    if [[ $script =~ {script_base}\.py ]]; then
+        if [[ $current == -* ]]; then
+            COMPREPLY=($(compgen -W "$options" -- $current))
+            return 0
+        fi
+        if [[ {expression_str} ]]; then
+            COMPREPLY=($(compgen -W "$values" -- $current))
+            return 0
+        fi
+    else
+        COMPREPLY=($(compgen -f -- $current))
+        return 0
+    fi
+}}
+complete -F _{script_base} {interpreter}
+'''
+
+    with open(completion, 'w', newline='\n') as f:
+        f.write(completion_str)

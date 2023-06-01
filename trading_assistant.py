@@ -249,6 +249,12 @@ def main():
                 file_utilities.delete_shortcut(
                     args.A, program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
+
+            file_utilities.create_completion(
+                trade.script_base, ('-a', '-A', '-T'),
+                configuration.list_section(config, trade.action_section),
+                'py.exe',
+                os.path.join(trade.resource_directory, 'completion.sh'))
             return
         elif args.C and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
@@ -330,6 +336,10 @@ def main():
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
+        file_utilities.create_completion(
+            trade.script_base, ('-a', '-A', '-T'),
+            configuration.list_section(config, trade.action_section), 'py.exe',
+            os.path.join(trade.resource_directory, 'completion.sh'))
         return
 
 def configure(trade, interpolation=True):
