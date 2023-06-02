@@ -161,6 +161,23 @@ You can also schedule the actions above as the following configurations:
 SCHEDULE = ('%H:%M:%S', 'ACTION')
 ```
 
+### Bash Action Argument Completion ###
+
+The `-A` and `-T` options generate a Bash completion script at
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.sh`. To enable action
+argument completion, source this script in your current shell:
+
+``` shell
+. $USERPROFILE/AppData/Local/trading-assistant/HYPERSBI2/completion.sh
+```
+
+Now you can use tab completion for action arguments:
+
+``` shell
+py.exe trading_assistant.py -a a⇥
+py.exe trading_assistant.py -a action
+```
+
 ### Options ###
 
   * `-P BROKERAGE PROCESS`: set a brokerage and a process [default: `SBI
