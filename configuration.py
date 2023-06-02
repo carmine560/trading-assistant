@@ -147,7 +147,7 @@ def modify_option(config, section, option, config_file, backup_function=None,
         print(option, '=', ANSI_DEFAULT + config[section][option] + ANSI_RESET)
         try:
             boolean_value = config[section].getboolean(option)
-            answer = tidy_answer(['toggle', 'default', 'quit'])
+            answer = tidy_answer(['modify', 'toggle', 'default', 'quit'])
         except ValueError:
             answer = tidy_answer(['modify', 'default', 'quit'])
 

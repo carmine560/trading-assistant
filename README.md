@@ -230,8 +230,8 @@ watch_active_stocks = [
     # copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     ('show_window', '登録銘柄'),     # show the Watchlists window.
-    ('click', '44, 96'),             # select the first watchlist.
-    ('click', '1668, 41'),           # select the List view.
+    ('click', '44, 95'),             # select the first watchlist.
+    ('click', '1664, 41'),           # select the List view.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
@@ -241,7 +241,7 @@ watch_active_stocks = [
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('click', '1729, 41'),           # select the Tile view.
+    ('click', '1728, 41'),           # select the Tile view.
 
     # Optional Commands
     ('press_key', 'tab, 5'),         # focus on the number of columns input.
@@ -251,8 +251,8 @@ watch_active_stocks = [
     ('press_key', 'home'),           # move to the first item.
     ('press_key', 'down, 2'),        # select the 5-minute time frame.
     ('press_key', 'enter'),          # close the menu.
-    ('click', '415, 95'),            # select the 1-day date range.
-    ('click', '503, 70'),            # click the Chart button.
+    ('click', '420, 90'),            # select the 1-day date range.
+    ('click', '508, 68'),            # click the Chart button.
     # back the cursor to the previous position.
     ('back_to',)]
 ```
@@ -272,14 +272,14 @@ watch_tick_count = [
     ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     ('click', '38, 39'),             # select the Rankings tab.
-    ('click', '88, 339'),            # select the Tick Count ranking.
-    ('click', '315, 65'),            # click the Prime Market button.
+    ('click', '88, 338'),            # select the Tick Count ranking.
+    ('click', '315, 63'),            # click the Prime Market button.
     ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
     # recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
-    ('click', '44, 122'),            # select the second watchlist.
-    ('click', '1668, 41'),           # select the List view.
+    ('click', '44, 120'),            # select the second watchlist.
+    ('click', '1664, 41'),           # select the List view.
     ('press_key', 'tab, 2'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
@@ -289,7 +289,7 @@ watch_tick_count = [
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('click', '1729, 41'),           # select the Tile view.
+    ('click', '1728, 41'),           # select the Tile view.
 
     # Optional Commands
     ('press_key', 'tab, 5'),         # focus on the number of columns input.
@@ -299,8 +299,8 @@ watch_tick_count = [
     ('press_key', 'home'),           # move to the first item.
     ('press_key', 'down, 2'),        # select the 5-minute time frame.
     ('press_key', 'enter'),          # close the menu.
-    ('click', '415, 95'),            # select the 1-day date range.
-    ('click', '503, 70'),            # click the Chart button.
+    ('click', '420, 90'),            # select the 1-day date range.
+    ('click', '508, 68'),            # click the Chart button.
     # back the cursor to the previous position.
     ('back_to',)]
 ```
@@ -317,28 +317,28 @@ open_close_long_position = [
     # Open Long Position
     ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
     ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
-    ('click', '208, 727'),           # select the New Order tab.
-    ('click', '541, 799'),           # focus on the Share Size text box.
+    ('click', '208, 726'),           # select the New Order tab.
+    ('click', '541, 797'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     # get the symbol from the Summary window.
     ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
     ('calculate_share_size', 'long'), # calculate the share size.
     ('write_share_size',),           # write the calculated share size.
-    ('click', '476, 821'),           # click the Market Order button.
+    ('click', '477, 819'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     # notify you of the readiness of a buy order.
     ('speak_string', 'long'),
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # wait for space input.
-    ('wait_for_prices', '201, 955, 470, 21, 0'), # wait for the execution.
+    ('wait_for_prices', '201, 956, 470, 20, 0'), # wait for the execution.
 
     # Close Long Position
-    ('click', '292, 727'),           # select the Repayment tab.
-    ('click', '604, 842'),           # focus on the Share Size text box.
+    ('click', '292, 726'),           # select the Repayment tab.
+    ('click', '605, 838'),           # focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # select an existing value.
     ('write_share_size',),           # write the calculated share size.
-    ('click', '454, 934'),           # click the Market Order button.
+    ('click', '448, 935'),           # click the Market Order button.
     ('press_key', 'tab, 5'),         # focus on the Sell Order button.
     ('count_trades',),               # count the number of trades for the day.
     # speak the number above and notify you of the readiness of a sell order.

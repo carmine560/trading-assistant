@@ -175,6 +175,7 @@ def main():
     parser.add_argument(
         '-s', action='store_true',
         help='run the scheduler')
+    # TODO: remove LIST_ACTIONS
     parser.add_argument(
         execute_action_flag, const='LIST_ACTIONS', metavar='ACTION', nargs='?',
         help='execute an action')
