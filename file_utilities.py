@@ -450,6 +450,20 @@ complete -F _{script_base} {interpreter}
 
 def create_powershell_completion(script_base, options, values, interpreter,
                                  completion):
+    """Creates a PowerShell completion script for a given Python script.
+
+    Args:
+        script_base: The base name of the Python script.
+        options: A list of valid options for the script.
+        values: A list of valid values for the options.
+        interpreter: The name of the Python interpreter.
+        completion: The path to the completion script to be created.
+
+    Returns:
+        None
+
+    Raises:
+        None"""
     options_str = '|'.join(options)
     values_str = ', '.join(f"'{value}'" for value in values)
     completion_str = f'''$scriptblock = {{
