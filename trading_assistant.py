@@ -251,7 +251,11 @@ def main():
                     args.A, program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
 
-            file_utilities.create_completion(
+            file_utilities.create_powershell_completion(
+                trade.script_base, ('-a', '-A', '-T'),
+                configuration.list_section(config, trade.action_section),
+                'py', os.path.join(trade.resource_directory, 'completion.ps1'))
+            file_utilities.create_bash_completion(
                 trade.script_base, ('-a', '-A', '-T'),
                 configuration.list_section(config, trade.action_section),
                 'py.exe',
@@ -337,7 +341,11 @@ def main():
         file_utilities.delete_shortcut(
             args.T, program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
-        file_utilities.create_completion(
+        file_utilities.create_powershell_completion(
+            trade.script_base, ('-a', '-A', '-T'),
+            configuration.list_section(config, trade.action_section),
+            'py', os.path.join(trade.resource_directory, 'completion.ps1'))
+        file_utilities.create_bash_completion(
             trade.script_base, ('-a', '-A', '-T'),
             configuration.list_section(config, trade.action_section), 'py.exe',
             os.path.join(trade.resource_directory, 'completion.sh'))

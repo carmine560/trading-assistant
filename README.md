@@ -161,17 +161,34 @@ You can also schedule the actions above as the following configurations:
 SCHEDULE = ('%H:%M:%S', 'ACTION')
 ```
 
-### Bash Action Argument Completion ###
+### Action Argument Completion ###
 
-The `-A` and `-T` options generate a Bash completion script at
-`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.sh`. To enable action
-argument completion, source this script in your current shell:
+The `-A` and `-T` options generate completion scripts for action arguments.
+The scripts are located at
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.ps1` for PowerShell and
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.sh` for Bash.
+
+To enable action argument completion in PowerShell, source the script in your
+current shell:
+
+``` powershell
+. $Env:LOCALAPPDATA\trading-assistant\HYPERSBI2\completion.ps1
+```
+
+To enable action argument completion in Bash, source the script in your current
+shell:
 
 ``` shell
 . $USERPROFILE/AppData/Local/trading-assistant/HYPERSBI2/completion.sh
 ```
 
-Now you can use tab completion for action arguments:
+After sourcing the script, you can use tab completion for action arguments when
+running this script with the `-a`, `-A`, or `-T` option:
+
+``` powershell
+py trading_assistant.py -a a⇥
+py trading_assistant.py -a action
+```
 
 ``` shell
 py.exe trading_assistant.py -a a⇥

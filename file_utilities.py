@@ -402,7 +402,8 @@ def extract_commands(source, command='command'):
                         commands.append(comparator.value)
     return commands
 
-def create_completion(script_base, options, values, interpreter, completion):
+def create_bash_completion(script_base, options, values, interpreter,
+                           completion):
     """Create a bash completion script for a given script.
 
     Args:
@@ -445,4 +446,29 @@ complete -F _{script_base} {interpreter}
 '''
 
     with open(completion, 'w', newline='\n') as f:
+        f.write(completion_str)
+
+def create_powershell_completion(script_base, options, values, interpreter,
+                                 completion):
+    options_str = '|'.join(options)
+    values_str = ', '.join(f"'{value}'" for value in values)
+    completion_str = f'''$scriptblock = {{
+    param($wordToComplete, $commandAst, $cursorPosition)
+    $commandLine = $commandAst.ToString()
+    $regex = `
+      '{interpreter}(\.exe)?\s+.*{script_base}\.py(\s+.*)?\s+({options_str})'
+    if ($commandLine -cmatch $regex) {{
+        $options = @({values_str})
+        $options | Where-Object {{ $_ -like "$wordToComplete*" }} |
+          ForEach-Object {{
+              [System.Management.Automation.CompletionResult]::new(
+                  $_, $_, 'ParameterValue', $_)
+          }}
+    }}
+}}
+Register-ArgumentCompleter -Native -CommandName {interpreter} `
+  -ScriptBlock $scriptblock
+'''
+
+    with open(completion, 'w') as f:
         f.write(completion_str)
