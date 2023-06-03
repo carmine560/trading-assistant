@@ -175,9 +175,8 @@ def main():
     parser.add_argument(
         '-s', action='store_true',
         help='run the scheduler')
-    # TODO: remove LIST_ACTIONS
     parser.add_argument(
-        execute_action_flag, const='LIST_ACTIONS', metavar='ACTION', nargs='?',
+        execute_action_flag, metavar='ACTION', nargs=1,
         help='execute an action')
     group.add_argument(
         '-I', action='store_true',
@@ -186,7 +185,7 @@ def main():
         '-S', action='store_true',
         help='configure schedules and exit')
     group.add_argument(
-        '-A', const='LIST_ACTIONS', metavar='ACTION', nargs='?',
+        '-A', metavar='ACTION', nargs=1,
         help=('configure an action, create a shortcut to it, and exit'))
     group.add_argument(
         '-C', action='store_true',
@@ -198,7 +197,7 @@ def main():
         '-L', action='store_true',
         help=('configure the price limit region and exit'))
     group.add_argument(
-        '-T', const='LIST_ACTIONS', metavar='SCRIPT_BASE | ACTION', nargs='?',
+        '-T', metavar='SCRIPT_BASE | ACTION', nargs=1,
         help=('delete a startup script or an action, delete a shortcut to it, '
               'and exit'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
@@ -227,13 +226,9 @@ def main():
                             'possible_values': configuration.list_section(
                                 config, trade.action_section)}):
             return
-        elif (args.A == 'LIST_ACTIONS'
-              and configuration.list_section(config, trade.action_section,
-                                             is_printable=True)):
-            return
         elif args.A:
             if configuration.modify_tuple_list(
-                    config, trade.action_section, args.A, trade.config_file,
+                    config, trade.action_section, args.A[0], trade.config_file,
                     **backup_file,
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
@@ -242,13 +237,15 @@ def main():
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the target_path argument.
                 file_utilities.create_shortcut(
-                    args.A, 'py.exe',
-                    '"' + __file__ + '" ' + execute_action_flag + ' ' + args.A,
+                    args.A[0], 'py.exe',
+                    '"' + __file__ + '" ' + execute_action_flag + ' '
+                    + args.A[0],
                     program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
             else:
                 file_utilities.delete_shortcut(
-                    args.A, program_group_base=config[trade.process]['title'],
+                    args.A[0],
+                    program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
 
             file_utilities.create_powershell_completion(
@@ -307,39 +304,28 @@ def main():
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
-    if args.a == 'LIST_ACTIONS':
-        if not configuration.list_section(config, trade.action_section,
-                                          is_printable=True):
-            sys.exit(1)
-        return
-    elif args.a:
+    if args.a:
         if config.has_section(trade.action_section):
             execute_action(
                 trade, config, gui_callbacks,
-                ast.literal_eval(config[trade.action_section][args.a]))
+                ast.literal_eval(config[trade.action_section][args.a[0]]))
         else:
             print(trade.action_section, 'section does not exist')
             sys.exit(1)
-    if args.T == 'LIST_ACTIONS':
-        if os.path.exists(trade.startup_script):
-            print(trade.script_base)
-        if not configuration.list_section(config, trade.action_section,
-                                          is_printable=True):
-            sys.exit(1)
-        return
-    elif args.T:
-        if args.T == trade.script_base \
+    if args.T:
+        if args.T[0] == trade.script_base \
            and os.path.exists(trade.startup_script):
             try:
                 os.remove(trade.startup_script)
             except OSError as e:
                 print(e)
         else:
-            configuration.delete_option(config, trade.action_section, args.T,
-                                        trade.config_file, **backup_file)
+            configuration.delete_option(config, trade.action_section,
+                                        args.T[0], trade.config_file,
+                                        **backup_file)
 
         file_utilities.delete_shortcut(
-            args.T, program_group_base=config[trade.process]['title'],
+            args.T[0], program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
         file_utilities.create_powershell_completion(
             trade.script_base, ('-a', '-A', '-T'),
