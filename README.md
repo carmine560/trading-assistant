@@ -91,7 +91,7 @@ py trading_assistant.py -L
 Create or modify an action for processing by this script.
 
 ``` powershell
-py trading_assistant.py -A [ACTION]
+py trading_assistant.py -A ACTION
 ```
 
 An action is a list of sequential tuples, and each tuple consists of a command
@@ -149,7 +149,7 @@ ACTION = [
 Execute an action saved in the configuration file.
 
 ``` powershell
-py trading_assistant.py -a [ACTION]
+py trading_assistant.py -a ACTION
 ```
 
 ### Schedule Actions ###
@@ -202,14 +202,14 @@ py.exe trading_assistant.py -a action
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
   * `-s`: run the scheduler
-  * `-a [ACTION]`: execute an action
+  * `-a ACTION`: execute an action
   * `-I`: configure a startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit
-  * `-A [ACTION]`: configure an action, create a shortcut to it, and exit
+  * `-A ACTION`: configure an action, create a shortcut to it, and exit
   * `-C`: configure the cash balance region and the index of the price
   * `-B`: configure an arbitrary cash balance
   * `-L`: configure the price limit region and the index of the price
-  * `-T [SCRIPT_BASE | ACTION]`: delete a startup script or an action, delete a
+  * `-T SCRIPT_BASE | ACTION`: delete a startup script or an action, delete a
     shortcut to it, and exit
 
 ## Action Examples ##
