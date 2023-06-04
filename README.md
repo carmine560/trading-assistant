@@ -234,7 +234,8 @@ button.
 
 > **Note** These examples below underwent in an environment with 1080p
 > resolution, a maximized Watchlists window, a left-snapped Summary window, and
-> a right-snapped Chart window.
+> a right-snapped Chart window.  In addition, my Hyper SBI 2 settings differ
+> from the default settings.
 
 ``` ini
 [HYPERSBI2 Actions]
@@ -265,20 +266,18 @@ watch_active_stocks = [
     ('copy_symbols_from_market_data',),
     ('show_window', '登録銘柄'),     # show the Watchlists window.
     ('click', '44, 95'),             # select the first watchlist.
-    ('click', '1664, 41'),           # select the List view.
-    ('press_key', 'tab, 2'),         # focus on the stock list pane.
+    ('click', '1612, 41'),           # select the List view.
+    ('press_key', 'tab, 3'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
-    ('press_key', 'enter'),          # confirm the deletion.
     ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('click', '1728, 41'),           # select the Tile view.
+    ('click', '1676, 41'),           # select the Tile view.
 
     # Optional Commands
-    ('press_key', 'tab, 5'),         # focus on the number of columns input.
+    ('press_key', 'tab, 6'),         # focus on the number of columns input.
     ('press_key', '6'),              # enter 6.
     ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # open the menu.
@@ -313,20 +312,18 @@ watch_tick_count = [
     ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
     ('press_hotkeys', 'alt, f4'),    # close the window.
     ('click', '44, 120'),            # select the second watchlist.
-    ('click', '1664, 41'),           # select the List view.
-    ('press_key', 'tab, 2'),         # focus on the stock list pane.
+    ('click', '1612, 41'),           # select the List view.
+    ('press_key', 'tab, 3'),         # focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # select all stocks.
     ('press_key', 'del'),            # delete them.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
-    ('press_key', 'enter'),          # confirm the deletion.
     ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
     ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
     ('press_key', 'enter'),          # confirm the registration.
     ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('click', '1728, 41'),           # select the Tile view.
+    ('click', '1676, 41'),           # select the Tile view.
 
     # Optional Commands
-    ('press_key', 'tab, 5'),         # focus on the number of columns input.
+    ('press_key', 'tab, 6'),         # focus on the number of columns input.
     ('press_key', '6'),              # enter 6.
     ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # open the menu.

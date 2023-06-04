@@ -856,41 +856,35 @@ def create_startup_script(trade, config):
         None
 
     Raises:
-        None"""
+        None
+    """
     section = config[trade.startup_script_section]
-    pre_start_options = section['pre_start_options']
-    post_start_options = section['post_start_options']
-    running_options = section['running_options']
-
-    pre_start_options = \
-        tuple(map(str.strip, pre_start_options.split(','))) \
-        if pre_start_options else ()
-    post_start_options = \
-        tuple(map(str.strip, post_start_options.split(','))) \
-        if post_start_options else ()
-    running_options = \
-        tuple(map(str.strip, running_options.split(','))) \
-        if running_options else ()
+    pre_start_options = section.get('pre_start_options', '').split(',')
+    post_start_options = section.get('post_start_options', '').split(',')
+    running_options = section.get('running_options', '').split(',')
 
     with open(trade.startup_script, 'w') as f:
         lines = []
-        lines.append('if (Get-Process "' + trade.process
-                     + '" -ErrorAction SilentlyContinue)\n{\n')
+        lines.append(f'if (Get-Process "{trade.process}"'
+                     f' -ErrorAction SilentlyContinue)\n{{\n')
         for option in running_options:
-            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + option + '" -NoNewWindow\n')
+            lines.append(f'    Start-Process "py.exe"'
+                         f' -ArgumentList "`"{__file__}`" {option.strip()}"'
+                         f' -NoNewWindow\n')
 
         lines.append('}\nelse\n{\n')
         for option in pre_start_options:
-            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + option + '" -NoNewWindow\n')
+            lines.append(f'    Start-Process "py.exe"'
+                         f' -ArgumentList "`"{__file__}`" {option.strip()}"'
+                         f' -NoNewWindow\n')
 
-        lines.append('    Start-Process "'
-                     + config[trade.process]['executable']
-                     + '" -NoNewWindow\n')
+        lines.append(f'    Start-Process'
+                     f' "{config[trade.process]["executable"]}"'
+                     f' -NoNewWindow\n')
         for option in post_start_options:
-            lines.append('    Start-Process "py.exe" -ArgumentList "`"'
-                         + __file__ + '`" ' + option + '" -NoNewWindow\n')
+            lines.append(f'    Start-Process "py.exe"'
+                         f' -ArgumentList "`"{__file__}`" {option.strip()}"'
+                         f' -NoNewWindow\n')
 
         lines.append('}\n')
         f.writelines(lines)
