@@ -856,9 +856,28 @@ def create_startup_script(trade, config):
         None
 
     Raises:
-        None
-    """
+        None"""
     def generate_start_process_lines(options):
+        """Generates a list of start process lines for given options.
+
+        Args:
+            options: A list of options to be passed as arguments to the
+            start process command.
+
+        Returns:
+            A list of start process lines for each option.
+
+        Example:
+            generate_start_process_lines(['option1', 'option2']) will
+            return:
+            [
+                '    Start-Process "py.exe" -ArgumentList `\n'
+                '      "`"{__file__}`"", `\n'
+                '      "option1" -NoNewWindow\n',
+                '    Start-Process "py.exe" -ArgumentList `\n'
+                '      "`"{__file__}`"", `\n'
+                '      "option2" -NoNewWindow\n'
+            ]"""
         lines = []
         for option in options:
             lines.append(f'    Start-Process "py.exe" -ArgumentList `\n'
