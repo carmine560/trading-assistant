@@ -858,6 +858,14 @@ def create_startup_script(trade, config):
     Raises:
         None
     """
+    def generate_start_process_lines(options):
+        lines = []
+        for option in options:
+            lines.append(f'    Start-Process "py.exe" -ArgumentList `\n'
+                         f'      "`"{__file__}`"", `\n'
+                         f'      "{option.strip()}" -NoNewWindow\n')
+        return lines
+
     section = config[trade.startup_script_section]
     pre_start_options = section.get('pre_start_options', '').split(',')
     post_start_options = section.get('post_start_options', '').split(',')
@@ -867,25 +875,13 @@ def create_startup_script(trade, config):
         lines = []
         lines.append(f'if (Get-Process "{trade.process}"'
                      f' -ErrorAction SilentlyContinue)\n{{\n')
-        for option in running_options:
-            lines.append(f'    Start-Process "py.exe"'
-                         f' -ArgumentList "`"{__file__}`" {option.strip()}"'
-                         f' -NoNewWindow\n')
-
+        lines.extend(generate_start_process_lines(running_options))
         lines.append('}\nelse\n{\n')
-        for option in pre_start_options:
-            lines.append(f'    Start-Process "py.exe"'
-                         f' -ArgumentList "`"{__file__}`" {option.strip()}"'
-                         f' -NoNewWindow\n')
-
-        lines.append(f'    Start-Process'
-                     f' "{config[trade.process]["executable"]}"'
-                     f' -NoNewWindow\n')
-        for option in post_start_options:
-            lines.append(f'    Start-Process "py.exe"'
-                         f' -ArgumentList "`"{__file__}`" {option.strip()}"'
-                         f' -NoNewWindow\n')
-
+        lines.extend(generate_start_process_lines(pre_start_options))
+        lines.append(f'    Start-Process `\n'
+                     f'      "{config[trade.process]["executable"]}" `\n'
+                     f'      -NoNewWindow\n')
+        lines.extend(generate_start_process_lines(post_start_options))
         lines.append('}\n')
         f.writelines(lines)
 
