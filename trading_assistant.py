@@ -16,6 +16,7 @@ import configuration
 import file_utilities
 import gui_interactions
 import process_utilities
+import text_recognition
 
 class Trade:
     """A class to represent a trade.
@@ -730,8 +731,9 @@ def execute_action(trade, config, gui_callbacks, action):
             import win32clipboard
 
             argument = ast.literal_eval(argument)
-            split_string = recognize_text(config[trade.process], *argument,
-                                          None, text_type='numeric_column')
+            split_string = text_recognition.recognize_text(
+                config[trade.process], *argument, None,
+                text_type='numeric_column')
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(' '.join(split_string))
@@ -822,7 +824,7 @@ def execute_action(trade, config, gui_callbacks, action):
             time.sleep(float(argument))
         elif command == 'wait_for_prices':
             argument = ast.literal_eval(argument)
-            recognize_text(config[trade.process], *argument)
+            text_recognition.recognize_text(config[trade.process], *argument)
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(gui_callbacks, argument)
         elif command == 'write_share_size':
@@ -925,7 +927,7 @@ def calculate_share_size(trade, config, position):
         trade.cash_balance = fixed_cash_balance
     else:
         region = ast.literal_eval(section['cash_balance_region'])
-        trade.cash_balance = recognize_text(section, *region)
+        trade.cash_balance = text_recognition.recognize_text(section, *region)
 
     customer_margin_ratio = 0.31
     try:
@@ -953,68 +955,6 @@ def calculate_share_size(trade, config, position):
         share_size = 50 * trading_unit
 
     trade.share_size = share_size
-
-def recognize_text(section, x, y, width, height, index, text_type='integers'):
-    """Recognize text from an image.
-
-    Args:
-        section: dictionary containing configuration parameters
-        x: x-coordinate of the top left corner of the image
-        y: y-coordinate of the top left corner of the image
-        width: width of the image
-        height: height of the image
-        index: index of the string to return
-        text_type: type of text to recognize. Default is 'integers'
-
-    Returns:
-        If index is None, returns a list of recognized
-        strings. Otherwise, returns the string at the given index.
-
-    Raises:
-        ImportError: If the required libraries are not installed
-        Exception: If the image cannot be processed"""
-    from PIL import Image
-    from PIL import ImageGrab
-    from PIL import ImageOps
-    import pytesseract
-
-    image_magnification = int(section['image_magnification'])
-    binarization_threshold = int(section['binarization_threshold'])
-    currently_dark_theme = section.getboolean('currently_dark_theme')
-
-    if text_type == 'integers':
-        config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
-    elif text_type == 'decimal_numbers':
-        config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
-    elif text_type == 'numeric_column':
-        config = '-c tessedit_char_whitelist=0123456789 --psm 6'
-
-    split_string = []
-    while not split_string:
-        try:
-            image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
-            image = image.resize((image_magnification * width,
-                                  image_magnification * height),
-                                 Image.LANCZOS)
-            image = image.point(lambda p:
-                                255 if p > binarization_threshold else 0)
-            if currently_dark_theme:
-                image = ImageOps.invert(image)
-
-            string = pytesseract.image_to_string(image, config=config)
-            if text_type == 'integers' or text_type == 'decimal_numbers':
-                split_string = list(map(lambda s: float(s.replace(',', '')),
-                                        string.split(' ')))
-            elif text_type == 'numeric_column':
-                for item in string.splitlines():
-                    split_string.append(item)
-        except:
-            pass
-
-    if index is None:
-        return split_string
-    else:
-        return split_string[int(index)]
 
 def get_price_limit(trade, config):
     """Get the price limit for a trade.
@@ -1119,8 +1059,8 @@ def get_price_limit(trade, config):
     else:
         section = config[trade.process]
         region = ast.literal_eval(section['price_limit_region'])
-        price_limit = recognize_text(section, *region,
-                                     text_type='decimal_numbers')
+        price_limit = text_recognition.recognize_text(
+            section, *region, text_type='decimal_numbers')
     return price_limit
 
 def initialize_speech_engine(trade):
