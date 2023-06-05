@@ -188,15 +188,43 @@ def create_icon(basename, icon_directory=None):
     Note:
         The icon file is saved in the following sizes: 16x16, 32x32,
         48x48, and 256x256."""
+    def get_scaled_font(text, font_path, desired_width, desired_height):
+        """Returns a scaled font object based on the desired width and
+        height of the text.
+
+        Args:
+            text : the text to be displayed
+            font_path : the path to the font file
+            desired_width : the desired width of the text
+            desired_height : the desired height of the text
+
+        Returns:
+            The scaled font object
+
+        Raises:
+            None"""
+        temp_font_size = 100
+        temp_font = ImageFont.truetype(font_path, temp_font_size)
+        draw = ImageDraw.Draw(Image.new('RGB', (1, 1)))
+        left, top, right, bottom = draw.multiline_textbbox((0, 0), text,
+                                                           font=temp_font)
+        temp_text_width = right - left
+        temp_text_height = bottom - top
+
+        scaling_factor_width = desired_width / temp_text_width
+        scaling_factor_height = desired_height / temp_text_height
+        scaling_factor = min(scaling_factor_width, scaling_factor_height)
+        actual_font_size = int(temp_font_size * scaling_factor)
+        actual_font = ImageFont.truetype(font_path, actual_font_size)
+        return actual_font
+
     import winreg
 
     from PIL import Image, ImageDraw, ImageFont
 
-    acronym = ''
-    for word in re.split('[\W_]+', basename):
-        if word:
-            acronym = acronym + word[0].upper()
-
+    acronym = ''.join(word[0].upper()
+                      for word in re.split('[\W_]+', basename) if word)
+    font_path = 'consolab.ttf'
     image_width = image_height = 256
     image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -207,43 +235,38 @@ def create_icon(basename, icon_directory=None):
             is_light_theme, _ = winreg.QueryValueEx(key, 'AppsUseLightTheme')
         except OSError:
             is_light_theme = True
-    if is_light_theme:
-        fill = 'black'
-    else:
-        fill = 'white'
 
-    if len(acronym) == 0:
+    fill = 'black' if is_light_theme else 'white'
+
+    if not acronym:
         return False
     elif len(acronym) == 1:
-        font = ImageFont.truetype('consolab.ttf', 306)
-
-        offset_x, offset_y, text_width, text_height = \
-            draw.textbbox((0, 0), acronym, font=font)
+        font = get_scaled_font(acronym, font_path, image_width, image_height)
+        offset_x, offset_y, text_width, text_height = draw.textbbox(
+            (0, 0), acronym, font=font)
         draw.text(((image_width - text_width) / 2, -offset_y), acronym,
                   font=font, fill=fill)
     elif len(acronym) == 2:
-        font = ImageFont.truetype('consolab.ttf', 233)
-
-        offset_x, offset_y, text_width, text_height = \
-            draw.textbbox((0, 0), acronym, font=font)
+        font = get_scaled_font(acronym, font_path, image_width, image_height)
+        offset_x, offset_y, text_width, text_height = draw.textbbox(
+            (0, 0), acronym, font=font)
         draw.text(((image_width - text_width) / 2,
                    (image_height - text_height) / 2 - offset_y), acronym,
                   font=font, fill=fill)
-    elif len(acronym) >= 3:
-        font = ImageFont.truetype('consolab.ttf', 154)
-
+    else:
         upper = acronym[:2]
-        offset_x, offset_y, text_width, text_height = \
-            draw.textbbox((0, 0), upper, font=font)
+        lower = acronym[2:4]
+        font = get_scaled_font(upper + '\n' + lower , font_path, image_width,
+                               image_height)
+
+        offset_x, offset_y, text_width, text_height = draw.textbbox(
+            (0, 0), upper, font=font)
         draw.text(((image_width - text_width) / 2, -offset_y), upper,
                   font=font, fill=fill)
-
-        lower = acronym[2:4]
-        offset_x, offset_y, text_width, text_height = \
-            draw.textbbox((0, 0), lower, font=font)
+        offset_x, offset_y, text_width, text_height = draw.textbbox(
+            (0, 0), lower, font=font)
         draw.text(((image_width - text_width) / 2,
-                   image_height - text_height), lower, font=font,
-                  fill=fill)
+                   image_height - text_height), lower, font=font, fill=fill)
 
     if icon_directory:
         icon = os.path.join(icon_directory, basename + '.ico')
