@@ -166,7 +166,6 @@ def check_directory(directory):
             print(e)
             sys.exit(1)
 
-# TODO: replace the font.
 def create_icon(basename, icon_directory=None):
     """Creates an icon file from a given basename.
 
@@ -216,14 +215,14 @@ def create_icon(basename, icon_directory=None):
     if len(acronym) == 0:
         return False
     elif len(acronym) == 1:
-        font = ImageFont.truetype('consolab.ttf', 401)
+        font = ImageFont.truetype('consolab.ttf', 306)
 
         offset_x, offset_y, text_width, text_height = \
             draw.textbbox((0, 0), acronym, font=font)
         draw.text(((image_width - text_width) / 2, -offset_y), acronym,
                   font=font, fill=fill)
     elif len(acronym) == 2:
-        font = ImageFont.truetype('consolab.ttf', 180)
+        font = ImageFont.truetype('consolab.ttf', 233)
 
         offset_x, offset_y, text_width, text_height = \
             draw.textbbox((0, 0), acronym, font=font)
@@ -231,7 +230,7 @@ def create_icon(basename, icon_directory=None):
                    (image_height - text_height) / 2 - offset_y), acronym,
                   font=font, fill=fill)
     elif len(acronym) >= 3:
-        font = ImageFont.truetype('consolab.ttf', 180)
+        font = ImageFont.truetype('consolab.ttf', 154)
 
         upper = acronym[:2]
         offset_x, offset_y, text_width, text_height = \
