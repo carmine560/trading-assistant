@@ -188,15 +188,18 @@ def create_icon(basename, icon_directory=None):
     Note:
         The icon file is saved in the following sizes: 16x16, 32x32,
         48x48, and 256x256."""
-    def get_scaled_font(text, font_path, desired_width, desired_height):
-        """Returns a scaled font object based on the desired width and
-        height of the text.
+    def get_scaled_font(text, font_path, desired_width, desired_height,
+                        variation_name=''):
+        """Returns a scaled font object for the given text, font path,
+        desired width and height.
 
         Args:
-            text : the text to be displayed
-            font_path : the path to the font file
-            desired_width : the desired width of the text
-            desired_height : the desired height of the text
+            text (str): The text to be written
+            font_path (str): The path to the font file
+            desired_width (int): The desired width of the text
+            desired_height (int): The desired height of the text
+            variation_name (str): The variation name of the font
+            (optional)
 
         Returns:
             The scaled font object
@@ -205,6 +208,9 @@ def create_icon(basename, icon_directory=None):
             None"""
         temp_font_size = 100
         temp_font = ImageFont.truetype(font_path, temp_font_size)
+        if variation_name:
+            temp_font.set_variation_by_name(variation_name)
+
         draw = ImageDraw.Draw(Image.new('RGB', (1, 1)))
         left, top, right, bottom = draw.multiline_textbbox((0, 0), text,
                                                            font=temp_font)
@@ -216,6 +222,8 @@ def create_icon(basename, icon_directory=None):
         scaling_factor = min(scaling_factor_width, scaling_factor_height)
         actual_font_size = int(temp_font_size * scaling_factor)
         actual_font = ImageFont.truetype(font_path, actual_font_size)
+        if variation_name:
+            actual_font.set_variation_by_name(variation_name)
         return actual_font
 
     import winreg
@@ -224,7 +232,8 @@ def create_icon(basename, icon_directory=None):
 
     acronym = ''.join(word[0].upper()
                       for word in re.split('[\W_]+', basename) if word)
-    font_path = 'consolab.ttf'
+    font_path = 'bahnschrift.ttf'
+    variation_name = 'Bold'
     image_width = image_height = 256
     image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -241,32 +250,28 @@ def create_icon(basename, icon_directory=None):
     if not acronym:
         return False
     elif len(acronym) == 1:
-        font = get_scaled_font(acronym, font_path, image_width, image_height)
-        offset_x, offset_y, text_width, text_height = draw.textbbox(
-            (0, 0), acronym, font=font)
-        draw.text(((image_width - text_width) / 2, -offset_y), acronym,
-                  font=font, fill=fill)
+        font = get_scaled_font(acronym, font_path, image_width, image_height,
+                               variation_name=variation_name)
+        left, top, right, bottom = draw.textbbox((0, 0), acronym, font=font)
+        draw.text(((image_width - (right - left)) / 2,
+                   (image_height - (bottom - top)) / 2 - top), acronym,
+                  fill=fill, font=font)
     elif len(acronym) == 2:
-        font = get_scaled_font(acronym, font_path, image_width, image_height)
-        offset_x, offset_y, text_width, text_height = draw.textbbox(
-            (0, 0), acronym, font=font)
-        draw.text(((image_width - text_width) / 2,
-                   (image_height - text_height) / 2 - offset_y), acronym,
-                  font=font, fill=fill)
+        font = get_scaled_font(acronym, font_path, image_width, image_height,
+                               variation_name=variation_name)
+        left, top, right, bottom = draw.textbbox((0, 0), acronym, font=font)
+        draw.text(((image_width - (right - left)) / 2,
+                   (image_height - (bottom - top)) / 2 - top), acronym,
+                  fill=fill, font=font)
     else:
-        upper = acronym[:2]
-        lower = acronym[2:4]
-        font = get_scaled_font(upper + '\n' + lower , font_path, image_width,
-                               image_height)
-
-        offset_x, offset_y, text_width, text_height = draw.textbbox(
-            (0, 0), upper, font=font)
-        draw.text(((image_width - text_width) / 2, -offset_y), upper,
-                  font=font, fill=fill)
-        offset_x, offset_y, text_width, text_height = draw.textbbox(
-            (0, 0), lower, font=font)
-        draw.text(((image_width - text_width) / 2,
-                   image_height - text_height), lower, font=font, fill=fill)
+        text = f'{acronym[:2]}\n{acronym[2:4]}'
+        font = get_scaled_font(text , font_path, image_width, image_height,
+                               variation_name=variation_name)
+        left, top, right, bottom = draw.multiline_textbbox((0, 0), text,
+                                                           font=font)
+        draw.multiline_text(((image_width - (right - left)) / 2,
+                             (image_height - (bottom - top)) / 2 - top), text,
+                            fill=fill, font=font, align='center')
 
     if icon_directory:
         icon = os.path.join(icon_directory, basename + '.ico')
