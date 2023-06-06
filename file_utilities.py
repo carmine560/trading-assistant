@@ -235,6 +235,7 @@ def create_icon(basename, icon_directory=None):
     font_path = 'bahnschrift.ttf'
     variation_name = 'Bold'
     image_width = image_height = 256
+    desired_width = desired_height = image_width - 2
     image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
 
@@ -250,26 +251,26 @@ def create_icon(basename, icon_directory=None):
     if not acronym:
         return False
     elif len(acronym) == 1:
-        font = get_scaled_font(acronym, font_path, image_width, image_height,
-                               variation_name=variation_name)
+        font = get_scaled_font(acronym, font_path, desired_width,
+                               desired_height, variation_name=variation_name)
         left, top, right, bottom = draw.textbbox((0, 0), acronym, font=font)
-        draw.text(((image_width - (right - left)) / 2,
+        draw.text(((image_width - (right - left)) / 2 - left,
                    (image_height - (bottom - top)) / 2 - top), acronym,
                   fill=fill, font=font)
     elif len(acronym) == 2:
-        font = get_scaled_font(acronym, font_path, image_width, image_height,
-                               variation_name=variation_name)
+        font = get_scaled_font(acronym, font_path, desired_width,
+                               desired_height, variation_name=variation_name)
         left, top, right, bottom = draw.textbbox((0, 0), acronym, font=font)
-        draw.text(((image_width - (right - left)) / 2,
+        draw.text(((image_width - (right - left)) / 2 - left,
                    (image_height - (bottom - top)) / 2 - top), acronym,
                   fill=fill, font=font)
     else:
         text = f'{acronym[:2]}\n{acronym[2:4]}'
-        font = get_scaled_font(text , font_path, image_width, image_height,
+        font = get_scaled_font(text, font_path, desired_width, desired_height,
                                variation_name=variation_name)
         left, top, right, bottom = draw.multiline_textbbox((0, 0), text,
                                                            font=font)
-        draw.multiline_text(((image_width - (right - left)) / 2,
+        draw.multiline_text(((image_width - (right - left)) / 2 - left,
                              (image_height - (bottom - top)) / 2 - top), text,
                             fill=fill, font=font, align='center')
 
