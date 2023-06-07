@@ -749,8 +749,7 @@ def execute_action(trade, config, gui_callbacks, action):
                 section['current_date'] = str(date.today())
                 section['current_number_of_trades'] = '1'
 
-            with open(trade.config_file, 'w', encoding='utf-8') as f:
-                config.write(f)
+            configuration.write_config(config, trade.config_file)
         elif command == 'get_symbol':
             win32gui.EnumWindows(trade.get_symbol, argument)
         elif command == 'hide_parent_window':
