@@ -250,14 +250,7 @@ def create_icon(basename, icon_directory=None):
 
     if not acronym:
         return False
-    elif len(acronym) == 1:
-        font = get_scaled_font(acronym, font_path, desired_width,
-                               desired_height, variation_name=variation_name)
-        left, top, right, bottom = draw.textbbox((0, 0), acronym, font=font)
-        draw.text(((image_width - (right - left)) / 2 - left,
-                   (image_height - (bottom - top)) / 2 - top), acronym,
-                  fill=fill, font=font)
-    elif len(acronym) == 2:
+    elif len(acronym) < 3:
         font = get_scaled_font(acronym, font_path, desired_width,
                                desired_height, variation_name=variation_name)
         left, top, right, bottom = draw.textbbox((0, 0), acronym, font=font)
