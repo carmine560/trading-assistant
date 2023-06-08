@@ -34,8 +34,7 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
 
     output = os.path.join(output_directory,
                           os.path.basename(source) + '.tar.xz.gpg')
-    # TODO: reduce file size.
-    gpg.encrypt_file(tar_stream, fingerprint, output=output)
+    gpg.encrypt_file(tar_stream, fingerprint, armor=False, output=output)
 
 def decrypt_extract_file(source, output_directory):
     """Decrypt and extract a file.
