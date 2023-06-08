@@ -143,24 +143,27 @@ def modify_option(config, section, option, config_file, backup_function=None,
         print(option, '=', ANSI_DEFAULT + config[section][option] + ANSI_RESET)
         try:
             boolean_value = config[section].getboolean(option)
-            answer = tidy_answer(['modify', 'toggle', 'default', 'quit'])
+            answer = tidy_answer(['modify', 'toggle', 'empty', 'default',
+                                  'quit'])
         except ValueError:
-            answer = tidy_answer(['modify', 'default', 'quit'])
+            answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
             if re.sub('\s+', '', config[section][option])[:2] == '[(':
                 modify_tuple_list(config, section, option, config_file,
                                   categorized_keys=categorized_keys)
             elif re.sub('\s+', '', config[section][option])[:1] == '(':
-                config[section][option] = modify_tuple(config[section][option],
-                                                       False, level=1,
-                                                       tuple_info=tuple_info)
+                config[section][option] = modify_tuple(
+                    config[section][option], False, level=1,
+                    tuple_info=tuple_info)
             else:
                 config[section][option] = modify_data(
                     prompts.get('value', 'value'),
                     data=config[section][option])
         elif answer == 'toggle':
             config[section][option] = str(not boolean_value)
+        elif answer == 'empty':
+            config[section][option] = ''
         elif answer == 'default':
             config.remove_option(section, option)
         elif answer == 'quit':

@@ -881,9 +881,10 @@ def create_startup_script(trade, config):
             ]"""
         lines = []
         for option in options:
-            lines.append(f'    Start-Process "py.exe" -ArgumentList `\n'
-                         f'      "`"{__file__}`"", `\n'
-                         f'      "{option.strip()}" -NoNewWindow\n')
+            if option:
+                lines.append(f'    Start-Process "py.exe" -ArgumentList `\n'
+                             f'      "`"{__file__}`"", `\n'
+                             f'      "{option.strip()}" -NoNewWindow\n')
         return lines
 
     section = config[trade.startup_script_section]
