@@ -16,6 +16,10 @@ action consisting of a sequence of commands, this script:
   * manipulates widgets to prepare your order
   * also schedules these actions
 
+> **Disclaimer** This script does not analyze and make decisions for the user.
+> If the user has incorrect assumptions, they can lose more because this script
+> can execute orders more quickly and repeatedly.  Use at your own risk.
+
 > **Warning** This script is currently under heavy development.  Changes in
 > functionality can occur at any time.
 
