@@ -280,7 +280,6 @@ def wait_for_key(gui_callbacks, key):
     else:
         for _ in range(gui_callbacks.moved_focus):
             pyautogui.hotkey('shift', 'tab')
-
         return False
 
 def wait_for_window(gui_callbacks, title_regex):
