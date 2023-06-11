@@ -12,18 +12,6 @@ if sys.platform == 'win32':
     os.system('color')
 
 def list_section(config, section):
-    """Return a list of options in a section of a configuration file.
-
-    Args:
-        config: A ConfigParser object representing the configuration
-        file
-        section: The name of the section to retrieve options from
-
-    Returns:
-        A list of options in the specified section
-
-    Raises:
-        None."""
     options = []
     if config.has_section(section):
         for option in config[section]:
@@ -37,33 +25,6 @@ def modify_section(config, section, config_file, backup_function=None,
                    backup_parameters=None, is_inserting=False,
                    value_format='string', prompts={}, categorized_keys={},
                    tuple_info={}):
-    """Modifies a section in a configuration file.
-
-    Args:
-        config (ConfigParser): The configuration object
-        section (str): The section to modify
-        config_file (str): The path to the configuration file
-        backup_function (function, optional): A function to backup the
-        configuration file. Defaults to None.
-        backup_parameters (dict, optional): Parameters to pass to the
-        backup function. Defaults to None.
-        is_inserting (bool, optional): Whether to insert a new
-        option. Defaults to False.
-        value_format (str, optional): The format of the value to
-        modify. Defaults to 'string'.
-        prompts (dict, optional): Prompts to display to the
-        user. Defaults to {}.
-        categorized_keys (dict, optional): Categorized keys. Defaults to
-        {}.
-        tuple_info (dict, optional): Information about tuples. Defaults
-        to {}.
-
-    Returns:
-        bool: True if the section was modified successfully, False
-        otherwise.
-
-    Raises:
-        NotImplementedError: If the animal is silent."""
     if backup_function:
         backup_function(config_file, **backup_parameters)
 
@@ -107,33 +68,6 @@ def modify_section(config, section, config_file, backup_function=None,
 def modify_option(config, section, option, config_file, backup_function=None,
                   backup_parameters=None, prompts={}, categorized_keys={},
                   tuple_info={}):
-    """Modify an option in a configuration file.
-
-    Args:
-        config: A configparser object representing the configuration
-        file.
-        section: The section of the configuration file that contains the
-        option.
-        option: The option to modify.
-        config_file: The path to the configuration file.
-        backup_function: A function to backup the configuration file
-        before modification. Default is None.
-        backup_parameters: A dictionary of parameters to pass to the
-        backup function. Default is None.
-        prompts: A dictionary of prompts to display to the user. Default
-        is an empty dictionary.
-        categorized_keys: A dictionary of categorized keys. Default is
-        an empty dictionary.
-        tuple_info: A dictionary of information about tuples. Default is
-        an empty dictionary.
-
-    Returns:
-        True if the option was modified, False if the option does not
-        exist.
-
-    Raises:
-        ValueError: If the configuration file is not valid.
-        NotImplementedError: If silent animals are not supported."""
     import re
 
     if backup_function:
@@ -178,29 +112,6 @@ def modify_option(config, section, option, config_file, backup_function=None,
 def modify_tuple_list(config, section, option, config_file,
                       backup_function=None, backup_parameters=None, prompts={},
                       categorized_keys={}):
-    """Modify a list of tuples in a configuration file.
-
-    Args:
-        config (ConfigParser): configuration object
-        section (str): section name in the configuration file
-        option (str): option name in the section
-        config_file (str): path to the configuration file
-        backup_function (function, optional): function to backup the
-        configuration file
-        backup_parameters (dict, optional): parameters to pass to the
-        backup function
-        prompts (dict, optional): dictionary of prompts to display to
-        the user
-        categorized_keys (dict, optional): dictionary of categorized
-        keys
-
-    Returns:
-        bool: True if the list of tuples was modified, False otherwise
-
-    Raises:
-        ValueError: If the section or option does not exist in the
-        configuration file
-        NotImplementedError: If the animal is silent"""
     if backup_function:
         backup_function(config_file, **backup_parameters)
 
@@ -224,22 +135,6 @@ def modify_tuple_list(config, section, option, config_file,
 
 def modify_tuples(tuples, is_created, level=0, prompts={},
                   categorized_keys={}):
-    """Modify tuples of data.
-
-    Args:
-        tuples: A list of tuples to be modified.
-        is_created: A boolean indicating whether the tuples are being
-        created or modified.
-        level: An integer indicating the level of indentation for
-        printing.
-        prompts: A dictionary containing prompts for user input.
-        categorized_keys: A dictionary containing categorized keys.
-
-    Returns:
-        The modified list of tuples.
-
-    Raises:
-        No specific exceptions are raised by this function."""
     key_prompt = prompts.get('key', 'key')
     value_prompt = prompts.get('value', 'value')
     additional_value_prompt = prompts.get('additional_value',
@@ -339,19 +234,6 @@ def modify_tuples(tuples, is_created, level=0, prompts={},
     return tuples
 
 def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
-    """Modify a tuple.
-
-    Args:
-        data: a string representation of the tuple to be modified
-        is_created: a boolean indicating whether the tuple is being
-        created or modified
-        level: an integer indicating the level of indentation for the
-        output
-        prompts: a dictionary containing prompts for user input
-        tuple_info: a dictionary containing information about the tuple
-
-    Returns:
-        A string representation of the modified tuple."""
     data = list(ast.literal_eval(data))
     value_prompt = prompts.get('value', 'value')
     end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
@@ -398,21 +280,6 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
     return str(tuple(data))
 
 def modify_data(prompt, level=0, data='', all_data=[]):
-    """Modify data based on user input.
-
-    Args:
-        prompt (str): The prompt to display to the user.
-        level (int): The indentation level of the prompt.
-        data (str): The default value to use if the user does not
-        provide input.
-        all_data (list): A list of all possible values for the user to
-        choose from.
-
-    Returns:
-        The modified data.
-
-    Raises:
-        ImportError: If prompt_toolkit is not installed."""
     has_prompt_toolkit = True
     try:
         from prompt_toolkit import prompt as pt_prompt
@@ -441,16 +308,6 @@ def modify_data(prompt, level=0, data='', all_data=[]):
     return data
 
 def tidy_answer(answers, level=0):
-    """Tidy up user input by highlighting the first letter of each word
-    and prompting the user for an answer.
-
-    Args:
-        answers: A list of possible answers
-        level: The indentation level for the prompt (default 0)
-
-    Returns:
-        The user's answer as a string, or an empty string if the answer
-        does not match any of the possible answers."""
     initialism = ''
 
     previous_initialism = ''
@@ -483,18 +340,6 @@ def tidy_answer(answers, level=0):
     return answer
 
 def configure_position(answer, level=0, value=''):
-    """Configure the position of an object.
-
-    Args:
-        answer (str): The answer to the prompt.
-        level (int, optional): The level of indentation. Defaults to 0.
-        value (str, optional): The value of the prompt. Defaults to ''.
-
-    Returns:
-        str: The coordinates of the object or the value of the prompt.
-
-    Raises:
-        ImportError: If prompt_toolkit is not installed."""
     import time
 
     import pyautogui
@@ -543,24 +388,6 @@ def configure_position(answer, level=0, value=''):
 
 def delete_option(config, section, option, config_file, backup_function=None,
                   backup_parameters=None):
-    """Deletes an option from a configuration file.
-
-    Args:
-        config: ConfigParser object representing the configuration file
-        section: Section of the configuration file where the option is
-        located
-        option: Option to be deleted
-        config_file: Path to the configuration file
-        backup_function: Function to backup the configuration file
-        before deleting the option
-        backup_parameters: Parameters to be passed to the backup
-        function
-
-    Returns:
-        True if the option was deleted successfully, False otherwise
-
-    Raises:
-        None"""
     if backup_function:
         backup_function(config_file, **backup_parameters)
 
@@ -573,16 +400,5 @@ def delete_option(config, section, option, config_file, backup_function=None,
         return False
 
 def write_config(config, config_file):
-    """Writes a configuration to a file.
-
-    Args:
-        config: A configuration object.
-        config_file: A file path to write the configuration to.
-
-    Returns:
-        None
-
-    Raises:
-        IOError: If the file cannot be opened or written to."""
     with open(config_file, 'w', encoding='utf-8') as f:
         config.write(f)

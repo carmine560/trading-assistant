@@ -3,21 +3,6 @@ import re
 import sys
 
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
-    """Encrypt and archive a directory.
-
-    Args:
-        source: The path of the directory to be encrypted and archived.
-        output_directory: The path of the directory where the encrypted
-        and archived file will be saved.
-        fingerprint: The fingerprint of the GPG key to be used for
-        encryption. If not provided, the first key in the keyring will
-        be used.
-
-    Returns:
-        None
-
-    Raises:
-        None"""
     import io
     import tarfile
 
@@ -37,16 +22,6 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
     gpg.encrypt_file(tar_stream, fingerprint, armor=False, output=output)
 
 def decrypt_extract_file(source, output_directory):
-    """Decrypt and extract a file.
-
-    Args:
-        source: The path to the encrypted file.
-        output_directory: The path to the directory where the decrypted
-        file will be extracted.
-
-    Raises:
-        Exception: If there is an error in decrypting or extracting the
-        file."""
     import io
     import shutil
     import tarfile
@@ -92,19 +67,6 @@ def decrypt_extract_file(source, output_directory):
                 sys.exit(1)
 
 def backup_file(source, backup_directory=None, number_of_backups=-1):
-    """Backs up a file to a specified directory.
-
-    Args:
-        source: The source file to be backed up.
-        backup_directory: The directory where the backup file will be
-        stored. If not provided, a 'backups' directory will be created
-        in the same directory as the source file.
-        number_of_backups: The maximum number of backups to keep. If set
-        to a negative value, all backups will be kept.
-
-    Raises:
-        OSError: If there is an error in deleting or copying the
-        file."""
     from datetime import datetime
     import shutil
 
@@ -149,15 +111,6 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
                     sys.exit(1)
 
 def check_directory(directory):
-    """Check if a directory exists, and create it if it doesn't.
-
-    Args:
-        directory: A string representing the directory path.
-
-    Raises:
-        OSError: If the directory cannot be created.
-        sys.exit(1): If the directory does not exist and cannot be
-        created."""
     if not os.path.isdir(directory):
         try:
             os.makedirs(directory)
@@ -166,45 +119,8 @@ def check_directory(directory):
             sys.exit(1)
 
 def create_icon(basename, icon_directory=None):
-    """Creates an icon file from a given basename.
-
-    Args:
-        basename (str): The base name of the icon file.
-        icon_directory (str, optional): The directory to save the icon
-        file. Defaults to None.
-
-    Returns:
-        str: The path of the created icon file.
-
-    Raises:
-        OSError: If the subkey cannot be opened.
-        NotImplementedError: If the animal is silent.
-
-    Dependencies:
-        - winreg
-        - PIL
-
-    Note:
-        The icon file is saved in the following sizes: 16x16, 32x32,
-        48x48, and 256x256."""
     def get_scaled_font(text, font_path, desired_width, desired_height,
                         variation_name=''):
-        """Returns a scaled font object for the given text, font path,
-        desired width and height.
-
-        Args:
-            text (str): The text to be written
-            font_path (str): The path to the font file
-            desired_width (int): The desired width of the text
-            desired_height (int): The desired height of the text
-            variation_name (str): The variation name of the font
-            (optional)
-
-        Returns:
-            The scaled font object
-
-        Raises:
-            None"""
         temp_font_size = 100
         temp_font = ImageFont.truetype(font_path, temp_font_size)
         if variation_name:
@@ -277,19 +193,6 @@ def create_icon(basename, icon_directory=None):
 
 def create_shortcut(basename, target_path, arguments, program_group_base=None,
                     icon_directory=None, hotkey=None):
-    """Creates a shortcut for a given program.
-
-    Args:
-        basename: The name of the shortcut
-        target_path: The path of the program to be executed
-        arguments: The arguments to be passed to the program
-        program_group_base: The name of the program group
-        icon_directory: The directory containing the icon for the
-        shortcut
-        hotkey: The hotkey to be used for the shortcut
-
-    Returns:
-        None"""
     import win32com.client
 
     program_group = get_program_group(program_group_base)
@@ -310,21 +213,6 @@ def create_shortcut(basename, target_path, arguments, program_group_base=None,
     shortcut.save()
 
 def delete_shortcut(basename, program_group_base=None, icon_directory=None):
-    """Deletes a shortcut file and its associated icon file.
-
-    Args:
-        basename (str): The base name of the shortcut file.
-        program_group_base (str, optional): The base name of the program
-        group. Defaults to None.
-        icon_directory (str, optional): The directory containing the
-        icon file. Defaults to None.
-
-    Raises:
-        OSError: If there is an error deleting the shortcut or icon
-        file.
-
-    Returns:
-        None."""
     if icon_directory:
         icon = os.path.join(icon_directory, basename + '.ico')
     else:
@@ -354,17 +242,6 @@ def delete_shortcut(basename, program_group_base=None, icon_directory=None):
             sys.exit(1)
 
 def get_program_group(program_group_base=None):
-    """Get the program group path.
-
-    Args:
-        program_group_base: The name of the program group. If not
-        provided, it will be derived from the name of the script.
-
-    Returns:
-        The path of the program group.
-
-    Raises:
-        None."""
     import win32com.client
 
     shell = win32com.client.Dispatch('WScript.Shell')
@@ -377,14 +254,6 @@ def get_program_group(program_group_base=None):
     return program_group
 
 def is_writing(target_path):
-    """Check if a file is being written to.
-
-    Args:
-        target_path: Path to the file to check
-
-    Returns:
-        True if the file exists and was modified within the last second,
-        False otherwise."""
     import time
 
     if os.path.exists(target_path) \
@@ -394,19 +263,6 @@ def is_writing(target_path):
         return False
 
 def extract_commands(source, command='command'):
-    """Extracts commands from source code.
-
-    Args:
-        source : str
-            The source code to extract commands from.
-        command : str, optional
-            The name of the command to extract. Default is 'command'.
-
-    Returns:
-        A list of commands extracted from the source code.
-
-    Raises:
-        None."""
     import ast
 
     commands = []
@@ -424,20 +280,6 @@ def extract_commands(source, command='command'):
 
 def create_powershell_completion(script_base, options, values, interpreter,
                                  completion):
-    """Creates a PowerShell completion script for a given Python script.
-
-    Args:
-        script_base: The base name of the Python script.
-        options: A list of valid options for the script.
-        values: A list of valid values for the options.
-        interpreter: The name of the Python interpreter.
-        completion: The path to the completion script to be created.
-
-    Returns:
-        None
-
-    Raises:
-        None"""
     options_str = '|'.join(options)
 
     variable_str = '        $options = @('
@@ -475,17 +317,6 @@ Register-ArgumentCompleter -Native -CommandName {interpreter} -ScriptBlock $scri
 
 def create_bash_completion(script_base, options, values, interpreter,
                            completion):
-    """Create a bash completion script for a given script.
-
-    Args:
-        script_base: The base name of the script
-        options: A list of options to be completed
-        values: A list of values to be completed
-        interpreter: The interpreter to use for the completion
-        completion: The file path to write the completion script to
-
-    Returns:
-        None"""
     options_str = ' '.join(options)
 
     variable_str = '    values="'

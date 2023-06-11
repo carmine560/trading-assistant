@@ -1,22 +1,4 @@
 def recognize_text(section, x, y, width, height, index, text_type='integers'):
-    """Recognize text from an image.
-
-    Args:
-        section: dictionary containing configuration parameters
-        x: x-coordinate of the top left corner of the image
-        y: y-coordinate of the top left corner of the image
-        width: width of the image
-        height: height of the image
-        index: index of the string to return
-        text_type: type of text to recognize. Default is 'integers'
-
-    Returns:
-        If index is None, returns a list of recognized
-        strings. Otherwise, returns the string at the given index.
-
-    Raises:
-        ImportError: If the required libraries are not installed
-        Exception: If the image cannot be processed"""
     from PIL import Image
     from PIL import ImageGrab
     from PIL import ImageOps

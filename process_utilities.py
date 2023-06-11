@@ -1,11 +1,4 @@
 def is_running(process):
-    """Check if a process is running.
-
-    Args:
-        process: name of the process to check
-
-    Returns:
-        True if the process is running, False otherwise."""
     import re
     import subprocess
 
