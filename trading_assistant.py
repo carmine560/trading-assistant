@@ -88,7 +88,10 @@ def main():
         help='save the previous market data')
     parser.add_argument(
         '-s', action='store_true',
-        help='run the scheduler')
+        help='start the scheduler')
+    parser.add_argument(
+        '-m', action='store_true',
+        help='start the mouse and keyboard monitors')
     parser.add_argument(
         execute_action_flag, metavar='ACTION', nargs=1,
         help='execute an action')
@@ -212,12 +215,16 @@ def main():
             from multiprocessing import Process
 
             process = Process(
-                target=run_scheduler,
+                target=start_scheduler,
                 args=(trade, config, gui_callbacks, trade.process))
             process.start()
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
+    if args.m:
+        # TODO
+        gui_interactions.start_monitors(
+            gui_callbacks, process_utilities.is_running, trade.process)
     if args.a:
         if config.has_section(trade.action_section):
             execute_action(
@@ -503,7 +510,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         else:
             return latest
 
-def run_scheduler(trade, config, gui_callbacks, process):
+def start_scheduler(trade, config, gui_callbacks, process):
     import sched
 
     scheduler = sched.scheduler(time.time, time.sleep)

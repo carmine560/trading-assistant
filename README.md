@@ -205,7 +205,8 @@ py.exe trading_assistant.py -a action
     Securities` and `HYPERSBI2`]
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
-  * `-s`: run the scheduler
+  * `-s`: start the scheduler
+  * `-m`: start the mouse and keyboard monitors
   * `-a ACTION`: execute an action
   * `-I`: configure a startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit
@@ -399,7 +400,7 @@ show_hide_watchlists = [
 # minimize_all_windows action above.
 pre_start_options = -rda minimize_all_windows
 # execute the login action mentioned in the previous section, then execute the
-# show_hide_watchlists_on_click action and run the scheduler.
+# show_hide_watchlists_on_click action and start the scheduler.
 post_start_options = -a login, -sa show_hide_watchlists_on_click
 # execute the show_hide_window action above.
 running_options = -a show_hide_watchlists
