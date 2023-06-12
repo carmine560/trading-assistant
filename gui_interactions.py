@@ -26,6 +26,42 @@ class GuiCallbacks:
         # check_for_window
         self.exist = []
 
+        # TODO
+        self.function_keys = (
+            keyboard.Key.f1, keyboard.Key.f2, keyboard.Key.f3, keyboard.Key.f4,
+            keyboard.Key.f5, keyboard.Key.f6, keyboard.Key.f7, keyboard.Key.f8,
+            keyboard.Key.f9, keyboard.Key.f10, keyboard.Key.f11,
+            keyboard.Key.f12)
+
+        keymap = {'f5': 'open_close_short_position',
+                  'f6': 'speak_cpu_utilization',
+                  'f7': 'show_hide_watchlists',
+                  'f9': 'open_close_long_position',
+                  'f10': 'open_close_long_position_',
+                  }
+
+        self.keys = {}
+        for key_name, command in keymap.items():
+            key = getattr(keyboard.Key, key_name)
+            self.keys[key] = command
+
+    # TODO
+    def on_click(self, x, y, button, pressed):
+        print('{0} at {1}'.format('Pressed' if pressed else 'Released', (x, y)))
+
+    def on_press(self, key, callback, *args):
+    # def on_press(self, key):
+        if self.is_interactive_window():
+            if key in self.function_keys:
+                action = self.keys.get(key)
+                if action:
+                    # execute_action(
+                    #     self, self.config, self,
+                    #     ast.literal_eval(
+                    #         self.config[self.action_section][action]))
+                    callback(*args, action)
+                    # print(action)
+
     def enumerate_windows_on_click(self, x, y, button, pressed):
         if button == mouse.Button.middle and not pressed:
             if self.is_interactive_window():
@@ -60,6 +96,30 @@ class GuiCallbacks:
             win32gui.SetForegroundWindow(hwnd)
             self.exist.append((hwnd, title_regex))
             return
+
+# TODO
+def start_monitors(on_click, on_press, is_running_function, process, callback,
+                   *args):
+    # import threading
+
+    # trade = GuiCallbacks([])
+
+    mouse_listener = mouse.Listener(on_click=on_click)
+    mouse_listener.start()
+
+    # keyboard_listener = keyboard.Listener(on_press=on_press)
+    keyboard_listener = keyboard.Listener(on_press=lambda key: on_press(key, callback, *args))
+    keyboard_listener.start()
+
+    # check_process_thread = threading.Thread(
+    #     target=check_process,
+    #     args=(is_running_function, 'i_view64', mouse_listener, keyboard_listener))
+
+    check_process_thread = threading.Thread(
+        target=check_process,
+        args=(is_running_function, process, mouse_listener, keyboard_listener))
+
+    check_process_thread.start()
 
 def click_widget(gui_callbacks, image, x, y, width, height):
     location = None
@@ -141,14 +201,6 @@ def wait_for_window(gui_callbacks, title_regex):
                 if gui_callbacks.exist[i][1] == title_regex), True):
         win32gui.EnumWindows(gui_callbacks.check_for_window, title_regex)
         time.sleep(0.001)
-
-# def check_process(is_running_function, process, listener):
-#     while True:
-#         if is_running_function(process):
-#             time.sleep(1)
-#         else:
-#             listener.stop()
-#             break
 
 # TODO
 def check_process(is_running_function, process, mouse_listener,

@@ -127,30 +127,24 @@ class Trade:
     def on_click(self, x, y, button, pressed):
         print('{0} at {1}'.format('Pressed' if pressed else 'Released', (x, y)))
 
-    # TODO: twice
-    def on_press(self, key):
-        if self.gui_callbacks.is_interactive_window():
+    # def on_press(self, key):
+    def on_press(self, key, config, gui_callbacks):
+        # if self.gui_callbacks.is_interactive_window():
+        if gui_callbacks.is_interactive_window():
             if key in self.function_keys:
-                if not self.is_function_key_pressed:
-                    # self.is_function_key_pressed = True
-                    print('Function key pressed: {0}'.format(key))
-                    action = self.keys.get(key)
-                    print(action)
-                    if action:
-                        self.key_to_check = keyboard.Key.space
-                        # time.sleep(5)
-                        execute_action(
-                            self, self.config, self.gui_callbacks,
-                            ast.literal_eval(self.config[self.action_section][action]))
-                        print('done')
-
+                action = self.keys.get(key)
+                if action:
+                    self.key_to_check = keyboard.Key.space
+                    # execute_action(
+                    #     self, self.config, self.gui_callbacks,
+                    #     ast.literal_eval(
+                    #         self.config[self.action_section][action]))
+                    execute_action(
+                        self, config, gui_callbacks,
+                        ast.literal_eval(config[self.action_section][action]))
             elif key == self.key_to_check:
                 print('Key pressed: {0}'.format(key))
                 self.key_to_check = None
-
-    def on_release(self, key):
-        if key in self.function_keys:
-            self.is_function_key_pressed = False
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
@@ -314,11 +308,15 @@ def main():
         # trade.set_config(config)
         # trade.set_gui_callbacks(gui_callbacks)
 
-        # TODO
-        trade.config = config
-        trade.gui_callbacks = gui_callbacks
+        # # TODO
+        # trade.config = config
+        # trade.gui_callbacks = gui_callbacks
+        # start_monitors(trade, process_utilities.is_running, trade.process)
 
-        start_monitors(trade, process_utilities.is_running, trade.process)
+        # gui_interactions.start_monitors(gui_callbacks.on_click, gui_callbacks.on_press, process_utilities.is_running, trade.process, execute_action, trade, config, gui_callbacks)
+
+        start_monitors(trade, trade.on_press, config, gui_callbacks, process_utilities.is_running, trade.process)
+
     if args.a:
         if config.has_section(trade.action_section):
             execute_action(
@@ -642,7 +640,7 @@ def start_scheduler(trade, config, gui_callbacks, process):
                 scheduler.cancel(schedule)
 
 # TODO
-def start_monitors(trade, is_running_function, process):
+def start_monitors(trade, on_press, config, gui_callbacks, is_running_function, process):
     import threading
 
     # trade = GuiCallbacks([])
@@ -650,8 +648,8 @@ def start_monitors(trade, is_running_function, process):
     mouse_listener = mouse.Listener(on_click=trade.on_click)
     mouse_listener.start()
 
-    keyboard_listener = keyboard.Listener(on_press=trade.on_press,
-                                          on_release=trade.on_release)
+    # keyboard_listener = keyboard.Listener(on_press=trade.on_press)
+    keyboard_listener = keyboard.Listener(on_press=lambda key: on_press(key, config, gui_callbacks))
     keyboard_listener.start()
 
     # check_process_thread = threading.Thread(
