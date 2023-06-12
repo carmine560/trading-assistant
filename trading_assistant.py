@@ -9,7 +9,6 @@ import re
 import sys
 import time
 
-# TODO
 from pynput import keyboard
 from pynput import mouse
 import pyautogui
@@ -63,16 +62,26 @@ class Trade:
         self.schedule_section = self.process + ' Schedules'
 
         # TODO
+        self.keyboard_listener_state = 0
         self.function_keys = (
             keyboard.Key.f1, keyboard.Key.f2, keyboard.Key.f3, keyboard.Key.f4,
             keyboard.Key.f5, keyboard.Key.f6, keyboard.Key.f7, keyboard.Key.f8,
             keyboard.Key.f9, keyboard.Key.f10, keyboard.Key.f11,
             keyboard.Key.f12)
-        self.is_function_key_pressed = False
-        self.key_to_check = None
 
-        self.config = None
-        self.gui_callbacks = None
+        keymap = {'f5': 'open_close_short_position',
+                  'f6': 'speak_cpu_utilization',
+                  'f7': 'show_hide_watchlists',
+                  'f8': '00',
+                  'f9': 'open_close_long_position',
+                  'f10': 'open_close_long_position_'}
+        self.keys = {}
+        for key_name, action in keymap.items():
+            key = getattr(keyboard.Key, key_name)
+            self.keys[key] = action
+
+        self.key_to_check = None
+        self.should_continue = False
 
         self.cash_balance = 0
         self.previous_position = pyautogui.position()
@@ -80,71 +89,48 @@ class Trade:
         self.speech_engine = None
         self.symbol = ''
 
-        # # from pynput.keyboard import Key
-
-        # # keymap = {'f5': 'command'}
-        # keymap = {f5: 'open_close_short_position',
-        #           f6: 'speak_cpu_utilization',
-        #           f7: 'show_hide_watchlists',
-        #           f9: 'open_close_long_position',
-        #           f10: 'open_close_long_position_',
-        #           }
-
-        # from pynput.keyboard import Key
-
-        keymap = {'f5': 'open_close_short_position',
-                  'f6': 'speak_cpu_utilization',
-                  'f7': 'show_hide_watchlists',
-                  'f9': 'open_close_long_position',
-                  'f10': 'open_close_long_position_',
-                  }
-
-        self.keys = {}
-        for key_name, command in keymap.items():
-            key = getattr(keyboard.Key, key_name)
-            self.keys[key] = command
-
-        print(self.keys)
-        # key_name = 'f5'
-        # key = getattr(Key, key_name)
-
-        # print(key)  # Key.f5
-        # d = {keyboard.Key.f5: 'open_close_short_position',
-        #      keyboard.Key.f6: 'speak_cpu_utilization',
-        #      keyboard.Key.f7: 'show_hide_watchlists',
-        #      keyboard.Key.f9: 'open_close_long_position',
-        #      keyboard.Key.f10: 'open_close_long_position_',
-        #      }
-
-    # # TODO
-    # def set_config(self, config):
-    #     self.config = config
-
-    # def set_gui_callbacks(self, gui_callbacks):
-    #     self.gui_callbacks = gui_callbacks
-
     # TODO
     def on_click(self, x, y, button, pressed):
-        print('{0} at {1}'.format('Pressed' if pressed else 'Released', (x, y)))
+        # print('{0} at {1}'.format('Pressed' if pressed else 'Released', (x, y)))
+        pass
 
-    # def on_press(self, key):
     def on_press(self, key, config, gui_callbacks):
-        # if self.gui_callbacks.is_interactive_window():
+        print(self.key_to_check)
+        print(self.should_continue)
         if gui_callbacks.is_interactive_window():
-            if key in self.function_keys:
-                action = self.keys.get(key)
-                if action:
-                    self.key_to_check = keyboard.Key.space
-                    # execute_action(
-                    #     self, self.config, self.gui_callbacks,
-                    #     ast.literal_eval(
-                    #         self.config[self.action_section][action]))
-                    execute_action(
-                        self, config, gui_callbacks,
-                        ast.literal_eval(config[self.action_section][action]))
-            elif key == self.key_to_check:
-                print('Key pressed: {0}'.format(key))
-                self.key_to_check = None
+            if self.keyboard_listener_state == 0:
+                print(f"First key pressed: {key}")
+                if key in self.function_keys:
+                    action = self.keys.get(key)
+                    # print(action)
+                    # print(ast.literal_eval(
+                    #     config[self.action_section][action]))
+                    if action:
+                        # execute_action(
+                        #     self, config, gui_callbacks,
+                        #     ast.literal_eval(
+                        #         config[self.action_section][action]))
+
+                        import threading
+
+                        execute_action_thread = threading.Thread(
+                            target=execute_action,
+                            args=(self, config, gui_callbacks,
+                                  ast.literal_eval(
+                                      config[self.action_section][action])))
+                        execute_action_thread.start()
+
+                        print('done')
+            elif self.keyboard_listener_state == 1:
+                print(f"Second key pressed: {key}")
+                if key == self.key_to_check:
+                    self.should_continue = True
+                    self.keyboard_listener_state = 0
+                elif key == keyboard.Key.esc:
+                    self.should_continue = False
+                    self.keyboard_listener_state = 0
+
+                # self.keyboard_listener_state = 0
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
@@ -200,7 +186,6 @@ def main():
               'and exit'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
-    # TODO: config, gui_callbacks
     trade = Trade(*args.P)
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
@@ -304,19 +289,9 @@ def main():
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
     if args.m:
-        # # TODO
-        # trade.set_config(config)
-        # trade.set_gui_callbacks(gui_callbacks)
-
-        # # TODO
-        # trade.config = config
-        # trade.gui_callbacks = gui_callbacks
-        # start_monitors(trade, process_utilities.is_running, trade.process)
-
-        # gui_interactions.start_monitors(gui_callbacks.on_click, gui_callbacks.on_press, process_utilities.is_running, trade.process, execute_action, trade, config, gui_callbacks)
-
-        start_monitors(trade, trade.on_press, config, gui_callbacks, process_utilities.is_running, trade.process)
-
+        # TODO
+        start_monitors(trade, config, gui_callbacks,
+                       process_utilities.is_running)
     if args.a:
         if config.has_section(trade.action_section):
             execute_action(
@@ -640,40 +615,21 @@ def start_scheduler(trade, config, gui_callbacks, process):
                 scheduler.cancel(schedule)
 
 # TODO
-def start_monitors(trade, on_press, config, gui_callbacks, is_running_function, process):
+def start_monitors(trade, config, gui_callbacks, is_running_function):
     import threading
-
-    # trade = GuiCallbacks([])
 
     mouse_listener = mouse.Listener(on_click=trade.on_click)
     mouse_listener.start()
 
-    # keyboard_listener = keyboard.Listener(on_press=trade.on_press)
-    keyboard_listener = keyboard.Listener(on_press=lambda key: on_press(key, config, gui_callbacks))
+    keyboard_listener = keyboard.Listener(
+        on_press=lambda key: trade.on_press(key, config, gui_callbacks))
     keyboard_listener.start()
-
-    # check_process_thread = threading.Thread(
-    #     target=check_process,
-    #     args=(is_running_function, 'i_view64', mouse_listener, keyboard_listener))
 
     check_process_thread = threading.Thread(
         target=check_process,
-        args=(is_running_function, process, mouse_listener, keyboard_listener))
-
+        args=(is_running_function, trade.process, mouse_listener,
+              keyboard_listener))
     check_process_thread.start()
-
-    # time.sleep(5)
-    # trade.key_to_check = keyboard.Key.space
-    # print(trade.key_to_check)
-    # time.sleep(5)
-    # trade.key_to_check = None
-    # print(trade.key_to_check)
-    # time.sleep(5)
-    # trade.key_to_check = keyboard.Key.space
-    # print(trade.key_to_check)
-    # time.sleep(5)
-    # trade.key_to_check = None
-    # print(trade.key_to_check)
 
     # mouse_listener.join()
     # keyboard_listener.join()
@@ -812,6 +768,24 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'wait_for_key':
             if not gui_interactions.wait_for_key(gui_callbacks, argument):
                 return
+        elif command == 'wait_for_key_':
+            # print(command)
+            # print(argument)
+            # print(trade.keyboard_listener_state)
+            # print(trade.key_to_check)
+            # print(trade.should_continue)
+            trade.keyboard_listener_state = 1
+            trade.key_to_check = getattr(keyboard.Key, argument)
+            while trade.keyboard_listener_state == 1:
+                # print(trade.keyboard_listener_state)
+                # print(trade.key_to_check)
+                # print(trade.should_continue)
+                # time.sleep(0.1)
+                time.sleep(1)
+            if not trade.should_continue:
+                for _ in range(gui_callbacks.moved_focus):
+                    pyautogui.hotkey('shift', 'tab')
+                break
         elif command == 'wait_for_period':
             time.sleep(float(argument))
         elif command == 'wait_for_prices':
