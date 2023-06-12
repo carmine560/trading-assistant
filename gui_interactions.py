@@ -26,15 +26,6 @@ class GuiCallbacks:
         # check_for_window
         self.exist = []
 
-        # TODO
-        self.function_keys = (
-            keyboard.Key.f1, keyboard.Key.f2, keyboard.Key.f3, keyboard.Key.f4,
-            keyboard.Key.f5, keyboard.Key.f6, keyboard.Key.f7, keyboard.Key.f8,
-            keyboard.Key.f9, keyboard.Key.f10, keyboard.Key.f11,
-            keyboard.Key.f12)
-        self.is_function_key_pressed = False
-        self.key_to_check = None
-
     def enumerate_windows_on_click(self, x, y, button, pressed):
         if button == mouse.Button.middle and not pressed:
             if self.is_interactive_window():
@@ -59,6 +50,7 @@ class GuiCallbacks:
         for title_regex in self.interactive_windows:
             if re.fullmatch(title_regex, foreground_window):
                 return True
+        return False
 
     def check_for_window(self, hwnd, title_regex):
         if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
@@ -68,60 +60,6 @@ class GuiCallbacks:
             win32gui.SetForegroundWindow(hwnd)
             self.exist.append((hwnd, title_regex))
             return
-
-    # TODO
-    def on_click(self, x, y, button, pressed):
-        print('{0} at {1}'.format('Pressed' if pressed else 'Released', (x, y)))
-
-    def on_press(self, key):
-        if key in self.function_keys:
-            if not self.is_function_key_pressed:
-                self.is_function_key_pressed = True
-                print('Function key pressed: {0}'.format(key))
-        elif key == self.key_to_check:
-            print('Key pressed: {0}'.format(key))
-            self.key_to_check = None
-
-    def on_release(self, key):
-        if key in self.function_keys:
-            self.is_function_key_pressed = False
-
-# TODO
-def start_monitors(gui_callbacks, is_running_function, process):
-    # gui_callbacks = GuiCallbacks([])
-
-    mouse_listener = mouse.Listener(on_click=gui_callbacks.on_click)
-    mouse_listener.start()
-
-    keyboard_listener = keyboard.Listener(on_press=gui_callbacks.on_press,
-                                          on_release=gui_callbacks.on_release)
-    keyboard_listener.start()
-
-    # check_process_thread = threading.Thread(
-    #     target=check_process,
-    #     args=(process_utilities.is_running, 'i_view64', mouse_listener,
-    #           keyboard_listener))
-    check_process_thread = threading.Thread(
-        target=check_process,
-        args=(is_running_function, process, mouse_listener, keyboard_listener))
-    check_process_thread.start()
-
-    # time.sleep(5)
-    # gui_callbacks.key_to_check = keyboard.Key.space
-    # print(gui_callbacks.key_to_check)
-    # time.sleep(5)
-    # gui_callbacks.key_to_check = None
-    # print(gui_callbacks.key_to_check)
-    # time.sleep(5)
-    # gui_callbacks.key_to_check = keyboard.Key.space
-    # print(gui_callbacks.key_to_check)
-    # time.sleep(5)
-    # gui_callbacks.key_to_check = None
-    # print(gui_callbacks.key_to_check)
-
-    # mouse_listener.join()
-    # keyboard_listener.join()
-    # check_process_thread.join()
 
 def click_widget(gui_callbacks, image, x, y, width, height):
     location = None
