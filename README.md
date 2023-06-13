@@ -206,7 +206,7 @@ py.exe trading_assistant.py -a action
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
   * `-s`: start the scheduler
-  * `-m`: start the mouse and keyboard monitors
+  * `-l`: start the mouse and keyboard listeners
   * `-a ACTION`: execute an action
   * `-I`: configure a startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit

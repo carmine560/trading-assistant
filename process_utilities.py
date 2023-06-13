@@ -10,12 +10,11 @@ def is_running(process):
     else:
         return False
 
-def check_process(is_running_function, process, mouse_listener,
-                  keyboard_listener):
+def stop_listeners(process, mouse_listener, keyboard_listener):
     import time
 
     while True:
-        if is_running_function(process):
+        if is_running(process):
             time.sleep(1)
         else:
             if mouse_listener:

@@ -69,18 +69,7 @@ class Trade:
             keyboard.Key.f5, keyboard.Key.f6, keyboard.Key.f7, keyboard.Key.f8,
             keyboard.Key.f9, keyboard.Key.f10, keyboard.Key.f11,
             keyboard.Key.f12)
-
-        keymap = {'f5': 'open_close_short_position',
-                  'f6': 'speak_cpu_utilization',
-                  'f7': 'show_hide_watchlists',
-                  'f8': '00',
-                  'f9': 'open_close_long_position',
-                  'f10': 'open_close_long_position_'}
         self.keys = {}
-        for key_name, action in keymap.items():
-            key = getattr(keyboard.Key, key_name)
-            self.keys[key] = action
-
         self.key_to_check = None
         self.should_continue = False
 
@@ -97,7 +86,7 @@ class Trade:
     def on_press(self, key, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
             if self.keyboard_listener_state == 0:
-                print(f"First key pressed: {key}")
+                print(f'First key pressed: {key}')
                 if key in self.function_keys:
                     action = self.keys.get(key)
                     if action:
@@ -108,8 +97,9 @@ class Trade:
                                       config[self.action_section][action])))
                         execute_action_thread.start()
             elif self.keyboard_listener_state == 1:
-                print(f"Second key pressed: {key}")
-                if key == self.key_to_check:
+                print(f'Second key pressed: {key}')
+                if ((hasattr(key, 'char') and key.char == self.key_to_check)
+                    or key == self.key_to_check):
                     self.should_continue = True
                     self.keyboard_listener_state = 0
                 elif key == keyboard.Key.esc:
@@ -141,8 +131,8 @@ def main():
         '-s', action='store_true',
         help='start the scheduler')
     parser.add_argument(
-        '-m', action='store_true',
-        help='start the mouse and keyboard monitors')
+        '-l', action='store_true',
+        help='start the mouse and keyboard listeners')
     parser.add_argument(
         execute_action_flag, metavar='ACTION', nargs=1,
         help='execute an action')
@@ -272,10 +262,18 @@ def main():
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
-    if args.m:
-        # TODO
-        start_monitors(trade, config, gui_callbacks,
-                       process_utilities.is_running)
+    if args.l:
+        if config.has_option(trade.process, 'keymap'):
+            keymap = ast.literal_eval(config[trade.process]['keymap'])
+            for key_name, action in keymap.items():
+                key = getattr(keyboard.Key, key_name)
+                trade.keys[key] = action
+
+            start_listeners(trade, config, gui_callbacks,
+                            process_utilities.is_running)
+        else:
+            print(option, 'option does not exist')
+            sys.exit(1)
     if args.a:
         if config.has_section(trade.action_section):
             execute_action(
@@ -363,6 +361,9 @@ def configure(trade, interpolation=True):
             '取引ポップアップ',            # Trading
             '通知設定',                    # Notifications
             '全板\s.*\((\d{4})\)'),        # Full Order Book
+        'keymap': {
+            'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
+            'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '', 'f12': ''},
         'fixed_cash_balance': '0',
         'cash_balance_region': '0, 0, 0, 0, 0',
         'utilization_ratio': '1.0',
@@ -599,7 +600,7 @@ def start_scheduler(trade, config, gui_callbacks, process):
                 scheduler.cancel(schedule)
 
 # TODO
-def start_monitors(trade, config, gui_callbacks, is_running_function):
+def start_listeners(trade, config, gui_callbacks, is_running_function):
     mouse_listener = mouse.Listener(on_click=trade.on_click)
     mouse_listener.start()
 
@@ -607,15 +608,14 @@ def start_monitors(trade, config, gui_callbacks, is_running_function):
         on_press=lambda key: trade.on_press(key, config, gui_callbacks))
     keyboard_listener.start()
 
-    check_process_thread = threading.Thread(
-        target=process_utilities.check_process,
-        args=(is_running_function, trade.process, mouse_listener,
-              keyboard_listener))
-    check_process_thread.start()
+    stop_listeners_thread = threading.Thread(
+        target=process_utilities.stop_listeners,
+        args=(trade.process, mouse_listener, keyboard_listener))
+    stop_listeners_thread.start()
 
     # mouse_listener.join()
     # keyboard_listener.join()
-    # check_process_thread.join()
+    # stop_listeners_thread.join()
 
 def execute_action(trade, config, gui_callbacks, action):
     for index in range(len(action)):
@@ -738,14 +738,19 @@ def execute_action(trade, config, gui_callbacks, action):
             if not gui_interactions.wait_for_key(gui_callbacks, argument):
                 return
         elif command == 'wait_for_key_':
+            # TODO
             trade.keyboard_listener_state = 1
-            trade.key_to_check = getattr(keyboard.Key, argument)
+            if len(argument) == 1:
+                trade.key_to_check = argument
+            else:
+                trade.key_to_check = keyboard.Key[argument]
             while trade.keyboard_listener_state == 1:
                 time.sleep(0.001)
+
             if not trade.should_continue:
                 for _ in range(gui_callbacks.moved_focus):
                     pyautogui.hotkey('shift', 'tab')
-                break
+                return
         elif command == 'wait_for_period':
             time.sleep(float(argument))
         elif command == 'wait_for_prices':
