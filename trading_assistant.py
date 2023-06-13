@@ -7,6 +7,7 @@ import inspect
 import os
 import re
 import sys
+import threading
 import time
 
 from pynput import keyboard
@@ -91,36 +92,21 @@ class Trade:
 
     # TODO
     def on_click(self, x, y, button, pressed):
-        # print('{0} at {1}'.format('Pressed' if pressed else 'Released', (x, y)))
         pass
 
     def on_press(self, key, config, gui_callbacks):
-        print(self.key_to_check)
-        print(self.should_continue)
         if gui_callbacks.is_interactive_window():
             if self.keyboard_listener_state == 0:
                 print(f"First key pressed: {key}")
                 if key in self.function_keys:
                     action = self.keys.get(key)
-                    # print(action)
-                    # print(ast.literal_eval(
-                    #     config[self.action_section][action]))
                     if action:
-                        # execute_action(
-                        #     self, config, gui_callbacks,
-                        #     ast.literal_eval(
-                        #         config[self.action_section][action]))
-
-                        import threading
-
                         execute_action_thread = threading.Thread(
                             target=execute_action,
                             args=(self, config, gui_callbacks,
                                   ast.literal_eval(
                                       config[self.action_section][action])))
                         execute_action_thread.start()
-
-                        print('done')
             elif self.keyboard_listener_state == 1:
                 print(f"Second key pressed: {key}")
                 if key == self.key_to_check:
@@ -129,8 +115,6 @@ class Trade:
                 elif key == keyboard.Key.esc:
                     self.should_continue = False
                     self.keyboard_listener_state = 0
-
-                # self.keyboard_listener_state = 0
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
@@ -616,8 +600,6 @@ def start_scheduler(trade, config, gui_callbacks, process):
 
 # TODO
 def start_monitors(trade, config, gui_callbacks, is_running_function):
-    import threading
-
     mouse_listener = mouse.Listener(on_click=trade.on_click)
     mouse_listener.start()
 
@@ -626,7 +608,7 @@ def start_monitors(trade, config, gui_callbacks, is_running_function):
     keyboard_listener.start()
 
     check_process_thread = threading.Thread(
-        target=check_process,
+        target=process_utilities.check_process,
         args=(is_running_function, trade.process, mouse_listener,
               keyboard_listener))
     check_process_thread.start()
@@ -634,19 +616,6 @@ def start_monitors(trade, config, gui_callbacks, is_running_function):
     # mouse_listener.join()
     # keyboard_listener.join()
     # check_process_thread.join()
-
-# TODO
-def check_process(is_running_function, process, mouse_listener,
-                  keyboard_listener):
-    while True:
-        if is_running_function(process):
-            time.sleep(1)
-        else:
-            if mouse_listener:
-                mouse_listener.stop()
-            if keyboard_listener:
-                keyboard_listener.stop()
-            break
 
 def execute_action(trade, config, gui_callbacks, action):
     for index in range(len(action)):
@@ -769,19 +738,10 @@ def execute_action(trade, config, gui_callbacks, action):
             if not gui_interactions.wait_for_key(gui_callbacks, argument):
                 return
         elif command == 'wait_for_key_':
-            # print(command)
-            # print(argument)
-            # print(trade.keyboard_listener_state)
-            # print(trade.key_to_check)
-            # print(trade.should_continue)
             trade.keyboard_listener_state = 1
             trade.key_to_check = getattr(keyboard.Key, argument)
             while trade.keyboard_listener_state == 1:
-                # print(trade.keyboard_listener_state)
-                # print(trade.key_to_check)
-                # print(trade.should_continue)
-                # time.sleep(0.1)
-                time.sleep(1)
+                time.sleep(0.001)
             if not trade.should_continue:
                 for _ in range(gui_callbacks.moved_focus):
                     pyautogui.hotkey('shift', 'tab')
