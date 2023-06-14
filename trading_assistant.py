@@ -73,10 +73,13 @@ class Trade:
         self.key_to_check = None
         self.should_continue = False
 
+        self.speech_engine = None
+        self.text = ''
+        self.text_lock = threading.Lock()
+
         self.cash_balance = 0
         self.previous_position = pyautogui.position()
         self.share_size = 0
-        self.speech_engine = None
         self.symbol = ''
 
     # TODO
@@ -88,15 +91,46 @@ class Trade:
             if self.keyboard_listener_state == 0:
                 print(f'First key pressed: {key}')
                 if key in self.function_keys:
+                    # with self.text_lock:
+                    #     self.text = 'Hello.'
+
                     action = self.keys.get(key)
                     if action:
                         gui_callbacks.moved_focus = 0
+
                         execute_action_thread = threading.Thread(
                             target=execute_action,
                             args=(self, config, gui_callbacks,
                                   ast.literal_eval(
                                       config[self.action_section][action])))
                         execute_action_thread.start()
+
+                        # execute_action_thread = threading.Thread(
+                        #     target=execute_action,
+                        #     args=(self, config, gui_callbacks,
+                        #           [('speak_string_', 'Hello.')]))
+                        # execute_action_thread.start()
+                        # print(ast.literal_eval(
+                        #               config[self.action_section][action]))
+
+                        # win32gui.EnumWindows(gui_interactions.show_window, '個別チャート\\s.*\\((\\d{4})\\)')
+                        # # win32gui.EnumWindows(gui_interactions.show_window, 'Task Manager')
+
+                        # execute_action_thread = threading.Thread(
+                        #     target=execute_action,
+                        #     args=(self, config, gui_callbacks,
+                        #           [('show_window', '個別チャート\\s.*\\((\\d{4})\\)'), ('show_window', '個別銘柄\\s.*\\((\\d{4})\\)'), ('click', '208, 726'), ('click', '541, 797'), ('press_hotkeys', 'ctrl, a'), ('get_symbol', '個別銘柄\\s.*\\((\\d{4})\\)'), ('calculate_share_size', 'long'), ('write_share_size',), ('click', '477, 819'), ('press_key', 'tab, 3'), ('speak_string_', 'long'), ('back_to',), ('wait_for_key_', 'space'), ('wait_for_prices', '201, 956, 470, 20, 0'), ('click', '292, 726'), ('click', '605, 838'), ('press_hotkeys', 'ctrl, a'), ('write_share_size',), ('click', '448, 935'), ('press_key', 'tab, 5'), ('count_trades',), ('speak_config_', 'Variables', 'current_number_of_trades'), ('back_to',)]))
+                        # execute_action_thread.start()
+
+                        # execute_action(
+                        #     self, config, gui_callbacks,
+                        #     ast.literal_eval(
+                        #         config[self.action_section][action]))
+
+                        # execute_action(
+                        #     self, config, gui_callbacks,
+                        #     [('beep', '1000, 100')])
+
             elif self.keyboard_listener_state == 1:
                 print(f'Second key pressed: {key}')
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
@@ -609,10 +643,20 @@ def start_listeners(trade, config, gui_callbacks, is_running_function):
         on_press=lambda key: trade.on_press(key, config, gui_callbacks))
     keyboard_listener.start()
 
+    # speak_text_thread = threading.Thread(target=speak_text_, args=(trade,))
+    # speak_text_thread.start()
+    # print('started')
+
     stop_listeners_thread = threading.Thread(
         target=process_utilities.stop_listeners,
         args=(trade.process, mouse_listener, keyboard_listener))
     stop_listeners_thread.start()
+
+    # speak_text_(trade)
+    # print('started')
+
+    # speak_text_thread.start()
+    # print('started')
 
     # mouse_listener.join()
     # keyboard_listener.join()
@@ -623,6 +667,7 @@ def execute_action(trade, config, gui_callbacks, action):
         command = action[index][0]
         if len(action[index]) > 1:
             argument = action[index][1]
+            print(argument)
         if len(action[index]) > 2:
             additional_argument = action[index][2]
 
@@ -708,8 +753,18 @@ def execute_action(trade, config, gui_callbacks, action):
             speak_text(trade,
                        str(round(psutil.cpu_percent(interval=float(argument))))
                        + '%')
+        elif command == 'speak_cpu_utilization_':
+            import psutil
+
+            with trade.text_lock:
+                trade.text = str(round(psutil.cpu_percent(interval=float(argument)))) + '%'
         elif command == 'speak_string':
             speak_text(trade, argument)
+        elif command == 'speak_string_':
+            # TODO
+            with trade.text_lock:
+                trade.text = argument
+            # pass
         elif command == 'speak_seconds_until_time':
             import math
 
@@ -949,6 +1004,21 @@ def speak_text(trade, text):
     initialize_speech_engine(trade)
     trade.speech_engine.say(text)
     trade.speech_engine.runAndWait()
+
+def speak_text_(trade):
+    initialize_speech_engine(trade)
+    while True:
+        with trade.text_lock:
+            text = trade.text
+            trade.text = ''
+
+        if text:
+            print(text)
+            trade.speech_engine.say(text)
+            trade.speech_engine.runAndWait()
+            print('stopped')
+
+        time.sleep(0.01)
 
 if __name__ == '__main__':
     main()
