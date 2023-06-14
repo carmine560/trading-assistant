@@ -90,6 +90,7 @@ class Trade:
                 if key in self.function_keys:
                     action = self.keys.get(key)
                     if action:
+                        gui_callbacks.moved_focus = 0
                         execute_action_thread = threading.Thread(
                             target=execute_action,
                             args=(self, config, gui_callbacks,
@@ -748,8 +749,12 @@ def execute_action(trade, config, gui_callbacks, action):
                 time.sleep(0.001)
 
             if not trade.should_continue:
+                import winsound
+
                 for _ in range(gui_callbacks.moved_focus):
                     pyautogui.hotkey('shift', 'tab')
+
+                winsound.Beep(1000, 100)
                 return
         elif command == 'wait_for_period':
             time.sleep(float(argument))
@@ -939,6 +944,7 @@ def initialize_speech_engine(trade):
         voices = trade.speech_engine.getProperty('voices')
         trade.speech_engine.setProperty('voice', voices[1].id)
 
+# TODO: the pyttsx3 engine is not thread-safe.
 def speak_text(trade, text):
     initialize_speech_engine(trade)
     trade.speech_engine.say(text)
