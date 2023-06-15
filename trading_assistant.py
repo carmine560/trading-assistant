@@ -1,4 +1,6 @@
 from datetime import date
+from multiprocessing import Process
+from multiprocessing.managers import BaseManager
 import argparse
 import ast
 import configparser
@@ -67,7 +69,6 @@ class Trade:
         self.share_size = 0
 
         self.previous_position = pyautogui.position()
-        self.speech_engine = None
 
         # TODO
         self.keyboard_listener_state = 0
@@ -78,6 +79,16 @@ class Trade:
             keyboard.Key.f12)
         self.key_to_check = None
         self.should_continue = False
+
+        # TODO
+        self.speech_engine = None
+        self.speech_manager = None
+
+    def get_symbol(self, hwnd, title_regex):
+        matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
+        if matched:
+            self.symbol = matched.group(1)
+            return
 
     # TODO
     def on_click(self, x, y, button, pressed):
@@ -90,6 +101,7 @@ class Trade:
                 if key in self.function_keys:
                     action = ast.literal_eval(
                         config[self.process]['keymap']).get(key.name)
+                    print(action)
                     if action:
                         gui_callbacks.moved_focus = 0
                         self.previous_position = pyautogui.position()
@@ -110,11 +122,22 @@ class Trade:
                     self.should_continue = False
                     self.keyboard_listener_state = 0
 
-    def get_symbol(self, hwnd, title_regex):
-        matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
-        if matched:
-            self.symbol = matched.group(1)
-            return
+class SpeechManager:
+    def __init__(self):
+        self._can_speak = True
+        self._speech_text = ''
+
+    def can_speak(self):
+        return self._can_speak
+
+    def set_can_speak(self, can_speak):
+        self._can_speak = can_speak
+
+    def get_speech_text(self):
+        return self._speech_text
+
+    def set_speech_text(self, text):
+        self._speech_text = text
 
 def main():
     execute_action_flag = '-a'
@@ -239,6 +262,14 @@ def main():
     else:
         config = configure(trade)
 
+    # TODO
+    BaseManager.register('SpeechManager', SpeechManager)
+    manager = BaseManager()
+    manager.start()
+    # speech_manager = manager.SpeechManager()
+    # trade.speech_manager = speech_manager
+    trade.speech_manager = manager.SpeechManager()
+
     if not config.has_section(trade.process):
         print(trade.process, 'section does not exist')
         sys.exit(1)
@@ -257,7 +288,7 @@ def main():
         save_market_data(trade, config)
     if args.s:
         if config.has_section(trade.schedule_section):
-            from multiprocessing import Process
+            # from multiprocessing import Process
 
             process = Process(
                 target=start_scheduler,
@@ -267,9 +298,10 @@ def main():
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
     if args.l:
+        # TODO
         if config.has_option(trade.process, 'keymap'):
-            start_listeners(trade, config, gui_callbacks,
-                            process_utilities.is_running)
+            start_listeners(trade, config, gui_callbacks, manager,
+                            trade.speech_manager, process_utilities.is_running)
         else:
             print(option, 'option does not exist')
             sys.exit(1)
@@ -599,7 +631,8 @@ def start_scheduler(trade, config, gui_callbacks, process):
                 scheduler.cancel(schedule)
 
 # TODO
-def start_listeners(trade, config, gui_callbacks, is_running_function):
+def start_listeners(trade, config, gui_callbacks, manager, speech_manager,
+                    is_running_function):
     mouse_listener = mouse.Listener(on_click=trade.on_click)
     mouse_listener.start()
 
@@ -607,9 +640,13 @@ def start_listeners(trade, config, gui_callbacks, is_running_function):
         on_press=lambda key: trade.on_press(key, config, gui_callbacks))
     keyboard_listener.start()
 
+    speak_text_process = Process(target=speak_text_, args=(speech_manager,))
+    speak_text_process.start()
+
     stop_listeners_thread = threading.Thread(
         target=process_utilities.stop_listeners,
-        args=(trade.process, mouse_listener, keyboard_listener))
+        args=(trade.process, mouse_listener, keyboard_listener,
+              speech_manager, speak_text_process, manager))
     stop_listeners_thread.start()
 
 def execute_action(trade, config, gui_callbacks, action):
@@ -675,11 +712,14 @@ def execute_action(trade, config, gui_callbacks, action):
                 section['current_number_of_trades'] = '1'
 
             # TODO
-            if True:
-                import winsound
+            # if True:
+            #     import winsound
 
-                for _ in range(int(section['current_number_of_trades'])):
-                    winsound.Beep(750, 100)
+            #     for _ in range(int(section['current_number_of_trades'])):
+            #         winsound.Beep(750, 100)
+
+            trade.speech_manager.set_speech_text(
+                section['current_number_of_trades'])
 
             configuration.write_config(config, trade.config_file)
         elif command == 'get_symbol':
@@ -965,6 +1005,23 @@ def speak_text(trade, text):
     initialize_speech_engine(trade)
     trade.speech_engine.say(text)
     trade.speech_engine.runAndWait()
+
+def speak_text_(speech_manager):
+    import pyttsx3
+
+    speech_engine = pyttsx3.init()
+    voices = speech_engine.getProperty('voices')
+    speech_engine.setProperty('voice', voices[1].id)
+
+    while speech_manager.can_speak():
+        text = speech_manager.get_speech_text()
+        if text:
+            print(f'speak_text: {text}')
+            speech_engine.say(text)
+            speech_engine.runAndWait()
+            speech_manager.set_speech_text('')
+
+        time.sleep(0.01)
 
 if __name__ == '__main__':
     main()
