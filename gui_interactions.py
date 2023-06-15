@@ -113,14 +113,11 @@ def show_hide_window_on_click(gui_callbacks, process, title_regex,
 
 def show_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
-        print(hwnd, title_regex)
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 9)
 
         win32gui.SetForegroundWindow(hwnd)
-        # TODO
-        return
-        # return False
+        return False
 
 def wait_for_key(gui_callbacks, key):
     if len(key) == 1:
