@@ -21,6 +21,7 @@ import configuration
 import file_utilities
 import gui_interactions
 import process_utilities
+import speech_synthesis
 import text_recognition
 
 class Trade:
@@ -68,9 +69,10 @@ class Trade:
         self.symbol = ''
         self.share_size = 0
 
+        # TODO
         self.previous_position = pyautogui.position()
 
-        # TODO
+        self.keyboard_listener = None
         self.keyboard_listener_state = 0
         self.function_keys = (
             keyboard.Key.f1, keyboard.Key.f2, keyboard.Key.f3, keyboard.Key.f4,
@@ -80,9 +82,9 @@ class Trade:
         self.key_to_check = None
         self.should_continue = False
 
-        # TODO
         self.speech_engine = None
         self.speech_manager = None
+        self.speaking_process = None
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
@@ -97,13 +99,12 @@ class Trade:
     def on_press(self, key, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
             if self.keyboard_listener_state == 0:
-                print(f'First key pressed: {key}')
                 if key in self.function_keys:
                     action = ast.literal_eval(
                         config[self.process]['keymap']).get(key.name)
-                    print(action)
                     if action:
                         gui_callbacks.moved_focus = 0
+                        # TODO
                         self.previous_position = pyautogui.position()
 
                         execute_action_thread = threading.Thread(
@@ -113,7 +114,6 @@ class Trade:
                                       config[self.action_section][action])))
                         execute_action_thread.start()
             elif self.keyboard_listener_state == 1:
-                print(f'Second key pressed: {key}')
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
                     or key == self.key_to_check):
                     self.should_continue = True
@@ -121,23 +121,6 @@ class Trade:
                 elif key == keyboard.Key.esc:
                     self.should_continue = False
                     self.keyboard_listener_state = 0
-
-class SpeechManager:
-    def __init__(self):
-        self._can_speak = True
-        self._speech_text = ''
-
-    def can_speak(self):
-        return self._can_speak
-
-    def set_can_speak(self, can_speak):
-        self._can_speak = can_speak
-
-    def get_speech_text(self):
-        return self._speech_text
-
-    def set_speech_text(self, text):
-        self._speech_text = text
 
 def main():
     execute_action_flag = '-a'
@@ -263,11 +246,9 @@ def main():
         config = configure(trade)
 
     # TODO
-    BaseManager.register('SpeechManager', SpeechManager)
+    BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
     manager = BaseManager()
     manager.start()
-    # speech_manager = manager.SpeechManager()
-    # trade.speech_manager = speech_manager
     trade.speech_manager = manager.SpeechManager()
 
     if not config.has_section(trade.process):
@@ -288,8 +269,7 @@ def main():
         save_market_data(trade, config)
     if args.s:
         if config.has_section(trade.schedule_section):
-            # from multiprocessing import Process
-
+            # TODO
             process = Process(
                 target=start_scheduler,
                 args=(trade, config, gui_callbacks, trade.process))
@@ -298,7 +278,6 @@ def main():
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
     if args.l:
-        # TODO
         if config.has_option(trade.process, 'keymap'):
             start_listeners(trade, config, gui_callbacks, manager,
                             trade.speech_manager, process_utilities.is_running)
@@ -378,20 +357,10 @@ def configure(trade, interpolation=True):
         'executable': '',
         'title': 'Hyper SBI 2 Assistant',
         'interactive_windows': (
-            'お知らせ',                    # Announcements
-            '個別銘柄\s.*\((\d{4})\)',     # Summary
-            '登録銘柄',                    # Watchlists
-            '保有証券',                    # Holdings
-            '注文一覧',                    # Order Status
-            '個別チャート\s.*\((\d{4})\)', # Chart
-            'マーケット',                  # Markets
-            'ランキング',                  # Rankings
-            '銘柄一覧',                    # Stock Lists
-            '口座情報',                    # Account
-            'ニュース',                    # News
-            '取引ポップアップ',            # Trading
-            '通知設定',                    # Notifications
-            '全板\s.*\((\d{4})\)'),        # Full Order Book
+            'お知らせ', '個別銘柄\s.*\((\d{4})\)', '登録銘柄', '保有証券',
+            '注文一覧', '個別チャート\s.*\((\d{4})\)', 'マーケット',
+            'ランキング', '銘柄一覧', '口座情報', 'ニュース',
+            '取引ポップアップ', '通知設定', '全板\s.*\((\d{4})\)'),
         'keymap': {
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
             'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '', 'f12': ''},
@@ -608,19 +577,10 @@ def start_scheduler(trade, config, gui_callbacks, process):
                                       + schedule_time, '%Y-%m-%d %H:%M:%S')
         schedule_time = time.mktime(schedule_time)
         if schedule_time > time.time():
-            for index in range(len(action)):
-                command = action[index][0]
-                if command in ('speak_config', 'speak_cpu_utilization',
-                               'speak_string', 'speak_seconds_until_time'):
-                    speech = True
-
             schedule = scheduler.enterabs(
                 schedule_time, 1, execute_action,
                 argument=(trade, config, gui_callbacks, action))
             schedules.append(schedule)
-
-    if speech:
-        initialize_speech_engine(trade)
 
     while scheduler.queue:
         if process_utilities.is_running(process):
@@ -636,17 +596,18 @@ def start_listeners(trade, config, gui_callbacks, manager, speech_manager,
     mouse_listener = mouse.Listener(on_click=trade.on_click)
     mouse_listener.start()
 
-    keyboard_listener = keyboard.Listener(
+    trade.keyboard_listener = keyboard.Listener(
         on_press=lambda key: trade.on_press(key, config, gui_callbacks))
-    keyboard_listener.start()
+    trade.keyboard_listener.start()
 
-    speak_text_process = Process(target=speak_text_, args=(speech_manager,))
-    speak_text_process.start()
+    trade.speaking_process = Process(target=speech_synthesis.start_speaking,
+                                     args=(speech_manager,))
+    trade.speaking_process.start()
 
     stop_listeners_thread = threading.Thread(
         target=process_utilities.stop_listeners,
-        args=(trade.process, mouse_listener, keyboard_listener,
-              speech_manager, speak_text_process, manager))
+        args=(trade.process, mouse_listener, trade.keyboard_listener, manager,
+              speech_manager, trade.speaking_process))
     stop_listeners_thread.start()
 
 def execute_action(trade, config, gui_callbacks, action):
@@ -700,28 +661,6 @@ def execute_action(trade, config, gui_callbacks, action):
                 section['current_number_of_trades'] = '1'
 
             configuration.write_config(config, trade.config_file)
-        elif command == 'count_trades_':
-            section = config['Variables']
-            previous_date = date.fromisoformat(section['current_date'])
-            current_date = date.today()
-            if previous_date == current_date:
-                section['current_number_of_trades'] = \
-                    str(int(section['current_number_of_trades']) + 1)
-            else:
-                section['current_date'] = str(date.today())
-                section['current_number_of_trades'] = '1'
-
-            # TODO
-            # if True:
-            #     import winsound
-
-            #     for _ in range(int(section['current_number_of_trades'])):
-            #         winsound.Beep(750, 100)
-
-            trade.speech_manager.set_speech_text(
-                section['current_number_of_trades'])
-
-            configuration.write_config(config, trade.config_file)
         elif command == 'get_symbol':
             win32gui.EnumWindows(trade.get_symbol, argument)
         elif command == 'hide_parent_window':
@@ -752,11 +691,13 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, argument)
         elif command == 'show_window':
-            # TODO
             try:
                 win32gui.EnumWindows(gui_interactions.show_window, argument)
             except Exception as e:
-                print(e)
+                if e.args[0] == 0:
+                    pass
+                else:
+                    print(e)
         elif command == 'speak_config':
             speak_text(trade, config[argument][additional_argument])
         elif command == 'speak_cpu_utilization':
@@ -765,8 +706,6 @@ def execute_action(trade, config, gui_callbacks, action):
             speak_text(
                 trade,
                 str(round(psutil.cpu_percent(interval=float(argument)))) + '%')
-        elif command == 'speak_string':
-            speak_text(trade, argument)
         elif command == 'speak_seconds_until_time':
             import math
 
@@ -775,6 +714,8 @@ def execute_action(trade, config, gui_callbacks, action):
             event_time = time.mktime(event_time)
             speak_text(trade,
                        str(math.ceil(event_time - time.time())) + ' seconds')
+        elif command == 'speak_text':
+            speak_text(trade, argument)
         elif command == 'take_screenshot':
             from PIL import ImageGrab
 
@@ -793,25 +734,23 @@ def execute_action(trade, config, gui_callbacks, action):
             image.save(os.path.join(config['General']['screenshot_directory'],
                                     base))
         elif command == 'wait_for_key':
-            if not gui_interactions.wait_for_key(gui_callbacks, argument):
-                return
-        elif command == 'wait_for_key_':
-            # TODO
-            trade.keyboard_listener_state = 1
-            if len(argument) == 1:
-                trade.key_to_check = argument
-            else:
-                trade.key_to_check = keyboard.Key[argument]
-            while trade.keyboard_listener_state == 1:
-                time.sleep(0.001)
+            if trade.keyboard_listener:
+                # TODO
+                trade.keyboard_listener_state = 1
+                if len(argument) == 1:
+                    trade.key_to_check = argument
+                else:
+                    trade.key_to_check = keyboard.Key[argument]
+                while trade.keyboard_listener_state == 1:
+                    time.sleep(0.001)
 
-            if not trade.should_continue:
-                import winsound
+                if not trade.should_continue:
+                    for _ in range(gui_callbacks.moved_focus):
+                        pyautogui.hotkey('shift', 'tab')
 
-                for _ in range(gui_callbacks.moved_focus):
-                    pyautogui.hotkey('shift', 'tab')
-
-                winsound.Beep(300, 500)
+                    trade.speech_manager.set_speech_text('Canceled.')
+                    return
+            elif not gui_interactions.wait_for_key(gui_callbacks, argument):
                 return
         elif command == 'wait_for_period':
             time.sleep(float(argument))
@@ -993,35 +932,11 @@ def get_price_limit(trade, config):
             section, *region, text_type='decimal_numbers')
     return price_limit
 
-def initialize_speech_engine(trade):
-    if not trade.speech_engine:
-        import pyttsx3
-
-        trade.speech_engine = pyttsx3.init()
-        voices = trade.speech_engine.getProperty('voices')
-        trade.speech_engine.setProperty('voice', voices[1].id)
-
 def speak_text(trade, text):
-    initialize_speech_engine(trade)
-    trade.speech_engine.say(text)
-    trade.speech_engine.runAndWait()
-
-def speak_text_(speech_manager):
-    import pyttsx3
-
-    speech_engine = pyttsx3.init()
-    voices = speech_engine.getProperty('voices')
-    speech_engine.setProperty('voice', voices[1].id)
-
-    while speech_manager.can_speak():
-        text = speech_manager.get_speech_text()
-        if text:
-            print(f'speak_text: {text}')
-            speech_engine.say(text)
-            speech_engine.runAndWait()
-            speech_manager.set_speech_text('')
-
-        time.sleep(0.01)
+    if trade.speaking_process:
+        trade.speech_manager.set_speech_text(text)
+    else:
+        speech_synthesis.speak_directly(trade.speech_engine, text)
 
 if __name__ == '__main__':
     main()

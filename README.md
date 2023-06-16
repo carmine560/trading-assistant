@@ -131,9 +131,9 @@ ACTION = [
     ('speak_config', 'SECTION', 'OPTION'), # speak a configuration.
     # calculate CPU utilization for an interval and speak it.
     ('speak_cpu_utilization', 'INTERVAL'),
-    ('speak_string', 'STRING'),      # speak a string.
     # speak seconds until a specific time.
     ('speak_seconds_until_time', '%H:%M:%S'),
+    ('speak_text', 'STRING'),        # speak a string.
     # take a screenshot with the number of trades and symbol as the filename.
     ('take_screenshot',),
     ('wait_for_key', 'KEY'),         # wait for keyboard input.
@@ -363,7 +363,7 @@ open_close_long_position = [
     ('click', '477, 819'),           # click the Market Order button.
     ('press_key', 'tab, 3'),         # focus on the Buy Order button.
     # notify you of the readiness of a buy order.
-    ('speak_string', 'long'),
+    ('speak_text', 'long'),
     # back the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # wait for space input.

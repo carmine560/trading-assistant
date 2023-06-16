@@ -10,8 +10,8 @@ def is_running(process):
     else:
         return False
 
-def stop_listeners(process, mouse_listener, keyboard_listener,
-                   speech_manager, speak_text_process, manager):
+def stop_listeners(process, mouse_listener, keyboard_listener, manager,
+                   speech_manager, speak_text_process):
     import time
 
     while True:
@@ -22,7 +22,8 @@ def stop_listeners(process, mouse_listener, keyboard_listener,
                 mouse_listener.stop()
             if keyboard_listener:
                 keyboard_listener.stop()
-            if speech_manager and speak_text_process and manager:
+            if manager and speech_manager and speak_text_process:
+                # TODO
                 speech_manager.set_can_speak(False)
                 speak_text_process.join()
                 manager.shutdown()
