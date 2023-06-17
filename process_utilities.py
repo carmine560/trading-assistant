@@ -10,11 +10,12 @@ def is_running(process):
     else:
         return False
 
-def stop_listeners(process, mouse_listener, keyboard_listener, manager,
-                   speech_manager, speak_text_process):
+def stop_listeners(stop_listeners_event, process, mouse_listener,
+                   keyboard_listener, manager, speech_manager,
+                   speaking_process):
     import time
 
-    while True:
+    while not stop_listeners_event.is_set():
         if is_running(process):
             time.sleep(1)
         else:
@@ -22,9 +23,20 @@ def stop_listeners(process, mouse_listener, keyboard_listener, manager,
                 mouse_listener.stop()
             if keyboard_listener:
                 keyboard_listener.stop()
-            if manager and speech_manager and speak_text_process:
-                # TODO
+            if manager and speech_manager and speaking_process:
                 speech_manager.set_can_speak(False)
-                speak_text_process.join()
+                speaking_process.join()
                 manager.shutdown()
             break
+
+def force_stop_listeners(mouse_listener, keyboard_listener, manager,
+                         speech_manager, speaking_process,
+                         stop_listeners_thread):
+    if mouse_listener:
+        mouse_listener.stop()
+    if keyboard_listener:
+        keyboard_listener.stop()
+    if manager and speech_manager and speaking_process:
+        speech_manager.set_can_speak(False)
+        speaking_process.join()
+        manager.shutdown()

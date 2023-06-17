@@ -38,7 +38,6 @@ def start_speaking(speech_manager):
     while speech_manager.can_speak():
         text = speech_manager.get_speech_text()
         if text:
-            print(f'speak_text: {text}')
             speech_engine.say(text)
             speech_engine.runAndWait()
             speech_manager.set_speech_text('')

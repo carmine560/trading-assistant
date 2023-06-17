@@ -69,9 +69,7 @@ class Trade:
         self.symbol = ''
         self.share_size = 0
 
-        # TODO
-        self.previous_position = pyautogui.position()
-
+        self.mouse_listener = None
         self.keyboard_listener = None
         self.keyboard_listener_state = 0
         self.function_keys = (
@@ -85,6 +83,9 @@ class Trade:
         self.speech_engine = None
         self.speech_manager = None
         self.speaking_process = None
+
+        self.stop_listeners_event = None
+        self.stop_listeners_thread = None
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
@@ -103,10 +104,7 @@ class Trade:
                     action = ast.literal_eval(
                         config[self.process]['keymap']).get(key.name)
                     if action:
-                        gui_callbacks.moved_focus = 0
-                        # TODO
-                        self.previous_position = pyautogui.position()
-
+                        gui_callbacks.initialize_attributes()
                         execute_action_thread = threading.Thread(
                             target=execute_action,
                             args=(self, config, gui_callbacks,
@@ -280,15 +278,29 @@ def main():
     if args.l:
         if config.has_option(trade.process, 'keymap'):
             start_listeners(trade, config, gui_callbacks, manager,
-                            trade.speech_manager, process_utilities.is_running)
+                            trade.speech_manager)
         else:
             print(option, 'option does not exist')
             sys.exit(1)
     if args.a:
+        # TODO
+        if config.has_option(trade.process, 'keymap'):
+            start_listeners(trade, config, gui_callbacks, manager,
+                            trade.speech_manager)
+        else:
+            print(option, 'option does not exist')
+            sys.exit(1)
         if config.has_section(trade.action_section):
             execute_action(
                 trade, config, gui_callbacks,
                 ast.literal_eval(config[trade.action_section][args.a[0]]))
+            # TODO: wait the last command.
+            process_utilities.force_stop_listeners(
+                trade.mouse_listener, trade.keyboard_listener,
+                manager, trade.speech_manager, trade.speaking_process,
+                trade.stop_listeners_thread)
+            trade.stop_listeners_event.set()
+            trade.stop_listeners_thread.join()
         else:
             print(trade.action_section, 'section does not exist')
             sys.exit(1)
@@ -590,25 +602,26 @@ def start_scheduler(trade, config, gui_callbacks, process):
             for schedule in schedules:
                 scheduler.cancel(schedule)
 
-# TODO
-def start_listeners(trade, config, gui_callbacks, manager, speech_manager,
-                    is_running_function):
-    mouse_listener = mouse.Listener(on_click=trade.on_click)
-    mouse_listener.start()
+def start_listeners(trade, config, gui_callbacks, manager, speech_manager):
+    trade.mouse_listener = mouse.Listener(on_click=trade.on_click)
+    trade.mouse_listener.start()
 
     trade.keyboard_listener = keyboard.Listener(
         on_press=lambda key: trade.on_press(key, config, gui_callbacks))
     trade.keyboard_listener.start()
 
+    # TODO
     trade.speaking_process = Process(target=speech_synthesis.start_speaking,
                                      args=(speech_manager,))
     trade.speaking_process.start()
 
-    stop_listeners_thread = threading.Thread(
+    trade.stop_listeners_event = threading.Event()
+    trade.stop_listeners_thread = threading.Thread(
         target=process_utilities.stop_listeners,
-        args=(trade.process, mouse_listener, trade.keyboard_listener, manager,
-              speech_manager, trade.speaking_process))
-    stop_listeners_thread.start()
+        args=(trade.stop_listeners_event, trade.process, trade.mouse_listener,
+              trade.keyboard_listener, manager, speech_manager,
+              trade.speaking_process))
+    trade.stop_listeners_thread.start()
 
 def execute_action(trade, config, gui_callbacks, action):
     for index in range(len(action)):
@@ -619,7 +632,7 @@ def execute_action(trade, config, gui_callbacks, action):
             additional_argument = action[index][2]
 
         if command == 'back_to':
-            pyautogui.moveTo(trade.previous_position)
+            pyautogui.moveTo(gui_callbacks.previous_position)
         elif command == 'beep':
             import winsound
 
@@ -734,23 +747,19 @@ def execute_action(trade, config, gui_callbacks, action):
             image.save(os.path.join(config['General']['screenshot_directory'],
                                     base))
         elif command == 'wait_for_key':
-            if trade.keyboard_listener:
-                # TODO
-                trade.keyboard_listener_state = 1
-                if len(argument) == 1:
-                    trade.key_to_check = argument
-                else:
-                    trade.key_to_check = keyboard.Key[argument]
-                while trade.keyboard_listener_state == 1:
-                    time.sleep(0.001)
+            trade.keyboard_listener_state = 1
+            if len(argument) == 1:
+                trade.key_to_check = argument
+            else:
+                trade.key_to_check = keyboard.Key[argument]
+            while trade.keyboard_listener_state == 1:
+                time.sleep(0.001)
 
-                if not trade.should_continue:
-                    for _ in range(gui_callbacks.moved_focus):
-                        pyautogui.hotkey('shift', 'tab')
+            if not trade.should_continue:
+                for _ in range(gui_callbacks.moved_focus):
+                    pyautogui.hotkey('shift', 'tab')
 
-                    trade.speech_manager.set_speech_text('Canceled.')
-                    return
-            elif not gui_interactions.wait_for_key(gui_callbacks, argument):
+                trade.speech_manager.set_speech_text('Canceled.')
                 return
         elif command == 'wait_for_period':
             time.sleep(float(argument))

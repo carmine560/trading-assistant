@@ -13,6 +13,7 @@ class GuiCallbacks:
     def __init__(self, interactive_windows):
         self.interactive_windows = interactive_windows
         self.swapped = win32api.GetSystemMetrics(23)
+        self.previous_position = pyautogui.position()
         self.moved_focus = 0
 
         # enumerate_windows_on_click
@@ -25,6 +26,10 @@ class GuiCallbacks:
 
         # check_for_window
         self.exist = []
+
+    def initialize_attributes(self):
+        self.previous_position = pyautogui.position()
+        self.moved_focus = 0
 
     def enumerate_windows_on_click(self, x, y, button, pressed):
         if button == mouse.Button.middle and not pressed:
@@ -99,6 +104,7 @@ def show_hide_window(hwnd, title_regex):
             win32gui.ShowWindow(hwnd, 6)
         return
 
+# TODO: Trade.mouse_listener
 def show_hide_window_on_click(gui_callbacks, process, title_regex,
                               is_running_function, callback=show_hide_window):
     gui_callbacks.callback = callback
@@ -119,29 +125,13 @@ def show_window(hwnd, title_regex):
         win32gui.SetForegroundWindow(hwnd)
         return False
 
-def wait_for_key(gui_callbacks, key):
-    if len(key) == 1:
-        gui_callbacks.key = key
-    else:
-        gui_callbacks.key = keyboard.Key[key]
-    with keyboard.Listener(on_release=gui_callbacks.compare_keys_on_release) \
-         as listener:
-        listener.join()
-
-    if gui_callbacks.released:
-        return True
-    else:
-        for _ in range(gui_callbacks.moved_focus):
-            pyautogui.hotkey('shift', 'tab')
-        return False
-
 def wait_for_window(gui_callbacks, title_regex):
     while next((False for i in range(len(gui_callbacks.exist))
                 if gui_callbacks.exist[i][1] == title_regex), True):
         win32gui.EnumWindows(gui_callbacks.check_for_window, title_regex)
         time.sleep(0.001)
 
-# TODO
+# TODO: remove
 def check_process(is_running_function, process, mouse_listener,
                   keyboard_listener):
     while True:
