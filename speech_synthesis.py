@@ -1,3 +1,5 @@
+from multiprocessing import Process
+
 class SpeechManager:
     def __init__(self):
         self._can_speak = True
@@ -14,6 +16,11 @@ class SpeechManager:
 
     def set_speech_text(self, text):
         self._speech_text = text
+
+def start_speaking_process(speech_manager):
+    speaking_process = Process(target=start_speaking, args=(speech_manager,))
+    speaking_process.start()
+    return speaking_process
 
 def start_speaking(speech_manager):
     import time

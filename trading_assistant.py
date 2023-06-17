@@ -1,5 +1,4 @@
 from datetime import date
-from multiprocessing import Process
 from multiprocessing.managers import BaseManager
 import argparse
 import ast
@@ -266,12 +265,36 @@ def main():
     if args.d:
         save_market_data(trade, config)
     if args.s:
+        # # TODO
+        # if config.has_option(trade.process, 'keymap'):
+        #     start_listeners(trade, config, gui_callbacks, manager,
+        #                     trade.speech_manager)
+        # else:
+        #     print(option, 'option does not exist')
+        #     sys.exit(1)
         if config.has_section(trade.schedule_section):
+            trade.speaking_process = speech_synthesis.start_speaking_process(
+                trade.speech_manager)
+            # print(trade.speaking_process)
+
             # TODO
-            process = Process(
+            start_scheduler_thread = threading.Thread(
                 target=start_scheduler,
                 args=(trade, config, gui_callbacks, trade.process))
-            process.start()
+            start_scheduler_thread.start()
+            start_scheduler_thread.join()
+
+            # process = Process(
+            #     target=start_scheduler,
+            #     args=(trade, config, gui_callbacks, trade.process))
+            # process.start()
+
+            process_utilities.force_stop_listeners(
+                trade.mouse_listener, trade.keyboard_listener,
+                manager, trade.speech_manager, trade.speaking_process,
+                trade.stop_listeners_thread)
+            # trade.stop_listeners_event.set()
+            # trade.stop_listeners_thread.join()
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
@@ -609,10 +632,12 @@ def start_listeners(trade, config, gui_callbacks, manager, speech_manager):
         on_press=lambda key: trade.on_press(key, config, gui_callbacks))
     trade.keyboard_listener.start()
 
-    # TODO
-    trade.speaking_process = Process(target=speech_synthesis.start_speaking,
-                                     args=(speech_manager,))
-    trade.speaking_process.start()
+    # # TODO
+    # trade.speaking_process = Process(target=speech_synthesis.start_speaking,
+    #                                  args=(speech_manager,))
+    # trade.speaking_process.start()
+    trade.speaking_process = speech_synthesis.start_speaking_process(
+        speech_manager)
 
     trade.stop_listeners_event = threading.Event()
     trade.stop_listeners_thread = threading.Thread(
