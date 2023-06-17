@@ -1,3 +1,5 @@
+import time
+
 def is_running(process):
     import re
     import subprocess
@@ -13,8 +15,6 @@ def is_running(process):
 def stop_listeners(stop_listeners_event, process, mouse_listener,
                    keyboard_listener, manager, speech_manager,
                    speaking_process):
-    import time
-
     while not stop_listeners_event.is_set():
         if is_running(process):
             time.sleep(1)
@@ -37,6 +37,9 @@ def force_stop_listeners(mouse_listener, keyboard_listener, manager,
     if keyboard_listener:
         keyboard_listener.stop()
     if manager and speech_manager and speaking_process:
+        if speech_manager.get_speech_text():
+            time.sleep(0.01)
+
         speech_manager.set_can_speak(False)
         speaking_process.join()
         manager.shutdown()

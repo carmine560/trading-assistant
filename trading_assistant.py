@@ -294,7 +294,6 @@ def main():
             execute_action(
                 trade, config, gui_callbacks,
                 ast.literal_eval(config[trade.action_section][args.a[0]]))
-            # TODO: wait the last command.
             process_utilities.force_stop_listeners(
                 trade.mouse_listener, trade.keyboard_listener,
                 manager, trade.speech_manager, trade.speaking_process,
@@ -574,6 +573,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         else:
             return latest
 
+# TODO: speech
 def start_scheduler(trade, config, gui_callbacks, process):
     import sched
 
@@ -581,7 +581,6 @@ def start_scheduler(trade, config, gui_callbacks, process):
     schedules = []
 
     section = config[trade.schedule_section]
-    speech = False
     for option in section:
         schedule_time, action = ast.literal_eval(section[option])
         action = ast.literal_eval(config[trade.action_section][action])
@@ -712,12 +711,12 @@ def execute_action(trade, config, gui_callbacks, action):
                 else:
                     print(e)
         elif command == 'speak_config':
-            speak_text(trade, config[argument][additional_argument])
+            trade.speech_manager.set_speech_text(
+                config[argument][additional_argument])
         elif command == 'speak_cpu_utilization':
             import psutil
 
-            speak_text(
-                trade,
+            trade.speech_manager.set_speech_text(
                 str(round(psutil.cpu_percent(interval=float(argument)))) + '%')
         elif command == 'speak_seconds_until_time':
             import math
@@ -725,10 +724,10 @@ def execute_action(trade, config, gui_callbacks, action):
             event_time = time.strptime(time.strftime('%Y-%m-%d ') + argument,
                                        '%Y-%m-%d %H:%M:%S')
             event_time = time.mktime(event_time)
-            speak_text(trade,
-                       str(math.ceil(event_time - time.time())) + ' seconds')
+            trade.speech_manager.set_speech_text(
+                str(math.ceil(event_time - time.time())) + ' seconds')
         elif command == 'speak_text':
-            speak_text(trade, argument)
+            trade.speech_manager.set_speech_text(argument)
         elif command == 'take_screenshot':
             from PIL import ImageGrab
 
@@ -940,12 +939,6 @@ def get_price_limit(trade, config):
         price_limit = text_recognition.recognize_text(
             section, *region, text_type='decimal_numbers')
     return price_limit
-
-def speak_text(trade, text):
-    if trade.speaking_process:
-        trade.speech_manager.set_speech_text(text)
-    else:
-        speech_synthesis.speak_directly(trade.speech_engine, text)
 
 if __name__ == '__main__':
     main()

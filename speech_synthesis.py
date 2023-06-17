@@ -15,25 +15,14 @@ class SpeechManager:
     def set_speech_text(self, text):
         self._speech_text = text
 
-def initialize_speech_engine():
+def start_speaking(speech_manager):
+    import time
+
     import pyttsx3
 
     speech_engine = pyttsx3.init()
     voices = speech_engine.getProperty('voices')
     speech_engine.setProperty('voice', voices[1].id)
-    return speech_engine
-
-def speak_directly(speech_engine, text):
-    if not speech_engine:
-        speech_engine = initialize_speech_engine()
-
-    speech_engine.say(text)
-    speech_engine.runAndWait()
-
-def start_speaking(speech_manager):
-    import time
-
-    speech_engine = initialize_speech_engine()
 
     while speech_manager.can_speak():
         text = speech_manager.get_speech_text()
