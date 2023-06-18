@@ -86,15 +86,23 @@ class Trade:
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
 
+        # TODO
+        self.callback = None
+        self.extra = ''
+
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
             self.symbol = matched.group(1)
             return
 
-    # TODO
-    def on_click(self, x, y, button, pressed):
-        pass
+    def on_click(self, x, y, button, pressed, config, gui_callbacks):
+        if gui_callbacks.is_interactive_window():
+            if button == mouse.Button.middle and not pressed:
+                # TODO
+                self.callback = gui_interactions.show_hide_window
+                self.extra = '登録銘柄'
+                win32gui.EnumWindows(self.callback, self.extra)
 
     def on_press(self, key, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
@@ -262,34 +270,19 @@ def main():
         save_market_data(trade, config)
     if args.s and process_utilities.is_running(trade.process):
         if config.has_section(trade.schedule_section):
-
             if not (args.l or args.a):
-                trade.speaking_process = speech_synthesis.start_speaking_process(
-                    trade.speech_manager)
-
-            # trade.speaking_process = speech_synthesis.start_speaking_process(
-            #     trade.speech_manager)
+                trade.speaking_process = (
+                    speech_synthesis.start_speaking_process(
+                        trade.speech_manager))
 
             start_scheduler_thread = threading.Thread(
                 target=start_scheduler,
                 args=(trade, config, gui_callbacks, trade.process))
             start_scheduler_thread.start()
 
-            # # TODO
-            # print(args.a)
-            # if not args.a:
-            #     print('start_scheduler_thread.join')
-            #     start_scheduler_thread.join()
-
-            # start_scheduler_thread.join()
-
             if not (args.l or args.a):
                 speech_synthesis.stop_speaking_process(
                     manager, trade.speech_manager, trade.speaking_process)
-
-            # speech_synthesis.stop_speaking_process(
-            #     manager, trade.speech_manager, trade.speaking_process)
-
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
@@ -300,16 +293,9 @@ def main():
         else:
             print(option, 'option does not exist')
             sys.exit(1)
-    # if args.a and process_utilities.is_running(trade.process):
     if args.a:
-        # TODO
-        # if not process_utilities.is_running(trade.process):
-        #     return
         is_running = process_utilities.is_running(trade.process)
-        # if not is_running:
-        if not is_running or not args.l:
-        # if not is_running and not args.l:
-        # if not args.l:
+        if not (is_running and args.l):
             if config.has_option(trade.process, 'keymap'):
                 start_listeners(trade, config, gui_callbacks, manager,
                                 trade.speech_manager, is_persistent=True)
@@ -317,35 +303,18 @@ def main():
                 print(option, 'option does not exist')
                 sys.exit(1)
         if config.has_section(trade.action_section):
-            # time.sleep(2)
-            # print(trade.wait_listeners_thread)
-
             execute_action(
                 trade, config, gui_callbacks,
                 ast.literal_eval(config[trade.action_section][args.a[0]]))
-
-            # try:
-            #     execute_action(
-            #         trade, config, gui_callbacks,
-            #         ast.literal_eval(config[trade.action_section][args.a[0]]))
-            # except Exception as e:
-            #     print(e)
         else:
             print(trade.action_section, 'section does not exist')
             sys.exit(1)
-        # if not is_running:
-        if not is_running or not args.l:
-        # if not is_running and not args.l:
-        # if not args.l:
-
-            # print('execute_action')
-            # time.sleep(10)
+        if not (is_running and args.l):
             process_utilities.stop_listeners(
                 trade.mouse_listener, trade.keyboard_listener,
                 manager, trade.speech_manager, trade.speaking_process)
             trade.stop_listeners_event.set()
             trade.wait_listeners_thread.join()
-
     if args.T:
         if args.T[0] == trade.script_base \
            and os.path.exists(trade.startup_script):
@@ -425,8 +394,8 @@ def configure(trade, interpolation=True):
         'image_magnification': '2',
         'binarization_threshold': '128'}
     config['HYPERSBI2 Startup Script'] = {
-        'pre_start_options': '-rd',
-        'post_start_options': '-s',
+        'pre_start_options': '',
+        'post_start_options': '',
         'running_options': ''}
     config['HYPERSBI2 Actions'] = {}
     config['HYPERSBI2 Schedules'] = {}
@@ -636,7 +605,6 @@ def start_scheduler(trade, config, gui_callbacks, process):
             schedules.append(schedule)
 
     while scheduler.queue:
-        print(scheduler.queue)
         if process_utilities.is_running(process):
             scheduler.run(False)
             time.sleep(1)
@@ -646,18 +614,15 @@ def start_scheduler(trade, config, gui_callbacks, process):
 
 def start_listeners(trade, config, gui_callbacks, manager, speech_manager,
                     is_persistent=False):
-    trade.mouse_listener = mouse.Listener(on_click=trade.on_click)
+    trade.mouse_listener = mouse.Listener(
+        on_click=lambda x, y, button, pressed:
+        trade.on_click(x, y, button, pressed, config, gui_callbacks))
     trade.mouse_listener.start()
 
     trade.keyboard_listener = keyboard.Listener(
         on_press=lambda key: trade.on_press(key, config, gui_callbacks))
     trade.keyboard_listener.start()
 
-    # # TODO
-    # from multiprocessing import Process
-    # trade.speaking_process = Process(target=speech_synthesis.start_speaking,
-    #                                  args=(speech_manager,))
-    # trade.speaking_process.start()
     trade.speaking_process = speech_synthesis.start_speaking_process(
         speech_manager)
 
@@ -743,10 +708,6 @@ def execute_action(trade, config, gui_callbacks, action):
             pyautogui.press(key, presses=presses)
             if key == 'tab':
                 gui_callbacks.moved_focus = presses
-        elif command == 'show_hide_window_on_click':
-            gui_interactions.show_hide_window_on_click(
-                gui_callbacks, trade.process, argument,
-                process_utilities.is_running)
         elif command == 'show_hide_window':
             win32gui.EnumWindows(gui_interactions.show_hide_window, argument)
         elif command == 'show_window':

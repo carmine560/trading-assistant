@@ -105,46 +105,44 @@ commands are:
 ``` ini
 [HYPERSBI2 Actions]
 ACTION = [
-    # back the cursor to the previous position.
+    # Back the cursor to the previous position.
     ('back_to',),
-    ('beep', 'FREQUENCY, DURATION'), # beep.
-    ('calculate_share_size', 'POSITION'), # calculate a share size.
-    ('click', 'X, Y'),               # click.
-    # locate a widget image in a region and click on it, assuming that it is in
-    # the same directory as the configuration file.
+    ('beep', 'FREQUENCY, DURATION'), # Beep.
+    ('calculate_share_size', 'POSITION'), # Calculate a share size.
+    ('click', 'X, Y'),               # Click.
+    # Locate a widget image in a region and click on it, assuming that it is in
+    # The same directory as the configuration file.
     ('click_widget', 'IMAGE', 'X, Y, WIDTH, HEIGHT'),
-    # copy symbols from the current market data to the clipboard.
+    # Copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
-    # recognize a numeric column and copy symbols to the clipboard.
+    # Recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT'),
-    ('count_trades',),               # count the number of trades for the day.
-    ('get_symbol', 'TITLE_REGEX'),   # get the symbol from a window title.
-    ('hide_parent_window', 'TITLE_REGEX'), # hide a parent window.
-    ('hide_window', 'TITLE_REGEX'),  # hide a window.
-    ('move_to', 'X, Y'),             # move the cursor to a position.
-    ('press_hotkeys', 'KEY[, ...]'), # press hotkeys.
-    ('press_key', 'KEY[, PRESSES]'), # press a key.
-    ('show_hide_window', 'TITLE_REGEX'), # show or hide a window.
-    # show or hide a window on the middle click.
-    ('show_hide_window_on_click', 'TITLE_REGEX')
-    ('show_window', 'TITLE_REGEX'),  # show a window.
-    ('speak_config', 'SECTION', 'OPTION'), # speak a configuration.
-    # calculate CPU utilization for an interval and speak it.
+    ('count_trades',),               # Count the number of trades for the day.
+    ('get_symbol', 'TITLE_REGEX'),   # Get the symbol from a window title.
+    ('hide_parent_window', 'TITLE_REGEX'), # Hide a parent window.
+    ('hide_window', 'TITLE_REGEX'),  # Hide a window.
+    ('move_to', 'X, Y'),             # Move the cursor to a position.
+    ('press_hotkeys', 'KEY[, ...]'), # Press hotkeys.
+    ('press_key', 'KEY[, PRESSES]'), # Press a key.
+    ('show_hide_window', 'TITLE_REGEX'), # Show or hide a window.
+    ('show_window', 'TITLE_REGEX'),  # Show a window.
+    ('speak_config', 'SECTION', 'OPTION'), # Speak a configuration.
+    # Calculate CPU utilization for an interval and speak it.
     ('speak_cpu_utilization', 'INTERVAL'),
-    # speak seconds until a specific time.
+    # Speak seconds until a specific time.
     ('speak_seconds_until_time', '%H:%M:%S'),
-    ('speak_text', 'TEXT'),          # speak text.
-    # take a screenshot with the number of trades and symbol as the filename.
+    ('speak_text', 'TEXT'),          # Speak text.
+    # Take a screenshot with the number of trades and symbol as the filename.
     ('take_screenshot',),
-    ('wait_for_key', 'KEY'),         # wait for keyboard input.
-    ('wait_for_period', 'PERIOD'),   # wait for a period.
-    # wait for prices to be displayed in a region.
+    ('wait_for_key', 'KEY'),         # Wait for keyboard input.
+    ('wait_for_period', 'PERIOD'),   # Wait for a period.
+    # Wait for prices to be displayed in a region.
     ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'),
-    ('wait_for_window', 'TITLE_REGEX'), # wait for a window.
-    ('write_share_size',),           # write the calculated share size.
+    ('wait_for_window', 'TITLE_REGEX'), # Wait for a window.
+    ('write_share_size',),           # Write the calculated share size.
 
     # Boolean Command
-    # execute an ACTION if recording a screencast is a BOOL value.
+    # Execute an ACTION if recording a screencast is a BOOL value.
     ('is_recording', 'BOOL', ACTION)]
 ```
 
@@ -219,19 +217,6 @@ py.exe trading_assistant.py -a action
 
 ## Action Examples ##
 
-### Show or Hide Watchlists Window on Middle Click ###
-
-The following `show_hide_watchlists_on_click` action shows or hides the
-Watchlists window on the middle click while Hyper SBI 2 is running.
-
-> **Note** This example contains no coordinates or images and can be tested
-> immediately in many environments.
-
-``` ini
-[HYPERSBI2 Actions]
-show_hide_watchlists_on_click = [('show_hide_window_on_click', '登録銘柄')]
-```
-
 ### Login ###
 
 The following `login` action waits for the Login window to show and clicks its
@@ -245,16 +230,16 @@ button.
 ``` ini
 [HYPERSBI2 Actions]
 login = [
-    # locate the Login button in the region, and click it.
+    # Locate the Login button in the region, and click it.
     ('click_widget', 'login.png', '759, 320, 402, 381'),
-    # back the cursor to the previous position.
+    # Back the cursor to the previous position.
     ('back_to',),
-    ('wait_for_window', 'HYPER SBI 2'), # wait for the Toolbar.
-    ('wait_for_period', '1'),        # wait for 1 second.
-    ('hide_parent_window', 'HYPER SBI 2'), # hide the Toolbar.
-    ('wait_for_window', '登録銘柄'), # wait for the Watchlists window.
-    ('wait_for_period', '1'),        # wait for 1 second.
-    ('hide_window', '登録銘柄')]     # hide the Watchlists window.
+    ('wait_for_window', 'HYPER SBI 2'), # Wait for the Toolbar.
+    ('wait_for_period', '1'),        # Wait for 1 second.
+    ('hide_parent_window', 'HYPER SBI 2'), # Hide the Toolbar.
+    ('wait_for_window', '登録銘柄'), # Wait for the Watchlists window.
+    ('wait_for_period', '1'),        # Wait for 1 second.
+    ('hide_window', '登録銘柄')]     # Hide the Watchlists window.
 ```
 
 ### Replace Watchlist with Market Data on Website ###
@@ -267,31 +252,31 @@ Watchlists window with new ones scraped from the current market data above.
 ``` ini
 [HYPERSBI2 Actions]
 watch_active_stocks = [
-    # copy symbols from the current market data to the clipboard.
+    # Copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
-    ('show_window', '登録銘柄'),     # show the Watchlists window.
-    ('click', '44, 95'),             # select the first watchlist.
-    ('click', '1612, 41'),           # select the List view.
-    ('press_key', 'tab, 3'),         # focus on the stock list pane.
-    ('press_hotkeys', 'ctrl, a'),    # select all stocks.
-    ('press_key', 'del'),            # delete them.
-    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
-    ('press_key', 'enter'),          # confirm the registration.
-    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('click', '1676, 41'),           # select the Tile view.
+    ('show_window', '登録銘柄'),     # Show the Watchlists window.
+    ('click', '44, 95'),             # Select the first watchlist.
+    ('click', '1612, 41'),           # Select the List view.
+    ('press_key', 'tab, 3'),         # Focus on the stock list pane.
+    ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
+    ('press_key', 'del'),            # Delete them.
+    ('wait_for_period', '0.6'),      # Wait for 0.6 seconds.
+    ('press_hotkeys', 'ctrl, v'),    # Paste the symbols copied above.
+    ('press_key', 'enter'),          # Confirm the registration.
+    ('wait_for_period', '0.6'),      # Wait for 0.6 seconds.
+    ('click', '1676, 41'),           # Select the Tile view.
 
     # Optional Commands
-    ('press_key', 'tab, 6'),         # focus on the number of columns input.
-    ('press_key', '6'),              # enter 6.
-    ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
-    ('press_hotkeys', 'alt, down'),  # open the menu.
-    ('press_key', 'home'),           # move to the first item.
-    ('press_key', 'down, 2'),        # select the 5-minute time frame.
-    ('press_key', 'enter'),          # close the menu.
-    ('click', '420, 90'),            # select the 1-day date range.
-    ('click', '508, 68'),            # click the Chart button.
-    # back the cursor to the previous position.
+    ('press_key', 'tab, 6'),         # Focus on the number of columns input.
+    ('press_key', '6'),              # Enter 6.
+    ('press_key', 'tab, 3'),         # Focus on the time frame drop-down menu.
+    ('press_hotkeys', 'alt, down'),  # Open the menu.
+    ('press_key', 'home'),           # Move to the first item.
+    ('press_key', 'down, 2'),        # Select the 5-minute time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '420, 90'),            # Select the 1-day date range.
+    ('click', '508, 68'),            # Click the Chart button.
+    # Back the cursor to the previous position.
     ('back_to',)]
 ```
 
@@ -306,38 +291,38 @@ window with new ones recognized in the Rankings window.
 ``` ini
 [HYPERSBI2 Actions]
 watch_tick_count = [
-    ('show_window', '登録銘柄'),     # show the Watchlists window.
-    ('press_hotkeys', 'ctrl, 7'),    # open the Rankings window.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
-    ('click', '38, 39'),             # select the Rankings tab.
-    ('click', '88, 338'),            # select the Tick Count ranking.
-    ('click', '315, 63'),            # click the Prime Market button.
-    ('wait_for_period', '0.2'),      # wait for 0.2 seconds.
-    # recognize a numeric column and copy symbols to the clipboard.
+    ('show_window', '登録銘柄'),     # Show the Watchlists window.
+    ('press_hotkeys', 'ctrl, 7'),    # Open the Rankings window.
+    ('wait_for_period', '0.2'),      # Wait for 0.2 seconds.
+    ('click', '38, 39'),             # Select the Rankings tab.
+    ('click', '88, 338'),            # Select the Tick Count ranking.
+    ('click', '315, 63'),            # Click the Prime Market button.
+    ('wait_for_period', '0.2'),      # Wait for 0.2 seconds.
+    # Recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
-    ('press_hotkeys', 'alt, f4'),    # close the window.
-    ('click', '44, 120'),            # select the second watchlist.
-    ('click', '1612, 41'),           # select the List view.
-    ('press_key', 'tab, 3'),         # focus on the stock list pane.
-    ('press_hotkeys', 'ctrl, a'),    # select all stocks.
-    ('press_key', 'del'),            # delete them.
-    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('press_hotkeys', 'ctrl, v'),    # paste the symbols copied above.
-    ('press_key', 'enter'),          # confirm the registration.
-    ('wait_for_period', '0.6'),      # wait for 0.6 seconds.
-    ('click', '1676, 41'),           # select the Tile view.
+    ('press_hotkeys', 'alt, f4'),    # Close the window.
+    ('click', '44, 120'),            # Select the second watchlist.
+    ('click', '1612, 41'),           # Select the List view.
+    ('press_key', 'tab, 3'),         # Focus on the stock list pane.
+    ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
+    ('press_key', 'del'),            # Delete them.
+    ('wait_for_period', '0.6'),      # Wait for 0.6 seconds.
+    ('press_hotkeys', 'ctrl, v'),    # Paste the symbols copied above.
+    ('press_key', 'enter'),          # Confirm the registration.
+    ('wait_for_period', '0.6'),      # Wait for 0.6 seconds.
+    ('click', '1676, 41'),           # Select the Tile view.
 
     # Optional Commands
-    ('press_key', 'tab, 6'),         # focus on the number of columns input.
-    ('press_key', '6'),              # enter 6.
-    ('press_key', 'tab, 3'),         # focus on the time frame drop-down menu.
-    ('press_hotkeys', 'alt, down'),  # open the menu.
-    ('press_key', 'home'),           # move to the first item.
-    ('press_key', 'down, 2'),        # select the 5-minute time frame.
-    ('press_key', 'enter'),          # close the menu.
-    ('click', '420, 90'),            # select the 1-day date range.
-    ('click', '508, 68'),            # click the Chart button.
-    # back the cursor to the previous position.
+    ('press_key', 'tab, 6'),         # Focus on the number of columns input.
+    ('press_key', '6'),              # Enter 6.
+    ('press_key', 'tab, 3'),         # Focus on the time frame drop-down menu.
+    ('press_hotkeys', 'alt, down'),  # Open the menu.
+    ('press_key', 'home'),           # Move to the first item.
+    ('press_key', 'down, 2'),        # Select the 5-minute time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '420, 90'),            # Select the 1-day date range.
+    ('click', '508, 68'),            # Click the Chart button.
+    # Back the cursor to the previous position.
     ('back_to',)]
 ```
 
@@ -351,35 +336,35 @@ prepares a sell order for repayment.
 [HYPERSBI2 Actions]
 open_close_long_position = [
     # Open Long Position
-    ('show_window', '個別チャート\s.*\((\d{4})\)'), # show the Chart window.
-    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # show the Summary window.
-    ('click', '208, 726'),           # select the New Order tab.
-    ('click', '541, 797'),           # focus on the Share Size text box.
-    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    # get the symbol from the Summary window.
+    ('show_window', '個別チャート\s.*\((\d{4})\)'), # Show the Chart window.
+    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # Show the Summary window.
+    ('click', '208, 726'),           # Select the New Order tab.
+    ('click', '541, 797'),           # Focus on the Share Size text box.
+    ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
+    # Get the symbol from the Summary window.
     ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
-    ('calculate_share_size', 'long'), # calculate the share size.
-    ('write_share_size',),           # write the calculated share size.
-    ('click', '477, 819'),           # click the Market Order button.
-    ('press_key', 'tab, 3'),         # focus on the Buy Order button.
-    # notify you of the readiness of a buy order.
+    ('calculate_share_size', 'long'), # Calculate the share size.
+    ('write_share_size',),           # Write the calculated share size.
+    ('click', '477, 819'),           # Click the Market Order button.
+    ('press_key', 'tab, 3'),         # Focus on the Buy Order button.
+    # Notify you of the readiness of a buy order.
     ('speak_text', 'Long.'),
-    # back the cursor to the previous position.
+    # Back the cursor to the previous position.
     ('back_to',),
-    ('wait_for_key', 'space'),       # wait for space input.
-    ('wait_for_prices', '201, 956, 470, 20, 0'), # wait for the execution.
+    ('wait_for_key', 'space'),       # Wait for space input.
+    ('wait_for_prices', '201, 956, 470, 20, 0'), # Wait for the execution.
 
     # Close Long Position
-    ('click', '292, 726'),           # select the Repayment tab.
-    ('click', '605, 838'),           # focus on the Share Size text box.
-    ('press_hotkeys', 'ctrl, a'),    # select an existing value.
-    ('write_share_size',),           # write the calculated share size.
-    ('click', '448, 935'),           # click the Market Order button.
-    ('press_key', 'tab, 5'),         # focus on the Sell Order button.
-    ('count_trades',),               # count the number of trades for the day.
-    # speak the number above and notify you of the readiness of a sell order.
+    ('click', '292, 726'),           # Select the Repayment tab.
+    ('click', '605, 838'),           # Focus on the Share Size text box.
+    ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
+    ('write_share_size',),           # Write the calculated share size.
+    ('click', '448, 935'),           # Click the Market Order button.
+    ('press_key', 'tab, 5'),         # Focus on the Sell Order button.
+    ('count_trades',),               # Count the number of trades for the day.
+    # Speak the number above and notify you of the readiness of a sell order.
     ('speak_config', 'Variables', 'number_of_trades'),
-    # back the cursor to the previous position.
+    # Back the cursor to the previous position.
     ('back_to',)]
 ```
 
@@ -391,18 +376,18 @@ and post-startup and during running.
 ``` ini
 [HYPERSBI2 Actions]
 minimize_all_windows = [
-    ('press_hotkeys', 'win, m')]     # minimize all windows.
+    ('press_hotkeys', 'win, m')]     # Minimize all windows.
 show_hide_watchlists = [
-    ('show_hide_window', '登録銘柄')] # show or hide the Watchlists window.
+    ('show_hide_window', '登録銘柄')] # Show or hide the Watchlists window.
 
 [HYPERSBI2 Startup Script]
-# save customer margin ratios and the previous market data and execute the
+# Save customer margin ratios and the previous market data and execute the
 # minimize_all_windows action above.
 pre_start_options = -rda minimize_all_windows
-# execute the login action mentioned in the previous section, then execute the
-# show_hide_watchlists_on_click action and start the scheduler.
+# Start the scheduler, mouse and keyboard listeners, and execute the login
+# action mentioned in the previous section.
 post_start_options = -sla login
-# execute the show_hide_window action above.
+# Execute the show_hide_window action above.
 running_options = -a show_hide_watchlists
 ```
 
@@ -416,16 +401,16 @@ screencast using Nvidia ShadowPlay.
 ``` ini
 [HYPERSBI2 Actions]
 start_manual_recording = [
-    # start a new recording if one is not already in progress.
+    # Start a new recording if one is not already in progress.
     ('is_recording', 'False', [('press_hotkeys', 'alt, f9')])]
 stop_manual_recording = [
-    # stop a recording if one is currently in progress.
+    # Stop a recording if one is currently in progress.
     ('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]
 
 [HYPERSBI2 Schedules]
-# trigger the start_manual_recording action at 08:50:00.
+# Trigger the start_manual_recording action at 08:50:00.
 start_new_manual_recording = ('08:50:00', 'start_manual_recording')
-# trigger the stop_manual_recording action at 10:00:00.
+# Trigger the stop_manual_recording action at 10:00:00.
 stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
 ```
 
@@ -436,11 +421,11 @@ The following action and schedule calculate CPU utilization and speak it.
 ``` ini
 [HYPERSBI2 Actions]
 speak_cpu_utilization = [
-    # calculate CPU utilization for 1 second and speak it.
+    # Calculate CPU utilization for 1 second and speak it.
     ('speak_cpu_utilization', '1')]
 
 [HYPERSBI2 Schedules]
-# trigger the speak_cpu_utilization action at 08:50:10.
+# Trigger the speak_cpu_utilization action at 08:50:10.
 speak_cpu_utilization = ('08:50:10', 'speak_cpu_utilization')
 ```
 
@@ -451,13 +436,13 @@ The following action and schedules speak the number of seconds until the open.
 ``` ini
 [HYPERSBI2 Actions]
 speak_seconds_until_open = [
-    # speak seconds until the open.
+    # Speak seconds until the open.
     ('speak_seconds_until_time', '${Market Data:opening_time}')]
 
 [HYPERSBI2 Schedules]
-# trigger the speak_seconds_until_open action at 08:59:00.
+# Trigger the speak_seconds_until_open action at 08:59:00.
 speak_60_seconds_until_open = ('08:59:00', 'speak_seconds_until_open')
-# trigger the speak_seconds_until_open action at 08:59:30.
+# Trigger the speak_seconds_until_open action at 08:59:30.
 speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 ```
 
