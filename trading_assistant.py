@@ -84,7 +84,7 @@ class Trade:
         self.speaking_process = None
 
         self.stop_listeners_event = None
-        self.stop_listeners_thread = None
+        self.wait_listeners_thread = None
 
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
@@ -120,8 +120,6 @@ class Trade:
                     self.keyboard_listener_state = 0
 
 def main():
-    execute_action_flag = '-a'
-
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     parser.add_argument(
@@ -141,7 +139,7 @@ def main():
         '-l', action='store_true',
         help='start the mouse and keyboard listeners')
     parser.add_argument(
-        execute_action_flag, metavar='ACTION', nargs=1,
+        '-a', metavar='ACTION', nargs=1,
         help='execute an action')
     group.add_argument(
         '-I', action='store_true',
@@ -202,9 +200,7 @@ def main():
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the target_path argument.
                 file_utilities.create_shortcut(
-                    args.A[0], 'py.exe',
-                    '"' + __file__ + '" ' + execute_action_flag + ' '
-                    + args.A[0],
+                    args.A[0], 'py.exe', f'"{__file__}" -a {args.A[0]}',
                     program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
             else:
@@ -265,36 +261,22 @@ def main():
     if args.d:
         save_market_data(trade, config)
     if args.s:
-        # # TODO
-        # if config.has_option(trade.process, 'keymap'):
-        #     start_listeners(trade, config, gui_callbacks, manager,
-        #                     trade.speech_manager)
-        # else:
-        #     print(option, 'option does not exist')
-        #     sys.exit(1)
         if config.has_section(trade.schedule_section):
-            trade.speaking_process = speech_synthesis.start_speaking_process(
-                trade.speech_manager)
-            # print(trade.speaking_process)
+            if not (args.l or args.a):
+                trade.speaking_process = speech_synthesis.start_speaking_process(
+                    trade.speech_manager)
 
-            # TODO
             start_scheduler_thread = threading.Thread(
                 target=start_scheduler,
                 args=(trade, config, gui_callbacks, trade.process))
             start_scheduler_thread.start()
-            start_scheduler_thread.join()
+            # TODO
+            if not args.a:
+                start_scheduler_thread.join()
 
-            # process = Process(
-            #     target=start_scheduler,
-            #     args=(trade, config, gui_callbacks, trade.process))
-            # process.start()
-
-            process_utilities.force_stop_listeners(
-                trade.mouse_listener, trade.keyboard_listener,
-                manager, trade.speech_manager, trade.speaking_process,
-                trade.stop_listeners_thread)
-            # trade.stop_listeners_event.set()
-            # trade.stop_listeners_thread.join()
+            if not (args.l or args.a):
+                speech_synthesis.stop_speaking_process(
+                    manager, trade.speech_manager, trade.speaking_process)
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
@@ -305,24 +287,40 @@ def main():
         else:
             print(option, 'option does not exist')
             sys.exit(1)
+    # if args.a and process_utilities.is_running(trade.process):
     if args.a:
         # TODO
+        # if not process_utilities.is_running(trade.process):
+        #     return
+
         if config.has_option(trade.process, 'keymap'):
             start_listeners(trade, config, gui_callbacks, manager,
-                            trade.speech_manager)
+                            trade.speech_manager, is_persistent=True)
         else:
             print(option, 'option does not exist')
             sys.exit(1)
         if config.has_section(trade.action_section):
+            # time.sleep(2)
+            # print(trade.wait_listeners_thread)
+
             execute_action(
                 trade, config, gui_callbacks,
                 ast.literal_eval(config[trade.action_section][args.a[0]]))
-            process_utilities.force_stop_listeners(
+
+            # try:
+            #     execute_action(
+            #         trade, config, gui_callbacks,
+            #         ast.literal_eval(config[trade.action_section][args.a[0]]))
+            # except Exception as e:
+            #     print(e)
+
+            # print('execute_action')
+            # time.sleep(10)
+            process_utilities.stop_listeners(
                 trade.mouse_listener, trade.keyboard_listener,
-                manager, trade.speech_manager, trade.speaking_process,
-                trade.stop_listeners_thread)
+                manager, trade.speech_manager, trade.speaking_process)
             trade.stop_listeners_event.set()
-            trade.stop_listeners_thread.join()
+            trade.wait_listeners_thread.join()
         else:
             print(trade.action_section, 'section does not exist')
             sys.exit(1)
@@ -596,7 +594,6 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         else:
             return latest
 
-# TODO: speech
 def start_scheduler(trade, config, gui_callbacks, process):
     import sched
 
@@ -624,7 +621,8 @@ def start_scheduler(trade, config, gui_callbacks, process):
             for schedule in schedules:
                 scheduler.cancel(schedule)
 
-def start_listeners(trade, config, gui_callbacks, manager, speech_manager):
+def start_listeners(trade, config, gui_callbacks, manager, speech_manager,
+                    is_persistent=False):
     trade.mouse_listener = mouse.Listener(on_click=trade.on_click)
     trade.mouse_listener.start()
 
@@ -633,6 +631,7 @@ def start_listeners(trade, config, gui_callbacks, manager, speech_manager):
     trade.keyboard_listener.start()
 
     # # TODO
+    # from multiprocessing import Process
     # trade.speaking_process = Process(target=speech_synthesis.start_speaking,
     #                                  args=(speech_manager,))
     # trade.speaking_process.start()
@@ -640,12 +639,12 @@ def start_listeners(trade, config, gui_callbacks, manager, speech_manager):
         speech_manager)
 
     trade.stop_listeners_event = threading.Event()
-    trade.stop_listeners_thread = threading.Thread(
-        target=process_utilities.stop_listeners,
+    trade.wait_listeners_thread = threading.Thread(
+        target=process_utilities.wait_listeners,
         args=(trade.stop_listeners_event, trade.process, trade.mouse_listener,
               trade.keyboard_listener, manager, speech_manager,
-              trade.speaking_process))
-    trade.stop_listeners_thread.start()
+              trade.speaking_process, is_persistent))
+    trade.wait_listeners_thread.start()
 
 def execute_action(trade, config, gui_callbacks, action):
     for index in range(len(action)):

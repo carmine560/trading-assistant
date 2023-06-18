@@ -401,7 +401,7 @@ show_hide_watchlists = [
 pre_start_options = -rda minimize_all_windows
 # execute the login action mentioned in the previous section, then execute the
 # show_hide_watchlists_on_click action and start the scheduler.
-post_start_options = -a login, -sa show_hide_watchlists_on_click
+post_start_options = -sla login
 # execute the show_hide_window action above.
 running_options = -a show_hide_watchlists
 ```
