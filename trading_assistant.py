@@ -260,27 +260,40 @@ def main():
             sys.exit(1)
     if args.d:
         save_market_data(trade, config)
-    if args.s:
+    if args.s and process_utilities.is_running(trade.process):
         if config.has_section(trade.schedule_section):
+
             if not (args.l or args.a):
                 trade.speaking_process = speech_synthesis.start_speaking_process(
                     trade.speech_manager)
+
+            # trade.speaking_process = speech_synthesis.start_speaking_process(
+            #     trade.speech_manager)
 
             start_scheduler_thread = threading.Thread(
                 target=start_scheduler,
                 args=(trade, config, gui_callbacks, trade.process))
             start_scheduler_thread.start()
-            # TODO
-            if not args.a:
-                start_scheduler_thread.join()
+
+            # # TODO
+            # print(args.a)
+            # if not args.a:
+            #     print('start_scheduler_thread.join')
+            #     start_scheduler_thread.join()
+
+            # start_scheduler_thread.join()
 
             if not (args.l or args.a):
                 speech_synthesis.stop_speaking_process(
                     manager, trade.speech_manager, trade.speaking_process)
+
+            # speech_synthesis.stop_speaking_process(
+            #     manager, trade.speech_manager, trade.speaking_process)
+
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
-    if args.l:
+    if args.l and process_utilities.is_running(trade.process):
         if config.has_option(trade.process, 'keymap'):
             start_listeners(trade, config, gui_callbacks, manager,
                             trade.speech_manager)
@@ -292,13 +305,17 @@ def main():
         # TODO
         # if not process_utilities.is_running(trade.process):
         #     return
-
-        if config.has_option(trade.process, 'keymap'):
-            start_listeners(trade, config, gui_callbacks, manager,
-                            trade.speech_manager, is_persistent=True)
-        else:
-            print(option, 'option does not exist')
-            sys.exit(1)
+        is_running = process_utilities.is_running(trade.process)
+        # if not is_running:
+        if not is_running or not args.l:
+        # if not is_running and not args.l:
+        # if not args.l:
+            if config.has_option(trade.process, 'keymap'):
+                start_listeners(trade, config, gui_callbacks, manager,
+                                trade.speech_manager, is_persistent=True)
+            else:
+                print(option, 'option does not exist')
+                sys.exit(1)
         if config.has_section(trade.action_section):
             # time.sleep(2)
             # print(trade.wait_listeners_thread)
@@ -313,6 +330,13 @@ def main():
             #         ast.literal_eval(config[trade.action_section][args.a[0]]))
             # except Exception as e:
             #     print(e)
+        else:
+            print(trade.action_section, 'section does not exist')
+            sys.exit(1)
+        # if not is_running:
+        if not is_running or not args.l:
+        # if not is_running and not args.l:
+        # if not args.l:
 
             # print('execute_action')
             # time.sleep(10)
@@ -321,9 +345,7 @@ def main():
                 manager, trade.speech_manager, trade.speaking_process)
             trade.stop_listeners_event.set()
             trade.wait_listeners_thread.join()
-        else:
-            print(trade.action_section, 'section does not exist')
-            sys.exit(1)
+
     if args.T:
         if args.T[0] == trade.script_base \
            and os.path.exists(trade.startup_script):
@@ -614,6 +636,7 @@ def start_scheduler(trade, config, gui_callbacks, process):
             schedules.append(schedule)
 
     while scheduler.queue:
+        print(scheduler.queue)
         if process_utilities.is_running(process):
             scheduler.run(False)
             time.sleep(1)
