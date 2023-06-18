@@ -87,7 +87,7 @@ configuration file stores these configurations.
 
 ``` powershell
 py trading_assistant.py -C
-py trading_assistant.py -L
+py trading_assistant.py -R
 ```
 
 ### Create or Modify Action ###
@@ -165,7 +165,7 @@ SCHEDULE = ('%H:%M:%S', 'ACTION')
 
 ### Action Argument Completion ###
 
-The `-A` and `-T` options generate completion scripts for action arguments.
+The `-A` and `-D` options generate completion scripts for action arguments.
 They are located at `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.ps1`
 for PowerShell and `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.sh`
 for Bash.
@@ -185,7 +185,7 @@ shell:
 ```
 
 After sourcing the script, you can use tab completion for action arguments when
-running this script with the `-a`, `-A`, or `-T` options:
+running this script with the `-a`, `-A`, or `-D` options:
 
 ``` powershell
 py trading_assistant.py -a a⇥
@@ -208,11 +208,12 @@ py.exe trading_assistant.py -a action
   * `-a ACTION`: execute an action
   * `-I`: configure a startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit
+  * `-L`: configure the input map for buttons and keys and exit
   * `-A ACTION`: configure an action, create a shortcut to it, and exit
   * `-C`: configure the cash balance region and the index of the price
   * `-B`: configure an arbitrary cash balance
-  * `-L`: configure the price limit region and the index of the price
-  * `-T SCRIPT_BASE | ACTION`: delete a startup script or an action, delete a
+  * `-R`: configure the price limit region and the index of the price
+  * `-D SCRIPT_BASE | ACTION`: delete a startup script or an action, delete a
     shortcut to it, and exit
 
 ## Action Examples ##

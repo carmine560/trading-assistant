@@ -94,10 +94,10 @@ class Trade:
 
     def on_click(self, x, y, button, pressed, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
-            # TODO
+            # TODO: not pressed
             if pressed:
                 action = ast.literal_eval(
-                    config[self.process]['buttonmap']).get(button.name)
+                    config[self.process]['input_map']).get(button.name)
                 if action:
                     gui_callbacks.initialize_attributes()
                     execute_action_thread = threading.Thread(
@@ -112,7 +112,7 @@ class Trade:
             if self.keyboard_listener_state == 0:
                 if key in self.function_keys:
                     action = ast.literal_eval(
-                        config[self.process]['keymap']).get(key.name)
+                        config[self.process]['input_map']).get(key.name)
                     if action:
                         gui_callbacks.initialize_attributes()
                         execute_action_thread = threading.Thread(
@@ -159,6 +159,9 @@ def main():
         '-S', action='store_true',
         help='configure schedules and exit')
     group.add_argument(
+        '-L', action='store_true',
+        help='configure the input map for buttons and keys and exit')
+    group.add_argument(
         '-A', metavar='ACTION', nargs=1,
         help=('configure an action, create a shortcut to it, and exit'))
     group.add_argument(
@@ -168,10 +171,10 @@ def main():
         '-B', action='store_true',
         help='configure an arbitrary cash balance and exit')
     group.add_argument(
-        '-L', action='store_true',
+        '-R', action='store_true',
         help=('configure the price limit region and exit'))
     group.add_argument(
-        '-T', metavar='SCRIPT_BASE | ACTION', nargs=1,
+        '-D', metavar='SCRIPT_BASE | ACTION', nargs=1,
         help=('delete a startup script or an action, delete a shortcut to it, '
               'and exit'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
@@ -180,7 +183,7 @@ def main():
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
 
-    if args.I or args.S or args.A or args.C or args.B or args.L:
+    if args.I or args.S or args.L or args.A or args.C or args.B or args.R:
         config = configure(trade, interpolation=False)
         if args.I and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_file,
@@ -199,6 +202,9 @@ def main():
                 tuple_info={'element_index': 1,
                             'possible_values': configuration.list_section(
                                 config, trade.action_section)}):
+            return
+        elif args.L:
+            # TODO: modify_dictionary()
             return
         elif args.A:
             if configuration.modify_tuple_list(
@@ -221,11 +227,11 @@ def main():
                     icon_directory=trade.resource_directory)
 
             file_utilities.create_powershell_completion(
-                trade.script_base, ('-a', '-A', '-T'),
+                trade.script_base, ('-a', '-A', '-D'),
                 configuration.list_section(config, trade.action_section),
                 'py', os.path.join(trade.resource_directory, 'completion.ps1'))
             file_utilities.create_bash_completion(
-                trade.script_base, ('-a', '-A', '-T'),
+                trade.script_base, ('-a', '-A', '-D'),
                 configuration.list_section(config, trade.action_section),
                 'py.exe',
                 os.path.join(trade.resource_directory, 'completion.sh'))
@@ -239,7 +245,7 @@ def main():
                 config, trade.process, 'fixed_cash_balance', trade.config_file,
                 **backup_file):
             return
-        elif args.L and configuration.modify_option(
+        elif args.R and configuration.modify_option(
                 config, trade.process, 'price_limit_region', trade.config_file,
                 **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
@@ -249,7 +255,7 @@ def main():
     else:
         config = configure(trade)
 
-    # TODO
+    # TODO: function
     BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
     manager = BaseManager()
     manager.start()
@@ -290,7 +296,7 @@ def main():
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
     if args.l and process_utilities.is_running(trade.process):
-        if config.has_option(trade.process, 'keymap'):
+        if config.has_option(trade.process, 'input_map'):
             start_listeners(trade, config, gui_callbacks, manager,
                             trade.speech_manager)
         else:
@@ -299,7 +305,7 @@ def main():
     if args.a:
         is_running = process_utilities.is_running(trade.process)
         if not (is_running and args.l):
-            if config.has_option(trade.process, 'keymap'):
+            if config.has_option(trade.process, 'input_map'):
                 start_listeners(trade, config, gui_callbacks, manager,
                                 trade.speech_manager, is_persistent=True)
             else:
@@ -318,8 +324,8 @@ def main():
                 manager, trade.speech_manager, trade.speaking_process)
             trade.stop_listeners_event.set()
             trade.wait_listeners_thread.join()
-    if args.T:
-        if args.T[0] == trade.script_base \
+    if args.D:
+        if args.D[0] == trade.script_base \
            and os.path.exists(trade.startup_script):
             try:
                 os.remove(trade.startup_script)
@@ -327,18 +333,18 @@ def main():
                 print(e)
         else:
             configuration.delete_option(config, trade.action_section,
-                                        args.T[0], trade.config_file,
+                                        args.D[0], trade.config_file,
                                         **backup_file)
 
         file_utilities.delete_shortcut(
-            args.T[0], program_group_base=config[trade.process]['title'],
+            args.D[0], program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
         file_utilities.create_powershell_completion(
-            trade.script_base, ('-a', '-A', '-T'),
+            trade.script_base, ('-a', '-A', '-D'),
             configuration.list_section(config, trade.action_section),
             'py', os.path.join(trade.resource_directory, 'completion.ps1'))
         file_utilities.create_bash_completion(
-            trade.script_base, ('-a', '-A', '-T'),
+            trade.script_base, ('-a', '-A', '-D'),
             configuration.list_section(config, trade.action_section), 'py.exe',
             os.path.join(trade.resource_directory, 'completion.sh'))
         return
@@ -387,9 +393,8 @@ def configure(trade, interpolation=True):
             '注文一覧', '個別チャート\s.*\((\d{4})\)', 'マーケット',
             'ランキング', '銘柄一覧', '口座情報', 'ニュース',
             '取引ポップアップ', '通知設定', '全板\s.*\((\d{4})\)'),
-        'buttonmap': {
-            'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': ''},
-        'keymap': {
+        'input_map': {
+            'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
             'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '', 'f12': ''},
         'fixed_cash_balance': '0',
