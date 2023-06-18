@@ -154,6 +154,21 @@ Execute an action saved in the configuration file.
 py trading_assistant.py -a ACTION
 ```
 
+### Trigger Actions Using Mouse and Keyboard ###
+
+You can also trigger the actions above using the mouse and keyboard by
+configuring the input map for mapping buttons and keys to them.
+
+``` powershell
+py trading_assistant.py -L
+```
+
+Then start the mouse and keyboard listeners.
+
+``` powershell
+py trading_assistant.py -l
+```
+
 ### Schedule Actions ###
 
 You can also schedule the actions above as the following configurations:
