@@ -111,7 +111,7 @@ ACTION = [
     ('calculate_share_size', 'POSITION'), # Calculate a share size.
     ('click', 'X, Y'),               # Click.
     # Locate a widget image in a region and click on it, assuming that it is in
-    # The same directory as the configuration file.
+    # the same directory as the configuration file.
     ('click_widget', 'IMAGE', 'X, Y, WIDTH, HEIGHT'),
     # Copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),

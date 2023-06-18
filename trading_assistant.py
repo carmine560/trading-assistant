@@ -86,10 +86,6 @@ class Trade:
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
 
-        # TODO
-        self.callback = None
-        self.extra = ''
-
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
@@ -98,11 +94,18 @@ class Trade:
 
     def on_click(self, x, y, button, pressed, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
-            if button == mouse.Button.middle and not pressed:
-                # TODO
-                self.callback = gui_interactions.show_hide_window
-                self.extra = '登録銘柄'
-                win32gui.EnumWindows(self.callback, self.extra)
+            # TODO
+            if pressed:
+                action = ast.literal_eval(
+                    config[self.process]['buttonmap']).get(button.name)
+                if action:
+                    gui_callbacks.initialize_attributes()
+                    execute_action_thread = threading.Thread(
+                        target=execute_action,
+                        args=(self, config, gui_callbacks,
+                              ast.literal_eval(
+                                  config[self.action_section][action])))
+                    execute_action_thread.start()
 
     def on_press(self, key, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
@@ -384,6 +387,8 @@ def configure(trade, interpolation=True):
             '注文一覧', '個別チャート\s.*\((\d{4})\)', 'マーケット',
             'ランキング', '銘柄一覧', '口座情報', 'ニュース',
             '取引ポップアップ', '通知設定', '全板\s.*\((\d{4})\)'),
+        'buttonmap': {
+            'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': ''},
         'keymap': {
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
             'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '', 'f12': ''},
