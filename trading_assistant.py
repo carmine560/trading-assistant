@@ -677,7 +677,7 @@ def execute_action(trade, config, gui_callbacks, action):
             argument = ast.literal_eval(argument)
             split_string = text_recognition.recognize_text(
                 config[trade.process], *argument, None,
-                text_type='numeric_column')
+                text_type='securities_code_column')
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(' '.join(split_string))
