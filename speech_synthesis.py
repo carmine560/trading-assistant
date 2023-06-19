@@ -39,10 +39,10 @@ def start_speaking(speech_manager):
 
         time.sleep(0.01)
 
-def stop_speaking_process(manager, speech_manager, speaking_process):
+def stop_speaking_process(base_manager, speech_manager, speaking_process):
     if speech_manager.get_speech_text():
         time.sleep(0.01)
 
     speech_manager.set_can_speak(False)
     speaking_process.join()
-    manager.shutdown()
+    base_manager.shutdown()

@@ -79,7 +79,7 @@ class Trade:
         self.key_to_check = None
         self.should_continue = False
 
-        self.speech_engine = None
+        self.base_manager = None
         self.speech_manager = None
         self.speaking_process = None
 
@@ -254,18 +254,18 @@ def main():
     else:
         config = configure(trade)
 
-    # TODO: function
-    BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
-    manager = BaseManager()
-    manager.start()
-    trade.speech_manager = manager.SpeechManager()
-
     if not config.has_section(trade.process):
         print(trade.process, 'section does not exist')
         sys.exit(1)
     else:
         gui_callbacks = gui_interactions.GuiCallbacks(
             ast.literal_eval(config[trade.process]['interactive_windows']))
+
+    if args.s or args.l or args.a:
+        BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
+        trade.base_manager = BaseManager()
+        trade.base_manager.start()
+        trade.speech_manager = trade.base_manager.SpeechManager()
 
     if args.r:
         if config.has_section(trade.customer_margin_ratio_section):
@@ -290,13 +290,14 @@ def main():
 
             if not (args.l or args.a):
                 speech_synthesis.stop_speaking_process(
-                    manager, trade.speech_manager, trade.speaking_process)
+                    trade.base_manager, trade.speech_manager,
+                    trade.speaking_process)
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
     if args.l and process_utilities.is_running(trade.process):
         if config.has_option(trade.process, 'input_map'):
-            start_listeners(trade, config, gui_callbacks, manager,
+            start_listeners(trade, config, gui_callbacks, trade.base_manager,
                             trade.speech_manager)
         else:
             print(option, 'option does not exist')
@@ -305,8 +306,9 @@ def main():
         is_running = process_utilities.is_running(trade.process)
         if not (is_running and args.l):
             if config.has_option(trade.process, 'input_map'):
-                start_listeners(trade, config, gui_callbacks, manager,
-                                trade.speech_manager, is_persistent=True)
+                start_listeners(trade, config, gui_callbacks,
+                                trade.base_manager, trade.speech_manager,
+                                is_persistent=True)
             else:
                 print(option, 'option does not exist')
                 sys.exit(1)
@@ -320,7 +322,8 @@ def main():
         if not (is_running and args.l):
             process_utilities.stop_listeners(
                 trade.mouse_listener, trade.keyboard_listener,
-                manager, trade.speech_manager, trade.speaking_process)
+                trade.base_manager, trade.speech_manager,
+                trade.speaking_process)
             trade.stop_listeners_event.set()
             trade.wait_listeners_thread.join()
     if args.D:
@@ -621,7 +624,7 @@ def start_scheduler(trade, config, gui_callbacks, process):
             for schedule in schedules:
                 scheduler.cancel(schedule)
 
-def start_listeners(trade, config, gui_callbacks, manager, speech_manager,
+def start_listeners(trade, config, gui_callbacks, base_manager, speech_manager,
                     is_persistent=False):
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed:
@@ -639,7 +642,7 @@ def start_listeners(trade, config, gui_callbacks, manager, speech_manager,
     trade.wait_listeners_thread = threading.Thread(
         target=process_utilities.wait_listeners,
         args=(trade.stop_listeners_event, trade.process, trade.mouse_listener,
-              trade.keyboard_listener, manager, speech_manager,
+              trade.keyboard_listener, base_manager, speech_manager,
               trade.speaking_process, is_persistent))
     trade.wait_listeners_thread.start()
 
