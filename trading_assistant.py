@@ -94,8 +94,7 @@ class Trade:
 
     def on_click(self, x, y, button, pressed, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
-            # TODO: not pressed
-            if pressed:
+            if not pressed:
                 action = ast.literal_eval(
                     config[self.process]['input_map']).get(button.name)
                 if action:

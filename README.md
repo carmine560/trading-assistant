@@ -31,13 +31,13 @@ the following packages:
 
   * [pandas](https://pandas.pydata.org/) to save customer margin ratios and the
     previous market data from websites
-  * [pywin32](https://github.com/mhammond/pywin32) to access the Windows APIs
+  * [pywin32](https://github.com/mhammond/pywin32) to access Windows APIs
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
-    [Tesseract](https://tesseract-ocr.github.io/) to recognize prices on Hyper
-    SBI 2
+    [Tesseract](https://tesseract-ocr.github.io/) to recognize prices and
+    securities codes on Hyper SBI 2
   * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html) to
     automate interactions with Hyper SBI 2
-  * [pynput](https://github.com/moses-palmer/pynput) to monitor keyboard input
+  * [pynput](https://github.com/moses-palmer/pynput) to monitor input devices
   * [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak information
   * [psutil](https://github.com/giampaolo/psutil) to calculate CPU utilization
   * (optional)
@@ -163,7 +163,7 @@ configuring the input map for mapping buttons and keys to them.
 py trading_assistant.py -L
 ```
 
-Then start the mouse and keyboard listeners.
+Then start the mouse and keyboard listeners while Hyper SBI 2 is running.
 
 ``` powershell
 py trading_assistant.py -l
@@ -230,6 +230,29 @@ py.exe trading_assistant.py -a action
   * `-R`: configure the price limit region and the index of the price
   * `-D SCRIPT_BASE | ACTION`: delete a startup script or an action, delete a
     shortcut to it, and exit
+
+## Startup Script Example ##
+
+The following actions and options configure the processing of Hyper SBI 2 pre-
+and post-startup and during running.
+
+``` ini
+[HYPERSBI2 Actions]
+minimize_all_windows = [
+    ('press_hotkeys', 'win, m')]     # Minimize all windows.
+show_hide_watchlists = [
+    ('show_hide_window', '登録銘柄')] # Show or hide the Watchlists window.
+
+[HYPERSBI2 Startup Script]
+# Save customer margin ratios and the previous market data and execute the
+# minimize_all_windows action above.
+pre_start_options = -rda minimize_all_windows
+# Start the scheduler, mouse and keyboard listeners, and execute the login
+# action mentioned in the next section.
+post_start_options = -sla login
+# Execute the show_hide_window action above.
+running_options = -a show_hide_watchlists
+```
 
 ## Action Examples ##
 
@@ -384,27 +407,28 @@ open_close_long_position = [
     ('back_to',)]
 ```
 
-## Startup Script Example ##
-
-The following actions and options configure the processing of Hyper SBI 2 pre-
-and post-startup and during running.
+## Input Map Example ##
 
 ``` ini
-[HYPERSBI2 Actions]
-minimize_all_windows = [
-    ('press_hotkeys', 'win, m')]     # Minimize all windows.
-show_hide_watchlists = [
-    ('show_hide_window', '登録銘柄')] # Show or hide the Watchlists window.
-
-[HYPERSBI2 Startup Script]
-# Save customer margin ratios and the previous market data and execute the
-# minimize_all_windows action above.
-pre_start_options = -rda minimize_all_windows
-# Start the scheduler, mouse and keyboard listeners, and execute the login
-# action mentioned in the previous section.
-post_start_options = -sla login
-# Execute the show_hide_window action above.
-running_options = -a show_hide_watchlists
+[HYPERSBI2]
+input_map = {
+    'left': '',
+    'middle': 'show_hide_watchlists',
+    'right': '',
+    'x1': '',
+    'x2': '',
+    'f1': 'open_close_short_position',
+    'f2': 'open_close_long_position',
+    'f3': '',
+    'f4': '',
+    'f5': 'show_hide_watchlists',
+    'f6': 'watch_tick_count',
+    'f7': 'watch_favorites',
+    'f8': 'watch_active_stocks',
+    'f9': '',
+    'f10': 'speak_cpu_utilization',
+    'f11': '',
+    'f12': ''}
 ```
 
 ## Schedule Examples ##
