@@ -156,8 +156,8 @@ py trading_assistant.py -a ACTION
 
 ### Trigger Actions Using Mouse and Keyboard ###
 
-You can also trigger the actions above using the mouse and keyboard by
-configuring the input map for mapping buttons and keys to them.
+You can also trigger actions using the mouse and keyboard by configuring the
+input map for mapping buttons and keys to them.
 
 ``` powershell
 py trading_assistant.py -L
@@ -171,11 +171,22 @@ py trading_assistant.py -l
 
 ### Schedule Actions ###
 
-You can also schedule the actions above as the following configurations:
+You can also schedule actions using the `-S` option and the following time
+format:
+
+``` powershell
+py trading_assistant.py -S
+```
 
 ``` ini
 [HYPERSBI2 Schedules]
 SCHEDULE = ('%H:%M:%S', 'ACTION')
+```
+
+Then start the scheduler while Hyper SBI 2 is running.
+
+``` powershell
+py trading_assistant.py -s
 ```
 
 ### Action Argument Completion ###
@@ -409,23 +420,36 @@ open_close_long_position = [
 
 ## Input Map Example ##
 
+The following input map maps mouse buttons and keyboard keys to actions.
+
 ``` ini
 [HYPERSBI2]
 input_map = {
     'left': '',
+    # Execute the show_hide_watchlists action above.  The middle button also
+    # toggles between prices and price changes in the order book.
     'middle': 'show_hide_watchlists',
     'right': '',
     'x1': '',
     'x2': '',
+    # Execute an action to open and close a short position.
     'f1': 'open_close_short_position',
+    # Execute the open_close_long_position action above.
     'f2': 'open_close_long_position',
     'f3': '',
+    # The F4 key is used to close a window above.
     'f4': '',
+    # Execute the show_hide_watchlists action above.
     'f5': 'show_hide_watchlists',
+    # Execute the watch_tick_count action above.
     'f6': 'watch_tick_count',
+    # Execute an action to watch favorite stocks.
     'f7': 'watch_favorites',
+    # Execute the watch_active_stocks action above.
     'f8': 'watch_active_stocks',
+    # The F9 key is used for manual recording below.
     'f9': '',
+    # Execute the speak_cpu_utilization action below.
     'f10': 'speak_cpu_utilization',
     'f11': '',
     'f12': ''}
