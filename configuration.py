@@ -279,6 +279,10 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
 
     return str(tuple(data))
 
+# TODO
+def modify_dictionary():
+    pass
+
 def modify_data(prompt, level=0, data='', all_data=[]):
     has_prompt_toolkit = True
     try:

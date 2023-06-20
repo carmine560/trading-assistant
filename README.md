@@ -68,7 +68,7 @@ Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and the previous market data from [*Most Active Stocks
 Today*](https://kabutan.jp/warning/?mode=2_9&market=1) beforehand.  The
-following option creates a
+following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1` startup
 script that processes them and starts Hyper SBI 2.
 
@@ -226,22 +226,22 @@ py.exe trading_assistant.py -a action
 
 ### Options ###
 
-  * `-P BROKERAGE PROCESS`: set a brokerage and a process [default: `SBI
+  * `-P BROKERAGE PROCESS`: set the brokerage and process [defaults: `SBI
     Securities` and `HYPERSBI2`]
   * `-r`: save customer margin ratios
   * `-d`: save the previous market data
   * `-s`: start the scheduler
   * `-l`: start the mouse and keyboard listeners
   * `-a ACTION`: execute an action
-  * `-I`: configure a startup script, create a shortcut to it, and exit
+  * `-I`: configure the startup script, create the shortcut to it, and exit
   * `-S`: configure schedules and exit
   * `-L`: configure the input map for buttons and keys and exit
-  * `-A ACTION`: configure an action, create a shortcut to it, and exit
-  * `-C`: configure the cash balance region and the index of the price
-  * `-B`: configure an arbitrary cash balance
-  * `-R`: configure the price limit region and the index of the price
-  * `-D SCRIPT_BASE | ACTION`: delete a startup script or an action, delete a
-    shortcut to it, and exit
+  * `-A ACTION`: configure an action, create the shortcut to it, and exit
+  * `-C`: configure the cash balance region and exit
+  * `-B`: configure an arbitrary cash balance and exit
+  * `-R`: configure the price limit region and exit
+  * `-D SCRIPT_BASE | ACTION`: delete the startup script or an action, delete
+    the shortcut to it, and exit
 
 ## Startup Script Example ##
 

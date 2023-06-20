@@ -79,7 +79,6 @@ class Trade:
         self.key_to_check = None
         self.should_continue = False
 
-        self.base_manager = None
         self.speech_manager = None
         self.speaking_process = None
 
@@ -135,7 +134,7 @@ def main():
     parser.add_argument(
         '-P', default=('SBI Securities', 'HYPERSBI2'),
         metavar=('BROKERAGE', 'PROCESS'), nargs=2,
-        help='set a brokerage and a process [defaults: %(default)s]')
+        help='set the brokerage and process [defaults: %(default)s]')
     parser.add_argument(
         '-r', action='store_true',
         help='save customer margin ratios')
@@ -153,7 +152,8 @@ def main():
         help='execute an action')
     group.add_argument(
         '-I', action='store_true',
-        help=('configure a startup script, create a shortcut to it, and exit'))
+        help=('configure the startup script, create the shortcut to it, '
+              'and exit'))
     group.add_argument(
         '-S', action='store_true',
         help='configure schedules and exit')
@@ -162,7 +162,7 @@ def main():
         help='configure the input map for buttons and keys and exit')
     group.add_argument(
         '-A', metavar='ACTION', nargs=1,
-        help=('configure an action, create a shortcut to it, and exit'))
+        help=('configure an action, create the shortcut to it, and exit'))
     group.add_argument(
         '-C', action='store_true',
         help=('configure the cash balance region and exit'))
@@ -174,8 +174,8 @@ def main():
         help=('configure the price limit region and exit'))
     group.add_argument(
         '-D', metavar='SCRIPT_BASE | ACTION', nargs=1,
-        help=('delete a startup script or an action, delete a shortcut to it, '
-              'and exit'))
+        help=('delete the startup script or an action, '
+              'delete the shortcut to it, and exit'))
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade(*args.P)
@@ -263,9 +263,9 @@ def main():
 
     if args.s or args.l or args.a:
         BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
-        trade.base_manager = BaseManager()
-        trade.base_manager.start()
-        trade.speech_manager = trade.base_manager.SpeechManager()
+        base_manager = BaseManager()
+        base_manager.start()
+        trade.speech_manager = base_manager.SpeechManager()
 
     if args.r:
         if config.has_section(trade.customer_margin_ratio_section):
@@ -290,14 +290,13 @@ def main():
 
             if not (args.l or args.a):
                 speech_synthesis.stop_speaking_process(
-                    trade.base_manager, trade.speech_manager,
-                    trade.speaking_process)
+                    base_manager, trade.speech_manager, trade.speaking_process)
         else:
             print(trade.schedule_section, 'section does not exist')
             sys.exit(1)
     if args.l and process_utilities.is_running(trade.process):
         if config.has_option(trade.process, 'input_map'):
-            start_listeners(trade, config, gui_callbacks, trade.base_manager,
+            start_listeners(trade, config, gui_callbacks, base_manager,
                             trade.speech_manager)
         else:
             print(option, 'option does not exist')
@@ -306,9 +305,8 @@ def main():
         is_running = process_utilities.is_running(trade.process)
         if not (is_running and args.l):
             if config.has_option(trade.process, 'input_map'):
-                start_listeners(trade, config, gui_callbacks,
-                                trade.base_manager, trade.speech_manager,
-                                is_persistent=True)
+                start_listeners(trade, config, gui_callbacks, base_manager,
+                                trade.speech_manager, is_persistent=True)
             else:
                 print(option, 'option does not exist')
                 sys.exit(1)
@@ -321,9 +319,8 @@ def main():
             sys.exit(1)
         if not (is_running and args.l):
             process_utilities.stop_listeners(
-                trade.mouse_listener, trade.keyboard_listener,
-                trade.base_manager, trade.speech_manager,
-                trade.speaking_process)
+                trade.mouse_listener, trade.keyboard_listener, base_manager,
+                trade.speech_manager, trade.speaking_process)
             trade.stop_listeners_event.set()
             trade.wait_listeners_thread.join()
     if args.D:
