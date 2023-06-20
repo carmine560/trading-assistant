@@ -29,8 +29,8 @@ This script has been tested in [Python for
 Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 and uses
 the following packages:
 
-  * [pandas](https://pandas.pydata.org/) to save customer margin ratios and the
-    previous market data from websites
+  * [pandas](https://pandas.pydata.org/) to save the customer margin ratios and
+    the previous market data from websites
   * [pywin32](https://github.com/mhammond/pywin32) to access Windows APIs
   * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
     [Tesseract](https://tesseract-ocr.github.io/) to recognize prices and
@@ -63,8 +63,8 @@ pip install prompt_toolkit
 
 ### Create Startup Script ###
 
-To calculate a maximum share size, save customer margin ratios from [*Stocks
-Subject to Margin
+To calculate a maximum share size, save the customer margin ratios from
+[*Stocks Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 and the previous market data from [*Most Active Stocks
 Today*](https://kabutan.jp/warning/?mode=2_9&market=1) beforehand.  The
@@ -226,17 +226,17 @@ py.exe trading_assistant.py -a action
 
 ### Options ###
 
-  * `-P BROKERAGE PROCESS`: set the brokerage and process [defaults: `SBI
+  * `-P BROKERAGE PROCESS`: set the brokerage and the process [defaults: `SBI
     Securities` and `HYPERSBI2`]
-  * `-r`: save customer margin ratios
+  * `-r`: save the customer margin ratios
   * `-d`: save the previous market data
   * `-s`: start the scheduler
   * `-l`: start the mouse and keyboard listeners
   * `-a ACTION`: execute an action
-  * `-I`: configure the startup script, create the shortcut to it, and exit
+  * `-I`: configure the startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit
   * `-L`: configure the input map for buttons and keys and exit
-  * `-A ACTION`: configure an action, create the shortcut to it, and exit
+  * `-A ACTION`: configure an action, create a shortcut to it, and exit
   * `-C`: configure the cash balance region and exit
   * `-B`: configure an arbitrary cash balance and exit
   * `-R`: configure the price limit region and exit
@@ -256,7 +256,7 @@ show_hide_watchlists = [
     ('show_hide_window', '登録銘柄')] # Show or hide the Watchlists window.
 
 [HYPERSBI2 Startup Script]
-# Save customer margin ratios and the previous market data and execute the
+# Save the customer margin ratios and the previous market data and execute the
 # minimize_all_windows action above.
 pre_start_options = -rda minimize_all_windows
 # Start the scheduler, mouse and keyboard listeners, and execute the login
@@ -426,10 +426,12 @@ The following input map maps mouse buttons and keyboard keys to actions.
 ``` ini
 [HYPERSBI2]
 input_map = {
+    # The left button is used to click widgets.
     'left': '',
     # Execute the show_hide_watchlists action above.  The middle button also
     # toggles between prices and price changes in the order book.
     'middle': 'show_hide_watchlists',
+    # The right button is used for context menus.
     'right': '',
     'x1': '',
     'x2': '',

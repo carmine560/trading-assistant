@@ -1,9 +1,8 @@
+import re
+import subprocess
 import time
 
 def is_running(process):
-    import re
-    import subprocess
-
     image = process + '.exe'
     output = subprocess.check_output(['tasklist', '/fi',
                                       'imagename eq ' + image])

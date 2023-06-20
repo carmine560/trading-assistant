@@ -134,10 +134,10 @@ def main():
     parser.add_argument(
         '-P', default=('SBI Securities', 'HYPERSBI2'),
         metavar=('BROKERAGE', 'PROCESS'), nargs=2,
-        help='set the brokerage and process [defaults: %(default)s]')
+        help='set the brokerage and the process [defaults: %(default)s]')
     parser.add_argument(
         '-r', action='store_true',
-        help='save customer margin ratios')
+        help='save the customer margin ratios')
     parser.add_argument(
         '-d', action='store_true',
         help='save the previous market data')
@@ -152,7 +152,7 @@ def main():
         help='execute an action')
     group.add_argument(
         '-I', action='store_true',
-        help=('configure the startup script, create the shortcut to it, '
+        help=('configure the startup script, create a shortcut to it, '
               'and exit'))
     group.add_argument(
         '-S', action='store_true',
@@ -162,7 +162,7 @@ def main():
         help='configure the input map for buttons and keys and exit')
     group.add_argument(
         '-A', metavar='ACTION', nargs=1,
-        help=('configure an action, create the shortcut to it, and exit'))
+        help=('configure an action, create a shortcut to it, and exit'))
     group.add_argument(
         '-C', action='store_true',
         help=('configure the cash balance region and exit'))
@@ -202,8 +202,11 @@ def main():
                             'possible_values': configuration.list_section(
                                 config, trade.action_section)}):
             return
-        elif args.L:
-            # TODO: modify_dictionary()
+        elif args.L and configuration.modify_option(
+                config, trade.process, 'input_map', trade.config_file,
+                **backup_file,
+                dictionary_info={'possible_values': configuration.list_section(
+                    config, trade.action_section)}):
             return
         elif args.A:
             if configuration.modify_tuple_list(

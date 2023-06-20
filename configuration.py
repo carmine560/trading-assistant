@@ -67,7 +67,7 @@ def modify_section(config, section, config_file, backup_function=None,
 
 def modify_option(config, section, option, config_file, backup_function=None,
                   backup_parameters=None, prompts={}, categorized_keys={},
-                  tuple_info={}):
+                  tuple_info={}, dictionary_info={}):
     import re
 
     if backup_function:
@@ -90,6 +90,10 @@ def modify_option(config, section, option, config_file, backup_function=None,
                 config[section][option] = modify_tuple(
                     config[section][option], False, level=1,
                     tuple_info=tuple_info)
+            elif re.sub('\s+', '', config[section][option])[:1] == '{':
+                config[section][option] = modify_dictionary(
+                    config[section][option], level=1,
+                    dictionary_info=dictionary_info)
             else:
                 config[section][option] = modify_data(
                     prompts.get('value', 'value'),
@@ -279,9 +283,28 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
 
     return str(tuple(data))
 
-# TODO
-def modify_dictionary():
-    pass
+def modify_dictionary(data, level=0, prompts={}, dictionary_info={}):
+    data = ast.literal_eval(data)
+    value_prompt = prompts.get('value', 'value')
+    possible_values = dictionary_info.get('possible_values')
+
+    for key, value in data.items():
+        print(f'{INDENT * level}{key}: {ANSI_DEFAULT}{data[key]}{ANSI_RESET}')
+        answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
+
+        if answer == 'modify':
+            if possible_values:
+                data[key] = modify_data(value_prompt, level=level,
+                                        all_data=possible_values)
+            else:
+                data[key] = modify_data(value_prompt, level=level,
+                                        data=data[key])
+        elif answer == 'empty':
+            data[key] = ''
+        elif answer == 'quit':
+            break
+
+    return str(data)
 
 def modify_data(prompt, level=0, data='', all_data=[]):
     has_prompt_toolkit = True
