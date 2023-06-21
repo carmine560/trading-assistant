@@ -700,8 +700,7 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'get_symbol':
             win32gui.EnumWindows(trade.get_symbol, argument)
         elif command == 'hide_parent_window':
-            win32gui.EnumWindows(gui_interactions.hide_parent_window,
-                                 argument)
+            win32gui.EnumWindows(gui_interactions.hide_parent_window, argument)
         elif command == 'hide_window':
             win32gui.EnumWindows(gui_interactions.hide_window, argument)
         elif command == 'move_to':
@@ -749,10 +748,6 @@ def execute_action(trade, config, gui_callbacks, action):
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
         elif command == 'take_screenshot':
-            from PIL import ImageGrab
-
-            pyautogui.hotkey('alt', 'printscreen')
-            image = ImageGrab.grabclipboard()
             section = config['Variables']
             previous_date = date.fromisoformat(section['current_date'])
             current_date = date.today()
@@ -760,11 +755,11 @@ def execute_action(trade, config, gui_callbacks, action):
             if previous_date == current_date:
                 base += f"-{int(section['current_number_of_trades']):02}"
             if trade.symbol:
-                base += '-' + trade.symbol
+                base += f'-{trade.symbol}'
 
             base += '-screenshot.png'
-            image.save(os.path.join(config['General']['screenshot_directory'],
-                                    base))
+            gui_interactions.take_screenshot(
+                os.path.join(config['General']['screenshot_directory'], base))
         elif command == 'wait_for_key':
             trade.keyboard_listener_state = 1
             if len(argument) == 1:

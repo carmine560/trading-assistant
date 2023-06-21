@@ -84,6 +84,21 @@ def show_window(hwnd, title_regex):
         win32gui.SetForegroundWindow(hwnd)
         return False
 
+def take_screenshot(output):
+    from ctypes import wintypes
+    import ctypes
+    import mss
+
+    hwnd = ctypes.windll.user32.GetForegroundWindow()
+    rect = wintypes.RECT()
+    ctypes.windll.dwmapi.DwmGetWindowAttribute(
+        wintypes.HWND(hwnd), wintypes.DWORD(9),
+        ctypes.byref(rect), ctypes.sizeof(rect))
+
+    with mss.mss() as screenshot:
+        image = screenshot.grab((rect.left, rect.top, rect.right, rect.bottom))
+        mss.tools.to_png(image.rgb, image.size, output=output)
+
 def wait_for_window(gui_callbacks, title_regex):
     while next((False for i in range(len(gui_callbacks.exist))
                 if gui_callbacks.exist[i][1] == title_regex), True):
