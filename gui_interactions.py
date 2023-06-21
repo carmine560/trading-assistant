@@ -54,6 +54,15 @@ def click_widget(gui_callbacks, image, x, y, width, height):
     else:
         pyautogui.click(pyautogui.center(location))
 
+def enumerate_windows(callback, extra):
+    try:
+        win32gui.EnumWindows(callback, extra)
+    except Exception as e:
+        if e.args[0] == 0:
+            pass
+        else:
+            print(e)
+
 def hide_parent_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         parent = win32gui.GetParent(hwnd)
@@ -74,7 +83,7 @@ def show_hide_window(hwnd, title_regex):
             win32gui.SetForegroundWindow(hwnd)
         else:
             win32gui.ShowWindow(hwnd, 6)
-        return
+        return False
 
 def show_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):

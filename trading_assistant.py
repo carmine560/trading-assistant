@@ -89,7 +89,7 @@ class Trade:
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
             self.symbol = matched.group(1)
-            return
+            return False
 
     def on_click(self, x, y, button, pressed, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
@@ -390,6 +390,7 @@ def configure(trade, interpolation=True):
     config['HYPERSBI2'] = {
         'executable': '',
         'title': 'Hyper SBI 2 Assistant',
+        # TODO: securities_code
         'interactive_windows': (
             'お知らせ', '個別銘柄\s.*\((\d{4})\)', '登録銘柄', '保有証券',
             '注文一覧', '個別チャート\s.*\((\d{4})\)', 'マーケット',
@@ -445,7 +446,6 @@ def configure(trade, interpolation=True):
     return config
 
 def save_customer_margin_ratios(trade, config):
-    global pd
     import pandas as pd
 
     section = config[trade.customer_margin_ratio_section]
@@ -481,7 +481,6 @@ def save_customer_margin_ratios(trade, config):
         df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
 def save_market_data(trade, config, clipboard=False):
-    global pd
     import pandas as pd
 
     section = config['Market Data']
@@ -661,6 +660,7 @@ def execute_action(trade, config, gui_callbacks, action):
 
             winsound.Beep(*ast.literal_eval(argument))
         elif command == 'calculate_share_size':
+            # TODO: return
             calculate_share_size(trade, config, argument)
         elif command == 'click':
             coordinates = ast.literal_eval(argument)
@@ -698,7 +698,8 @@ def execute_action(trade, config, gui_callbacks, action):
 
             configuration.write_config(config, trade.config_file)
         elif command == 'get_symbol':
-            win32gui.EnumWindows(trade.get_symbol, argument)
+            # TODO: initialize
+            gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_parent_window':
             win32gui.EnumWindows(gui_interactions.hide_parent_window, argument)
         elif command == 'hide_window':
@@ -720,15 +721,11 @@ def execute_action(trade, config, gui_callbacks, action):
             if key == 'tab':
                 gui_callbacks.moved_focus = presses
         elif command == 'show_hide_window':
-            win32gui.EnumWindows(gui_interactions.show_hide_window, argument)
+            gui_interactions.enumerate_windows(
+                gui_interactions.show_hide_window, argument)
         elif command == 'show_window':
-            try:
-                win32gui.EnumWindows(gui_interactions.show_window, argument)
-            except Exception as e:
-                if e.args[0] == 0:
-                    pass
-                else:
-                    print(e)
+            gui_interactions.enumerate_windows(gui_interactions.show_window,
+                                               argument)
         elif command == 'speak_config':
             trade.speech_manager.set_speech_text(
                 config[argument][additional_argument])
@@ -861,6 +858,7 @@ def calculate_share_size(trade, config, position):
                      / customer_margin_ratio / price_limit / trading_unit) \
                      * trading_unit
     if share_size == 0:
+        # TODO: return
         sys.exit()
     if position == 'short' and share_size > 50 * trading_unit:
         share_size = 50 * trading_unit
