@@ -536,6 +536,7 @@ def save_market_data(trade, config, clipboard=False):
 
 def get_latest(config, market_holidays, update_time, time_zone, *paths,
                volatile_time=None):
+    import pandas as pd
     import requests
 
     section = config['Market Holidays']
@@ -660,8 +661,8 @@ def execute_action(trade, config, gui_callbacks, action):
 
             winsound.Beep(*ast.literal_eval(argument))
         elif command == 'calculate_share_size':
-            # TODO: return
-            calculate_share_size(trade, config, argument)
+            if not calculate_share_size(trade, config, argument):
+                return False
         elif command == 'click':
             coordinates = ast.literal_eval(argument)
             if gui_callbacks.swapped:
@@ -698,7 +699,7 @@ def execute_action(trade, config, gui_callbacks, action):
 
             configuration.write_config(config, trade.config_file)
         elif command == 'get_symbol':
-            # TODO: initialize
+            # TODO: initialize and return
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_parent_window':
             win32gui.EnumWindows(gui_interactions.hide_parent_window, argument)
@@ -796,7 +797,7 @@ def execute_action(trade, config, gui_callbacks, action):
 
         else:
             print(command, 'is not a recognized command')
-            sys.exit(1)
+            return False
 
 def create_startup_script(trade, config):
     def generate_start_process_lines(options):
@@ -844,7 +845,7 @@ def calculate_share_size(trade, config, position):
             for row in reader:
                 if row[0] == trade.symbol:
                     if row[1] == 'suspended':
-                        sys.exit()
+                        return False
                     else:
                         customer_margin_ratio = float(row[1])
                     break
@@ -854,16 +855,17 @@ def calculate_share_size(trade, config, position):
     utilization_ratio = float(section['utilization_ratio'])
     price_limit = get_price_limit(trade, config)
     trading_unit = 100
-    share_size = int(trade.cash_balance * utilization_ratio
-                     / customer_margin_ratio / price_limit / trading_unit) \
-                     * trading_unit
+    share_size = (int(trade.cash_balance * utilization_ratio
+                      / customer_margin_ratio / price_limit / trading_unit)
+                  * trading_unit)
     if share_size == 0:
-        # TODO: return
-        sys.exit()
-    if position == 'short' and share_size > 50 * trading_unit:
-        share_size = 50 * trading_unit
+        return False
+    else:
+        if position == 'short' and share_size > 50 * trading_unit:
+            share_size = 50 * trading_unit
 
-    trade.share_size = share_size
+        trade.share_size = share_size
+        return True
 
 def get_price_limit(trade, config):
     closing_price = 0.0
