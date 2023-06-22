@@ -1,6 +1,4 @@
 import re
-import sys
-import threading
 import time
 
 import pyautogui
@@ -14,9 +12,6 @@ class GuiCallbacks:
 
         self.initialize_attributes()
 
-        # check_for_window
-        self.exist = []
-
     def is_interactive_window(self):
         foreground_window = win32gui.GetWindowText(
             win32gui.GetForegroundWindow())
@@ -28,15 +23,6 @@ class GuiCallbacks:
     def initialize_attributes(self):
         self.previous_position = pyautogui.position()
         self.moved_focus = 0
-
-    def check_for_window(self, hwnd, title_regex):
-        if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
-            if win32gui.IsIconic(hwnd):
-                win32gui.ShowWindow(hwnd, 9)
-
-            win32gui.SetForegroundWindow(hwnd)
-            self.exist.append((hwnd, title_regex))
-            return
 
 def click_widget(gui_callbacks, image, x, y, width, height):
     location = None
@@ -108,8 +94,19 @@ def take_screenshot(output):
         image = screenshot.grab((rect.left, rect.top, rect.right, rect.bottom))
         mss.tools.to_png(image.rgb, image.size, output=output)
 
-def wait_for_window(gui_callbacks, title_regex):
-    while next((False for i in range(len(gui_callbacks.exist))
-                if gui_callbacks.exist[i][1] == title_regex), True):
-        win32gui.EnumWindows(gui_callbacks.check_for_window, title_regex)
+def wait_for_window(title_regex):
+    def check_for_window(hwnd, extra):
+        if re.fullmatch(extra[0], win32gui.GetWindowText(hwnd)):
+            # TODO
+            if win32gui.IsIconic(hwnd):
+                win32gui.ShowWindow(hwnd, 9)
+
+            win32gui.SetForegroundWindow(hwnd)
+            extra[1] = False
+            return False
+
+    extra = [title_regex, True]
+    while extra[1]:
+        enumerate_windows(check_for_window, extra)
+        # TODO
         time.sleep(0.001)

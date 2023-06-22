@@ -783,7 +783,7 @@ def execute_action(trade, config, gui_callbacks, action):
             argument = ast.literal_eval(argument)
             text_recognition.recognize_text(config[trade.process], *argument)
         elif command == 'wait_for_window':
-            gui_interactions.wait_for_window(gui_callbacks, argument)
+            gui_interactions.wait_for_window(argument)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
 
