@@ -387,13 +387,15 @@ prepares a sell order for repayment.
 [HYPERSBI2 Actions]
 open_close_long_position = [
     # Open Long Position
-    ('show_window', '個別チャート\s.*\((\d{4})\)'), # Show the Chart window.
-    ('show_window', '個別銘柄\s.*\((\d{4})\)'), # Show the Summary window.
+    # Show the Chart window.
+    ('show_window', '個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
+    # Show the Summary window.
+    ('show_window', '個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
     ('click', '208, 726'),           # Select the New Order tab.
     ('click', '541, 797'),           # Focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
     # Get the symbol from the Summary window.
-    ('get_symbol', '個別銘柄\s.*\((\d{4})\)'),
+    ('get_symbol', '個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
     ('calculate_share_size', 'long'), # Calculate the share size.
     ('write_share_size',),           # Write the calculated share size.
     ('click', '477, 819'),           # Click the Market Order button.
@@ -444,10 +446,10 @@ input_map = {
     'f4': '',
     # Execute the show_hide_watchlists action above.
     'f5': 'show_hide_watchlists',
-    # Execute the watch_tick_count action above.
-    'f6': 'watch_tick_count',
     # Execute an action to watch favorite stocks.
-    'f7': 'watch_favorites',
+    'f6': 'watch_favorites',
+    # Execute the watch_tick_count action above.
+    'f7': 'watch_tick_count',
     # Execute the watch_active_stocks action above.
     'f8': 'watch_active_stocks',
     # The F9 key is used for manual recording below.
@@ -517,22 +519,22 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 
 ### Hyper SBI 2 Window Titles ###
 
-| Window          | Regular Expression for Title  | Shortcut     |
-|-----------------|-------------------------------|--------------|
-| Announcements   | `お知らせ`                    | `Ctrl` + `I` |
-| Summary         | `個別銘柄\s.*\((\d{4})\)`     | `Ctrl` + `1` |
-| Watchlists      | `登録銘柄`                    | `Ctrl` + `2` |
-| Holdings        | `保有証券`                    | `Ctrl` + `3` |
-| Order Status    | `注文一覧`                    | `Ctrl` + `4` |
-| Chart           | `個別チャート\s.*\((\d{4})\)` | `Ctrl` + `5` |
-| Markets         | `マーケット`                  | `Ctrl` + `6` |
-| Rankings        | `ランキング`                  | `Ctrl` + `7` |
-| Stock Lists     | `銘柄一覧`                    | `Ctrl` + `8` |
-| Account         | `口座情報`                    | `Ctrl` + `9` |
-| News            | `ニュース`                    | `Ctrl` + `N` |
-| Trading         | `取引ポップアップ`            | `Ctrl` + `T` |
-| Notifications   | `通知設定`                    | `Ctrl` + `G` |
-| Full Order Book | `全板\s.*\((\d{4})\)`         |              |
+| Window          | Regular Expression for Title                                                 | Shortcut     |
+|-----------------|------------------------------------------------------------------------------|--------------|
+| Announcements   | `お知らせ`                                                                   | `Ctrl` + `I` |
+| Summary         | `個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     | `Ctrl` + `1` |
+| Watchlists      | `登録銘柄`                                                                   | `Ctrl` + `2` |
+| Holdings        | `保有証券`                                                                   | `Ctrl` + `3` |
+| Order Status    | `注文一覧`                                                                   | `Ctrl` + `4` |
+| Chart           | `個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` | `Ctrl` + `5` |
+| Markets         | `マーケット`                                                                 | `Ctrl` + `6` |
+| Rankings        | `ランキング`                                                                 | `Ctrl` + `7` |
+| Stock Lists     | `銘柄一覧`                                                                   | `Ctrl` + `8` |
+| Account         | `口座情報`                                                                   | `Ctrl` + `9` |
+| News            | `ニュース`                                                                   | `Ctrl` + `N` |
+| Trading         | `取引ポップアップ`                                                           | `Ctrl` + `T` |
+| Notifications   | `通知設定`                                                                   | `Ctrl` + `G` |
+| Full Order Book | `全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         |              |
 
 ## License ##
 

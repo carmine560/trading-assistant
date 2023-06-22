@@ -97,16 +97,10 @@ def take_screenshot(output):
 def wait_for_window(title_regex):
     def check_for_window(hwnd, extra):
         if re.fullmatch(extra[0], win32gui.GetWindowText(hwnd)):
-            # TODO
-            if win32gui.IsIconic(hwnd):
-                win32gui.ShowWindow(hwnd, 9)
-
-            win32gui.SetForegroundWindow(hwnd)
             extra[1] = False
             return False
 
     extra = [title_regex, True]
     while extra[1]:
         enumerate_windows(check_for_window, extra)
-        # TODO
         time.sleep(0.001)

@@ -383,12 +383,14 @@ def configure(trade, interpolation=True):
     config['HYPERSBI2'] = {
         'executable': '',
         'title': 'Hyper SBI 2 Assistant',
-        # TODO: securities_code
         'interactive_windows': (
-            'お知らせ', '個別銘柄\s.*\((\d{4})\)', '登録銘柄', '保有証券',
-            '注文一覧', '個別チャート\s.*\((\d{4})\)', 'マーケット',
-            'ランキング', '銘柄一覧', '口座情報', 'ニュース',
-            '取引ポップアップ', '通知設定', '全板\s.*\((\d{4})\)'),
+            'お知らせ',
+            '個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
+            '登録銘柄', '保有証券', '注文一覧',
+            '個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
+            'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
+            '取引ポップアップ', '通知設定',
+            '全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
         'input_map': {
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
@@ -523,7 +525,8 @@ def save_market_data(trade, config, clipboard=False):
 
         for i in range(1, 10):
             subset = df.loc[df[symbol_header].astype(str).str.match(
-                str(i) + '\d{3}5?$')]
+                str(i)
+                + '[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?$')]
             subset.to_csv(trade.closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
