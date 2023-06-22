@@ -702,12 +702,13 @@ def execute_action(trade, config, gui_callbacks, action):
 
             configuration.write_config(config, trade.config_file)
         elif command == 'get_symbol':
-            # TODO: initialize and return
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_parent_window':
-            win32gui.EnumWindows(gui_interactions.hide_parent_window, argument)
+            gui_interactions.enumerate_windows(
+                gui_interactions.hide_parent_window, argument)
         elif command == 'hide_window':
-            win32gui.EnumWindows(gui_interactions.hide_window, argument)
+            gui_interactions.enumerate_windows(
+                gui_interactions.hide_window, argument)
         elif command == 'move_to':
             pyautogui.moveTo(ast.literal_eval(argument))
         elif command == 'press_hotkeys':

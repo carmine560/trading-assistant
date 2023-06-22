@@ -68,13 +68,13 @@ def hide_parent_window(hwnd, title_regex):
         parent = win32gui.GetParent(hwnd)
         if parent and not win32gui.IsIconic(parent):
             win32gui.ShowWindow(parent, 6)
-            return
+            return False
 
 def hide_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         if not win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 6)
-        return
+        return False
 
 def show_hide_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
