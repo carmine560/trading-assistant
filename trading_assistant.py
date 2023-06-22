@@ -100,12 +100,8 @@ class Trade:
                 action = ast.literal_eval(
                     config[self.process]['input_map']).get(button.name)
                 if action:
-                    execute_action_thread = threading.Thread(
-                        target=execute_action,
-                        args=(self, config, gui_callbacks,
-                              ast.literal_eval(
-                                  config[self.action_section][action])))
-                    execute_action_thread.start()
+                    start_execute_action_thread(self, config, gui_callbacks,
+                                                action)
 
     def on_press(self, key, config, gui_callbacks):
         if gui_callbacks.is_interactive_window():
@@ -114,12 +110,8 @@ class Trade:
                     action = ast.literal_eval(
                         config[self.process]['input_map']).get(key.name)
                     if action:
-                        execute_action_thread = threading.Thread(
-                            target=execute_action,
-                            args=(self, config, gui_callbacks,
-                                  ast.literal_eval(
-                                      config[self.action_section][action])))
-                        execute_action_thread.start()
+                        start_execute_action_thread(self, config,
+                                                    gui_callbacks, action)
             elif self.keyboard_listener_state == 1:
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
                     or key == self.key_to_check):
@@ -646,6 +638,13 @@ def start_listeners(trade, config, gui_callbacks, base_manager, speech_manager,
               trade.keyboard_listener, base_manager, speech_manager,
               trade.speaking_process, is_persistent))
     trade.wait_listeners_thread.start()
+
+def start_execute_action_thread(trade, config, gui_callbacks, action):
+    execute_action_thread = threading.Thread(
+        target=execute_action,
+        args=(trade, config, gui_callbacks,
+              ast.literal_eval(config[trade.action_section][action])))
+    execute_action_thread.start()
 
 def execute_action(trade, config, gui_callbacks, action):
     trade.initialize_attributes()
