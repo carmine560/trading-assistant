@@ -519,22 +519,22 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 
 ### Hyper SBI 2 Window Titles ###
 
-| Window          | Regular Expression for Title                                                 | Shortcut     |
-|-----------------|------------------------------------------------------------------------------|--------------|
-| Announcements   | `お知らせ`                                                                   | `Ctrl` + `I` |
-| Summary         | `個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     | `Ctrl` + `1` |
-| Watchlists      | `登録銘柄`                                                                   | `Ctrl` + `2` |
-| Holdings        | `保有証券`                                                                   | `Ctrl` + `3` |
-| Order Status    | `注文一覧`                                                                   | `Ctrl` + `4` |
-| Chart           | `個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` | `Ctrl` + `5` |
-| Markets         | `マーケット`                                                                 | `Ctrl` + `6` |
-| Rankings        | `ランキング`                                                                 | `Ctrl` + `7` |
-| Stock Lists     | `銘柄一覧`                                                                   | `Ctrl` + `8` |
-| Account         | `口座情報`                                                                   | `Ctrl` + `9` |
-| News            | `ニュース`                                                                   | `Ctrl` + `N` |
-| Trading         | `取引ポップアップ`                                                           | `Ctrl` + `T` |
-| Notifications   | `通知設定`                                                                   | `Ctrl` + `G` |
-| Full Order Book | `全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         |              |
+| Window          | Regular Expression for Title                                                 |
+|-----------------|------------------------------------------------------------------------------|
+| Announcements   | `お知らせ`                                                                   |
+| Summary         | `個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     |
+| Watchlists      | `登録銘柄`                                                                   |
+| Holdings        | `保有証券`                                                                   |
+| Order Status    | `注文一覧`                                                                   |
+| Chart           | `個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` |
+| Markets         | `マーケット`                                                                 |
+| Rankings        | `ランキング`                                                                 |
+| Stock Lists     | `銘柄一覧`                                                                   |
+| Account         | `口座情報`                                                                   |
+| News            | `ニュース`                                                                   |
+| Trading         | `取引ポップアップ`                                                           |
+| Notifications   | `通知設定`                                                                   |
+| Full Order Book | `全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         |
 
 ## License ##
 

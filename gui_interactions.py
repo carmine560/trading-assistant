@@ -5,7 +5,7 @@ import pyautogui
 import win32api
 import win32gui
 
-class GuiCallbacks:
+class GuiState:
     def __init__(self, interactive_windows):
         self.interactive_windows = interactive_windows
         self.swapped = win32api.GetSystemMetrics(23)
@@ -24,7 +24,7 @@ class GuiCallbacks:
         self.previous_position = pyautogui.position()
         self.moved_focus = 0
 
-def click_widget(gui_callbacks, image, x, y, width, height):
+def click_widget(gui_state, image, x, y, width, height):
     location = None
     x = int(x)
     y = int(y)
@@ -35,7 +35,7 @@ def click_widget(gui_callbacks, image, x, y, width, height):
                                             region=(x, y, width, height))
         time.sleep(0.001)
 
-    if gui_callbacks.swapped:
+    if gui_state.swapped:
         pyautogui.rightClick(pyautogui.center(location))
     else:
         pyautogui.click(pyautogui.center(location))

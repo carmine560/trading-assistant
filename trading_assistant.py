@@ -94,24 +94,24 @@ class Trade:
             self.symbol = matched.group(1)
             return False
 
-    def on_click(self, x, y, button, pressed, config, gui_callbacks):
-        if gui_callbacks.is_interactive_window():
+    def on_click(self, x, y, button, pressed, config, gui_state):
+        if gui_state.is_interactive_window():
             if not pressed:
                 action = ast.literal_eval(
                     config[self.process]['input_map']).get(button.name)
                 if action:
-                    start_execute_action_thread(self, config, gui_callbacks,
+                    start_execute_action_thread(self, config, gui_state,
                                                 action)
 
-    def on_press(self, key, config, gui_callbacks):
-        if gui_callbacks.is_interactive_window():
+    def on_press(self, key, config, gui_state):
+        if gui_state.is_interactive_window():
             if self.keyboard_listener_state == 0:
                 if key in self.function_keys:
                     action = ast.literal_eval(
                         config[self.process]['input_map']).get(key.name)
                     if action:
-                        start_execute_action_thread(self, config,
-                                                    gui_callbacks, action)
+                        start_execute_action_thread(self, config, gui_state,
+                                                    action)
             elif self.keyboard_listener_state == 1:
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
                     or key == self.key_to_check):
@@ -254,7 +254,7 @@ def main():
         print(trade.process, 'section does not exist')
         sys.exit(1)
     else:
-        gui_callbacks = gui_interactions.GuiCallbacks(
+        gui_state = gui_interactions.GuiState(
             ast.literal_eval(config[trade.process]['interactive_windows']))
 
     if args.s or args.l or args.a:
@@ -281,7 +281,7 @@ def main():
 
             start_scheduler_thread = threading.Thread(
                 target=start_scheduler,
-                args=(trade, config, gui_callbacks, trade.process))
+                args=(trade, config, gui_state, trade.process))
             start_scheduler_thread.start()
 
             if not (args.l or args.a):
@@ -292,7 +292,7 @@ def main():
             sys.exit(1)
     if args.l and process_utilities.is_running(trade.process):
         if config.has_option(trade.process, 'input_map'):
-            start_listeners(trade, config, gui_callbacks, base_manager,
+            start_listeners(trade, config, gui_state, base_manager,
                             trade.speech_manager)
         else:
             print(option, 'option does not exist')
@@ -301,14 +301,14 @@ def main():
         is_running = process_utilities.is_running(trade.process)
         if not (is_running and args.l):
             if config.has_option(trade.process, 'input_map'):
-                start_listeners(trade, config, gui_callbacks, base_manager,
+                start_listeners(trade, config, gui_state, base_manager,
                                 trade.speech_manager, is_persistent=True)
             else:
                 print(option, 'option does not exist')
                 sys.exit(1)
         if config.has_section(trade.action_section):
             execute_action(
-                trade, config, gui_callbacks,
+                trade, config, gui_state,
                 ast.literal_eval(config[trade.action_section][args.a[0]]))
         else:
             print(trade.action_section, 'section does not exist')
@@ -593,7 +593,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         else:
             return latest
 
-def start_scheduler(trade, config, gui_callbacks, process):
+def start_scheduler(trade, config, gui_state, process):
     import sched
 
     scheduler = sched.scheduler(time.time, time.sleep)
@@ -609,7 +609,7 @@ def start_scheduler(trade, config, gui_callbacks, process):
         if schedule_time > time.time():
             schedule = scheduler.enterabs(
                 schedule_time, 1, execute_action,
-                argument=(trade, config, gui_callbacks, action))
+                argument=(trade, config, gui_state, action))
             schedules.append(schedule)
 
     while scheduler.queue:
@@ -620,15 +620,15 @@ def start_scheduler(trade, config, gui_callbacks, process):
             for schedule in schedules:
                 scheduler.cancel(schedule)
 
-def start_listeners(trade, config, gui_callbacks, base_manager, speech_manager,
+def start_listeners(trade, config, gui_state, base_manager, speech_manager,
                     is_persistent=False):
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed:
-        trade.on_click(x, y, button, pressed, config, gui_callbacks))
+        trade.on_click(x, y, button, pressed, config, gui_state))
     trade.mouse_listener.start()
 
     trade.keyboard_listener = keyboard.Listener(
-        on_press=lambda key: trade.on_press(key, config, gui_callbacks))
+        on_press=lambda key: trade.on_press(key, config, gui_state))
     trade.keyboard_listener.start()
 
     trade.speaking_process = speech_synthesis.start_speaking_process(
@@ -642,16 +642,16 @@ def start_listeners(trade, config, gui_callbacks, base_manager, speech_manager,
               trade.speaking_process, is_persistent))
     trade.wait_listeners_thread.start()
 
-def start_execute_action_thread(trade, config, gui_callbacks, action):
+def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread = threading.Thread(
         target=execute_action,
-        args=(trade, config, gui_callbacks,
+        args=(trade, config, gui_state,
               ast.literal_eval(config[trade.action_section][action])))
     execute_action_thread.start()
 
-def execute_action(trade, config, gui_callbacks, action):
+def execute_action(trade, config, gui_state, action):
     trade.initialize_attributes()
-    gui_callbacks.initialize_attributes()
+    gui_state.initialize_attributes()
 
     for index in range(len(action)):
         command = action[index][0]
@@ -661,7 +661,7 @@ def execute_action(trade, config, gui_callbacks, action):
             additional_argument = action[index][2]
 
         if command == 'back_to':
-            pyautogui.moveTo(gui_callbacks.previous_position)
+            pyautogui.moveTo(gui_state.previous_position)
         elif command == 'beep':
             import winsound
 
@@ -671,14 +671,14 @@ def execute_action(trade, config, gui_callbacks, action):
                 return False
         elif command == 'click':
             coordinates = ast.literal_eval(argument)
-            if gui_callbacks.swapped:
+            if gui_state.swapped:
                 pyautogui.rightClick(coordinates)
             else:
                 pyautogui.click(coordinates)
         elif command == 'click_widget':
             image = os.path.join(trade.resource_directory, argument)
             region = ast.literal_eval(additional_argument)
-            gui_interactions.click_widget(gui_callbacks, image, *region)
+            gui_interactions.click_widget(gui_state, image, *region)
         elif command == 'copy_symbols_from_market_data':
             save_market_data(trade, config, clipboard=True)
         elif command == 'copy_symbols_from_numeric_column':
@@ -727,7 +727,7 @@ def execute_action(trade, config, gui_callbacks, action):
 
             pyautogui.press(key, presses=presses)
             if key == 'tab':
-                gui_callbacks.moved_focus = presses
+                gui_state.moved_focus = presses
         elif command == 'show_hide_window':
             gui_interactions.enumerate_windows(
                 gui_interactions.show_hide_window, argument)
@@ -775,7 +775,7 @@ def execute_action(trade, config, gui_callbacks, action):
                 time.sleep(0.001)
 
             if not trade.should_continue:
-                for _ in range(gui_callbacks.moved_focus):
+                for _ in range(gui_state.moved_focus):
                     pyautogui.hotkey('shift', 'tab')
 
                 trade.speech_manager.set_speech_text('Canceled.')
@@ -799,8 +799,7 @@ def execute_action(trade, config, gui_callbacks, action):
                            if re.fullmatch(screencast_pattern, f)]
             latest = os.path.join(screencast_directory, files[-1])
             if file_utilities.is_writing(latest) == ast.literal_eval(argument):
-                execute_action(trade, config, gui_callbacks,
-                               additional_argument)
+                execute_action(trade, config, gui_state, additional_argument)
 
         else:
             print(command, 'is not a recognized command')
