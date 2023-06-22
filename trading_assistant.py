@@ -64,10 +64,6 @@ class Trade:
             'positioning_keys': ('click', 'move_to')}
         self.schedule_section = self.process + ' Schedules'
 
-        self.cash_balance = 0
-        self.symbol = ''
-        self.share_size = 0
-
         self.mouse_listener = None
         self.keyboard_listener = None
         self.keyboard_listener_state = 0
@@ -85,6 +81,13 @@ class Trade:
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
 
+        self.initialize_attributes()
+
+    def initialize_attributes(self):
+        self.cash_balance = 0
+        self.symbol = ''
+        self.share_size = 0
+
     def get_symbol(self, hwnd, title_regex):
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
@@ -97,7 +100,6 @@ class Trade:
                 action = ast.literal_eval(
                     config[self.process]['input_map']).get(button.name)
                 if action:
-                    gui_callbacks.initialize_attributes()
                     execute_action_thread = threading.Thread(
                         target=execute_action,
                         args=(self, config, gui_callbacks,
@@ -112,7 +114,6 @@ class Trade:
                     action = ast.literal_eval(
                         config[self.process]['input_map']).get(key.name)
                     if action:
-                        gui_callbacks.initialize_attributes()
                         execute_action_thread = threading.Thread(
                             target=execute_action,
                             args=(self, config, gui_callbacks,
@@ -647,6 +648,9 @@ def start_listeners(trade, config, gui_callbacks, base_manager, speech_manager,
     trade.wait_listeners_thread.start()
 
 def execute_action(trade, config, gui_callbacks, action):
+    trade.initialize_attributes()
+    gui_callbacks.initialize_attributes()
+
     for index in range(len(action)):
         command = action[index][0]
         if len(action[index]) > 1:

@@ -11,23 +11,23 @@ class GuiCallbacks:
     def __init__(self, interactive_windows):
         self.interactive_windows = interactive_windows
         self.swapped = win32api.GetSystemMetrics(23)
-        self.previous_position = pyautogui.position()
-        self.moved_focus = 0
+
+        self.initialize_attributes()
 
         # check_for_window
         self.exist = []
 
-    def initialize_attributes(self):
-        self.previous_position = pyautogui.position()
-        self.moved_focus = 0
-
     def is_interactive_window(self):
-        foreground_window = \
-            win32gui.GetWindowText(win32gui.GetForegroundWindow())
+        foreground_window = win32gui.GetWindowText(
+            win32gui.GetForegroundWindow())
         for title_regex in self.interactive_windows:
             if re.fullmatch(title_regex, foreground_window):
                 return True
         return False
+
+    def initialize_attributes(self):
+        self.previous_position = pyautogui.position()
+        self.moved_focus = 0
 
     def check_for_window(self, hwnd, title_regex):
         if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
