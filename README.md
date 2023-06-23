@@ -41,8 +41,7 @@ the following packages:
     keyboard
   * [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak information
   * [psutil](https://github.com/giampaolo/psutil) to calculate CPU utilization
-  * (optional)
-    [prompt_toolkit](https://python-prompt-toolkit.readthedocs.io/en/master/index.html)
+  * [prompt_toolkit](https://python-prompt-toolkit.readthedocs.io/en/master/index.html)
     to complete possible values or a previous value in configuring
 
 Install each package as needed.  For example:

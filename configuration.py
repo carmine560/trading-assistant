@@ -307,20 +307,15 @@ def modify_dictionary(data, level=0, prompts={}, dictionary_info={}):
     return str(data)
 
 def modify_data(prompt, level=0, data='', all_data=[]):
-    has_prompt_toolkit = True
-    try:
-        from prompt_toolkit import prompt as pt_prompt
-        from prompt_toolkit.completion import WordCompleter
-        from prompt_toolkit.shortcuts import CompleteStyle
-    except ImportError:
-        has_prompt_toolkit = False
+    from prompt_toolkit import prompt as pt_prompt
+    from prompt_toolkit.completion import WordCompleter
+    from prompt_toolkit.shortcuts import CompleteStyle
 
     completer = None
-    if has_prompt_toolkit:
-        if all_data:
-            completer = WordCompleter(all_data, ignore_case=True)
-        elif data:
-            completer = WordCompleter([data])
+    if all_data:
+        completer = WordCompleter(all_data, ignore_case=True)
+    elif data:
+        completer = WordCompleter([data])
 
     prompt_prefix = INDENT * level + prompt
     if completer:
@@ -372,26 +367,17 @@ def configure_position(answer, level=0, value=''):
     import pyautogui
     import win32api
 
-    has_prompt_toolkit = True
-    try:
-        from prompt_toolkit import ANSI
-        from prompt_toolkit import prompt as pt_prompt
-        from prompt_toolkit.completion import WordCompleter
-        from prompt_toolkit.shortcuts import CompleteStyle
-    except ImportError:
-        has_prompt_toolkit = False
+    from prompt_toolkit import ANSI
+    from prompt_toolkit import prompt as pt_prompt
+    from prompt_toolkit.completion import WordCompleter
+    from prompt_toolkit.shortcuts import CompleteStyle
 
     prompt_prefix = f'{INDENT * level}input/{ANSI_HIGHLIGHT}c{ANSI_RESET}lick'
     if answer == 'modify' and value:
-        if has_prompt_toolkit:
-            completer = WordCompleter([value])
-            value = pt_prompt(
-                ANSI(prompt_prefix + ': '), completer=completer,
-                complete_style=CompleteStyle.READLINE_LIKE).strip() or value
-        else:
-            value = input(prompt_prefix + ' '
-                          + ANSI_DEFAULT + value + ANSI_RESET + ': ').strip() \
-                          or value
+        completer = WordCompleter([value])
+        value = pt_prompt(
+            ANSI(prompt_prefix + ': '), completer=completer,
+            complete_style=CompleteStyle.READLINE_LIKE).strip() or value
     else:
         value = input(prompt_prefix + ': ').strip()
 

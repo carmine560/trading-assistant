@@ -1,6 +1,7 @@
 mss
 pandas
 Pillow
+Pillow
 prompt_toolkit
 psutil
 PyAutoGUI
@@ -9,3 +10,4 @@ pytesseract
 python_gnupg
 pyttsx3
 pywin32
+Requests
