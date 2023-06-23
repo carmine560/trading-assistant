@@ -1,0 +1,11 @@
+mss
+pandas
+Pillow
+prompt_toolkit
+psutil
+PyAutoGUI
+pynput
+pytesseract
+python_gnupg
+pyttsx3
+pywin32

@@ -48,15 +48,8 @@ the following packages:
 Install each package as needed.  For example:
 
 ``` powershell
-pip install pandas
-pip install pywin32
 winget install UB-Mannheim.TesseractOCR
-pip install pytesseract
-pip install pyautogui
-pip install pynput
-pip install pyttsx3
-pip install psutil
-pip install prompt_toolkit
+py -m pip install -r requirements.txt -U
 ```
 
 ## Usage ##
