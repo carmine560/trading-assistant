@@ -209,6 +209,7 @@ def main():
                              'additional_value': 'additional argument',
                              'end_of_list': 'end of commands'},
                     categorized_keys=trade.categorized_keys):
+                # TODO: venv
                 # To pin the shortcut to the Taskbar, specify an
                 # executable file as the target_path argument.
                 file_utilities.create_shortcut(
@@ -808,11 +809,25 @@ def execute_action(trade, config, gui_state, action):
 def create_startup_script(trade, config):
     def generate_start_process_lines(options):
         lines = []
+        activate = None
+        if os.path.exists('.venv\Scripts\Activate.ps1'):
+            activate = '.venv\Scripts\Activate.ps1'
+
+        basename = os.path.basename(__file__)
+        parameters = '-WorkingDirectory "$workingDirectory" -NoNewWindow'
         for option in options:
             if option:
-                lines.append(f'    Start-Process "py.exe" -ArgumentList `\n'
-                             f'      "`"{__file__}`"", `\n'
-                             f'      "{option.strip()}" -NoNewWindow\n')
+                if activate:
+                    lines.append(
+                        f'    Start-Process "powershell.exe" -ArgumentList `\n'
+                        f'      "{activate};", `\n'
+                        f'      "python.exe {basename} {option.strip()}" `\n'
+                        f'      {parameters}\n')
+                else:
+                    lines.append(
+                        f'    Start-Process "py.exe" -ArgumentList `\n'
+                        f'      "{basename} {option.strip()}" `\n'
+                        f'      {parameters}\n')
         return lines
 
     section = config[trade.startup_script_section]
@@ -822,8 +837,10 @@ def create_startup_script(trade, config):
 
     with open(trade.startup_script, 'w') as f:
         lines = []
-        lines.append(f'if (Get-Process "{trade.process}"'
-                     f' -ErrorAction SilentlyContinue)\n{{\n')
+        lines.append(f'$workingDirectory = "{os.path.dirname(__file__)}"\n'
+                     f'\n'
+                     f'if (Get-Process "{trade.process}" '
+                     f'-ErrorAction SilentlyContinue)\n{{\n')
         lines.extend(generate_start_process_lines(running_options))
         lines.append('}\nelse\n{\n')
         lines.extend(generate_start_process_lines(pre_start_options))

@@ -11,3 +11,4 @@ python_gnupg
 pyttsx3
 pywin32
 Requests
+lxml
