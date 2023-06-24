@@ -64,8 +64,8 @@ following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1` startup
 script that processes the above and starts Hyper SBI 2.
 
-> **Note:** This option uses virtual environment activation if a `.venv`
-> directory exists.
+> **Note:** This option adds virtual environment activation to the startup
+> script if the `.venv\Scripts\Activate.ps1` script exists.
 
 ```powershell
 py trading_assistant.py -I
