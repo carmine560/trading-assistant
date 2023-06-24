@@ -16,11 +16,11 @@ action consisting of a sequence of commands, this script:
   * manipulates widgets to prepare your order
   * also schedules these actions
 
-> **Disclaimer** This script does not analyze and make decisions for the user.
+> **Disclaimer**: This script does not analyze and make decisions for the user.
 > If the user has incorrect assumptions, they can lose more because this script
 > can place orders more quickly and repeatedly.  Use at your own risk.
 
-> **Warning** This script is currently under heavy development.  Changes in
+> **Warning**: This script is currently under heavy development.  Changes in
 > functionality can occur at any time.
 
 ## Prerequisites ##
@@ -64,7 +64,7 @@ following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1` startup
 script that processes the above and starts Hyper SBI 2.
 
-> **Note:** This option adds virtual environment activation to the startup
+> **Note**: This option adds virtual environment activation to the startup
 > script if the `.venv\Scripts\Activate.ps1` script exists.
 
 ```powershell
@@ -90,8 +90,8 @@ py trading_assistant.py -R
 
 Create or modify an action for processing by this script.
 
-> **Note:** This option adds virtual environment activation to the target of
-> the shortcut if the `.venv\Scripts\activate.bat` script exists.
+> **Note**: This option adds virtual environment activation to the target of a
+> shortcut to the action if the `.venv\Scripts\activate.bat` script exists.
 
 ``` powershell
 py trading_assistant.py -A ACTION
@@ -271,7 +271,7 @@ running_options = -a show_hide_watchlists
 The following `login` action waits for the Login window to show and clicks its
 button.
 
-> **Note** These examples below underwent in an environment with 1080p
+> **Note**: These examples below underwent in an environment with 1080p
 > resolution, a maximized Watchlists window, a left-snapped Summary window, and
 > a right-snapped Chart window.  In addition, my Hyper SBI 2 settings differ
 > from the default settings.
@@ -296,7 +296,7 @@ login = [
 The following `watch_active_stocks` action replaces the stocks in the
 Watchlists window with new ones scraped from the current market data above.
 
-> **Note** The free market data provided by Kabutan has a 20-minute delay.
+> **Note**: The free market data provided by Kabutan has a 20-minute delay.
 
 ``` ini
 [HYPERSBI2 Actions]
@@ -334,7 +334,7 @@ watch_active_stocks = [
 The following `watch_tick_count` action replaces the stocks in the Watchlists
 window with new ones recognized in the Rankings window.
 
-> **Note** Hyper SBI updates the Rankings window in real-time, but the text
+> **Note**: Hyper SBI updates the Rankings window in real-time, but the text
 > recognition by Tesseract is not as accurate as the scraped market data above.
 
 ``` ini
