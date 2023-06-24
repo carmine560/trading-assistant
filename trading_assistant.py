@@ -209,11 +209,23 @@ def main():
                              'additional_value': 'additional argument',
                              'end_of_list': 'end of commands'},
                     categorized_keys=trade.categorized_keys):
-                # TODO: venv
-                # To pin the shortcut to the Taskbar, specify an
-                # executable file as the target_path argument.
+                activate = None
+                if os.path.exists(r'.venv\Scripts\activate.bat'):
+                    activate = r'.venv\Scripts\activate.bat'
+
+                # To pin the shortcut to the Taskbar, specify an executable
+                # file as the target_path argument.
+                basename = os.path.basename(__file__)
+                if activate:
+                    target_path = 'cmd.exe'
+                    arguments = (f'/c {activate}&&'
+                                 f'python.exe {basename} -a {args.A[0]}')
+                else:
+                    target_path = 'py.exe'
+                    arguments = f'{basename} -a {args.A[0]}'
+
                 file_utilities.create_shortcut(
-                    args.A[0], 'py.exe', f'"{__file__}" -a {args.A[0]}',
+                    args.A[0], target_path, arguments,
                     program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
             else:
@@ -810,8 +822,8 @@ def create_startup_script(trade, config):
     def generate_start_process_lines(options):
         lines = []
         activate = None
-        if os.path.exists('.venv\Scripts\Activate.ps1'):
-            activate = '.venv\Scripts\Activate.ps1'
+        if os.path.exists(r'.venv\Scripts\Activate.ps1'):
+            activate = r'.venv\Scripts\Activate.ps1'
 
         basename = os.path.basename(__file__)
         parameters = '-WorkingDirectory "$workingDirectory" -NoNewWindow'

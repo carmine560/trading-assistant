@@ -90,6 +90,9 @@ py trading_assistant.py -R
 
 Create or modify an action for processing by this script.
 
+> **Note:** This option adds virtual environment activation to the target of
+> the shortcut if the `.venv\Scripts\activate.bat` script exists.
+
 ``` powershell
 py trading_assistant.py -A ACTION
 ```
