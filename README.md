@@ -254,9 +254,9 @@ show_hide_watchlists = [
 # Save the customer margin ratios and the previous market data and execute the
 # minimize_all_windows action above.
 pre_start_options = -rda minimize_all_windows
-# Start the scheduler, mouse and keyboard listeners, and execute the login
-# action mentioned in the next section.
-post_start_options = -sla login
+# Start the mouse and keyboard listeners and the scheduler, and execute the
+# login action mentioned in the next section.
+post_start_options = -lsa login
 # Execute the show_hide_window action above.
 running_options = -a show_hide_watchlists
 ```
