@@ -30,8 +30,9 @@ class Trade:
         self.config_directory = os.path.join(
             os.path.expandvars('%LOCALAPPDATA%'),
             os.path.basename(os.path.dirname(__file__)))
-        self.script_base = os.path.splitext(os.path.basename(__file__))[0]
-        self.config_file = os.path.join(self.config_directory,
+        self.script_file = os.path.basename(__file__)
+        self.script_base = os.path.splitext(self.script_file)[0]
+        self.config_path = os.path.join(self.config_directory,
                                         self.script_base + '.ini')
         self.market_directory = os.path.join(self.config_directory, 'market')
         self.market_holidays = os.path.join(self.market_directory,
@@ -178,7 +179,7 @@ def main():
     if args.I or args.S or args.L or args.A or args.C or args.B or args.R:
         config = configure(trade, interpolation=False)
         if args.I and configuration.modify_section(
-                config, trade.startup_script_section, trade.config_file,
+                config, trade.startup_script_section, trade.config_path,
                 **backup_file):
             create_startup_script(trade, config)
             file_utilities.create_shortcut(
@@ -188,7 +189,7 @@ def main():
                 icon_directory=trade.resource_directory)
             return
         elif args.S and configuration.modify_section(
-                config, trade.schedule_section, trade.config_file,
+                config, trade.schedule_section, trade.config_path,
                 **backup_file, is_inserting=True, value_format='tuple',
                 prompts={'end_of_list': 'end of commands'},
                 tuple_info={'element_index': 1,
@@ -196,14 +197,14 @@ def main():
                                 config, trade.action_section)}):
             return
         elif args.L and configuration.modify_option(
-                config, trade.process, 'input_map', trade.config_file,
+                config, trade.process, 'input_map', trade.config_path,
                 **backup_file,
                 dictionary_info={'possible_values': configuration.list_section(
                     config, trade.action_section)}):
             return
         elif args.A:
             if configuration.modify_tuple_list(
-                    config, trade.action_section, args.A[0], trade.config_file,
+                    config, trade.action_section, args.A[0], trade.config_path,
                     **backup_file,
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
@@ -215,14 +216,14 @@ def main():
 
                 # To pin the shortcut to the Taskbar, specify an executable
                 # file as the target_path argument.
-                basename = os.path.basename(__file__)
                 if activate:
                     target_path = 'cmd.exe'
-                    arguments = (f'/c {activate}&&'
-                                 f'python.exe {basename} -a {args.A[0]}')
+                    arguments = (
+                        f'/c {activate}&&'
+                        f'python.exe {trade.script_file} -a {args.A[0]}')
                 else:
                     target_path = 'py.exe'
-                    arguments = f'{basename} -a {args.A[0]}'
+                    arguments = f'{trade.script_file} -a {args.A[0]}'
 
                 file_utilities.create_shortcut(
                     args.A[0], target_path, arguments,
@@ -247,15 +248,15 @@ def main():
             return
         elif args.C and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
-                trade.config_file, **backup_file,
+                trade.config_path, **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
             return
         elif args.B and configuration.modify_option(
-                config, trade.process, 'fixed_cash_balance', trade.config_file,
+                config, trade.process, 'fixed_cash_balance', trade.config_path,
                 **backup_file):
             return
         elif args.R and configuration.modify_option(
-                config, trade.process, 'price_limit_region', trade.config_file,
+                config, trade.process, 'price_limit_region', trade.config_path,
                 **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
             return
@@ -342,7 +343,7 @@ def main():
                 print(e)
         else:
             configuration.delete_option(config, trade.action_section,
-                                        args.D[0], trade.config_file,
+                                        args.D[0], trade.config_path,
                                         **backup_file)
 
         file_utilities.delete_shortcut(
@@ -426,7 +427,7 @@ def configure(trade, interpolation=True):
     config['Variables'] = {
         'current_date': str(date.today()),
         'current_number_of_trades': '0'}
-    config.read(trade.config_file, encoding='utf-8')
+    config.read(trade.config_path, encoding='utf-8')
 
     if trade.process == 'HYPERSBI2':
         section = config[trade.process]
@@ -719,7 +720,7 @@ def execute_action(trade, config, gui_state, action):
                 section['current_date'] = str(date.today())
                 section['current_number_of_trades'] = '1'
 
-            configuration.write_config(config, trade.config_file)
+            configuration.write_config(config, trade.config_path)
         elif command == 'get_symbol':
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_parent_window':
@@ -828,7 +829,6 @@ def create_startup_script(trade, config):
         if os.path.exists(r'.venv\Scripts\Activate.ps1'):
             activate = r'.venv\Scripts\Activate.ps1'
 
-        basename = os.path.basename(__file__)
         parameters = '-WorkingDirectory "$workingDirectory" -NoNewWindow'
         for option in options:
             if option:
@@ -836,12 +836,12 @@ def create_startup_script(trade, config):
                     lines.append(
                         f'    Start-Process "powershell.exe" -ArgumentList `\n'
                         f'      "{activate};", `\n'
-                        f'      "python.exe {basename} {option.strip()}" `\n'
+                        f'      "python.exe {trade.script_file} {option.strip()}" `\n'
                         f'      {parameters}\n')
                 else:
                     lines.append(
                         f'    Start-Process "py.exe" -ArgumentList `\n'
-                        f'      "{basename} {option.strip()}" `\n'
+                        f'      "{trade.script_file} {option.strip()}" `\n'
                         f'      {parameters}\n')
         return lines
 

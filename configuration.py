@@ -21,16 +21,16 @@ def list_section(config, section):
         print(section, 'section does not exist')
         return False
 
-def modify_section(config, section, config_file, backup_function=None,
+def modify_section(config, section, config_path, backup_function=None,
                    backup_parameters=None, is_inserting=False,
                    value_format='string', prompts={}, categorized_keys={},
                    tuple_info={}):
     if backup_function:
-        backup_function(config_file, **backup_parameters)
+        backup_function(config_path, **backup_parameters)
 
     if config.has_section(section):
         for option in config[section]:
-            result = modify_option(config, section, option, config_file,
+            result = modify_option(config, section, option, config_path,
                                    categorized_keys=categorized_keys,
                                    tuple_info=tuple_info)
             if result == 'quit' or result == False:
@@ -58,20 +58,20 @@ def modify_section(config, section, config_file, backup_function=None,
                 else:
                     is_inserting = False
             if is_inserted:
-                write_config(config, config_file)
+                write_config(config, config_path)
 
         return True
     else:
         print(section, 'section does not exist')
         return False
 
-def modify_option(config, section, option, config_file, backup_function=None,
+def modify_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None, prompts={}, categorized_keys={},
                   tuple_info={}, dictionary_info={}):
     import re
 
     if backup_function:
-        backup_function(config_file, **backup_parameters)
+        backup_function(config_path, **backup_parameters)
 
     if config.has_option(section, option):
         print(option, '=', ANSI_DEFAULT + config[section][option] + ANSI_RESET)
@@ -84,7 +84,7 @@ def modify_option(config, section, option, config_file, backup_function=None,
 
         if answer == 'modify':
             if re.sub('\s+', '', config[section][option])[:2] == '[(':
-                modify_tuple_list(config, section, option, config_file,
+                modify_tuple_list(config, section, option, config_path,
                                   categorized_keys=categorized_keys)
             elif re.sub('\s+', '', config[section][option])[:1] == '(':
                 config[section][option] = modify_tuple(
@@ -107,17 +107,17 @@ def modify_option(config, section, option, config_file, backup_function=None,
         elif answer == 'quit':
             return answer
 
-        write_config(config, config_file)
+        write_config(config, config_path)
         return True
     else:
         print(option, 'option does not exist')
         return False
 
-def modify_tuple_list(config, section, option, config_file,
+def modify_tuple_list(config, section, option, config_path,
                       backup_function=None, backup_parameters=None, prompts={},
                       categorized_keys={}):
     if backup_function:
-        backup_function(config_file, **backup_parameters)
+        backup_function(config_path, **backup_parameters)
 
     is_created = False
     if not config.has_section(section):
@@ -131,10 +131,10 @@ def modify_tuple_list(config, section, option, config_file,
                            categorized_keys=categorized_keys)
     if tuples:
         config[section][option] = str(tuples)
-        write_config(config, config_file)
+        write_config(config, config_path)
         return True
     else:
-        delete_option(config, section, option, config_file)
+        delete_option(config, section, option, config_path)
         return False
 
 def modify_tuples(tuples, is_created, level=0, prompts={},
@@ -399,19 +399,19 @@ def configure_position(answer, level=0, value=''):
     else:
         return value
 
-def delete_option(config, section, option, config_file, backup_function=None,
+def delete_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None):
     if backup_function:
-        backup_function(config_file, **backup_parameters)
+        backup_function(config_path, **backup_parameters)
 
     if config.has_option(section, option):
         config.remove_option(section, option)
-        write_config(config, config_file)
+        write_config(config, config_path)
         return True
     else:
         print(option, 'option does not exist')
         return False
 
-def write_config(config, config_file):
-    with open(config_file, 'w', encoding='utf-8') as f:
+def write_config(config, config_path):
+    with open(config_path, 'w', encoding='utf-8') as f:
         config.write(f)
