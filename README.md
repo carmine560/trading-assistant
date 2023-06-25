@@ -8,11 +8,11 @@ of stocks on margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining an
 action consisting of a sequence of commands, this script can:
 
-  * show required windows
-  * calculate the maximum share size for a market order on margin trading
-  * manipulate widgets to prepare your order
-  * trigger actions using the mouse and keyboard
-  * schedule actions
+  * Show required windows,
+  * Calculate the maximum share size for a market order on margin trading,
+  * Manipulate widgets to prepare your order,
+  * Trigger actions using the mouse and keyboard,
+  * Schedule actions.
 
 > **Disclaimer**: This script does not analyze or make decisions for the user.
 > If the user has incorrect assumptions, they may lose more because this script
