@@ -242,7 +242,7 @@ def main():
             file_utilities.create_bash_completion(
                 trade.script_base, ('-a', '-A', '-D'),
                 configuration.list_section(config, trade.action_section),
-                'py.exe',
+                ('py.exe', 'python.exe'),
                 os.path.join(trade.resource_directory, 'completion.sh'))
             return
         elif args.C and configuration.modify_option(
@@ -355,7 +355,8 @@ def main():
             os.path.join(trade.resource_directory, 'completion.ps1'))
         file_utilities.create_bash_completion(
             trade.script_base, ('-a', '-A', '-D'),
-            configuration.list_section(config, trade.action_section), 'py.exe',
+            configuration.list_section(config, trade.action_section),
+            ('py.exe', 'python.exe'),
             os.path.join(trade.resource_directory, 'completion.sh'))
         return
 

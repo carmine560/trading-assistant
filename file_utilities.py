@@ -278,10 +278,10 @@ def extract_commands(source, command='command'):
                         commands.append(comparator.value)
     return commands
 
-def create_powershell_completion(script_base, options, values, interpreter,
+def create_powershell_completion(script_base, options, values, interpreters,
                                  completion):
-    interpreter_regex = f"({'|'.join(interpreter)})"
-    interpreter_array = f"@({', '.join(map(repr, interpreter))})"
+    interpreters_regex = f"({'|'.join(interpreters)})"
+    interpreters_array = f"@({', '.join(map(repr, interpreters))})"
     options_str = '|'.join(options)
 
     variable_str = '        $options = @('
@@ -302,7 +302,7 @@ def create_powershell_completion(script_base, options, values, interpreter,
     param($wordToComplete, $commandAst, $cursorPosition)
     $commandLine = $commandAst.ToString()
     $regex = `
-      '{interpreter_regex}(\.exe)?\s+.*{script_base}\.py(\s+.*)?\s+({options_str})'
+      '{interpreters_regex}(\.exe)?\s+.*{script_base}\.py(\s+.*)?\s+({options_str})'
     if ($commandLine -cmatch $regex) {{
 {variable_str}{values_str})
         $options | Where-Object {{ $_ -like "$wordToComplete*" }} |
@@ -312,14 +312,14 @@ def create_powershell_completion(script_base, options, values, interpreter,
           }}
     }}
 }}
-Register-ArgumentCompleter -Native -CommandName {interpreter_array} `
+Register-ArgumentCompleter -Native -CommandName {interpreters_array} `
   -ScriptBlock $scriptblock
 '''
 
     with open(completion, 'w') as f:
         f.write(completion_str)
 
-def create_bash_completion(script_base, options, values, interpreter,
+def create_bash_completion(script_base, options, values, interpreters,
                            completion):
     options_str = ' '.join(options)
 
@@ -339,6 +339,7 @@ def create_bash_completion(script_base, options, values, interpreter,
 
     expression_str = ' || '.join(f'$previous == {option}'
                                  for option in options)
+    interpreters_str = ' '.join(interpreters)
     completion_str = f'''_{script_base}()
 {{
     local script current previous options values
@@ -362,7 +363,7 @@ def create_bash_completion(script_base, options, values, interpreter,
         return 0
     fi
 }}
-complete -F _{script_base} {interpreter}
+complete -F _{script_base} {interpreters_str}
 '''
 
     with open(completion, 'w', newline='\n') as f:
