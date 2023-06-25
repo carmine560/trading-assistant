@@ -237,7 +237,8 @@ def main():
             file_utilities.create_powershell_completion(
                 trade.script_base, ('-a', '-A', '-D'),
                 configuration.list_section(config, trade.action_section),
-                'py', os.path.join(trade.resource_directory, 'completion.ps1'))
+                ('py', 'python'),
+                os.path.join(trade.resource_directory, 'completion.ps1'))
             file_utilities.create_bash_completion(
                 trade.script_base, ('-a', '-A', '-D'),
                 configuration.list_section(config, trade.action_section),
@@ -350,7 +351,8 @@ def main():
         file_utilities.create_powershell_completion(
             trade.script_base, ('-a', '-A', '-D'),
             configuration.list_section(config, trade.action_section),
-            'py', os.path.join(trade.resource_directory, 'completion.ps1'))
+            ('py', 'python'),
+            os.path.join(trade.resource_directory, 'completion.ps1'))
         file_utilities.create_bash_completion(
             trade.script_base, ('-a', '-A', '-D'),
             configuration.list_section(config, trade.action_section), 'py.exe',

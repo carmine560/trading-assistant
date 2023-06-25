@@ -280,6 +280,8 @@ def extract_commands(source, command='command'):
 
 def create_powershell_completion(script_base, options, values, interpreter,
                                  completion):
+    interpreter_regex = f"({'|'.join(interpreter)})"
+    interpreter_array = f"@({', '.join(map(repr, interpreter))})"
     options_str = '|'.join(options)
 
     variable_str = '        $options = @('
@@ -299,7 +301,8 @@ def create_powershell_completion(script_base, options, values, interpreter,
     completion_str = f'''$scriptblock = {{
     param($wordToComplete, $commandAst, $cursorPosition)
     $commandLine = $commandAst.ToString()
-    $regex = '{interpreter}(\.exe)?\s+.*{script_base}\.py(\s+.*)?\s+({options_str})'
+    $regex = `
+      '{interpreter_regex}(\.exe)?\s+.*{script_base}\.py(\s+.*)?\s+({options_str})'
     if ($commandLine -cmatch $regex) {{
 {variable_str}{values_str})
         $options | Where-Object {{ $_ -like "$wordToComplete*" }} |
@@ -309,7 +312,8 @@ def create_powershell_completion(script_base, options, values, interpreter,
           }}
     }}
 }}
-Register-ArgumentCompleter -Native -CommandName {interpreter} -ScriptBlock $scriptblock
+Register-ArgumentCompleter -Native -CommandName {interpreter_array} `
+  -ScriptBlock $scriptblock
 '''
 
     with open(completion, 'w') as f:
