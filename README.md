@@ -1,24 +1,25 @@
 # trading-assistant #
 
-<!-- Python script that assists in discretionary day trading of stocks on
+<!-- Python script that assists with discretionary day trading of stocks on
 margin using Hyper SBI 2 -->
 
-A `trading_assistant.py` Python script assists in discretionary day trading of
-stocks on margin using [Hyper SBI
+The `trading_assistant.py` Python script assists with discretionary day trading
+of stocks on margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining an
-action consisting of a sequence of commands, this script:
+action consisting of a sequence of commands, this script can:
 
-  * shows required windows
-  * calculates the maximum share size for a market order on margin trading
-  * manipulates widgets to prepare your order
-  * also schedules these actions
+  * show required windows
+  * calculate the maximum share size for a market order on margin trading
+  * manipulate widgets to prepare your order
+  * trigger actions using the mouse and keyboard
+  * schedule actions
 
-> **Disclaimer**: This script does not analyze and make decisions for the user.
-> If the user has incorrect assumptions, they can lose more because this script
+> **Disclaimer**: This script does not analyze or make decisions for the user.
+> If the user has incorrect assumptions, they may lose more because this script
 > can place orders more quickly and repeatedly.  Use at your own risk.
 
 > **Warning**: This script is currently under heavy development.  Changes in
-> functionality can occur at any time.
+> functionality may occur at any time.
 
 ## Prerequisites ##
 
