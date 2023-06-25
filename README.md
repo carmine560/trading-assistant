@@ -3,9 +3,6 @@
 <!-- Python script that assists in discretionary day trading of stocks on
 margin using Hyper SBI 2 -->
 
-<!-- hypersbi2 python pandas pywin32 pytesseract tesseract pyautogui pynput
-pyttsx3 python-prompt-toolkit -->
-
 A `trading_assistant.py` Python script assists in discretionary day trading of
 stocks on margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining an
@@ -29,19 +26,22 @@ This script has been tested in [Python for
 Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 and uses
 the following packages:
 
-  * [pandas](https://pandas.pydata.org/) to save the customer margin ratios and
+  * [`requests`](https://requests.readthedocs.io/en/latest/),
+    [`pandas`](https://pandas.pydata.org/), and
+    [`lxml`](https://lxml.de/index.html) to save the customer margin ratios and
     the previous market data from websites
-  * [pywin32](https://github.com/mhammond/pywin32) to access Windows APIs
-  * [pytesseract](https://github.com/madmaze/pytesseract) to invoke
+  * [`pywin32`](https://github.com/mhammond/pywin32) to access Windows APIs
+  * [`pytesseract`](https://github.com/madmaze/pytesseract) to invoke
     [Tesseract](https://tesseract-ocr.github.io/) to recognize prices and
     securities codes on Hyper SBI 2
-  * [pyautogui](https://pyautogui.readthedocs.io/en/latest/index.html) to
+  * [`pyautogui`](https://pyautogui.readthedocs.io/en/latest/index.html) to
     automate interactions with Hyper SBI 2
-  * [pynput](https://github.com/moses-palmer/pynput) to monitor the mouse and
+  * [`pynput`](https://github.com/moses-palmer/pynput) to monitor the mouse and
     keyboard
-  * [pyttsx3](https://github.com/nateshmbhat/pyttsx3) to speak information
-  * [psutil](https://github.com/giampaolo/psutil) to calculate CPU utilization
-  * [prompt_toolkit](https://python-prompt-toolkit.readthedocs.io/en/master/index.html)
+  * [`pyttsx3`](https://github.com/nateshmbhat/pyttsx3) to speak information
+  * [`psutil`](https://github.com/giampaolo/psutil) to calculate CPU
+    utilization
+  * [`prompt_toolkit`](https://python-prompt-toolkit.readthedocs.io/en/master/index.html)
     to complete possible values or a previous value in configuring
 
 Install each package as needed.  For example:

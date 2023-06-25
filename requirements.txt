@@ -1,5 +1,6 @@
-pandas
 requests
+pandas
+lxml
 pywin32
 pytesseract
 pyautogui
