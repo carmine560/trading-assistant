@@ -136,27 +136,27 @@ def main():
         '-d', action='store_true',
         help='save the previous market data')
     parser.add_argument(
-        '-s', action='store_true',
-        help='start the scheduler')
+        '-a', metavar='ACTION', nargs=1,
+        help='execute an action')
     parser.add_argument(
         '-l', action='store_true',
         help='start the mouse and keyboard listeners')
     parser.add_argument(
-        '-a', metavar='ACTION', nargs=1,
-        help='execute an action')
+        '-s', action='store_true',
+        help='start the scheduler')
     group.add_argument(
         '-I', action='store_true',
         help=('configure the startup script, create a shortcut to it, '
               'and exit'))
     group.add_argument(
-        '-S', action='store_true',
-        help='configure schedules and exit')
+        '-A', metavar='ACTION', nargs=1,
+        help=('configure an action, create a shortcut to it, and exit'))
     group.add_argument(
         '-L', action='store_true',
         help='configure the input map for buttons and keys and exit')
     group.add_argument(
-        '-A', metavar='ACTION', nargs=1,
-        help=('configure an action, create a shortcut to it, and exit'))
+        '-S', action='store_true',
+        help='configure schedules and exit')
     group.add_argument(
         '-C', action='store_true',
         help=('configure the cash balance region and exit'))
@@ -176,7 +176,7 @@ def main():
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
 
-    if args.I or args.S or args.L or args.A or args.C or args.B or args.R:
+    if args.I or args.A or args.L or args.S or args.C or args.B or args.R:
         config = configure(trade, interpolation=False)
         if args.I and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_path,
@@ -187,20 +187,6 @@ def main():
                 '-WindowStyle Hidden -File "' + trade.startup_script + '"',
                 program_group_base=config[trade.process]['title'],
                 icon_directory=trade.resource_directory)
-            return
-        elif args.S and configuration.modify_section(
-                config, trade.schedule_section, trade.config_path,
-                **backup_file, is_inserting=True, value_format='tuple',
-                prompts={'end_of_list': 'end of commands'},
-                tuple_info={'element_index': 1,
-                            'possible_values': configuration.list_section(
-                                config, trade.action_section)}):
-            return
-        elif args.L and configuration.modify_option(
-                config, trade.process, 'input_map', trade.config_path,
-                **backup_file,
-                dictionary_info={'possible_values': configuration.list_section(
-                    config, trade.action_section)}):
             return
         elif args.A:
             if configuration.modify_tuple_list(
@@ -246,6 +232,20 @@ def main():
                 ('py.exe', 'python.exe'),
                 os.path.join(trade.resource_directory, 'completion.sh'))
             return
+        elif args.L and configuration.modify_option(
+                config, trade.process, 'input_map', trade.config_path,
+                **backup_file,
+                dictionary_info={'possible_values': configuration.list_section(
+                    config, trade.action_section)}):
+            return
+        elif args.S and configuration.modify_section(
+                config, trade.schedule_section, trade.config_path,
+                **backup_file, is_inserting=True, value_format='tuple',
+                prompts={'end_of_list': 'end of commands'},
+                tuple_info={'element_index': 1,
+                            'possible_values': configuration.list_section(
+                                config, trade.action_section)}):
+            return
         elif args.C and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
                 trade.config_path, **backup_file,
@@ -272,7 +272,7 @@ def main():
         gui_state = gui_interactions.GuiState(
             ast.literal_eval(config[trade.process]['interactive_windows']))
 
-    if args.s or args.l or args.a:
+    if args.a or args.l or args.s:
         BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
         base_manager = BaseManager()
         base_manager.start()
@@ -287,31 +287,6 @@ def main():
             sys.exit(1)
     if args.d:
         save_market_data(trade, config)
-    if args.s and process_utilities.is_running(trade.process):
-        if config.has_section(trade.schedule_section):
-            if not (args.l or args.a):
-                trade.speaking_process = (
-                    speech_synthesis.start_speaking_process(
-                        trade.speech_manager))
-
-            start_scheduler_thread = threading.Thread(
-                target=start_scheduler,
-                args=(trade, config, gui_state, trade.process))
-            start_scheduler_thread.start()
-
-            if not (args.l or args.a):
-                speech_synthesis.stop_speaking_process(
-                    base_manager, trade.speech_manager, trade.speaking_process)
-        else:
-            print(trade.schedule_section, 'section does not exist')
-            sys.exit(1)
-    if args.l and process_utilities.is_running(trade.process):
-        if config.has_option(trade.process, 'input_map'):
-            start_listeners(trade, config, gui_state, base_manager,
-                            trade.speech_manager)
-        else:
-            print(option, 'option does not exist')
-            sys.exit(1)
     if args.a:
         is_running = process_utilities.is_running(trade.process)
         if not (is_running and args.l):
@@ -334,6 +309,31 @@ def main():
                 trade.speech_manager, trade.speaking_process)
             trade.stop_listeners_event.set()
             trade.wait_listeners_thread.join()
+    if args.l and process_utilities.is_running(trade.process):
+        if config.has_option(trade.process, 'input_map'):
+            start_listeners(trade, config, gui_state, base_manager,
+                            trade.speech_manager)
+        else:
+            print(option, 'option does not exist')
+            sys.exit(1)
+    if args.s and process_utilities.is_running(trade.process):
+        if config.has_section(trade.schedule_section):
+            if not (args.a or args.l):
+                trade.speaking_process = (
+                    speech_synthesis.start_speaking_process(
+                        trade.speech_manager))
+
+            start_scheduler_thread = threading.Thread(
+                target=start_scheduler,
+                args=(trade, config, gui_state, trade.process))
+            start_scheduler_thread.start()
+
+            if not (args.a or args.l):
+                speech_synthesis.stop_speaking_process(
+                    base_manager, trade.speech_manager, trade.speaking_process)
+        else:
+            print(trade.schedule_section, 'section does not exist')
+            sys.exit(1)
     if args.D:
         if args.D[0] == trade.script_base \
            and os.path.exists(trade.startup_script):

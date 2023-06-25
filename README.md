@@ -48,7 +48,7 @@ Install each package as needed.  For example:
 
 ``` powershell
 winget install UB-Mannheim.TesseractOCR
-py -m pip install -r requirements.txt -U
+python -m pip install -r requirements.txt -U
 ```
 
 ## Usage ##
@@ -68,7 +68,7 @@ script that processes the above and starts Hyper SBI 2.
 > script if the `.venv\Scripts\Activate.ps1` script exists.
 
 ```powershell
-py trading_assistant.py -I
+python trading_assistant.py -I
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
@@ -82,8 +82,8 @@ you are referring to.  A
 configuration file stores these configurations.
 
 ``` powershell
-py trading_assistant.py -C
-py trading_assistant.py -R
+python trading_assistant.py -C
+python trading_assistant.py -R
 ```
 
 ### Create or Modify Action ###
@@ -94,7 +94,7 @@ Create or modify an action for processing by this script.
 > shortcut to the action if the `.venv\Scripts\activate.bat` script exists.
 
 ``` powershell
-py trading_assistant.py -A ACTION
+python trading_assistant.py -A ACTION
 ```
 
 An action is a list of sequential tuples, and each tuple consists of a command
@@ -150,7 +150,7 @@ ACTION = [
 Execute an action saved in the configuration file.
 
 ``` powershell
-py trading_assistant.py -a ACTION
+python trading_assistant.py -a ACTION
 ```
 
 ### Trigger Actions Using Mouse and Keyboard ###
@@ -159,13 +159,13 @@ You can also trigger actions using the mouse and keyboard by configuring the
 input map for mapping buttons and keys to them.
 
 ``` powershell
-py trading_assistant.py -L
+python trading_assistant.py -L
 ```
 
 Then start the mouse and keyboard listeners while Hyper SBI 2 is running.
 
 ``` powershell
-py trading_assistant.py -l
+python trading_assistant.py -l
 ```
 
 ### Schedule Actions ###
@@ -174,7 +174,7 @@ You can also schedule actions using the `-S` option and the following time
 format:
 
 ``` powershell
-py trading_assistant.py -S
+python trading_assistant.py -S
 ```
 
 ``` ini
@@ -185,7 +185,7 @@ SCHEDULE = ('%H:%M:%S', 'ACTION')
 Then start the scheduler while Hyper SBI 2 is running.
 
 ``` powershell
-py trading_assistant.py -s
+python trading_assistant.py -s
 ```
 
 ### Action Argument Completion ###
@@ -213,13 +213,8 @@ After sourcing the script, you can use tab completion for action arguments when
 running this script with the `-a`, `-A`, or `-D` options:
 
 ``` powershell
-py trading_assistant.py -a a⇥
-py trading_assistant.py -a action
-```
-
-``` shell
-py.exe trading_assistant.py -a a⇥
-py.exe trading_assistant.py -a action
+python trading_assistant.py -a a⇥
+python trading_assistant.py -a action
 ```
 
 ### Options ###
@@ -241,7 +236,9 @@ py.exe trading_assistant.py -a action
   * `-D SCRIPT_BASE | ACTION`: delete the startup script or an action, delete
     the shortcut to it, and exit
 
-## Startup Script Example ##
+## Examples ##
+
+### Startup Script ###
 
 The following actions and options configure the processing of Hyper SBI 2 pre-
 and post-startup and during running.
@@ -264,9 +261,9 @@ post_start_options = -sla login
 running_options = -a show_hide_watchlists
 ```
 
-## Action Examples ##
+### Actions ###
 
-### Login ###
+#### Login ####
 
 The following `login` action waits for the Login window to show and clicks its
 button.
@@ -291,7 +288,7 @@ login = [
     ('hide_window', '登録銘柄')]     # Hide the Watchlists window.
 ```
 
-### Replace Watchlist with Market Data on Website ###
+#### Replace Watchlist with Market Data on Website ####
 
 The following `watch_active_stocks` action replaces the stocks in the
 Watchlists window with new ones scraped from the current market data above.
@@ -329,7 +326,7 @@ watch_active_stocks = [
     ('back_to',)]
 ```
 
-### Replace Watchlist with Hyper SBI 2 Ranking ###
+#### Replace Watchlist with Hyper SBI 2 Ranking ####
 
 The following `watch_tick_count` action replaces the stocks in the Watchlists
 window with new ones recognized in the Rankings window.
@@ -375,7 +372,7 @@ watch_tick_count = [
     ('back_to',)]
 ```
 
-### Open and Close Long Position ###
+#### Open and Close Long Position ####
 
 The following `open_close_long_position` action shows the required windows and
 waits for a buy order with the maximum share size.  If you place the order, it
@@ -419,7 +416,7 @@ open_close_long_position = [
     ('back_to',)]
 ```
 
-## Input Map Example ##
+### Input Map ###
 
 The following input map maps mouse buttons and keyboard keys to actions.
 
@@ -458,9 +455,9 @@ input_map = {
     'f12': ''}
 ```
 
-## Schedule Examples ##
+### Schedules ###
 
-### Start and Stop Manual Recording ###
+#### Start and Stop Manual Recording ####
 
 The following actions and schedules start and stop manual recording of a
 screencast using Nvidia ShadowPlay.
@@ -481,7 +478,7 @@ start_new_manual_recording = ('08:50:00', 'start_manual_recording')
 stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
 ```
 
-### Speak CPU Utilization ###
+#### Speak CPU Utilization ####
 
 The following action and schedule calculate CPU utilization and speak it.
 
@@ -496,7 +493,7 @@ speak_cpu_utilization = [
 speak_cpu_utilization = ('08:50:10', 'speak_cpu_utilization')
 ```
 
-### Speak the Number of Seconds until the Open ###
+#### Speak the Number of Seconds until the Open ####
 
 The following action and schedules speak the number of seconds until the open.
 
