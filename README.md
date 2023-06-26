@@ -75,12 +75,12 @@ python trading_assistant.py -I
 ### Configure Cash Balance and Price Limit Regions ###
 
 Configure the cash balance and (optional) price limit regions on Hyper SBI 2 so
-that Tesseract recognizes these prices.  This script only references a price
+that Tesseract can recognize these prices.  This script only references a price
 limit if the previous closing price does not exist in the market data above.
-Because a region may have more than one price, specify the index of the price
-you are referring to.  A
+Because a region may contain more than one price, you need to specify the index
+of the price you want to refer to.  These configurations are stored in a
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
-configuration file stores these configurations.
+configuration file.
 
 ``` powershell
 python trading_assistant.py -C
@@ -98,14 +98,14 @@ Create or modify an action for processing by this script.
 python trading_assistant.py -A ACTION
 ```
 
-An action is a list of sequential tuples, and each tuple consists of a command
-and its arguments.  The configuration file stores these actions.  Possible
-commands are:
+An action is a list of sequential tuples, where each tuple consists of a
+command and its arguments.  These actions are stored in the configuration file.
+Possible commands include:
 
 ``` ini
 [HYPERSBI2 Actions]
 ACTION = [
-    # Back the cursor to the previous position.
+    # Move the cursor back to the previous position.
     ('back_to',),
     ('beep', 'FREQUENCY, DURATION'), # Beep.
     ('calculate_share_size', 'POSITION'), # Calculate a share size.
@@ -126,7 +126,7 @@ ACTION = [
     ('press_key', 'KEY[, PRESSES]'), # Press a key.
     ('show_hide_window', 'TITLE_REGEX'), # Show or hide a window.
     ('show_window', 'TITLE_REGEX'),  # Show a window.
-    ('speak_config', 'SECTION', 'OPTION'), # Speak a configuration.
+    ('speak_config', 'SECTION', 'OPTION'), # Speak a configuration value.
     # Calculate CPU utilization for an interval and speak it.
     ('speak_cpu_utilization', 'INTERVAL'),
     # Speak seconds until a specific time.
