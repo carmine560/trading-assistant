@@ -50,10 +50,12 @@ class Trade:
                           self.resource_directory]:
             file_utilities.check_directory(directory)
 
-        self.customer_margin_ratio_section = \
-            self.brokerage + ' Customer Margin Ratios'
-        self.startup_script_section = self.process + ' Startup Script'
-        self.action_section = self.process + ' Actions'
+        # TODO: ratios
+        self.customer_margin_ratio_section = (
+            f'{self.brokerage} Customer Margin Ratios')
+        self.startup_script_section = f'{self.process} Startup Script'
+        # TODO: actions
+        self.action_section = f'{self.process} Actions'
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
@@ -63,7 +65,7 @@ class Trade:
                               'count_trades', 'take_screenshot',
                               'write_share_size'),
             'positioning_keys': ('click', 'move_to')}
-        self.schedule_section = self.process + ' Schedules'
+        self.schedule_section = f'{self.process} Schedules'
 
         self.mouse_listener = None
         self.keyboard_listener = None
@@ -266,7 +268,7 @@ def main():
         config = configure(trade)
 
     if not config.has_section(trade.process):
-        print(trade.process, 'section does not exist')
+        print(trade.process, 'section does not exist.')
         sys.exit(1)
     else:
         gui_state = gui_interactions.GuiState(
@@ -294,14 +296,14 @@ def main():
                 start_listeners(trade, config, gui_state, base_manager,
                                 trade.speech_manager, is_persistent=True)
             else:
-                print(option, 'option does not exist')
+                print(option, 'option does not exist.')
                 sys.exit(1)
         if config.has_section(trade.action_section):
             execute_action(
                 trade, config, gui_state,
                 ast.literal_eval(config[trade.action_section][args.a[0]]))
         else:
-            print(trade.action_section, 'section does not exist')
+            print(trade.action_section, 'section does not exist.')
             sys.exit(1)
         if not (is_running and args.l):
             process_utilities.stop_listeners(
@@ -314,7 +316,7 @@ def main():
             start_listeners(trade, config, gui_state, base_manager,
                             trade.speech_manager)
         else:
-            print(option, 'option does not exist')
+            print(option, 'option does not exist.')
             sys.exit(1)
     if args.s and process_utilities.is_running(trade.process):
         if config.has_section(trade.schedule_section):
@@ -332,7 +334,7 @@ def main():
                 speech_synthesis.stop_speaking_process(
                     base_manager, trade.speech_manager, trade.speaking_process)
         else:
-            print(trade.schedule_section, 'section does not exist')
+            print(trade.schedule_section, 'section does not exist.')
             sys.exit(1)
     if args.D:
         if args.D[0] == trade.script_base \
@@ -388,7 +390,7 @@ def configure(trade, interpolation=True):
         'number_of_pages': '2',
         'symbol_header': 'コード',
         'price_header': '株価'}
-    config['SBI Securities Customer Margin Ratios'] = {
+    config[trade.customer_margin_ratio_section] = {
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
         'url': 'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
@@ -397,7 +399,7 @@ def configure(trade, interpolation=True):
         'header': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
         'customer_margin_ratio': '委託保証金率',
         'suspended': '新規建停止'}
-    config['HYPERSBI2'] = {
+    config[trade.process] = {
         'executable': '',
         'title': 'Hyper SBI 2 Assistant',
         'interactive_windows': (
@@ -418,12 +420,12 @@ def configure(trade, interpolation=True):
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '2',
         'binarization_threshold': '128'}
-    config['HYPERSBI2 Startup Script'] = {
+    config[trade.startup_script_section] = {
         'pre_start_options': '',
         'post_start_options': '',
         'running_options': ''}
-    config['HYPERSBI2 Actions'] = {}
-    config['HYPERSBI2 Schedules'] = {}
+    config[trade.action_section] = {}
+    config[trade.schedule_section] = {}
     config['Variables'] = {
         'current_date': str(date.today()),
         'current_number_of_trades': '0'}
@@ -807,7 +809,7 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
 
-        # Boolean Command
+        # Control Flow Commands
         elif command == 'is_recording':
             section = config['General']
             screencast_directory = section['screencast_directory']
@@ -819,7 +821,7 @@ def execute_action(trade, config, gui_state, action):
                 execute_action(trade, config, gui_state, additional_argument)
 
         else:
-            print(command, 'is not a recognized command')
+            print(command, 'is not a recognized command.')
             return False
 
 def create_startup_script(trade, config):

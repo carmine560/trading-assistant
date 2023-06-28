@@ -45,12 +45,12 @@ def decrypt_extract_file(source, output_directory):
                     print(e)
                     sys.exit(1)
             elif os.path.isfile(backup):
-                print(backup, 'file exists')
+                print(backup, 'file exists.')
                 sys.exit(1)
 
             os.rename(root, backup)
         elif os.path.isfile(root):
-            print(root, 'file exists')
+            print(root, 'file exists.')
             sys.exit(1)
 
         try:

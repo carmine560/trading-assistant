@@ -18,7 +18,7 @@ def list_section(config, section):
             options.append(option)
         return options
     else:
-        print(section, 'section does not exist')
+        print(section, 'section does not exist.')
         return False
 
 def modify_section(config, section, config_path, backup_function=None,
@@ -62,7 +62,7 @@ def modify_section(config, section, config_path, backup_function=None,
 
         return True
     else:
-        print(section, 'section does not exist')
+        print(section, 'section does not exist.')
         return False
 
 def modify_option(config, section, option, config_path, backup_function=None,
@@ -110,7 +110,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
         write_config(config, config_path)
         return True
     else:
-        print(option, 'option does not exist')
+        print(option, 'option does not exist.')
         return False
 
 def modify_tuple_list(config, section, option, config_path,
@@ -340,7 +340,7 @@ def tidy_answer(answers, level=0):
                 initialism = initialism + mnemonics.lower()
                 break
         if initialism == previous_initialism:
-            print('undetermined mnemonics')
+            print('Undetermined mnemonics.')
             sys.exit(1)
         else:
             previous_initialism = initialism
@@ -409,7 +409,7 @@ def delete_option(config, section, option, config_path, backup_function=None,
         write_config(config, config_path)
         return True
     else:
-        print(option, 'option does not exist')
+        print(option, 'option does not exist.')
         return False
 
 def write_config(config, config_path):
