@@ -141,7 +141,7 @@ ACTION = [
     ('wait_for_window', 'TITLE_REGEX'), # Wait for a window.
     ('write_share_size',),           # Write the calculated share size.
 
-    # Boolean Command
+    # Control Flow Command
     # Execute an ACTION if recording a screencast is a BOOL value.
     ('is_recording', 'BOOL', ACTION)]
 ```

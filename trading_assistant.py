@@ -50,16 +50,14 @@ class Trade:
                           self.resource_directory]:
             file_utilities.check_directory(directory)
 
-        # TODO: ratios
-        self.customer_margin_ratio_section = (
+        self.customer_margin_ratios_section = (
             f'{self.brokerage} Customer Margin Ratios')
         self.startup_script_section = f'{self.process} Startup Script'
-        # TODO: actions
-        self.action_section = f'{self.process} Actions'
+        self.actions_section = f'{self.process} Actions'
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
-            'boolean_keys': ('is_recording',),
+            'control_flow_keys': ('is_recording',),
             'additional_value_keys': ('click_widget', 'speak_config'),
             'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
                               'count_trades', 'take_screenshot',
@@ -192,8 +190,8 @@ def main():
             return
         elif args.A:
             if configuration.modify_tuple_list(
-                    config, trade.action_section, args.A[0], trade.config_path,
-                    **backup_file,
+                    config, trade.actions_section, args.A[0],
+                    trade.config_path, **backup_file,
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
                              'end_of_list': 'end of commands'},
@@ -225,12 +223,12 @@ def main():
 
             file_utilities.create_powershell_completion(
                 trade.script_base, ('-a', '-A', '-D'),
-                configuration.list_section(config, trade.action_section),
+                configuration.list_section(config, trade.actions_section),
                 ('py', 'python'),
                 os.path.join(trade.resource_directory, 'completion.ps1'))
             file_utilities.create_bash_completion(
                 trade.script_base, ('-a', '-A', '-D'),
-                configuration.list_section(config, trade.action_section),
+                configuration.list_section(config, trade.actions_section),
                 ('py.exe', 'python.exe'),
                 os.path.join(trade.resource_directory, 'completion.sh'))
             return
@@ -238,7 +236,7 @@ def main():
                 config, trade.process, 'input_map', trade.config_path,
                 **backup_file,
                 dictionary_info={'possible_values': configuration.list_section(
-                    config, trade.action_section)}):
+                    config, trade.actions_section)}):
             return
         elif args.S and configuration.modify_section(
                 config, trade.schedule_section, trade.config_path,
@@ -246,7 +244,7 @@ def main():
                 prompts={'end_of_list': 'end of commands'},
                 tuple_info={'element_index': 1,
                             'possible_values': configuration.list_section(
-                                config, trade.action_section)}):
+                                config, trade.actions_section)}):
             return
         elif args.C and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
@@ -281,10 +279,10 @@ def main():
         trade.speech_manager = base_manager.SpeechManager()
 
     if args.r:
-        if config.has_section(trade.customer_margin_ratio_section):
+        if config.has_section(trade.customer_margin_ratios_section):
             save_customer_margin_ratios(trade, config)
         else:
-            print(trade.customer_margin_ratio_section,
+            print(trade.customer_margin_ratios_section,
                   'section does not exist')
             sys.exit(1)
     if args.d:
@@ -298,12 +296,12 @@ def main():
             else:
                 print(option, 'option does not exist.')
                 sys.exit(1)
-        if config.has_section(trade.action_section):
+        if config.has_section(trade.actions_section):
             execute_action(
                 trade, config, gui_state,
-                ast.literal_eval(config[trade.action_section][args.a[0]]))
+                ast.literal_eval(config[trade.actions_section][args.a[0]]))
         else:
-            print(trade.action_section, 'section does not exist.')
+            print(trade.actions_section, 'section does not exist.')
             sys.exit(1)
         if not (is_running and args.l):
             process_utilities.stop_listeners(
@@ -344,7 +342,7 @@ def main():
             except OSError as e:
                 print(e)
         else:
-            configuration.delete_option(config, trade.action_section,
+            configuration.delete_option(config, trade.actions_section,
                                         args.D[0], trade.config_path,
                                         **backup_file)
 
@@ -353,12 +351,12 @@ def main():
             icon_directory=trade.resource_directory)
         file_utilities.create_powershell_completion(
             trade.script_base, ('-a', '-A', '-D'),
-            configuration.list_section(config, trade.action_section),
+            configuration.list_section(config, trade.actions_section),
             ('py', 'python'),
             os.path.join(trade.resource_directory, 'completion.ps1'))
         file_utilities.create_bash_completion(
             trade.script_base, ('-a', '-A', '-D'),
-            configuration.list_section(config, trade.action_section),
+            configuration.list_section(config, trade.actions_section),
             ('py.exe', 'python.exe'),
             os.path.join(trade.resource_directory, 'completion.sh'))
         return
@@ -390,7 +388,7 @@ def configure(trade, interpolation=True):
         'number_of_pages': '2',
         'symbol_header': 'コード',
         'price_header': '株価'}
-    config[trade.customer_margin_ratio_section] = {
+    config[trade.customer_margin_ratios_section] = {
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
         'url': 'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
@@ -424,7 +422,7 @@ def configure(trade, interpolation=True):
         'pre_start_options': '',
         'post_start_options': '',
         'running_options': ''}
-    config[trade.action_section] = {}
+    config[trade.actions_section] = {}
     config[trade.schedule_section] = {}
     config['Variables'] = {
         'current_date': str(date.today()),
@@ -462,7 +460,7 @@ def configure(trade, interpolation=True):
 def save_customer_margin_ratios(trade, config):
     import pandas as pd
 
-    section = config[trade.customer_margin_ratio_section]
+    section = config[trade.customer_margin_ratios_section]
     update_time = section['update_time']
     time_zone = section['time_zone']
     url = section['url']
@@ -621,7 +619,7 @@ def start_scheduler(trade, config, gui_state, process):
     section = config[trade.schedule_section]
     for option in section:
         schedule_time, action = ast.literal_eval(section[option])
-        action = ast.literal_eval(config[trade.action_section][action])
+        action = ast.literal_eval(config[trade.actions_section][action])
         schedule_time = time.strptime(time.strftime('%Y-%m-%d ')
                                       + schedule_time, '%Y-%m-%d %H:%M:%S')
         schedule_time = time.mktime(schedule_time)
@@ -665,7 +663,7 @@ def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread = threading.Thread(
         target=execute_action,
         args=(trade, config, gui_state,
-              ast.literal_eval(config[trade.action_section][action])))
+              ast.literal_eval(config[trade.actions_section][action])))
     execute_action_thread.start()
 
 def execute_action(trade, config, gui_state, action):

@@ -146,7 +146,7 @@ def modify_tuples(tuples, is_created, level=0, prompts={},
     end_of_list_prompt = prompts.get('end_of_list', 'end of list')
 
     all_keys = categorized_keys.get('all_keys', [])
-    boolean_keys = categorized_keys.get('boolean_keys', ())
+    control_flow_keys = categorized_keys.get('control_flow_keys', ())
     additional_value_keys = categorized_keys.get('additional_value_keys', ())
     no_value_keys = categorized_keys.get('no_value_keys', ())
     positioning_keys = categorized_keys.get('positioning_keys', ())
@@ -165,9 +165,8 @@ def modify_tuples(tuples, is_created, level=0, prompts={},
 
         if answer == 'insert':
             key = modify_data(key_prompt, level=level, all_data=all_keys)
-            if any(k == key for k in boolean_keys):
-                value = modify_data(value_prompt, level=level,
-                                    all_data=['True', 'False'])
+            if any(k == key for k in control_flow_keys):
+                value = modify_data(value_prompt, level=level)
                 level += 1
                 additional_value = modify_tuples(
                     [], True, level=level, prompts=prompts,
@@ -199,9 +198,8 @@ def modify_tuples(tuples, is_created, level=0, prompts={},
 
             key = modify_data(key_prompt, level=level, data=key,
                               all_data=all_keys)
-            if any(k == key for k in boolean_keys):
-                value = modify_data(value_prompt, level=level,
-                                    all_data=['True', 'False'])
+            if any(k == key for k in control_flow_keys):
+                value = modify_data(value_prompt, level=level, data=value)
                 level += 1
                 additional_value = modify_tuples(
                     additional_value, is_created, level=level, prompts=prompts,
