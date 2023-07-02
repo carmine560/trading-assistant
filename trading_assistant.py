@@ -266,12 +266,9 @@ def main():
 
         sys.exit(1)
     elif args.C:
-        # TODO
         default_config = configure(trade, can_interpolate=False,
                                    can_override=False)
-        user_config = configparser.ConfigParser()
-        user_config.read(trade.config_path, encoding='utf-8')
-        configuration.check_config_changes(default_config, user_config,
+        configuration.check_config_changes(default_config, trade.config_path,
                                            excluded_sections=('Variables',))
         return
     else:
