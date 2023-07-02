@@ -158,26 +158,29 @@ def main():
         '-S', action='store_true',
         help='configure schedules and exit')
     group.add_argument(
-        '-C', action='store_true',
+        '-CB', action='store_true',
         help=('configure the cash balance region and exit'))
     group.add_argument(
         '-B', action='store_true',
         help='configure an arbitrary cash balance and exit')
     group.add_argument(
-        '-R', action='store_true',
+        '-PL', action='store_true',
         help=('configure the price limit region and exit'))
     group.add_argument(
         '-D', metavar='SCRIPT_BASE | ACTION', nargs=1,
         help=('delete the startup script or an action, '
               'delete the shortcut to it, and exit'))
+    group.add_argument(
+        '-C', action='store_true',
+        help='check configuration changes and exit')
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade(*args.P)
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
 
-    if args.I or args.A or args.L or args.S or args.C or args.B or args.R:
-        config = configure(trade, interpolation=False)
+    if args.I or args.A or args.L or args.S or args.CB or args.B or args.PL:
+        config = configure(trade, can_interpolate=False)
         if args.I and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_path,
                 **backup_file):
@@ -246,7 +249,7 @@ def main():
                             'possible_values': configuration.list_section(
                                 config, trade.actions_section)}):
             return
-        elif args.C and configuration.modify_option(
+        elif args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
                 trade.config_path, **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
@@ -255,13 +258,22 @@ def main():
                 config, trade.process, 'fixed_cash_balance', trade.config_path,
                 **backup_file):
             return
-        elif args.R and configuration.modify_option(
+        elif args.PL and configuration.modify_option(
                 config, trade.process, 'price_limit_region', trade.config_path,
                 **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
             return
 
         sys.exit(1)
+    elif args.C:
+        # TODO
+        default_config = configure(trade, can_interpolate=False,
+                                   can_override=False)
+        user_config = configparser.ConfigParser()
+        user_config.read(trade.config_path, encoding='utf-8')
+        configuration.check_config_changes(default_config, user_config,
+                                           excluded_sections=('Variables',))
+        return
     else:
         config = configure(trade)
 
@@ -361,8 +373,8 @@ def main():
             os.path.join(trade.resource_directory, 'completion.sh'))
         return
 
-def configure(trade, interpolation=True):
-    if interpolation:
+def configure(trade, can_interpolate=True, can_override=True):
+    if can_interpolate:
         config = configparser.ConfigParser(
             interpolation=configparser.ExtendedInterpolation())
     else:
@@ -427,7 +439,9 @@ def configure(trade, interpolation=True):
     config['Variables'] = {
         'current_date': str(date.today()),
         'current_number_of_trades': '0'}
-    config.read(trade.config_path, encoding='utf-8')
+
+    if can_override:
+        config.read(trade.config_path, encoding='utf-8')
 
     if trade.process == 'HYPERSBI2':
         section = config[trade.process]

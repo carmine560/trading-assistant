@@ -83,8 +83,8 @@ of the price you want to refer to.  These configurations are stored in a
 configuration file.
 
 ``` powershell
-python trading_assistant.py -C
-python trading_assistant.py -R
+python trading_assistant.py -CB
+python trading_assistant.py -PL
 ```
 
 ### Create or Modify Action ###
@@ -231,11 +231,12 @@ python trading_assistant.py -a action
   * `-S`: configure schedules and exit
   * `-L`: configure the input map for buttons and keys and exit
   * `-A ACTION`: configure an action, create a shortcut to it, and exit
-  * `-C`: configure the cash balance region and exit
+  * `-CB`: configure the cash balance region and exit
   * `-B`: configure an arbitrary cash balance and exit
-  * `-R`: configure the price limit region and exit
+  * `-PL`: configure the price limit region and exit
   * `-D SCRIPT_BASE | ACTION`: delete the startup script or an action, delete
     the shortcut to it, and exit
+  * `-C`: check configuration changes and exit
 
 ## Examples ##
 
