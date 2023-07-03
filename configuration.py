@@ -1,15 +1,18 @@
 import ast
-import configparser
-import os
 import sys
 
-INDENT = '    '
-ANSI_DEFAULT = '\033[32m'
-ANSI_ANNOTATION = '\033[33m'
-ANSI_HIGHLIGHT = '\033[4m'
+ANSI_BOLD = '\033[1m'
+ANSI_CURRENT = '\033[32m'
+ANSI_ERROR = '\033[31m'
+ANSI_IDENTIFIER = '\033[36m'
 ANSI_RESET = '\033[m'
+ANSI_UNDERLINE = '\033[4m'
+ANSI_WARNING = '\033[33m'
+INDENT = '    '
 
 if sys.platform == 'win32':
+    import os
+
     os.system('color')
 
 def list_section(config, section):
@@ -41,7 +44,7 @@ def modify_section(config, section, config_path, backup_function=None,
             end_of_list_prompt = prompts.get('end_of_list', 'end of section')
             is_inserted = False
             while is_inserting:
-                print(ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
+                print(ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
                 answer = tidy_answer(['insert'])
                 if answer == 'insert':
                     option = modify_data('option')
@@ -75,7 +78,8 @@ def modify_option(config, section, option, config_path, backup_function=None,
         backup_function(config_path, **backup_parameters)
 
     if config.has_option(section, option):
-        print(option, '=', ANSI_DEFAULT + config[section][option] + ANSI_RESET)
+        print(f'{ANSI_IDENTIFIER}{option}{ANSI_RESET} = '
+              f'{ANSI_CURRENT}{config[section][option]}{ANSI_RESET}')
         try:
             boolean_value = config[section].getboolean(option)
             answer = tidy_answer(['modify', 'toggle', 'empty', 'default',
@@ -156,11 +160,11 @@ def modify_tuples(tuples, is_created, level=0, prompts={},
     while index <= len(tuples):
         if is_created or index == len(tuples):
             print(INDENT * level
-                  + ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
+                  + ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
             answer = tidy_answer(['insert', 'quit'], level=level)
         else:
             print(INDENT * level
-                  + ANSI_DEFAULT + str(tuples[index]) + ANSI_RESET)
+                  + ANSI_CURRENT + str(tuples[index]) + ANSI_RESET)
             answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
                                  level=level)
 
@@ -247,11 +251,11 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
     while index <= len(data):
         if is_created or index == len(data):
             print(INDENT * level
-                  + ANSI_ANNOTATION + end_of_list_prompt + ANSI_RESET)
+                  + ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
             answer = tidy_answer(['insert', 'quit'], level=level)
         else:
             print(INDENT * level
-                  + ANSI_DEFAULT + str(data[index]) + ANSI_RESET)
+                  + ANSI_CURRENT + str(data[index]) + ANSI_RESET)
             answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
                                  level=level)
 
@@ -288,9 +292,9 @@ def modify_dictionary(data, level=0, prompts={}, dictionary_info={}):
     possible_values = dictionary_info.get('possible_values')
 
     for key, value in data.items():
-        print(f'{INDENT * level}{key}: {ANSI_DEFAULT}{data[key]}{ANSI_RESET}')
+        print(f'{INDENT * level}{ANSI_IDENTIFIER}{key}{ANSI_RESET}: '
+              f'{ANSI_CURRENT}{data[key]}{ANSI_RESET}')
         answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
-
         if answer == 'modify':
             if possible_values:
                 data[key] = modify_data(value_prompt, level=level,
@@ -323,7 +327,7 @@ def modify_data(prompt, level=0, data='', all_data=[]):
             complete_style=CompleteStyle.READLINE_LIKE).strip() or data
     elif data:
         data = input(prompt_prefix + ' '
-                     + ANSI_DEFAULT + data + ANSI_RESET + ': ').strip() or data
+                     + ANSI_CURRENT + data + ANSI_RESET + ': ').strip() or data
     else:
         data = input(prompt_prefix + ': ').strip()
     return data
@@ -344,7 +348,7 @@ def tidy_answer(answers, level=0):
         else:
             previous_initialism = initialism
             highlighted_word = word.replace(
-                mnemonics, ANSI_HIGHLIGHT + mnemonics + ANSI_RESET, 1)
+                mnemonics, ANSI_UNDERLINE + mnemonics + ANSI_RESET, 1)
             if word_index == 0:
                 prompt = highlighted_word
             else:
@@ -371,7 +375,7 @@ def configure_position(answer, level=0, value=''):
     from prompt_toolkit.completion import WordCompleter
     from prompt_toolkit.shortcuts import CompleteStyle
 
-    prompt_prefix = f'{INDENT * level}input/{ANSI_HIGHLIGHT}c{ANSI_RESET}lick'
+    prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
     if answer == 'modify' and value:
         completer = WordCompleter([value])
         value = pt_prompt(
@@ -416,37 +420,57 @@ def write_config(config, config_path):
         config.write(f)
 
 def check_config_changes(default_config, config_path, excluded_sections=()):
+    import configparser
+
+    def display_changes(config, config_path, section, option, option_status):
+        global previous_section
+        if section != previous_section:
+            print(f'[{ANSI_BOLD}{section}{ANSI_RESET}]')
+            previous_section = section
+
+        print(option_status)
+        answer = tidy_answer(['default', 'quit'])
+        if answer == 'default':
+            config.remove_option(section, option)
+            write_config(config, config_path)
+        elif answer == 'quit':
+            return False
+        return True
+
     user_config = configparser.ConfigParser()
     user_config.read(config_path, encoding='utf-8')
 
+    global previous_section
     previous_section = None
     for section in default_config.sections():
         if section not in excluded_sections:
             for option in default_config[section]:
-                default_value = user_value = None
                 if (user_config.has_option(section, option)
                     and default_config[section][option]
                     != user_config[section][option]):
-                    if default_config[section][option]:
-                        default_value = default_config[section][option]
-                    else:
-                        default_value = '(empty)'
-                    if user_config[section][option]:
-                        user_value = user_config[section][option]
-                    else:
-                        user_value = '(empty)'
-
-                    if section != previous_section:
-                        print(f'[{section}]')
-                        previous_section = section
-
-                    print(f'{option}: '
-                          f'{ANSI_ANNOTATION}{default_value}{ANSI_RESET} → '
-                          f'{ANSI_DEFAULT}{user_value}{ANSI_RESET}')
-                    answer = tidy_answer(['default', 'quit'])
-
-                    if answer == 'default':
-                        user_config.remove_option(section, option)
-                        write_config(user_config, config_path)
-                    elif answer == 'quit':
+                    default_value = (default_config[section][option]
+                                  if default_config[section][option]
+                                  else '(empty)')
+                    user_value = (user_config[section][option]
+                                  if user_config[section][option]
+                                  else '(empty)')
+                    option_status = (
+                        f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
+                        f'{default_value} → '
+                        f'{ANSI_CURRENT}{user_value}{ANSI_RESET}')
+                    if not display_changes(user_config, config_path, section,
+                                           option, option_status):
+                        return
+            for option in user_config[section]:
+                if not default_config.has_option(section, option):
+                    default_value = '(not exist)'
+                    user_value = (user_config[section][option]
+                                  if user_config[section][option]
+                                  else '(empty)')
+                    option_status = (
+                        f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
+                        f'{ANSI_WARNING}{default_value}{ANSI_RESET} → '
+                        f'{user_value}')
+                    if not display_changes(user_config, config_path, section,
+                                           option, option_status):
                         return
