@@ -443,7 +443,8 @@ def check_config_changes(default_config, config_path, excluded_sections=()):
     global previous_section
     previous_section = None
     for section in default_config.sections():
-        if section not in excluded_sections:
+        if (section not in excluded_sections
+            and default_config.options(section)):
             for option in default_config[section]:
                 if (user_config.has_option(section, option)
                     and default_config[section][option]
