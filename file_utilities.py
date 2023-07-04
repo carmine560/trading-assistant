@@ -82,18 +82,26 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
                 + datetime.fromtimestamp(
                     os.path.getmtime(source)).strftime('-%Y%m%dT%H%M%S')
                 + os.path.splitext(source)[1])
+            pattern = (os.path.splitext(os.path.basename(source))[0]
+                       + r'-\d{8}T\d{6}' + os.path.splitext(source)[1])
+            backups = sorted([f for f in os.listdir(backup_directory)
+                              if re.fullmatch(pattern, f)])
+
             if not os.path.exists(backup):
-                try:
-                    shutil.copy2(source, backup)
-                except Exception as e:
-                    print(e)
-                    sys.exit(1)
+                with open(source, 'r', encoding='utf-8') as f:
+                    source_contents = f.read()
+                with open(os.path.join(backup_directory, backups[-1]),
+                          'r', encoding='utf-8') as f:
+                    last_backup_contents = f.read()
+                if source_contents != last_backup_contents:
+                    try:
+                        shutil.copy2(source, backup)
+                        backups.append(os.path.basename(backup))
+                    except Exception as e:
+                        print(e)
+                        sys.exit(1)
 
             if number_of_backups > 0:
-                pattern = os.path.splitext(os.path.basename(source))[0] \
-                    + r'-\d{8}T\d{6}' + os.path.splitext(source)[1]
-                backups = [f for f in os.listdir(backup_directory)
-                           if re.fullmatch(pattern, f)]
                 excess = len(backups) - number_of_backups
                 if excess > 0:
                     for f in backups[:excess]:
@@ -102,13 +110,13 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
                         except OSError as e:
                             print(e)
                             sys.exit(1)
-        else:
-            if os.path.isdir(backup_directory):
-                try:
-                    shutil.rmtree(backup_directory)
-                except Exception as e:
-                    print(e)
-                    sys.exit(1)
+
+        elif os.path.isdir(backup_directory):
+            try:
+                shutil.rmtree(backup_directory)
+            except Exception as e:
+                print(e)
+                sys.exit(1)
 
 def check_directory(directory):
     if not os.path.isdir(directory):
@@ -256,8 +264,8 @@ def get_program_group(program_group_base=None):
 def is_writing(target_path):
     import time
 
-    if os.path.exists(target_path) \
-       and time.time() - os.path.getmtime(target_path) < 1:
+    if (os.path.exists(target_path)
+        and time.time() - os.path.getmtime(target_path) < 1):
         return True
     else:
         return False

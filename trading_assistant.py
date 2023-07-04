@@ -162,7 +162,7 @@ def main():
         help=('configure the cash balance region and exit'))
     group.add_argument(
         '-B', action='store_true',
-        help='configure an arbitrary cash balance and exit')
+        help='configure a fixed cash balance and exit')
     group.add_argument(
         '-PL', action='store_true',
         help=('configure the price limit region and exit'))
@@ -269,7 +269,8 @@ def main():
         default_config = configure(trade, can_interpolate=False,
                                    can_override=False)
         configuration.check_config_changes(default_config, trade.config_path,
-                                           excluded_sections=('Variables',))
+                                           excluded_sections=('Variables',),
+                                           **backup_file)
         return
     else:
         config = configure(trade)

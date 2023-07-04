@@ -419,7 +419,8 @@ def write_config(config, config_path):
     with open(config_path, 'w', encoding='utf-8') as f:
         config.write(f)
 
-def check_config_changes(default_config, config_path, excluded_sections=()):
+def check_config_changes(default_config, config_path, excluded_sections=(),
+                         backup_function=None, backup_parameters=None):
     import configparser
 
     def truncate_string(string):
@@ -442,6 +443,9 @@ def check_config_changes(default_config, config_path, excluded_sections=()):
         elif answer == 'quit':
             return False
         return True
+
+    if backup_function:
+        backup_function(config_path, **backup_parameters)
 
     user_config = configparser.ConfigParser()
     user_config.read(config_path, encoding='utf-8')
