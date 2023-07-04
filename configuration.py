@@ -422,6 +422,12 @@ def write_config(config, config_path):
 def check_config_changes(default_config, config_path, excluded_sections=()):
     import configparser
 
+    def truncate_string(string):
+        max_length = 280
+        if len(string) > max_length:
+            string = string[:max_length] + '...'
+        return string
+
     def display_changes(config, config_path, section, option, option_status):
         global previous_section
         if section != previous_section:
@@ -449,12 +455,14 @@ def check_config_changes(default_config, config_path, excluded_sections=()):
                 if (user_config.has_option(section, option)
                     and default_config[section][option]
                     != user_config[section][option]):
-                    default_value = (default_config[section][option]
+                    default_value = (
+                        truncate_string(default_config[section][option])
                                   if default_config[section][option]
                                   else '(empty)')
-                    user_value = (user_config[section][option]
+                    user_value = (truncate_string(user_config[section][option])
                                   if user_config[section][option]
                                   else '(empty)')
+
                     option_status = (
                         f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
                         f'{default_value} → '
@@ -465,7 +473,7 @@ def check_config_changes(default_config, config_path, excluded_sections=()):
             for option in user_config[section]:
                 if not default_config.has_option(section, option):
                     default_value = '(not exist)'
-                    user_value = (user_config[section][option]
+                    user_value = (truncate_string(user_config[section][option])
                                   if user_config[section][option]
                                   else '(empty)')
                     option_status = (
