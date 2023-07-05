@@ -76,14 +76,14 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
 
         if number_of_backups:
             check_directory(backup_directory)
+            source_base = os.path.splitext(os.path.basename(source))[0]
+            source_suffix = os.path.splitext(source)[1]
             backup = os.path.join(
                 backup_directory,
-                os.path.splitext(os.path.basename(source))[0]
-                + datetime.fromtimestamp(
+                source_base + datetime.fromtimestamp(
                     os.path.getmtime(source)).strftime('-%Y%m%dT%H%M%S')
-                + os.path.splitext(source)[1])
-            pattern = (os.path.splitext(os.path.basename(source))[0]
-                       + r'-\d{8}T\d{6}' + os.path.splitext(source)[1])
+                + source_suffix)
+            pattern = (source_base + r'-\d{8}T\d{6}' + source_suffix)
             backups = sorted([f for f in os.listdir(backup_directory)
                               if re.fullmatch(pattern, f)])
 
