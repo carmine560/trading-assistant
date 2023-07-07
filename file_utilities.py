@@ -66,7 +66,8 @@ def decrypt_extract_file(source, output_directory):
                 print(e)
                 sys.exit(1)
 
-def backup_file(source, backup_directory=None, number_of_backups=-1):
+def backup_file(source, backup_directory=None, number_of_backups=-1,
+                should_compare=True):
     from datetime import datetime
     import shutil
 
@@ -88,12 +89,16 @@ def backup_file(source, backup_directory=None, number_of_backups=-1):
                               if re.fullmatch(pattern, f)])
 
             if not os.path.exists(backup):
-                with open(source, 'r', encoding='utf-8') as f:
-                    source_contents = f.read()
-                with open(os.path.join(backup_directory, backups[-1]),
-                          'r', encoding='utf-8') as f:
-                    last_backup_contents = f.read()
-                if source_contents != last_backup_contents:
+                should_copy = True
+                if should_compare:
+                    with open(source, 'rb') as f:
+                        source_contents = f.read()
+                    with open(os.path.join(backup_directory, backups[-1]),
+                              'rb') as f:
+                        last_backup_contents = f.read()
+                    if source_contents == last_backup_contents:
+                        should_copy = False
+                if should_copy:
                     try:
                         shutil.copy2(source, backup)
                         backups.append(os.path.basename(backup))
