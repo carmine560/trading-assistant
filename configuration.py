@@ -424,7 +424,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
     import configparser
 
     def truncate_string(string):
-        max_length = 280
+        max_length = 256
         if len(string) > max_length:
             string = string[:max_length] + '...'
         return string
