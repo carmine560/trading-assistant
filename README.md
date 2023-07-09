@@ -78,7 +78,7 @@ Configure the cash balance and (optional) price limit regions on Hyper SBI 2 so
 that Tesseract can recognize these prices.  This script only references a price
 limit if the previous closing price does not exist in the market data above.
 Because a region may contain more than one price, you need to specify the index
-of the price you want to refer to.  These configurations are stored in a
+of the price you want to refer to.  These configurations are stored in the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
 configuration file.
 
