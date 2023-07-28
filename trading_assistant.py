@@ -162,7 +162,10 @@ def main():
         help=('configure the cash balance region and exit'))
     group.add_argument(
         '-B', action='store_true',
-        help='configure a fixed cash balance and exit')
+        help='configure the fixed cash balance and exit')
+    group.add_argument(
+        '-U', action='store_true',
+        help='configure the utilization ratio of the cash balance and exit')
     group.add_argument(
         '-PL', action='store_true',
         help=('configure the price limit region and exit'))
@@ -179,7 +182,8 @@ def main():
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
 
-    if args.I or args.A or args.L or args.S or args.CB or args.B or args.PL:
+    if (args.I or args.A or args.L or args.S or args.CB or args.B or args.U
+        or args.PL):
         config = configure(trade, can_interpolate=False)
         if args.I and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_path,
@@ -256,6 +260,10 @@ def main():
             return
         elif args.B and configuration.modify_option(
                 config, trade.process, 'fixed_cash_balance', trade.config_path,
+                **backup_file):
+            return
+        elif args.U and configuration.modify_option(
+                config, trade.process, 'utilization_ratio', trade.config_path,
                 **backup_file):
             return
         elif args.PL and configuration.modify_option(

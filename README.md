@@ -232,7 +232,8 @@ python trading_assistant.py -a action
   * `-L`: configure the input map for buttons and keys and exit
   * `-A ACTION`: configure an action, create a shortcut to it, and exit
   * `-CB`: configure the cash balance region and exit
-  * `-B`: configure a fixed cash balance and exit
+  * `-B`: configure the fixed cash balance and exit
+  * `-U`: configure the utilization ratio of the cash balance and exit
   * `-PL`: configure the price limit region and exit
   * `-D SCRIPT_BASE | ACTION`: delete the startup script or an action, delete
     the shortcut to it, and exit
