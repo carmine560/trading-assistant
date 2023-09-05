@@ -478,7 +478,9 @@ def configure(trade, can_interpolate=True, can_override=True):
     return config
 
 def save_customer_margin_ratios(trade, config):
+    import chardet
     import pandas as pd
+    import requests
 
     section = config[trade.customer_margin_ratios_section]
     update_time = section['update_time']
@@ -493,7 +495,10 @@ def save_customer_margin_ratios(trade, config):
     if get_latest(config, trade.market_holidays, update_time, time_zone,
                   trade.customer_margin_ratios):
         try:
-            dfs = pd.read_html(url, match=regulation_header, header=0)
+            response = requests.get(url)
+            encoding = chardet.detect(response.content)['encoding']
+            dfs = pd.read_html(response.content, match=regulation_header,
+                               flavor='lxml', header=0, encoding=encoding)
         except Exception as e:
             print(e)
             sys.exit(1)

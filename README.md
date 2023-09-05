@@ -28,9 +28,10 @@ Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 and uses
 the following packages:
 
   * [`requests`](https://requests.readthedocs.io/en/latest/),
-    [`pandas`](https://pandas.pydata.org/), and
-    [`lxml`](https://lxml.de/index.html) to save the customer margin ratios and
-    the previous market data from websites
+    [`pandas`](https://pandas.pydata.org/),
+    [`lxml`](https://lxml.de/index.html), and
+    [`chardet`](https://github.com/chardet/chardet) to save the customer margin
+    ratios and the previous market data from websites
   * [`pywin32`](https://github.com/mhammond/pywin32) to access Windows APIs
   * [`pytesseract`](https://github.com/madmaze/pytesseract) to invoke
     [Tesseract](https://tesseract-ocr.github.io/) to recognize prices and

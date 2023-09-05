@@ -1,10 +1,11 @@
-requests
-pandas
+chardet
 lxml
-pywin32
-pytesseract
+pandas
+prompt_toolkit
+psutil
 pyautogui
 pynput
+pytesseract
 pyttsx3
-psutil
-prompt_toolkit
+pywin32
+requests
