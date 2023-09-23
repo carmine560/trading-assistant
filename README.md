@@ -317,15 +317,16 @@ watch_active_stocks = [
     ('click', '1676, 41'),           # Select the Tile view.
 
     # Optional Commands
-    ('press_key', 'tab, 6'),         # Focus on the number of columns input.
+    ('press_key', 'tab, 5'),         # Focus on the number of columns input.
     ('press_key', '6'),              # Enter 6.
-    ('press_key', 'tab, 3'),         # Focus on the time frame drop-down menu.
+    ('press_key', 'tab, 6'),         # Focus on the Chart button.
+    ('press_key', 'space'),          # Click the Chart button.
+    ('press_key', 'tab, 6'),         # Focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # Open the menu.
     ('press_key', 'home'),           # Move to the first item.
     ('press_key', 'down, 2'),        # Select the 5-minute time frame.
     ('press_key', 'enter'),          # Close the menu.
-    ('click', '420, 90'),            # Select the 1-day date range.
-    ('click', '508, 68'),            # Click the Chart button.
+    ('click', '561, 90'),            # Select the 1-day date range.
     # Back the cursor to the previous position.
     ('back_to',)]
 ```
@@ -363,15 +364,16 @@ watch_tick_count = [
     ('click', '1676, 41'),           # Select the Tile view.
 
     # Optional Commands
-    ('press_key', 'tab, 6'),         # Focus on the number of columns input.
+    ('press_key', 'tab, 5'),         # Focus on the number of columns input.
     ('press_key', '6'),              # Enter 6.
-    ('press_key', 'tab, 3'),         # Focus on the time frame drop-down menu.
+    ('press_key', 'tab, 6'),         # Focus on the Chart button.
+    ('press_key', 'space'),          # Click the Chart button.
+    ('press_key', 'tab, 6'),         # Focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # Open the menu.
     ('press_key', 'home'),           # Move to the first item.
     ('press_key', 'down, 2'),        # Select the 5-minute time frame.
     ('press_key', 'enter'),          # Close the menu.
-    ('click', '420, 90'),            # Select the 1-day date range.
-    ('click', '508, 68'),            # Click the Chart button.
+    ('click', '561, 90'),            # Select the 1-day date range.
     # Back the cursor to the previous position.
     ('back_to',)]
 ```
