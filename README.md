@@ -320,7 +320,7 @@ watch_active_stocks = [
     ('press_key', 'tab, 5'),         # Focus on the number of columns input.
     ('press_key', '6'),              # Enter 6.
     ('press_key', 'tab, 6'),         # Focus on the Chart button.
-    ('press_key', 'space'),          # Click the Chart button.
+    ('press_key', 'space'),          # Click the button.
     ('press_key', 'tab, 6'),         # Focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # Open the menu.
     ('press_key', 'home'),           # Move to the first item.
@@ -367,7 +367,7 @@ watch_tick_count = [
     ('press_key', 'tab, 5'),         # Focus on the number of columns input.
     ('press_key', '6'),              # Enter 6.
     ('press_key', 'tab, 6'),         # Focus on the Chart button.
-    ('press_key', 'space'),          # Click the Chart button.
+    ('press_key', 'space'),          # Click the button.
     ('press_key', 'tab, 6'),         # Focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # Open the menu.
     ('press_key', 'home'),           # Move to the first item.
