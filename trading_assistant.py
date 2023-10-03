@@ -420,12 +420,12 @@ def configure(trade, can_interpolate=True, can_override=True):
         'title': 'Hyper SBI 2 Assistant',
         'interactive_windows': (
             'お知らせ',
-            '個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
+            r'個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
             '登録銘柄', '保有証券', '注文一覧',
-            '個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
+            r'個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
             'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
             '取引ポップアップ', '通知設定',
-            '全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
+            r'全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
         'input_map': {
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
@@ -512,8 +512,9 @@ def save_customer_margin_ratios(trade, config):
             suspended + '|' + customer_margin_ratio)]
         df[regulation_header].replace('.*' + suspended + '.*', 'suspended',
                                       inplace=True, regex=True)
-        df[regulation_header].replace('.*' + customer_margin_ratio + '(\d+).*',
-                                      r'0.\1', inplace=True, regex=True)
+        df[regulation_header].replace(
+            '.*' + customer_margin_ratio + r'(\d+).*', r'0.\1', inplace=True,
+            regex=True)
 
         df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
@@ -568,7 +569,7 @@ def save_market_data(trade, config, clipboard=False):
         for i in range(1, 10):
             subset = df.loc[df[symbol_header].astype(str).str.match(
                 str(i)
-                + '[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?$')]
+                + r'[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?$')]
             subset.to_csv(trade.closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
@@ -597,7 +598,8 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
     if modified_time < pd.Timestamp(head.headers['last-modified']):
         dfs = pd.read_html(url, match=date_header)
         df = pd.concat(dfs)[date_header]
-        df.replace('^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
+        df.replace(r'^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True,
+                   regex=True)
 
         df.to_csv(market_holidays, header=False, index=False)
 
