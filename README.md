@@ -23,9 +23,9 @@ action consisting of a sequence of commands, this script can:
 
 ## Prerequisites ##
 
-This script has been tested in [Python for
-Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 and uses
-the following packages:
+This script has been tested in [Python for Windows
+3.11.6](https://www.python.org/downloads/release/python-3116/) with Hyper SBI 2
+and uses the following packages:
 
   * [`requests`](https://requests.readthedocs.io/en/latest/),
     [`chardet`](https://github.com/chardet/chardet),
@@ -50,6 +50,8 @@ Install each package as needed.  For example:
 
 ``` powershell
 winget install UB-Mannheim.TesseractOCR
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt -U
 ```
 

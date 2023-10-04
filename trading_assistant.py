@@ -283,12 +283,8 @@ def main():
     else:
         config = configure(trade)
 
-    if not config.has_section(trade.process):
-        print(trade.process, 'section does not exist.')
-        sys.exit(1)
-    else:
-        gui_state = gui_interactions.GuiState(
-            ast.literal_eval(config[trade.process]['interactive_windows']))
+    gui_state = gui_interactions.GuiState(
+        ast.literal_eval(config[trade.process]['interactive_windows']))
 
     if args.a or args.l or args.s:
         BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
@@ -297,30 +293,18 @@ def main():
         trade.speech_manager = base_manager.SpeechManager()
 
     if args.r:
-        if config.has_section(trade.customer_margin_ratios_section):
-            save_customer_margin_ratios(trade, config)
-        else:
-            print(trade.customer_margin_ratios_section,
-                  'section does not exist')
-            sys.exit(1)
+        save_customer_margin_ratios(trade, config)
     if args.d:
         save_market_data(trade, config)
     if args.a:
         is_running = process_utilities.is_running(trade.process)
         if not (is_running and args.l):
-            if config.has_option(trade.process, 'input_map'):
-                start_listeners(trade, config, gui_state, base_manager,
-                                trade.speech_manager, is_persistent=True)
-            else:
-                print(option, 'option does not exist.')
-                sys.exit(1)
-        if config.has_section(trade.actions_section):
-            execute_action(
-                trade, config, gui_state,
-                ast.literal_eval(config[trade.actions_section][args.a[0]]))
-        else:
-            print(trade.actions_section, 'section does not exist.')
-            sys.exit(1)
+            start_listeners(trade, config, gui_state, base_manager,
+                            trade.speech_manager, is_persistent=True)
+
+        execute_action(
+            trade, config, gui_state,
+            ast.literal_eval(config[trade.actions_section][args.a[0]]))
         if not (is_running and args.l):
             process_utilities.stop_listeners(
                 trade.mouse_listener, trade.keyboard_listener, base_manager,
@@ -328,30 +312,22 @@ def main():
             trade.stop_listeners_event.set()
             trade.wait_listeners_thread.join()
     if args.l and process_utilities.is_running(trade.process):
-        if config.has_option(trade.process, 'input_map'):
-            start_listeners(trade, config, gui_state, base_manager,
-                            trade.speech_manager)
-        else:
-            print(option, 'option does not exist.')
-            sys.exit(1)
+        start_listeners(trade, config, gui_state, base_manager,
+                        trade.speech_manager)
     if args.s and process_utilities.is_running(trade.process):
-        if config.has_section(trade.schedule_section):
-            if not (args.a or args.l):
-                trade.speaking_process = (
-                    speech_synthesis.start_speaking_process(
-                        trade.speech_manager))
+        if not (args.a or args.l):
+            trade.speaking_process = (
+                speech_synthesis.start_speaking_process(
+                    trade.speech_manager))
 
-            start_scheduler_thread = threading.Thread(
-                target=start_scheduler,
-                args=(trade, config, gui_state, trade.process))
-            start_scheduler_thread.start()
+        start_scheduler_thread = threading.Thread(
+            target=start_scheduler,
+            args=(trade, config, gui_state, trade.process))
+        start_scheduler_thread.start()
 
-            if not (args.a or args.l):
-                speech_synthesis.stop_speaking_process(
-                    base_manager, trade.speech_manager, trade.speaking_process)
-        else:
-            print(trade.schedule_section, 'section does not exist.')
-            sys.exit(1)
+        if not (args.a or args.l):
+            speech_synthesis.stop_speaking_process(
+                base_manager, trade.speech_manager, trade.speaking_process)
     if args.D:
         if args.D[0] == trade.script_base \
            and os.path.exists(trade.startup_script):
@@ -666,11 +642,13 @@ def start_scheduler(trade, config, gui_state, process):
 
 def start_listeners(trade, config, gui_state, base_manager, speech_manager,
                     is_persistent=False):
+    # TODO: Python 3.12.0
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed:
         trade.on_click(x, y, button, pressed, config, gui_state))
     trade.mouse_listener.start()
 
+    # TODO: Python 3.12.0
     trade.keyboard_listener = keyboard.Listener(
         on_press=lambda key: trade.on_press(key, config, gui_state))
     trade.keyboard_listener.start()

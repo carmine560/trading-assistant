@@ -9,9 +9,9 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
     currently_dark_theme = section.getboolean('currently_dark_theme')
 
     if text_type == 'integers':
-        config = '-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
+        config = r'-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
     elif text_type == 'decimal_numbers':
-        config = '-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
+        config = r'-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
     elif text_type == 'numeric_column':
         config = '-c tessedit_char_whitelist=0123456789 --psm 6'
     elif text_type == 'securities_code_column':

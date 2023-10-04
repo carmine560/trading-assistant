@@ -159,7 +159,7 @@ def create_icon(basename, icon_directory=None):
     from PIL import Image, ImageDraw, ImageFont
 
     acronym = ''.join(word[0].upper()
-                      for word in re.split('[\W_]+', basename) if word)
+                      for word in re.split(r'[\W_]+', basename) if word)
     font_path = 'bahnschrift.ttf'
     variation_name = 'Bold'
     image_width = image_height = 256
@@ -211,7 +211,7 @@ def create_shortcut(basename, target_path, arguments, program_group_base=None,
     program_group = get_program_group(program_group_base)
     check_directory(program_group)
     shell = win32com.client.Dispatch('WScript.Shell')
-    title = re.sub('[\W_]+', ' ', basename).strip().title()
+    title = re.sub(r'[\W_]+', ' ', basename).strip().title()
     shortcut = shell.CreateShortCut(os.path.join(program_group,
                                                  title + '.lnk'))
     shortcut.WindowStyle = 7
@@ -239,7 +239,7 @@ def delete_shortcut(basename, program_group_base=None, icon_directory=None):
             sys.exit(1)
 
     program_group = get_program_group(program_group_base)
-    title = re.sub('[\W_]+', ' ', basename).strip().title()
+    title = re.sub(r'[\W_]+', ' ', basename).strip().title()
     shortcut = os.path.join(program_group, title + '.lnk')
     if os.path.exists(shortcut):
         try:
@@ -260,7 +260,7 @@ def get_program_group(program_group_base=None):
     shell = win32com.client.Dispatch('WScript.Shell')
     if not program_group_base:
         basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-        program_group_base = re.sub('[\W_]+', ' ', basename).strip().title()
+        program_group_base = re.sub(r'[\W_]+', ' ', basename).strip().title()
 
     program_group = os.path.join(shell.SpecialFolders('Programs'),
                                  program_group_base)
@@ -311,7 +311,7 @@ def create_powershell_completion(script_base, options, values, interpreters,
     lines.append(line.rstrip(', '))
     values_str = f"\n{' ' * len(variable_str)}".join(lines)
 
-    completion_str = f'''$scriptblock = {{
+    completion_str = fr'''$scriptblock = {{
     param($wordToComplete, $commandAst, $cursorPosition)
     $commandLine = $commandAst.ToString()
     $regex = `
@@ -353,7 +353,7 @@ def create_bash_completion(script_base, options, values, interpreters,
     expression_str = ' || '.join(f'$previous == {option}'
                                  for option in options)
     interpreters_str = ' '.join(interpreters)
-    completion_str = f'''_{script_base}()
+    completion_str = fr'''_{script_base}()
 {{
     local script current previous options values
     script=${{COMP_WORDS[1]}}

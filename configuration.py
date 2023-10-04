@@ -88,14 +88,14 @@ def modify_option(config, section, option, config_path, backup_function=None,
             answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
-            if re.sub('\s+', '', config[section][option])[:2] == '[(':
+            if re.sub(r'\s+', '', config[section][option])[:2] == '[(':
                 modify_tuple_list(config, section, option, config_path,
                                   categorized_keys=categorized_keys)
-            elif re.sub('\s+', '', config[section][option])[:1] == '(':
+            elif re.sub(r'\s+', '', config[section][option])[:1] == '(':
                 config[section][option] = modify_tuple(
                     config[section][option], False, level=1,
                     tuple_info=tuple_info)
-            elif re.sub('\s+', '', config[section][option])[:1] == '{':
+            elif re.sub(r'\s+', '', config[section][option])[:1] == '{':
                 config[section][option] = modify_dictionary(
                     config[section][option], level=1,
                     dictionary_info=dictionary_info)
