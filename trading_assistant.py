@@ -642,13 +642,11 @@ def start_scheduler(trade, config, gui_state, process):
 
 def start_listeners(trade, config, gui_state, base_manager, speech_manager,
                     is_persistent=False):
-    # TODO: Python 3.12.0
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed:
         trade.on_click(x, y, button, pressed, config, gui_state))
     trade.mouse_listener.start()
 
-    # TODO: Python 3.12.0
     trade.keyboard_listener = keyboard.Listener(
         on_press=lambda key: trade.on_press(key, config, gui_state))
     trade.keyboard_listener.start()
@@ -669,6 +667,8 @@ def start_execute_action_thread(trade, config, gui_state, action):
         target=execute_action,
         args=(trade, config, gui_state,
               ast.literal_eval(config[trade.actions_section][action])))
+    # TODO: Python 3.12.0: RuntimeError: can't create new thread at interpreter
+    # shutdown
     execute_action_thread.start()
 
 def execute_action(trade, config, gui_state, action):
