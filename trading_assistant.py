@@ -756,6 +756,8 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'show_window':
             gui_interactions.enumerate_windows(gui_interactions.show_window,
                                                argument)
+        elif command == 'sleep':
+            time.sleep(float(argument))
         elif command == 'speak_config':
             trade.speech_manager.set_speech_text(
                 config[argument][additional_argument])
@@ -802,8 +804,6 @@ def execute_action(trade, config, gui_state, action):
 
                 trade.speech_manager.set_speech_text('Canceled.')
                 return
-        elif command == 'wait_for_period':
-            time.sleep(float(argument))
         elif command == 'wait_for_prices':
             argument = ast.literal_eval(argument)
             text_recognition.recognize_text(config[trade.process], *argument)

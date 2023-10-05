@@ -129,6 +129,7 @@ ACTION = [
     ('press_key', 'KEY[, PRESSES]'), # Press a key.
     ('show_hide_window', 'TITLE_REGEX'), # Show or hide a window.
     ('show_window', 'TITLE_REGEX'),  # Show a window.
+    ('sleep', 'PERIOD'),             # Wait for a period.
     ('speak_config', 'SECTION', 'OPTION'), # Speak a configuration value.
     # Calculate CPU utilization for an interval and speak it.
     ('speak_cpu_utilization', 'INTERVAL'),
@@ -138,7 +139,6 @@ ACTION = [
     # Take a screenshot with the number of trades and symbol as the filename.
     ('take_screenshot',),
     ('wait_for_key', 'KEY'),         # Wait for keyboard input.
-    ('wait_for_period', 'PERIOD'),   # Wait for a period.
     # Wait for prices to be displayed in a region.
     ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'),
     ('wait_for_window', 'TITLE_REGEX'), # Wait for a window.
@@ -287,10 +287,10 @@ login = [
     # Back the cursor to the previous position.
     ('back_to',),
     ('wait_for_window', 'HYPER SBI 2'), # Wait for the Toolbar.
-    ('wait_for_period', '1'),        # Wait for 1 second.
+    ('sleep', '1'),                  # Wait for 1 second.
     ('hide_parent_window', 'HYPER SBI 2'), # Hide the Toolbar.
     ('wait_for_window', '登録銘柄'), # Wait for the Watchlists window.
-    ('wait_for_period', '1'),        # Wait for 1 second.
+    ('sleep', '1'),                  # Wait for 1 second.
     ('hide_window', '登録銘柄')]     # Hide the Watchlists window.
 ```
 
@@ -312,10 +312,10 @@ watch_active_stocks = [
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
     ('press_key', 'del'),            # Delete them.
-    ('wait_for_period', '0.6'),      # Wait for 0.6 seconds.
+    ('sleep', '0.6'),                # Wait for 0.6 seconds.
     ('press_hotkeys', 'ctrl, v'),    # Paste the symbols copied above.
     ('press_key', 'enter'),          # Confirm the registration.
-    ('wait_for_period', '0.6'),      # Wait for 0.6 seconds.
+    ('sleep', '0.6'),                # Wait for 0.6 seconds.
     ('click', '1676, 41'),           # Select the Tile view.
 
     # Optional Commands
@@ -346,11 +346,11 @@ window with new ones recognized in the Rankings window.
 watch_tick_count = [
     ('show_window', '登録銘柄'),     # Show the Watchlists window.
     ('press_hotkeys', 'ctrl, 7'),    # Open the Rankings window.
-    ('wait_for_period', '0.2'),      # Wait for 0.2 seconds.
+    ('sleep', '0.2'),                # Wait for 0.2 seconds.
     ('click', '38, 39'),             # Select the Rankings tab.
     ('click', '88, 338'),            # Select the Tick Count ranking.
     ('click', '315, 63'),            # Click the Prime Market button.
-    ('wait_for_period', '0.2'),      # Wait for 0.2 seconds.
+    ('sleep', '0.2'),                # Wait for 0.2 seconds.
     # Recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
     ('press_hotkeys', 'alt, f4'),    # Close the window.
@@ -359,10 +359,10 @@ watch_tick_count = [
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
     ('press_key', 'del'),            # Delete them.
-    ('wait_for_period', '0.6'),      # Wait for 0.6 seconds.
+    ('sleep', '0.6'),                # Wait for 0.6 seconds.
     ('press_hotkeys', 'ctrl, v'),    # Paste the symbols copied above.
     ('press_key', 'enter'),          # Confirm the registration.
-    ('wait_for_period', '0.6'),      # Wait for 0.6 seconds.
+    ('sleep', '0.6'),                # Wait for 0.6 seconds.
     ('click', '1676, 41'),           # Select the Tile view.
 
     # Optional Commands
