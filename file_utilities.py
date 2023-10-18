@@ -71,14 +71,26 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
     from datetime import datetime
     import shutil
 
+    decrypted_source = source
+    encrypted_source = source + '.gpg'
+    if os.path.exists(encrypted_source):
+        source = encrypted_source
+        should_compare = False
+
     if os.path.exists(source):
         if not backup_directory:
             backup_directory = os.path.join(os.path.dirname(source), 'backups')
 
         if number_of_backups:
             check_directory(backup_directory)
-            source_base = os.path.splitext(os.path.basename(source))[0]
-            source_suffix = os.path.splitext(source)[1]
+            if source == encrypted_source:
+                source_base = os.path.splitext(
+                    os.path.basename(decrypted_source))[0]
+                source_suffix = os.path.splitext(decrypted_source)[1] + '.gpg'
+            else:
+                source_base = os.path.splitext(os.path.basename(source))[0]
+                source_suffix = os.path.splitext(source)[1]
+
             backup = os.path.join(
                 backup_directory,
                 source_base + datetime.fromtimestamp(

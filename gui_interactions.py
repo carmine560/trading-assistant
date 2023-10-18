@@ -49,13 +49,6 @@ def enumerate_windows(callback, extra):
         else:
             print(e)
 
-def hide_parent_window(hwnd, title_regex):
-    if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
-        parent = win32gui.GetParent(hwnd)
-        if parent and not win32gui.IsIconic(parent):
-            win32gui.ShowWindow(parent, 6)
-            return False
-
 def hide_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         if not win32gui.IsIconic(hwnd):

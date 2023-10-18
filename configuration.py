@@ -1,4 +1,5 @@
 import ast
+import os
 import sys
 
 ANSI_BOLD = '\033[1m'
@@ -11,8 +12,6 @@ ANSI_WARNING = '\033[33m'
 INDENT = '    '
 
 if sys.platform == 'win32':
-    import os
-
     os.system('color')
 
 def list_section(config, section):
@@ -415,9 +414,43 @@ def delete_option(config, section, option, config_path, backup_function=None,
         print(option, 'option does not exist.')
         return False
 
+def read_config(config, config_path):
+    encrypted_config_path = config_path + '.gpg'
+    if os.path.exists(encrypted_config_path):
+        import gnupg
+
+        with open(encrypted_config_path, 'rb') as f:
+            encrypted_config = f.read()
+
+        gpg = gnupg.GPG()
+        decrypted_config = gpg.decrypt(encrypted_config)
+        config.read_string(decrypted_config.data.decode())
+    else:
+        config.read(config_path, encoding='utf-8')
+
 def write_config(config, config_path):
-    with open(config_path, 'w', encoding='utf-8') as f:
-        config.write(f)
+    encrypted_config_path = config_path + '.gpg'
+    if os.path.exists(encrypted_config_path):
+        from io import StringIO
+        import gnupg
+
+        config_string = StringIO()
+        config.write(config_string)
+        gpg = gnupg.GPG()
+        gpg.encoding = 'utf-8'
+        fingerprint = ''
+        if config.has_option('General', 'fingerprint'):
+            fingerprint = config['General']['fingerprint']
+        if not fingerprint:
+            fingerprint = gpg.list_keys()[0]['fingerprint']
+
+        encrypted_config = gpg.encrypt(config_string.getvalue(), fingerprint,
+                                       armor=False)
+        with open(encrypted_config_path, 'wb') as f:
+            f.write(encrypted_config.data)
+    else:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            config.write(f)
 
 def check_config_changes(default_config, config_path, excluded_sections=(),
                          backup_function=None, backup_parameters=None):
@@ -448,7 +481,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
         backup_function(config_path, **backup_parameters)
 
     user_config = configparser.ConfigParser()
-    user_config.read(config_path, encoding='utf-8')
+    read_config(user_config, config_path)
 
     global previous_section
     previous_section = None

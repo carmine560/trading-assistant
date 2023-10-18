@@ -6,6 +6,7 @@ psutil
 pyautogui
 pynput
 pytesseract
+python-gnupg
 pyttsx3
 pywin32
 requests

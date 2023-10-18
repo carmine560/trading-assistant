@@ -368,7 +368,8 @@ def configure(trade, can_interpolate=True, can_override=True):
         'screencast_directory':
         os.path.join(os.path.expanduser('~'), r'Videos\Desktop'),
         'screencast_pattern':
-        r'Desktop \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d{2}\.mp4'}
+        r'Desktop \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d{2}\.mp4',
+        'fingerprint': ''}
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'date_header': '日付',
@@ -393,7 +394,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'suspended': '新規建停止'}
     config[trade.process] = {
         'executable': '',
-        'title': 'Hyper SBI 2 Assistant',
+        'title': trade.process + ' Assistant',
         'interactive_windows': (
             'お知らせ',
             r'個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
@@ -423,7 +424,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'current_number_of_trades': '0'}
 
     if can_override:
-        config.read(trade.config_path, encoding='utf-8')
+        configuration.read_config(config, trade.config_path)
 
     if trade.process == 'HYPERSBI2':
         section = config[trade.process]
@@ -728,9 +729,6 @@ def execute_action(trade, config, gui_state, action):
             configuration.write_config(config, trade.config_path)
         elif command == 'get_symbol':
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
-        elif command == 'hide_parent_window':
-            gui_interactions.enumerate_windows(
-                gui_interactions.hide_parent_window, argument)
         elif command == 'hide_window':
             gui_interactions.enumerate_windows(
                 gui_interactions.hide_window, argument)
@@ -811,6 +809,8 @@ def execute_action(trade, config, gui_state, action):
             gui_interactions.wait_for_window(argument)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
+        elif command == 'write_string':
+            pyautogui.write(argument)
 
         # Control Flow Commands
         elif command == 'is_recording':
