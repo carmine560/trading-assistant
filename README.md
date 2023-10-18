@@ -168,7 +168,7 @@ input map for mapping buttons and keys to them.
 python trading_assistant.py -L
 ```
 
-Then start the mouse and keyboard listeners while Hyper SBI 2 is running.
+Then, start the mouse and keyboard listeners while Hyper SBI 2 is running.
 
 ``` powershell
 python trading_assistant.py -l
@@ -188,7 +188,7 @@ python trading_assistant.py -S
 SCHEDULE = ('%H:%M:%S', 'ACTION')
 ```
 
-Then start the scheduler while Hyper SBI 2 is running.
+Then, start the scheduler while Hyper SBI 2 is running.
 
 ``` powershell
 python trading_assistant.py -s
@@ -196,14 +196,13 @@ python trading_assistant.py -s
 
 ### Encrypt Configuration File ###
 
-The configurations above are stored in the
-`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
-configuration file.  If your GnuPG-encrypted
-`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini.gpg` file
-exists, this script will read from and write to that file.  By default, it uses
-the default key pair of GnuPG.  However, you can also specify a key fingerprint
-as the value of the `fingerprint` option in the `General` section of your
-configuration file.
+The `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
+configuration file stores the configurations above.  If your GnuPG-encrypted
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini.gpg`
+configuration file exists, this script will read from and write to that file.
+By default, it uses the default key pair of GnuPG.  However, you can also
+specify a key fingerprint as the value of the `fingerprint` option in the
+`General` section of your configuration file.
 
 ### Action Argument Completion ###
 
