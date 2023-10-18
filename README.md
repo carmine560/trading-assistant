@@ -303,8 +303,8 @@ login = [
     # Wait for the Pre-authentication of Trading Password dialog box.
     ('wait_for_window', '取引パスワードのプレ認証'),
     ('show_window', '取引パスワードのプレ認証'), # Show the dialog box.
-    ('press_key', 'tab, 2'),         # Focus on the password field.
-    ('write_string', 'TRADING_PASSWORD'), # Enter the password.
+    ('press_key', 'tab, 2'),         # Focus on the trading password field.
+    ('write_string', 'TRADING_PASSWORD'), # Enter your trading password.
     ('press_key', 'tab, 2'),         # Focus on the Acknowledgement checkbox.
     ('press_key', 'space'),          # Check the checkbox.
     ('press_key', 'tab, 2'),         # Focus on the Authenticate button.
