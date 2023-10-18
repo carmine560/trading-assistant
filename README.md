@@ -104,8 +104,7 @@ python trading_assistant.py -A ACTION
 ```
 
 An action is a list of sequential tuples, where each tuple consists of a
-command and its arguments.  These actions are stored in the configuration file.
-Possible commands include:
+command and its arguments.  Possible commands include:
 
 ``` ini
 [HYPERSBI2 Actions]
@@ -154,7 +153,7 @@ ACTION = [
 
 ### Execute Action ###
 
-Execute an action saved in the configuration file.
+Execute a created or modified action.
 
 ``` powershell
 python trading_assistant.py -a ACTION
@@ -260,7 +259,7 @@ python trading_assistant.py -a action
 
 ### Startup Script ###
 
-The following actions and options configure the processing of Hyper SBI 2 pre-
+The following action and options configure the processing of Hyper SBI 2 pre-
 and post-startup and during running.
 
 ``` ini
@@ -364,7 +363,7 @@ watch_active_stocks = [
 The following `watch_tick_count` action replaces the stocks in the ‘Watchlists’
 window with new ones recognized in the ‘Rankings’ window.
 
-> **Note**: Hyper SBI updates the ‘Rankings’ window in real-time, but the text
+> **Note**: Hyper SBI updates the ‘Rankings’ window in real time, but the text
 > recognition by Tesseract is not as accurate as the scraped market data above.
 
 ``` ini
@@ -527,7 +526,7 @@ speak_cpu_utilization = [
 speak_cpu_utilization = ('08:50:10', 'speak_cpu_utilization')
 ```
 
-#### Speak the Number of Seconds until the Open ####
+#### Speak Number of Seconds until Open ####
 
 The following action and schedules speak the number of seconds until the open.
 
