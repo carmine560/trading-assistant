@@ -23,9 +23,9 @@ action consisting of a sequence of commands, this script can:
 
 ## Prerequisites ##
 
-This script has been tested in [Python for Windows
-3.11.6](https://www.python.org/downloads/release/python-3116/) with Hyper SBI 2
-and uses the following packages:
+This script has been tested in [Python 3.11.6 for
+Windows](https://www.python.org/downloads/release/python-3116/) with Hyper SBI
+2 and uses the following packages:
 
   * [`requests`](https://requests.readthedocs.io/en/latest/),
     [`chardet`](https://github.com/chardet/chardet),
