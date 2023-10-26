@@ -45,9 +45,9 @@ Windows](https://www.python.org/downloads/release/python-3116/) with Hyper SBI
     utilization
   * [`prompt_toolkit`](https://python-prompt-toolkit.readthedocs.io/en/master/index.html)
     to complete possible values or a previous value in configuring
-  * [GnuPG](https://gnupg.org/index.html) and
-    [`python-gnupg`](https://docs.red-dove.com/python-gnupg/) to encrypt and
-    decrypt the configuration file
+  * [`python-gnupg`](https://docs.red-dove.com/python-gnupg/) to invoke
+    [GnuPG](https://gnupg.org/index.html) to encrypt and decrypt the
+    configuration file
 
 Install each package as needed.  For example:
 
