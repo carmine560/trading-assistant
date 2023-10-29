@@ -308,12 +308,12 @@ login = [
     ('press_key', 'space'),          # Check the checkbox.
     ('press_key', 'tab, 2'),         # Focus on the Authenticate button.
     ('press_key', 'enter'),          # Press the button.
-    ('sleep', '1.2'),                # Sleep for 1.2 seconds.
+    ('sleep', '1.6'),                # Sleep for 1.6 seconds.
     ('press_key', 'enter'),          # Press the OK button.
+    ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     ('hide_window', '登録銘柄'),     # Hide the Watchlists window.
     # Show the Chart window.
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     # Show the Summary window.
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')]
 ```
