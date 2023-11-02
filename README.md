@@ -352,6 +352,7 @@ watch_active_stocks = [
     ('press_key', 'home'),           # Move to the first item.
     ('press_key', 'down, 2'),        # Select the 5-minute time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '561, 90'),            # Select the 1-day date range.
     # Move the cursor back to the previous position.
     ('back_to',)]
@@ -399,6 +400,7 @@ watch_tick_count = [
     ('press_key', 'home'),           # Move to the first item.
     ('press_key', 'down, 2'),        # Select the 5-minute time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '561, 90'),            # Select the 1-day date range.
     # Move the cursor back to the previous position.
     ('back_to',)]
