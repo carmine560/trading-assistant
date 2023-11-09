@@ -261,6 +261,11 @@ The following are some examples of the configurations in my environment.
 Because this script will execute anything that is an executable configuration,
 you should not use these configurations without understanding them.
 
+> **Note**: I tested these examples in an environment with 1080p resolution, a
+> maximized ‘Watchlists’ window, a left-snapped ‘Summary’ window, and a
+> right-snapped ‘Chart’ window.  Additionally, my Hyper SBI 2 settings differ
+> from the default settings.
+
 ### Startup Script ###
 
 The following action and options configure the processing of Hyper SBI 2 pre-
@@ -282,11 +287,6 @@ running_options = -a show_hide_watchlists
 ```
 
 ### Actions ###
-
-> **Note**: I tested the following examples in an environment with 1080p
-> resolution, a maximized ‘Watchlists’ window, a left-snapped ‘Summary’ window,
-> and a right-snapped ‘Chart’ window.  Additionally, my Hyper SBI 2 settings
-> differ from the default settings.
 
 #### Login ####
 
