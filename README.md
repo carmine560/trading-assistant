@@ -14,9 +14,10 @@ action consisting of a sequence of commands, this script can:
   * Trigger actions using the mouse and keyboard,
   * Schedule actions.
 
-> **Disclaimer**: This script does not analyze or make decisions for the user.
-> If the user has incorrect assumptions, they may lose more because this script
-> can place orders more quickly and repeatedly.  Use at your own risk.
+> **Disclaimer**: This script does not analyze or make decisions for you.  If
+> you operate under incorrect assumptions, the potential for loss may increase
+> because of the script’s fast and frequent order placement.  Use at your own
+> risk.
 
 > **Warning**: This script is currently under heavy development.  Changes in
 > functionality may occur at any time.
@@ -81,8 +82,8 @@ python trading_assistant.py -I
 
 ### Configure Cash Balance and Price Limit Regions ###
 
-Configure the cash balance and (optional) price limit regions on Hyper SBI 2 so
-that Tesseract can recognize these prices.  This script only references a price
+Configure the cash balance and (optional) price limit regions on Hyper SBI 2
+for Tesseract to recognize these prices.  This script only references a price
 limit if the previous closing price does not exist in the market data above.
 Because a region may contain more than one price, you need to specify the index
 of the price you want to refer to.
@@ -256,6 +257,10 @@ python trading_assistant.py -a action
 
 ## Examples ##
 
+The following are some examples of the configurations in my environment.
+Because this script will execute anything that is an executable configuration,
+you should not use these configurations without understanding them.
+
 ### Startup Script ###
 
 The following action and options configure the processing of Hyper SBI 2 pre-
@@ -363,7 +368,7 @@ watch_active_stocks = [
 The following `watch_tick_count` action replaces the stocks in the ‘Watchlists’
 window with new ones recognized in the ‘Rankings’ window.
 
-> **Note**: Hyper SBI updates the ‘Rankings’ window in real time, but the text
+> **Note**: Hyper SBI updates the ‘Rankings’ window in real-time, but the text
 > recognition by Tesseract is not as accurate as the scraped market data above.
 
 ``` ini
@@ -500,7 +505,11 @@ screencast using Nvidia ShadowPlay.
 [HYPERSBI2 Actions]
 start_manual_recording = [
     # Start a new recording if one is not already in progress.
-    ('is_recording', 'False', [('press_hotkeys', 'alt, f9')])]
+    ('is_recording', 'False', [
+        ('press_hotkeys', 'alt, f9'),
+        ('sleep', '2'),              # Sleep for 2 seconds.
+        # Check if recording is currently in progress.
+        ('is_recording', 'False', [('speak_text', 'Not recording.')])])]
 stop_manual_recording = [
     # Stop a recording if one is currently in progress.
     ('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]
