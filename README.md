@@ -14,17 +14,17 @@ action consisting of a sequence of commands, this script can:
   * Trigger actions using the mouse and keyboard,
   * Schedule actions.
 
-> **Disclaimer**: This script does not analyze or make decisions for you.  If
-> you operate under incorrect assumptions, the potential for loss may increase
-> because of the script’s fast and frequent order placement.  Use at your own
-> risk.
+> **Disclaimer**: `trading_assistant.py` does not analyze or make decisions for
+> you.  If you operate under incorrect assumptions, the potential for loss may
+> increase because of the script’s fast and frequent order placement.  Use at
+> your own risk.
 
-> **Warning**: This script is currently under heavy development.  Changes in
-> functionality may occur at any time.
+> **Warning**: `trading_assistant.py` is currently under heavy development.
+> Changes in functionality may occur at any time.
 
 ## Prerequisites ##
 
-This script has been tested in [Python
+`trading_assistant.py` has been tested in [Python
 3.11.6](https://www.python.org/downloads/release/python-3116/) with Hyper SBI 2
 on Windows 10 and uses the following packages:
 
@@ -83,10 +83,10 @@ python trading_assistant.py -I
 ### Configure Cash Balance and Price Limit Regions ###
 
 Configure the cash balance and (optional) price limit regions on Hyper SBI 2
-for Tesseract to recognize these prices.  This script only references a price
-limit if the previous closing price does not exist in the market data above.
-Because a region may contain more than one price, you need to specify the index
-of the price you want to refer to.
+for Tesseract to recognize these prices.  `trading_assistant.py` only
+references a price limit if the previous closing price does not exist in the
+market data above.  Because a region may contain more than one price, you need
+to specify the index of the price you want to refer to.
 
 ``` powershell
 python trading_assistant.py -CB
@@ -95,7 +95,7 @@ python trading_assistant.py -PL
 
 ### Create or Modify Action ###
 
-Create or modify an action for processing by this script.
+Create or modify an action for processing by `trading_assistant.py`.
 
 > **Note**: This option adds virtual environment activation to the target of a
 > shortcut to the action if the `.venv\Scripts\activate.bat` script exists.
@@ -201,10 +201,10 @@ python trading_assistant.py -s
 The `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
 configuration file stores the configurations above.  If your GnuPG-encrypted
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini.gpg`
-configuration file exists, this script will read from and write to that file.
-By default, it uses the default key pair of GnuPG.  However, you can also
-specify a key fingerprint as the value of the `fingerprint` option in the
-`General` section of your configuration file.
+configuration file exists, `trading_assistant.py` will read from and write to
+that file.  By default, it uses the default key pair of GnuPG.  However, you
+can also specify a key fingerprint as the value of the `fingerprint` option in
+the `General` section of your configuration file.
 
 ### Action Argument Completion ###
 
@@ -228,7 +228,7 @@ shell:
 ```
 
 After sourcing the script, you can use tab completion for action arguments when
-running this script with the `-a`, `-A`, or `-D` options:
+running `trading_assistant.py` with the `-a`, `-A`, or `-D` options:
 
 ``` powershell
 python trading_assistant.py -a a⇥
@@ -259,8 +259,9 @@ python trading_assistant.py -a action
 ## Examples ##
 
 The following are some examples of the configurations in my environment.
-Because this script will execute anything that is an executable configuration,
-you should not use these configurations without understanding them.
+Because `trading_assistant.py` will execute anything that is an executable
+configuration, you should not use these configurations without understanding
+them.
 
 > **Note**: I tested these examples in an environment with 1080p resolution, a
 > maximized ‘Watchlists’ window, a left-snapped ‘Summary’ window, and a
