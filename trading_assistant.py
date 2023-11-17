@@ -727,6 +727,8 @@ def execute_action(trade, config, gui_state, action):
                 section['current_number_of_trades'] = '1'
 
             configuration.write_config(config, trade.config_path)
+        elif command == 'drag_to':
+            pyautogui.dragTo(ast.literal_eval(argument))
         elif command == 'get_symbol':
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_window':

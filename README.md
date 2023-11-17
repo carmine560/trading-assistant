@@ -24,9 +24,9 @@ action consisting of a sequence of commands, this script can:
 
 ## Prerequisites ##
 
-This script has been tested in [Python 3.11.6 for
-Windows](https://www.python.org/downloads/release/python-3116/) with Hyper SBI
-2 and uses the following packages:
+This script has been tested in [Python
+3.11.6](https://www.python.org/downloads/release/python-3116/) with Hyper SBI 2
+on Windows 10 and uses the following packages:
 
   * [`requests`](https://requests.readthedocs.io/en/latest/),
     [`chardet`](https://github.com/chardet/chardet),
@@ -124,6 +124,7 @@ ACTION = [
     # Recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT'),
     ('count_trades',),               # Count the number of trades for the day.
+    ('drag_to', 'X, Y'),             # Drag the cursor to a position.
     ('get_symbol', 'TITLE_REGEX'),   # Get the symbol from a window title.
     ('hide_window', 'TITLE_REGEX'),  # Hide a window.
     ('move_to', 'X, Y'),             # Move the cursor to a position.
@@ -415,6 +416,25 @@ watch_tick_count = [
     ('back_to',)]
 ```
 
+#### Center Open ####
+
+The following `center_open` action centers the open in the main chart of the
+‘Chart’ window.
+
+``` ini
+[HYPERSBI2 Actions]
+center_open = [
+    # Show the Chart window.
+    ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('click', '1814, 76'),           # Click the Show Thumbnail Chart button.
+    # Move to the current viewport of the thumbnail chart.
+    ('move_to', '1621, 1018'),
+    ('drag_to', '1411, 1018'),       # Center the open in the main chart.
+    ('click', '1814, 76'),           # Click the Show Thumbnail Chart button.
+    # Move the cursor back to the previous position.
+    ('back_to',)]
+```
+
 #### Open and Close Long Position ####
 
 The following `open_close_long_position` action shows the required windows and
@@ -494,8 +514,10 @@ input_map = {
     'f9': '',
     # Execute the speak_cpu_utilization action below.
     'f10': 'speak_cpu_utilization',
-    'f11': '',
-    'f12': ''}
+    # Execute the center_open action above.
+    'f11': 'center_open',
+    # Execute an action to undo the center_open action.
+    'f12': 'undo_center_open'}
 ```
 
 ### Schedules ###
