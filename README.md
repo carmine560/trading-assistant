@@ -110,15 +110,15 @@ command and its arguments.  Possible commands include:
 ``` ini
 [HYPERSBI2 Actions]
 ACTION = [
-    # Move the cursor back to the previous position.
+    # Return the cursor to the previous position.
     ('back_to',),
     ('beep', 'FREQUENCY, DURATION'), # Beep.
     ('calculate_share_size', 'POSITION'), # Calculate a share size.
     ('click', 'X, Y'),               # Click at coordinates X, Y.
-    # Locate a widget image in a region and click it, assuming it is located in
-    # the HYPERSBI2 subdirectory of the same directory as the configuration
-    # file.
-    ('click_widget', 'IMAGE', 'X, Y, WIDTH, HEIGHT'),
+    # Wait for and locate a widget image in a region and click it, assuming the
+    # image file is located in the HYPERSBI2 subdirectory of the same directory
+    # as the configuration file.
+    ('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT'),
     # Copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     # Recognize a numeric column and copy symbols to the clipboard.
@@ -305,10 +305,8 @@ File](#encrypt-configuration-file)’ section above.
 ``` ini
 [HYPERSBI2 Actions]
 login = [
-    # Locate the Login button in the region and click it.
+    # Wait for and locate the Login button in the region and click it.
     ('click_widget', 'login.png', '759, 320, 402, 381'),
-    # Move the cursor back to the previous position.
-    ('back_to',),
     # Wait for the Pre-authentication of Trading Password dialog box.
     ('wait_for_window', '取引パスワードのプレ認証'),
     ('show_window', '取引パスワードのプレ認証'), # Show the dialog box.
@@ -318,15 +316,15 @@ login = [
     ('press_key', 'space'),          # Check the checkbox.
     ('press_key', 'tab, 2'),         # Focus on the Authenticate button.
     ('press_key', 'enter'),          # Press the button.
-    ('sleep', '4'),                  # Sleep for 4 seconds.
-    ('press_key', 'enter'),          # Press the OK button.
+    # Wait for and locate the OK button in the region and click it.
+    ('click_widget', 'ok.png', '793, 450, 334, 120'),
     ('hide_window', '登録銘柄'),     # Hide the Watchlists window.
-    ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the Chart window.
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the Summary window.
-    ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')]
+    ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
+    # Return the cursor to the previous position.
+    ('back_to',)
 ```
 
 #### Replace Watchlist with Market Data on Website ####
@@ -365,7 +363,7 @@ watch_active_stocks = [
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '561, 90'),            # Select the 1-day date range.
-    # Move the cursor back to the previous position.
+    # Return the cursor to the previous position.
     ('back_to',)]
 ```
 
@@ -413,7 +411,7 @@ watch_tick_count = [
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '561, 90'),            # Select the 1-day date range.
-    # Move the cursor back to the previous position.
+    # Return the cursor to the previous position.
     ('back_to',)]
 ```
 
@@ -432,7 +430,7 @@ center_open = [
     ('move_to', '1621, 1018'),
     ('drag_to', '1411, 1018'),       # Center the open in the main chart.
     ('click', '1814, 76'),           # Click the Show Thumbnail Chart button.
-    # Move the cursor back to the previous position.
+    # Return the cursor to the previous position.
     ('back_to',)]
 ```
 
@@ -461,7 +459,7 @@ open_close_long_position = [
     ('press_key', 'tab, 3'),         # Focus on the Buy Order button.
     # Notify you of the readiness of a buy order.
     ('speak_text', 'Long.'),
-    # Move the cursor back to the previous position.
+    # Return the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
     ('wait_for_prices', '201, 956, 470, 20, 0'), # Wait for the execution.
@@ -476,7 +474,7 @@ open_close_long_position = [
     ('count_trades',),               # Count the number of trades for the day.
     # Speak the number above and notify you of the readiness of a sell order.
     ('speak_config', 'Variables', 'number_of_trades'),
-    # Move the cursor back to the previous position.
+    # Return the cursor to the previous position.
     ('back_to',)]
 ```
 
