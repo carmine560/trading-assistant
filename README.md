@@ -299,9 +299,6 @@ you want to include your password as the value of an option, as demonstrated in
 this example, refer to the ‘[Encrypt Configuration
 File](#encrypt-configuration-file)’ section above.
 
-> **Note**: You may want to increase the sleep periods during trading hours for
-> active stocks because of Hyper SBI 2’s lag.
-
 ``` ini
 [HYPERSBI2 Actions]
 login = [
