@@ -318,6 +318,7 @@ login = [
     ('hide_window', '登録銘柄'),     # Hide the Watchlists window.
     # Show the Chart window.
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     # Show the Summary window.
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
     # Return the cursor to the previous position.
