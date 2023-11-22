@@ -309,7 +309,7 @@ login = [
     ('show_window', '取引パスワードのプレ認証'), # Show the dialog box.
     ('press_key', 'tab, 2'),         # Focus on the trading password field.
     ('write_string', 'TRADING_PASSWORD'), # Enter your trading password.
-    ('press_key', 'tab, 2'),         # Focus on the Acknowledgement checkbox.
+    ('press_key', 'tab, 2'),         # Focus on the Acknowledgment checkbox.
     ('press_key', 'space'),          # Check the checkbox.
     ('press_key', 'tab, 2'),         # Focus on the Authenticate button.
     ('press_key', 'enter'),          # Press the button.
@@ -318,7 +318,7 @@ login = [
     ('hide_window', '登録銘柄'),     # Hide the Watchlists window.
     # Show the Chart window.
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
+    ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the Summary window.
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
     # Return the cursor to the previous position.
@@ -455,8 +455,7 @@ open_close_long_position = [
     ('write_share_size',),           # Enter the calculated share size.
     ('click', '477, 819'),           # Click the Market Order button.
     ('press_key', 'tab, 3'),         # Focus on the Buy Order button.
-    # Notify you of the readiness of a buy order.
-    ('speak_text', 'Long.'),
+    ('speak_text', 'Long.'),         # Speak the readiness of a buy order.
     # Return the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
