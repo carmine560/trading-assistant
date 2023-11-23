@@ -64,11 +64,11 @@ python -m pip install -r requirements.txt -U
 
 ### Create Startup Script ###
 
-To calculate the maximum share size, save the customer margin ratios from
+To calculate the maximum share size, save the customer margin ratios from the
 [*Stocks Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
-and the previous market data from [*Most Active Stocks
-Today*](https://kabutan.jp/warning/?mode=2_9&market=1) beforehand.  The
+page and the previous market data from the [*Most Active Stocks
+Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page beforehand.  The
 following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1` startup
 script that processes the above and starts Hyper SBI 2.
