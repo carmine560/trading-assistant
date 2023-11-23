@@ -38,7 +38,7 @@ on Windows 10 and uses the following packages:
     [Tesseract](https://tesseract-ocr.github.io/) to recognize prices and
     securities codes on Hyper SBI 2
   * [`pyautogui`](https://pyautogui.readthedocs.io/en/latest/index.html) to
-    automate interactions with Hyper SBI 2
+    automate manipulation of Hyper SBI 2
   * [`pynput`](https://github.com/moses-palmer/pynput) to monitor the mouse and
     keyboard
   * [`pyttsx3`](https://github.com/nateshmbhat/pyttsx3) to speak information
