@@ -9,7 +9,8 @@ of stocks on margin using [Hyper SBI
 action consisting of a sequence of commands, this script can:
 
   * Show required windows,
-  * Calculate the maximum share size for a market order on margin trading,
+  * Calculate the maximum number of shares for a market order on margin
+    trading,
   * Manipulate widgets to prepare your order,
   * Trigger actions using the mouse and keyboard,
   * Schedule actions.
@@ -64,8 +65,8 @@ python -m pip install -r requirements.txt -U
 
 ### Create Startup Script ###
 
-To calculate the maximum share size, save the customer margin ratios from the
-[*Stocks Subject to Margin
+To calculate the maximum number of shares, save the customer margin ratios from
+the [*Stocks Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 page and the previous market data from the [*Most Active Stocks
 Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page beforehand.  The
@@ -435,8 +436,8 @@ center_open = [
 #### Open and Close Long Position ####
 
 The following `open_close_long_position` action shows the required windows and
-waits for a buy order with the maximum share size.  If you place the order, it
-prepares a sell order for repayment.
+waits for a buy order with the maximum number of shares.  If you place the
+order, it prepares a sell order for repayment.
 
 ``` ini
 [HYPERSBI2 Actions]
@@ -603,5 +604,5 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 ## Link ##
 
   * [*Python Scripting to Assist in Day Trading on Margin Using Hyper SBI
-    2*](): a blog post about computing the maximum share size for a market
-    order on margin trading
+    2*](): a blog post about computing the maximum number of shares for a
+    market order on margin trading
