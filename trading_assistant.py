@@ -208,7 +208,7 @@ def main():
                     activate = r'.venv\Scripts\activate.bat'
 
                 # To pin the shortcut to the Taskbar, specify an executable
-                # file as the target_path argument.
+                # file as the 'target_path' argument.
                 if activate:
                     target_path = 'cmd.exe'
                     arguments = (
@@ -591,7 +591,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
             modified_time = pd.Timestamp(0, tz='UTC', unit='s')
             break
 
-    # Assume the web page is updated at update_time.
+    # Assume the web page is updated at 'update_time'.
     now = pd.Timestamp.now(tz='UTC')
     latest = pd.Timestamp(update_time, tz=time_zone)
     if now < latest:
