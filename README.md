@@ -603,6 +603,7 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 
 ## Link ##
 
-  * [*Python Scripting to Assist in Day Trading on Margin Using Hyper SBI
-    2*](): a blog post about computing the maximum number of shares for a
-    market order on margin trading
+  * [*Python Scripting to Assist with Day Trading on Margin Using Hyper SBI
+    2*](https://carmine560.blogspot.com/2023/11/python-scripting-to-assist-with-day.html):
+    a blog post about computing the maximum number of shares for a market order
+    on margin trading
