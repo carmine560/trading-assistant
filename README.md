@@ -444,14 +444,14 @@ order, it prepares a sell order for repayment.
 open_close_long_position = [
     # Open Long Position
     # Show the Chart window.
-    ('show_window', '個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
+    ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Show the Summary window.
-    ('show_window', '個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
+    ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('click', '208, 726'),           # Select the New Order tab.
     ('click', '541, 797'),           # Focus on the Share Size text box.
     ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
     # Get the symbol from the Summary window.
-    ('get_symbol', '個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
+    ('get_symbol', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('calculate_share_size', 'long'), # Calculate the share size.
     ('write_share_size',),           # Enter the calculated share size.
     ('click', '477, 819'),           # Click the Market Order button.
