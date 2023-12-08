@@ -102,7 +102,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
 
             if not os.path.exists(backup):
                 should_copy = True
-                if should_compare:
+                if should_compare and backups:
                     with open(source, 'rb') as f:
                         source_contents = f.read()
                     with open(os.path.join(backup_directory, backups[-1]),

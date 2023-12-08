@@ -433,7 +433,7 @@ def configure(trade, can_interpolate=True, can_override=True):
                                     trade.brokerage, trade.process,
                                     'location.dat')
         try:
-            with open(location_dat, 'r') as f:
+            with open(location_dat) as f:
                 section['executable'] = os.path.normpath(
                     os.path.join(f.read(), trade.process + '.exe'))
         except OSError as e:
@@ -885,7 +885,7 @@ def calculate_share_size(trade, config, position):
 
     customer_margin_ratio = 0.31
     try:
-        with open(trade.customer_margin_ratios, 'r') as f:
+        with open(trade.customer_margin_ratios) as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == trade.symbol:
@@ -915,7 +915,7 @@ def calculate_share_size(trade, config, position):
 def get_price_limit(trade, config):
     closing_price = 0.0
     try:
-        with open(trade.closing_prices + trade.symbol[0] + '.csv', 'r') as f:
+        with open(trade.closing_prices + trade.symbol[0] + '.csv') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == trade.symbol:
