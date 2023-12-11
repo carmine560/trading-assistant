@@ -31,8 +31,12 @@ def click_widget(gui_state, image, x, y, width, height):
     width = int(width)
     height = int(height)
     while not location:
-        location = pyautogui.locateOnScreen(image,
-                                            region=(x, y, width, height))
+        try:
+            location = pyautogui.locateOnScreen(image,
+                                                region=(x, y, width, height))
+        except pyautogui.ImageNotFoundException:
+            pass
+
         time.sleep(0.001)
 
     if gui_state.swapped:
