@@ -26,8 +26,8 @@ action consisting of a sequence of commands, this script can:
 ## Prerequisites ##
 
 `trading_assistant.py` has been tested in [Python
-3.11.7](https://www.python.org/downloads/release/python-3117/) with Hyper SBI 2
-on Windows 10 and uses the following packages:
+3.11.7](https://www.python.org/downloads/release/python-3117/) for Windows with
+Hyper SBI 2 on Windows 10 and uses the following packages:
 
   * [`requests`](https://requests.readthedocs.io/en/latest/),
     [`chardet`](https://github.com/chardet/chardet),
