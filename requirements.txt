@@ -3,6 +3,7 @@ lxml
 pandas
 prompt_toolkit
 psutil
+pyarrow
 pyautogui
 pynput
 pytesseract

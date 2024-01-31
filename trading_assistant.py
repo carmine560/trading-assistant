@@ -487,11 +487,10 @@ def save_customer_margin_ratios(trade, config):
 
         df = df[df[regulation_header].str.contains(
             suspended + '|' + customer_margin_ratio)]
-        df[regulation_header].replace('.*' + suspended + '.*', 'suspended',
-                                      inplace=True, regex=True)
-        df[regulation_header].replace(
-            '.*' + customer_margin_ratio + r'(\d+).*', r'0.\1', inplace=True,
-            regex=True)
+        df[regulation_header] = df[regulation_header].replace(
+            '.*' + suspended + '.*', 'suspended', regex=True)
+        df[regulation_header] = df[regulation_header].replace(
+            '.*' + customer_margin_ratio + r'(\d+).*', r'0.\1', regex=True)
 
         df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 

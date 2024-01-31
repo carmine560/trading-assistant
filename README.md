@@ -29,11 +29,12 @@ action consisting of a sequence of commands, this script can:
 3.11.7](https://www.python.org/downloads/release/python-3117/) for Windows with
 Hyper SBI 2 on Windows 10 and uses the following packages:
 
-  * [`requests`](https://requests.readthedocs.io/en/latest/),
-    [`chardet`](https://github.com/chardet/chardet),
-    [`pandas`](https://pandas.pydata.org/), and
-    [`lxml`](https://lxml.de/index.html) to save the customer margin ratios and
-    the previous market data from websites
+  * [`chardet`](https://github.com/chardet/chardet),
+    [`lxml`](https://lxml.de/index.html),
+    [`pandas`](https://pandas.pydata.org/),
+    [`pyarrow`](https://arrow.apache.org/docs/python/), and
+    [`requests`](https://requests.readthedocs.io/en/latest/) to save the
+    customer margin ratios and the previous market data from websites
   * [`pywin32`](https://github.com/mhammond/pywin32) to access Windows APIs
   * [`pytesseract`](https://github.com/madmaze/pytesseract) to invoke
     [Tesseract](https://tesseract-ocr.github.io/) to recognize prices and
@@ -371,7 +372,7 @@ watch_active_stocks = [
 The following `watch_tick_count` action replaces the stocks in the ‘Watchlists’
 window with new ones recognized in the ‘Rankings’ window.
 
-> **Note**: Hyper SBI updates the ‘Rankings’ window in real-time, but the text
+> **Note**: Hyper SBI updates the ‘Rankings’ window in real time, but the text
 > recognition by Tesseract is not as accurate as the scraped market data above.
 
 ``` ini
