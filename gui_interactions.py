@@ -15,8 +15,8 @@ class GuiState:
     def is_interactive_window(self):
         foreground_window = win32gui.GetWindowText(
             win32gui.GetForegroundWindow())
-        for title_regex in self.interactive_windows:
-            if re.fullmatch(title_regex, foreground_window):
+        for title_pattern in self.interactive_windows:
+            if re.fullmatch(title_pattern, foreground_window):
                 return True
         return False
 
@@ -53,14 +53,14 @@ def enumerate_windows(callback, extra):
         else:
             print(e)
 
-def hide_window(hwnd, title_regex):
-    if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
+def hide_window(hwnd, title_pattern):
+    if re.fullmatch(title_pattern, win32gui.GetWindowText(hwnd)):
         if not win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 6)
         return False
 
-def show_hide_window(hwnd, title_regex):
-    if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
+def show_hide_window(hwnd, title_pattern):
+    if re.fullmatch(title_pattern, win32gui.GetWindowText(hwnd)):
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 9)
             win32gui.SetForegroundWindow(hwnd)
@@ -68,8 +68,8 @@ def show_hide_window(hwnd, title_regex):
             win32gui.ShowWindow(hwnd, 6)
         return False
 
-def show_window(hwnd, title_regex):
-    if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
+def show_window(hwnd, title_pattern):
+    if re.fullmatch(title_pattern, win32gui.GetWindowText(hwnd)):
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 9)
 
@@ -91,13 +91,13 @@ def take_screenshot(output):
         image = screenshot.grab((rect.left, rect.top, rect.right, rect.bottom))
         mss.tools.to_png(image.rgb, image.size, output=output)
 
-def wait_for_window(title_regex):
+def wait_for_window(title_pattern):
     def check_for_window(hwnd, extra):
         if re.fullmatch(extra[0], win32gui.GetWindowText(hwnd)):
             extra[1] = False
             return False
 
-    extra = [title_regex, True]
+    extra = [title_pattern, True]
     while extra[1]:
         enumerate_windows(check_for_window, extra)
         time.sleep(0.001)

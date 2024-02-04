@@ -89,8 +89,8 @@ class Trade:
         self.symbol = ''
         self.share_size = 0
 
-    def get_symbol(self, hwnd, title_regex):
-        matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
+    def get_symbol(self, hwnd, title_pattern):
+        matched = re.fullmatch(title_pattern, win32gui.GetWindowText(hwnd))
         if matched:
             self.symbol = matched.group(1)
             return False
