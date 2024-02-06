@@ -206,16 +206,16 @@ def main():
                              'end_of_list': 'end of commands'},
                     categorized_keys=trade.categorized_keys):
                 activate = None
-                if os.path.exists(r'.venv\Scripts\activate.bat'):
-                    activate = r'.venv\Scripts\activate.bat'
+                if os.path.exists(r'.venv\Scripts\activate.ps1'):
+                    activate = r'.venv\Scripts\activate.ps1'
 
                 # To pin the shortcut to the Taskbar, specify an executable
                 # file as the 'target_path' argument.
                 if activate:
-                    target_path = 'cmd.exe'
+                    target_path = 'powershell.exe'
                     arguments = (
-                        f'/c {activate}&&'
-                        f'python.exe {trade.script_file} -a {args.A[0]}')
+                        f'-Command ". {activate}; '
+                        f'python.exe {trade.script_file} -a {args.A[0]}"')
                 else:
                     target_path = 'py.exe'
                     arguments = f'{trade.script_file} -a {args.A[0]}'
@@ -388,7 +388,8 @@ def configure(trade, can_interpolate=True, can_override=True):
     config[trade.customer_margin_ratios_section] = {
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
-        'url': 'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
+        'url':
+        'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
         'header': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
@@ -704,8 +705,10 @@ def execute_action(trade, config, gui_state, action):
             region = ast.literal_eval(additional_argument)
             gui_interactions.click_widget(gui_state, image, *region)
         elif command == 'close_sticky_notes':
-            subprocess.run(['cmd.exe', '/c',
-                            'taskkill.exe /im Microsoft.Notes.exe /f'])
+            subprocess.run(['powershell.exe', '-Command',
+                            ('Start-Process taskkill.exe '
+                             '-ArgumentList "/im Microsoft.Notes.exe /f" '
+                             '-NoNewWindow')])
         elif command == 'copy_symbols_from_market_data':
             save_market_data(trade, config, clipboard=True)
         elif command == 'copy_symbols_from_numeric_column':
@@ -781,7 +784,8 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
         elif command == 'start_sticky_notes':
-            subprocess.run(['powershell.exe', '-Command', r'Start-Process shell:appsfolder\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe!App'])
+            subprocess.run(['powershell.exe', '-Command',
+                            r'Start-Process shell:appsfolder\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe!App'])
         elif command == 'take_screenshot':
             section = config['Variables']
             previous_date = date.fromisoformat(section['current_date'])
@@ -847,13 +851,13 @@ def create_startup_script(trade, config):
             if option:
                 if activate:
                     lines.append(
-                        f'    Start-Process "powershell.exe" -ArgumentList `\n'
+                        f'    Start-Process powershell.exe -ArgumentList `\n'
                         f'      "{activate};", `\n'
                         f'      "python.exe {trade.script_file} {option.strip()}" `\n'
                         f'      {parameters}\n')
                 else:
                     lines.append(
-                        f'    Start-Process "py.exe" -ArgumentList `\n'
+                        f'    Start-Process py.exe -ArgumentList `\n'
                         f'      "{trade.script_file} {option.strip()}" `\n'
                         f'      {parameters}\n')
         return lines
