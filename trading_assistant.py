@@ -851,14 +851,16 @@ def create_startup_script(trade, config):
             if option:
                 if activate:
                     lines.append(
-                        f'    Start-Process powershell.exe -ArgumentList `\n'
-                        f'      "{activate};", `\n'
-                        f'      "python.exe {trade.script_file} {option.strip()}" `\n'
+                        f'    Start-Process powershell.exe `\n'
+                        f'      -ArgumentList "{activate};", `\n'
+                        f'      "python.exe {trade.script_file} '
+                        f'{option.strip()}" `\n'
                         f'      {parameters}\n')
                 else:
                     lines.append(
-                        f'    Start-Process py.exe -ArgumentList `\n'
-                        f'      "{trade.script_file} {option.strip()}" `\n'
+                        f'    Start-Process py.exe `\n'
+                        f'      -ArgumentList "{trade.script_file} '
+                        f'{option.strip()}" `\n'
                         f'      {parameters}\n')
         return lines
 
