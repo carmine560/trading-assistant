@@ -121,6 +121,7 @@ ACTION = [
     # image file is located in the HYPERSBI2 subdirectory of the same directory
     # as the configuration file.
     ('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT'),
+    ('close_sticky_notes',),         # Close Sticky Notes.
     # Copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     # Recognize a numeric column and copy symbols to the clipboard.
@@ -141,6 +142,7 @@ ACTION = [
     # Speak seconds until a specific time.
     ('speak_seconds_until_time', '%H:%M:%S'),
     ('speak_text', 'TEXT'),          # Speak text.
+    ('start_sticky_notes',),         # Start Sticky Notes.
     # Take a screenshot with the number of trades and symbol as the filename.
     ('take_screenshot',),
     ('wait_for_key', 'KEY'),         # Wait for keyboard input.

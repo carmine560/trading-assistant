@@ -7,6 +7,7 @@ import csv
 import inspect
 import os
 import re
+import subprocess
 import sys
 import threading
 import time
@@ -59,8 +60,9 @@ class Trade:
                 inspect.getsource(execute_action)),
             'control_flow_keys': ('is_recording',),
             'additional_value_keys': ('click_widget', 'speak_config'),
-            'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
-                              'count_trades', 'take_screenshot',
+            'no_value_keys': ('back_to', 'close_sticky_notes',
+                              'copy_symbols_from_market_data', 'count_trades',
+                              'start_sticky_notes', 'take_screenshot',
                               'write_share_size'),
             'positioning_keys': ('click', 'move_to')}
         self.schedule_section = f'{self.process} Schedules'
@@ -701,6 +703,9 @@ def execute_action(trade, config, gui_state, action):
             image = os.path.join(trade.resource_directory, argument)
             region = ast.literal_eval(additional_argument)
             gui_interactions.click_widget(gui_state, image, *region)
+        elif command == 'close_sticky_notes':
+            subprocess.run(['cmd.exe', '/c',
+                            'taskkill.exe /im Microsoft.Notes.exe /f'])
         elif command == 'copy_symbols_from_market_data':
             save_market_data(trade, config, clipboard=True)
         elif command == 'copy_symbols_from_numeric_column':
@@ -775,6 +780,8 @@ def execute_action(trade, config, gui_state, action):
                 str(math.ceil(event_time - time.time())) + ' seconds')
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
+        elif command == 'start_sticky_notes':
+            subprocess.run(['powershell.exe', '-Command', r'Start-Process shell:appsfolder\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe!App'])
         elif command == 'take_screenshot':
             section = config['Variables']
             previous_date = date.fromisoformat(section['current_date'])
