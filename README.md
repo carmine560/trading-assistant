@@ -115,7 +115,13 @@ ACTION = [
     # Return the cursor to the previous position.
     ('back_to',),
     ('beep', 'FREQUENCY, DURATION'), # Beep.
-    ('calculate_share_size', 'POSITION'), # Calculate a share size.
+    # Calculate a share size.  This command requires that the 'get_symbol' and
+    # 'get_cash_balance' commands below have been called beforehand.
+    ('calculate_share_size', 'long|short'),
+    # Check if the daily loss limit is reached.  If it is, speak the alert text
+    # and exit.  This command requires that the 'get_cash_balance' command
+    # below has been called beforehand.
+    ('check_daily_loss_limit', 'ALERT_TEXT'),
     ('click', 'X, Y'),               # Click at coordinates X, Y.
     # Wait for and locate a widget image in a region and click it, assuming the
     # image file is located in the HYPERSBI2 subdirectory of the same directory
@@ -128,6 +134,8 @@ ACTION = [
     ('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT'),
     ('count_trades',),               # Count the number of trades for the day.
     ('drag_to', 'X, Y'),             # Drag the cursor to a position.
+    # Recognize the cash balance in the cash balance region specified above.
+    ('get_cash_balance',),
     ('get_symbol', 'TITLE_REGEX'),   # Get the symbol from a window title.
     ('hide_window', 'TITLE_REGEX'),  # Hide a window.
     ('move_to', 'X, Y'),             # Move the cursor to a position.
@@ -141,9 +149,11 @@ ACTION = [
     ('speak_cpu_utilization', 'INTERVAL'),
     # Speak seconds until a specific time.
     ('speak_seconds_until_time', '%H:%M:%S'),
-    ('speak_text', 'TEXT'),          # Speak text.
+    ('speak_text', 'TEXT'),          # Speak the text.
     ('start_sticky_notes',),         # Start Sticky Notes.
     # Take a screenshot with the number of trades and symbol as the filename.
+    # This command requires that the 'count_trades' command above has been
+    # called beforehand.
     ('take_screenshot',),
     ('wait_for_key', 'KEY'),         # Wait for keyboard input.
     # Wait for prices to be displayed in a region.
@@ -455,6 +465,11 @@ open_close_long_position = [
     ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
     # Get the symbol from the Summary window.
     ('get_symbol', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    # Recognize the cash balance on the Summary window.
+    ('get_cash_balance',),
+    # Check if the daily loss limit is reached.  If it is, speak the alert text
+    # and exit.
+    ('check_daily_loss_limit', 'Daily loss limit hit.'),
     ('calculate_share_size', 'long'), # Calculate the share size.
     ('write_share_size',),           # Enter the calculated share size.
     ('click', '477, 819'),           # Click the Market Order button.

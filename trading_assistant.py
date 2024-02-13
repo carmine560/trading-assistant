@@ -62,8 +62,8 @@ class Trade:
             'additional_value_keys': ('click_widget', 'speak_config'),
             'no_value_keys': ('back_to', 'close_sticky_notes',
                               'copy_symbols_from_market_data', 'count_trades',
-                              'start_sticky_notes', 'take_screenshot',
-                              'write_share_size'),
+                              'get_cash_balance', 'start_sticky_notes',
+                              'take_screenshot', 'write_share_size'),
             'positioning_keys': ('click', 'move_to')}
         self.schedule_section = f'{self.process} Schedules'
 
@@ -392,10 +392,11 @@ def configure(trade, can_interpolate=True, can_override=True):
         'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
-        'header': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
-        'customer_margin_ratio': '委託保証金率',
+        'headers': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
+        'customer_margin_ratio_string': '委託保証金率',
         'suspended': '新規建停止'}
     config[trade.process] = {
+        'customer_margin_ratio': '0.31',
         'executable': '',
         'title': trade.process + ' Assistant',
         'interactive_windows': (
@@ -410,9 +411,11 @@ def configure(trade, can_interpolate=True, can_override=True):
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
             'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '', 'f12': ''},
+        # TODO
         'fixed_cash_balance': '0',
         'cash_balance_region': '0, 0, 0, 0, 0',
         'utilization_ratio': '1.0',
+        'daily_loss_limit_ratio': '-1.0',
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '2',
         'binarization_threshold': '128'}
@@ -423,7 +426,9 @@ def configure(trade, can_interpolate=True, can_override=True):
     config[trade.actions_section] = {}
     config[trade.schedule_section] = {}
     config['Variables'] = {
-        'current_date': str(date.today()),
+        'daily_loss_limit_current_date': date.min.strftime('%Y-%m-%d'),
+        'initial_cash_balance': '0',
+        'trades_current_date': date.min.strftime('%Y-%m-%d'),
         'current_number_of_trades': '0'}
 
     if can_override:
@@ -468,8 +473,8 @@ def save_customer_margin_ratios(trade, config):
     url = section['url']
     symbol_header = section['symbol_header']
     regulation_header = section['regulation_header']
-    header = ast.literal_eval(section['header'])
-    customer_margin_ratio = section['customer_margin_ratio']
+    headers = ast.literal_eval(section['headers'])
+    customer_margin_ratio_string = section['customer_margin_ratio_string']
     suspended = section['suspended']
 
     if get_latest(config, trade.market_holidays, update_time, time_zone,
@@ -484,16 +489,17 @@ def save_customer_margin_ratios(trade, config):
             sys.exit(1)
 
         for index, df in enumerate(dfs):
-            if tuple(df.columns.values) == header:
+            if tuple(df.columns.values) == headers:
                 df = dfs[index][[symbol_header, regulation_header]]
                 break
 
         df = df[df[regulation_header].str.contains(
-            suspended + '|' + customer_margin_ratio)]
+            suspended + '|' + customer_margin_ratio_string)]
         df[regulation_header] = df[regulation_header].replace(
             '.*' + suspended + '.*', 'suspended', regex=True)
         df[regulation_header] = df[regulation_header].replace(
-            '.*' + customer_margin_ratio + r'(\d+).*', r'0.\1', regex=True)
+            '.*' + customer_margin_ratio_string + r'(\d+).*', r'0.\1',
+            regex=True)
 
         df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
@@ -693,7 +699,30 @@ def execute_action(trade, config, gui_state, action):
             winsound.Beep(*ast.literal_eval(argument))
         elif command == 'calculate_share_size':
             if not calculate_share_size(trade, config, argument):
+                # TODO
                 return False
+        elif command == 'check_daily_loss_limit':
+            section = config[trade.process]
+            daily_loss_limit = (trade.cash_balance
+                                * float(section['utilization_ratio'])
+                                / float(section['customer_margin_ratio'])
+                                * float(section['daily_loss_limit_ratio']))
+
+            section = config['Variables']
+            previous_date = date.fromisoformat(
+                section['daily_loss_limit_current_date'])
+            daily_loss_limit_current_date = date.today()
+            if previous_date == daily_loss_limit_current_date:
+                daily_profit = (trade.cash_balance
+                                - int(section['initial_cash_balance']))
+                if daily_profit < daily_loss_limit:
+                    trade.speech_manager.set_speech_text(argument)
+                    return False
+            else:
+                section['daily_loss_limit_current_date'] = (
+                    daily_loss_limit_current_date)
+                section['initial_cash_balance'] = str(trade.cash_balance)
+                configuration.write_config(config, trade.config_path)
         elif command == 'click':
             coordinates = ast.literal_eval(argument)
             if gui_state.swapped:
@@ -724,18 +753,23 @@ def execute_action(trade, config, gui_state, action):
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
             section = config['Variables']
-            previous_date = date.fromisoformat(section['current_date'])
-            current_date = date.today()
-            if previous_date == current_date:
+            previous_date = date.fromisoformat(section['trades_current_date'])
+            trades_current_date = date.today()
+            if previous_date == trades_current_date:
                 section['current_number_of_trades'] = \
                     str(int(section['current_number_of_trades']) + 1)
             else:
-                section['current_date'] = str(date.today())
+                section['trades_current_date'] = str(date.today())
                 section['current_number_of_trades'] = '1'
 
             configuration.write_config(config, trade.config_path)
         elif command == 'drag_to':
             pyautogui.dragTo(ast.literal_eval(argument))
+        elif command == 'get_cash_balance':
+            section = config[trade.process]
+            region = ast.literal_eval(section['cash_balance_region'])
+            trade.cash_balance = int(text_recognition.recognize_text(section,
+                                                                     *region))
         elif command == 'get_symbol':
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_window':
@@ -788,10 +822,10 @@ def execute_action(trade, config, gui_state, action):
                             r'Start-Process shell:appsfolder\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe!App'])
         elif command == 'take_screenshot':
             section = config['Variables']
-            previous_date = date.fromisoformat(section['current_date'])
-            current_date = date.today()
-            base = str(current_date)
-            if previous_date == current_date:
+            previous_date = date.fromisoformat(section['trades_current_date'])
+            trades_current_date = date.today()
+            base = str(trades_current_date)
+            if previous_date == trades_current_date:
                 base += f"-{int(section['current_number_of_trades']):02}"
             if trade.symbol:
                 base += f'-{trade.symbol}'
@@ -891,11 +925,8 @@ def calculate_share_size(trade, config, position):
                              or 0)
     if fixed_cash_balance > 0:
         trade.cash_balance = fixed_cash_balance
-    else:
-        region = ast.literal_eval(section['cash_balance_region'])
-        trade.cash_balance = text_recognition.recognize_text(section, *region)
 
-    customer_margin_ratio = 0.31
+    customer_margin_ratio = float(section['customer_margin_ratio'])
     try:
         with open(trade.customer_margin_ratios) as f:
             reader = csv.reader(f)
