@@ -415,7 +415,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'fixed_cash_balance': '0',
         'cash_balance_region': '0, 0, 0, 0, 0',
         'utilization_ratio': '1.0',
-        'daily_loss_limit_ratio': '-1.0',
+        'daily_loss_limit_ratio': '-0.01',
         'price_limit_region': '0, 0, 0, 0, 0',
         'image_magnification': '2',
         'binarization_threshold': '128'}
@@ -700,6 +700,7 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'calculate_share_size':
             if not calculate_share_size(trade, config, argument):
                 # TODO
+                # trade.speech_manager.set_speech_text('Calculation failed.')
                 return False
         elif command == 'check_daily_loss_limit':
             section = config[trade.process]
@@ -720,7 +721,7 @@ def execute_action(trade, config, gui_state, action):
                     return False
             else:
                 section['daily_loss_limit_current_date'] = (
-                    daily_loss_limit_current_date)
+                    str(daily_loss_limit_current_date))
                 section['initial_cash_balance'] = str(trade.cash_balance)
                 configuration.write_config(config, trade.config_path)
         elif command == 'click':

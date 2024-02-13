@@ -118,6 +118,7 @@ ACTION = [
     # Calculate a share size.  This command requires that the 'get_symbol' and
     # 'get_cash_balance' commands below have been called beforehand.
     ('calculate_share_size', 'long|short'),
+    # TODO: daily_loss_limit_ratio
     # Check if the daily loss limit is reached.  If it is, speak the alert text
     # and exit.  This command requires that the 'get_cash_balance' command
     # below has been called beforehand.
