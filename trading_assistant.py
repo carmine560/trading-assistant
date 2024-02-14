@@ -396,7 +396,7 @@ def configure(trade, can_interpolate=True, can_override=True):
     config[trade.process] = {
         'customer_margin_ratio': '0.31',
         'executable': '',
-        'title': trade.process + ' Assistant',
+        'title': '',
         'interactive_windows': (
             'お知らせ',
             r'個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
@@ -432,9 +432,9 @@ def configure(trade, can_interpolate=True, can_override=True):
     if can_override:
         configuration.read_config(config, trade.config_path)
 
-    if trade.process == 'HYPERSBI2':
-        section = config[trade.process]
+    section = config[trade.process]
 
+    if trade.process == 'HYPERSBI2':
         location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
                                     trade.brokerage, trade.process,
                                     'location.dat')
@@ -457,6 +457,12 @@ def configure(trade, can_interpolate=True, can_override=True):
             section['currently_dark_theme'] = 'False'
         else:                   # Dark as a fallback
             section['currently_dark_theme'] = 'True'
+
+    if section['executable'] and not section['title']:
+        file_description = file_utilities.get_file_description(
+            section['executable'])
+        if file_description:
+            section['title'] = file_description + ' Assistant'
 
     return config
 

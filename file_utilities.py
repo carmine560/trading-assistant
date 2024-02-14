@@ -2,6 +2,8 @@ import os
 import re
 import sys
 
+import win32api
+
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
     import io
     import tarfile
@@ -142,6 +144,19 @@ def check_directory(directory):
         except OSError as e:
             print(e)
             sys.exit(1)
+
+def get_file_description(executable):
+    try:
+        language, codepage = win32api.GetFileVersionInfo(
+            executable, r'\VarFileInfo\Translation')[0]
+        string_file_info = (u'\\StringFileInfo\\%04X%04X\\%s'
+                            % (language, codepage, "FileDescription"))
+        file_description = win32api.GetFileVersionInfo(executable,
+                                                       string_file_info)
+    except:
+        file_description = False
+
+    return file_description
 
 def create_icon(basename, icon_directory=None):
     def get_scaled_font(text, font_path, desired_width, desired_height,
