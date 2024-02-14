@@ -7,7 +7,6 @@ import csv
 import inspect
 import os
 import re
-import subprocess
 import sys
 import threading
 import time
@@ -60,9 +59,8 @@ class Trade:
                 inspect.getsource(execute_action)),
             'control_flow_keys': ('is_recording',),
             'additional_value_keys': ('click_widget', 'speak_config'),
-            'no_value_keys': ('back_to', 'close_sticky_notes',
-                              'copy_symbols_from_market_data', 'count_trades',
-                              'get_cash_balance', 'start_sticky_notes',
+            'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
+                              'count_trades', 'get_cash_balance',
                               'take_screenshot', 'write_share_size'),
             'positioning_keys': ('click', 'move_to')}
         self.schedule_section = f'{self.process} Schedules'
@@ -331,8 +329,8 @@ def main():
             speech_synthesis.stop_speaking_process(
                 base_manager, trade.speech_manager, trade.speaking_process)
     if args.D:
-        if args.D[0] == trade.script_base \
-           and os.path.exists(trade.startup_script):
+        if (args.D[0] == trade.script_base
+            and os.path.exists(trade.startup_script)):
             try:
                 os.remove(trade.startup_script)
             except OSError as e:
@@ -454,8 +452,8 @@ def configure(trade, can_interpolate=True, can_override=True):
         theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
                                  trade.brokerage, trade.process, 'theme.ini')
         theme_config.read(theme_ini)
-        if theme_config.has_option('General', 'theme') \
-           and theme_config['General']['theme'] == 'Light':
+        if (theme_config.has_option('General', 'theme')
+            and theme_config['General']['theme'] == 'Light'):
             section['currently_dark_theme'] = 'False'
         else:                   # Dark as a fallback
             section['currently_dark_theme'] = 'True'
@@ -606,18 +604,18 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         latest -= pd.Timedelta(days=1)
 
     df = pd.read_csv(market_holidays, header=None)
-    while df[0].str.contains(latest.strftime(date_format)).any() \
-          or latest.weekday() == 5 or latest.weekday() == 6:
+    while (df[0].str.contains(latest.strftime(date_format)).any()
+           or latest.weekday() == 5 or latest.weekday() == 6):
         latest -= pd.Timedelta(days=1)
 
     if modified_time < latest:
         if volatile_time:
             now = pd.Timestamp.now(tz=time_zone)
-            if df[0].str.contains(now.strftime(date_format)).any() \
-               or now.weekday() == 5 or now.weekday() == 6:
+            if (df[0].str.contains(now.strftime(date_format)).any()
+                or now.weekday() == 5 or now.weekday() == 6):
                 return latest
-            elif not pd.Timestamp(volatile_time, tz=time_zone) <= now \
-                 <= pd.Timestamp(update_time, tz=time_zone):
+            elif (not pd.Timestamp(volatile_time, tz=time_zone) <= now
+                  <= pd.Timestamp(update_time, tz=time_zone)):
                 return latest
         else:
             return latest
@@ -734,11 +732,6 @@ def execute_action(trade, config, gui_state, action):
             image = os.path.join(trade.resource_directory, argument)
             region = ast.literal_eval(additional_argument)
             gui_interactions.click_widget(gui_state, image, *region)
-        elif command == 'close_sticky_notes':
-            subprocess.run(['powershell.exe', '-Command',
-                            ('Start-Process taskkill.exe '
-                             '-ArgumentList "/im Microsoft.Notes.exe /f" '
-                             '-NoNewWindow')])
         elif command == 'copy_symbols_from_market_data':
             save_market_data(trade, config, clipboard=True)
         elif command == 'copy_symbols_from_numeric_column':
@@ -757,8 +750,8 @@ def execute_action(trade, config, gui_state, action):
             previous_date = date.fromisoformat(section['trades_current_date'])
             trades_current_date = date.today()
             if previous_date == trades_current_date:
-                section['current_number_of_trades'] = \
-                    str(int(section['current_number_of_trades']) + 1)
+                section['current_number_of_trades'] = (
+                    str(int(section['current_number_of_trades']) + 1))
             else:
                 section['trades_current_date'] = str(date.today())
                 section['current_number_of_trades'] = '1'
@@ -816,11 +809,11 @@ def execute_action(trade, config, gui_state, action):
             event_time = time.mktime(event_time)
             trade.speech_manager.set_speech_text(
                 str(math.ceil(event_time - time.time())) + ' seconds')
+        elif command == 'speak_show_text':
+            trade.speech_manager.set_speech_text(argument)
+            pyautogui.alert(argument, config[trade.process]['title'])
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
-        elif command == 'start_sticky_notes':
-            subprocess.run(['powershell.exe', '-Command',
-                            r'Start-Process shell:appsfolder\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe!App'])
         elif command == 'take_screenshot':
             section = config['Variables']
             previous_date = date.fromisoformat(section['trades_current_date'])
