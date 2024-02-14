@@ -435,18 +435,19 @@ def configure(trade, can_interpolate=True, can_override=True):
     section = config[trade.process]
 
     if trade.process == 'HYPERSBI2':
-        location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
-                                    trade.brokerage, trade.process,
-                                    'location.dat')
-        try:
-            with open(location_dat) as f:
-                section['executable'] = os.path.normpath(
-                    os.path.join(f.read(), trade.process + '.exe'))
-        except OSError as e:
-            print(e)
-            section['executable'] = os.path.join(
-                r'$${Env:ProgramFiles(x86)}\SBI SECURITIES',
-                trade.process, trade.process + '.exe')
+        if not section['executable']:
+            location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
+                                        trade.brokerage, trade.process,
+                                        'location.dat')
+            try:
+                with open(location_dat) as f:
+                    section['executable'] = os.path.normpath(
+                        os.path.join(f.read(), trade.process + '.exe'))
+            except OSError as e:
+                print(e)
+                section['executable'] = os.path.join(
+                    r'$${Env:ProgramFiles(x86)}\SBI SECURITIES',
+                    trade.process, trade.process + '.exe')
 
         theme_config = configparser.ConfigParser()
         theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
