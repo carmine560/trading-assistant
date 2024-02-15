@@ -85,8 +85,8 @@ class Trade:
         self.initialize_attributes()
 
     def initialize_attributes(self):
-        self.cash_balance = 0
         self.symbol = ''
+        self.cash_balance = 0
         self.share_size = 0
 
     def get_symbol(self, hwnd, title_pattern):
@@ -145,7 +145,7 @@ def main():
         '-s', action='store_true',
         help='start the scheduler')
     group.add_argument(
-        '-I', action='store_true',
+        '-SS', action='store_true',
         help=('configure the startup script, create a shortcut to it, '
               'and exit'))
     group.add_argument(
@@ -161,14 +161,14 @@ def main():
         '-CB', action='store_true',
         help=('configure the cash balance region and exit'))
     group.add_argument(
-        '-B', action='store_true',
-        help='configure the fixed cash balance and exit')
-    group.add_argument(
         '-U', action='store_true',
         help='configure the utilization ratio of the cash balance and exit')
     group.add_argument(
         '-PL', action='store_true',
         help=('configure the price limit region and exit'))
+    group.add_argument(
+        '-DLL', action='store_true',
+        help='configure the daily loss limit ratio and exit')
     group.add_argument(
         '-D', metavar='SCRIPT_BASE | ACTION', nargs=1,
         help=('delete the startup script or an action, '
@@ -182,10 +182,10 @@ def main():
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
 
-    if (args.I or args.A or args.L or args.S or args.CB or args.B or args.U
-        or args.PL):
+    if (args.SS or args.A or args.L or args.S or args.CB or args.U or args.PL
+        or args.DLL):
         config = configure(trade, can_interpolate=False)
-        if args.I and configuration.modify_section(
+        if args.SS and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_path,
                 **backup_file):
             create_startup_script(trade, config)
@@ -258,10 +258,6 @@ def main():
                 trade.config_path, **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
             return
-        elif args.B and configuration.modify_option(
-                config, trade.process, 'fixed_cash_balance', trade.config_path,
-                **backup_file):
-            return
         elif args.U and configuration.modify_option(
                 config, trade.process, 'utilization_ratio', trade.config_path,
                 **backup_file):
@@ -270,6 +266,10 @@ def main():
                 config, trade.process, 'price_limit_region', trade.config_path,
                 **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
+            return
+        elif args.DLL and configuration.modify_option(
+                config, trade.process, 'daily_loss_limit_ratio',
+                trade.config_path, **backup_file):
             return
 
         sys.exit(1)
@@ -409,8 +409,6 @@ def configure(trade, can_interpolate=True, can_override=True):
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
             'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '', 'f12': ''},
-        # TODO
-        'fixed_cash_balance': '0',
         'cash_balance_region': '0, 0, 0, 0, 0',
         'utilization_ratio': '1.0',
         'daily_loss_limit_ratio': '-0.01',
@@ -704,8 +702,8 @@ def execute_action(trade, config, gui_state, action):
             winsound.Beep(*ast.literal_eval(argument))
         elif command == 'calculate_share_size':
             if not calculate_share_size(trade, config, argument):
-                # TODO
-                # trade.speech_manager.set_speech_text('Calculation failed.')
+                # TODO: calculation_failed_text
+                trade.speech_manager.set_speech_text('Calculation failed.')
                 return False
         elif command == 'check_daily_loss_limit':
             section = config[trade.process]
@@ -921,40 +919,39 @@ def create_startup_script(trade, config):
         f.writelines(lines)
 
 def calculate_share_size(trade, config, position):
-    section = config[trade.process]
-    fixed_cash_balance = int(section['fixed_cash_balance'].replace(',', '')
-                             or 0)
-    if fixed_cash_balance > 0:
-        trade.cash_balance = fixed_cash_balance
+    if trade.symbol and trade.cash_balance:
+        section = config[trade.process]
 
-    customer_margin_ratio = float(section['customer_margin_ratio'])
-    try:
-        with open(trade.customer_margin_ratios) as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if row[0] == trade.symbol:
-                    if row[1] == 'suspended':
-                        return False
-                    else:
-                        customer_margin_ratio = float(row[1])
-                    break
-    except OSError as e:
-        print(e)
+        customer_margin_ratio = float(section['customer_margin_ratio'])
+        try:
+            with open(trade.customer_margin_ratios) as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if row[0] == trade.symbol:
+                        if row[1] == 'suspended':
+                            return False
+                        else:
+                            customer_margin_ratio = float(row[1])
+                        break
+        except OSError as e:
+            print(e)
 
-    utilization_ratio = float(section['utilization_ratio'])
-    price_limit = get_price_limit(trade, config)
-    trading_unit = 100
-    share_size = (int(trade.cash_balance * utilization_ratio
-                      / customer_margin_ratio / price_limit / trading_unit)
-                  * trading_unit)
-    if share_size == 0:
-        return False
+        utilization_ratio = float(section['utilization_ratio'])
+        price_limit = get_price_limit(trade, config)
+        trading_unit = 100
+        share_size = (int(trade.cash_balance * utilization_ratio
+                          / customer_margin_ratio / price_limit / trading_unit)
+                      * trading_unit)
+        if share_size == 0:
+            return False
+        else:
+            if position == 'short' and share_size > 50 * trading_unit:
+                share_size = 50 * trading_unit
+
+            trade.share_size = share_size
+            return True
     else:
-        if position == 'short' and share_size > 50 * trading_unit:
-            share_size = 50 * trading_unit
-
-        trade.share_size = share_size
-        return True
+        return False
 
 def get_price_limit(trade, config):
     closing_price = 0.0

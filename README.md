@@ -79,7 +79,7 @@ script that processes the above and starts Hyper SBI 2.
 > script if the `.venv\Scripts\Activate.ps1` script exists.
 
 ```powershell
-python trading_assistant.py -I
+python trading_assistant.py -SS
 ```
 
 ### Configure Cash Balance and Price Limit Regions ###
@@ -87,8 +87,9 @@ python trading_assistant.py -I
 Configure the cash balance and (optional) price limit regions on Hyper SBI 2
 for Tesseract to recognize these prices.  `trading_assistant.py` only
 references a price limit if the previous closing price does not exist in the
-market data above.  Because a region may contain more than one price, you need
-to specify the index of the price you want to refer to.
+market data in the ‘[Create Startup Script](#create-startup-script)’ section.
+Because a region may contain more than one price, you need to specify the index
+of the price you want to refer to.
 
 ``` powershell
 python trading_assistant.py -CB
@@ -118,15 +119,17 @@ ACTION = [
     # Calculate a share size.  This command requires that the 'get_symbol' and
     # 'get_cash_balance' commands below have been called beforehand.
     ('calculate_share_size', 'long|short'),
-    # TODO: daily_loss_limit_ratio
-    # Check if the daily loss limit is reached.  If it is, speak the alert text
-    # and exit.  This command requires that the 'get_cash_balance' command
-    # below has been called beforehand.
+    # Check if the loss has reached the daily loss limit.  If it has, speak the
+    # alert text and exit.  This command requires that the 'get_cash_balance'
+    # command below has been called beforehand.  The '-DLL' option configures
+    # the non-percent, negative daily loss limit ratio (from -1.0 to 0.0) and:
+    #     daily loss limit = cash balance * utilization ratio
+    #                        / customer margin ratio * daily loss limit ratio.
     ('check_daily_loss_limit', 'ALERT_TEXT'),
     ('click', 'X, Y'),               # Click at coordinates X, Y.
     # Wait for and locate a widget image in a region and click it, assuming the
-    # image file is located in the HYPERSBI2 subdirectory of the same directory
-    # as the configuration file.
+    # image file is located in the 'HYPERSBI2' subdirectory of the same
+    # directory as the configuration file.
     ('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT'),
     # Copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
@@ -134,7 +137,8 @@ ACTION = [
     ('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT'),
     ('count_trades',),               # Count the number of trades for the day.
     ('drag_to', 'X, Y'),             # Drag the cursor to a position.
-    # Recognize the cash balance in the cash balance region specified above.
+    # Recognize the cash balance in the cash balance region specified in the
+    # 'Configure Cash Balance and Price Limit Regions' section.
     ('get_cash_balance',),
     ('get_symbol', 'TITLE_REGEX'),   # Get the symbol from a window title.
     ('hide_window', 'TITLE_REGEX'),  # Hide a window.
@@ -163,7 +167,7 @@ ACTION = [
     ('write_string', 'STRING'),      # Write a string.
 
     # Control Flow Command
-    # Execute an ACTION if recording a screencast is a BOOL value.
+    # Execute an action if recording a screencast is a bool value.
     ('is_recording', 'BOOL', ACTION)]
 ```
 
@@ -213,7 +217,7 @@ python trading_assistant.py -s
 ### Encrypt Configuration File ###
 
 The `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
-configuration file stores the configurations above.  If your GnuPG-encrypted
+configuration file stores the configurations.  If your GnuPG-encrypted
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini.gpg`
 configuration file exists, `trading_assistant.py` will read from and write to
 that file.  By default, it uses the default key pair of GnuPG.  However, you
@@ -258,14 +262,14 @@ python trading_assistant.py -a action
   * `-s`: start the scheduler
   * `-l`: start the mouse and keyboard listeners
   * `-a ACTION`: execute an action
-  * `-I`: configure the startup script, create a shortcut to it, and exit
+  * `-SS`: configure the startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit
   * `-L`: configure the input map for buttons and keys and exit
   * `-A ACTION`: configure an action, create a shortcut to it, and exit
   * `-CB`: configure the cash balance region and exit
-  * `-B`: configure the fixed cash balance and exit
   * `-U`: configure the utilization ratio of the cash balance and exit
   * `-PL`: configure the price limit region and exit
+  * `-DLL`: configure the daily loss limit ratio and exit
   * `-D SCRIPT_BASE | ACTION`: delete the startup script or an action, delete
     the shortcut to it, and exit
   * `-C`: check configuration changes and exit
@@ -296,9 +300,9 @@ show_hide_watchlists = [
 # Save the customer margin ratios and the previous market data.
 pre_start_options = -rd
 # Start the mouse and keyboard listeners and the scheduler, and execute the
-# login action mentioned in the next section.
+# 'login' action in the 'Login' section.
 post_start_options = -lsa login
-# Execute the show_hide_window action above.
+# Execute the 'show_hide_watchlists' action above.
 running_options = -a show_hide_watchlists
 ```
 
@@ -311,29 +315,29 @@ then clicks its button.  Next, it enters your trading password and
 authenticates in the ‘Pre-authentication of Trading Password’ dialog box.  If
 you want to include your password as the value of an option, as demonstrated in
 this example, refer to the ‘[Encrypt Configuration
-File](#encrypt-configuration-file)’ section above.
+File](#encrypt-configuration-file)’ section.
 
 ``` ini
 [HYPERSBI2 Actions]
 login = [
-    # Wait for and locate the Login button in the region and click it.
+    # Wait for and locate the 'Login' button in the region and click it.
     ('click_widget', 'login.png', '759, 320, 402, 381'),
-    # Wait for the Pre-authentication of Trading Password dialog box.
+    # Wait for the 'Pre-authentication of Trading Password' dialog box.
     ('wait_for_window', '取引パスワードのプレ認証'),
     ('show_window', '取引パスワードのプレ認証'), # Show the dialog box.
     ('press_key', 'tab, 2'),         # Focus on the trading password field.
     ('write_string', 'TRADING_PASSWORD'), # Enter your trading password.
-    ('press_key', 'tab, 2'),         # Focus on the Acknowledgment checkbox.
+    ('press_key', 'tab, 2'),         # Focus on the 'Acknowledgment' checkbox.
     ('press_key', 'space'),          # Check the checkbox.
-    ('press_key', 'tab, 2'),         # Focus on the Authenticate button.
+    ('press_key', 'tab, 2'),         # Focus on the 'Authenticate' button.
     ('press_key', 'enter'),          # Press the button.
-    # Wait for and locate the OK button in the region and click it.
+    # Wait for and locate the 'OK' button in the region and click it.
     ('click_widget', 'ok.png', '793, 450, 334, 120'),
-    ('hide_window', '登録銘柄'),     # Hide the Watchlists window.
-    # Show the Chart window.
+    ('hide_window', '登録銘柄'),     # Hide the 'Watchlists' window.
+    # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('sleep', '0.4'),                # Sleep for 0.4 seconds.
-    # Show the Summary window.
+    # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
     # Return the cursor to the previous position.
     ('back_to',)
@@ -342,7 +346,8 @@ login = [
 #### Replace Watchlist with Market Data on Website ####
 
 The following `watch_active_stocks` action replaces the stocks in the
-‘Watchlists’ window with new ones scraped from the current market data above.
+‘Watchlists’ window with new ones scraped from the current market data in the
+‘[Create Startup Script](#create-startup-script)’ section.
 
 > **Note**: The free market data provided by Kabutan has a 20-minute delay.
 
@@ -351,9 +356,9 @@ The following `watch_active_stocks` action replaces the stocks in the
 watch_active_stocks = [
     # Copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
-    ('show_window', '登録銘柄'),     # Show the Watchlists window.
+    ('show_window', '登録銘柄'),     # Show the 'Watchlists' window.
     ('click', '44, 95'),             # Select the first watchlist.
-    ('click', '1612, 41'),           # Select the List view.
+    ('click', '1612, 41'),           # Select the 'List' view.
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
     ('press_key', 'del'),            # Delete them.
@@ -361,20 +366,20 @@ watch_active_stocks = [
     ('press_hotkeys', 'ctrl, v'),    # Paste the symbols copied above.
     ('press_key', 'enter'),          # Confirm the registration.
     ('sleep', '0.6'),                # Sleep for 0.6 seconds.
-    ('click', '1676, 41'),           # Select the Tile view.
+    ('click', '1676, 41'),           # Select the 'Tile' view.
 
     # Optional Commands
     ('press_key', 'tab, 5'),         # Focus on the number of columns field.
     ('press_key', '6'),              # Enter 6.
-    ('press_key', 'tab, 6'),         # Focus on the Chart button.
+    ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
     ('press_key', 'tab, 6'),         # Focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # Open the menu.
     ('press_key', 'home'),           # Move to the first item.
-    ('press_key', 'down, 2'),        # Select the 5-minute time frame.
+    ('press_key', 'down, 2'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '561, 90'),            # Select the 1-day date range.
+    ('click', '561, 90'),            # Select the '1-day' date range.
     # Return the cursor to the previous position.
     ('back_to',)]
 ```
@@ -385,23 +390,24 @@ The following `watch_tick_count` action replaces the stocks in the ‘Watchlists
 window with new ones recognized in the ‘Rankings’ window.
 
 > **Note**: Hyper SBI updates the ‘Rankings’ window in real time, but the text
-> recognition by Tesseract is not as accurate as the scraped market data above.
+> recognition by Tesseract is not as accurate as the scraped market data in the
+> ‘[Create Startup Script](#create-startup-script)’ section.
 
 ``` ini
 [HYPERSBI2 Actions]
 watch_tick_count = [
-    ('show_window', '登録銘柄'),     # Show the Watchlists window.
-    ('press_hotkeys', 'ctrl, 7'),    # Open the Rankings window.
+    ('show_window', '登録銘柄'),     # Show the 'Watchlists' window.
+    ('press_hotkeys', 'ctrl, 7'),    # Open the 'Rankings' window.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '38, 39'),             # Select the Rankings tab.
-    ('click', '88, 338'),            # Select the Tick Count ranking.
-    ('click', '315, 63'),            # Click the Prime Market button.
+    ('click', '38, 39'),             # Select the 'Rankings' tab.
+    ('click', '88, 338'),            # Select the 'Tick Count' ranking.
+    ('click', '315, 63'),            # Click the 'Prime Market' button.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     # Recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
     ('press_hotkeys', 'alt, f4'),    # Close the window.
     ('click', '44, 120'),            # Select the second watchlist.
-    ('click', '1612, 41'),           # Select the List view.
+    ('click', '1612, 41'),           # Select the 'List' view.
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
     ('press_key', 'del'),            # Delete them.
@@ -409,20 +415,20 @@ watch_tick_count = [
     ('press_hotkeys', 'ctrl, v'),    # Paste the symbols copied above.
     ('press_key', 'enter'),          # Confirm the registration.
     ('sleep', '0.6'),                # Sleep for 0.6 seconds.
-    ('click', '1676, 41'),           # Select the Tile view.
+    ('click', '1676, 41'),           # Select the 'Tile' view.
 
     # Optional Commands
     ('press_key', 'tab, 5'),         # Focus on the number of columns field.
     ('press_key', '6'),              # Enter 6.
-    ('press_key', 'tab, 6'),         # Focus on the Chart button.
+    ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
     ('press_key', 'tab, 6'),         # Focus on the time frame drop-down menu.
     ('press_hotkeys', 'alt, down'),  # Open the menu.
     ('press_key', 'home'),           # Move to the first item.
-    ('press_key', 'down, 2'),        # Select the 5-minute time frame.
+    ('press_key', 'down, 2'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '561, 90'),            # Select the 1-day date range.
+    ('click', '561, 90'),            # Select the '1-day' date range.
     # Return the cursor to the previous position.
     ('back_to',)]
 ```
@@ -435,13 +441,13 @@ The following `center_open` action centers the open in the main chart of the
 ``` ini
 [HYPERSBI2 Actions]
 center_open = [
-    # Show the Chart window.
+    # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('click', '1814, 76'),           # Click the Show Thumbnail Chart button.
+    ('click', '1814, 76'),           # Click the 'Show Thumbnail Chart' button.
     # Move to the current viewport of the thumbnail chart.
     ('move_to', '1621, 1018'),
     ('drag_to', '1411, 1018'),       # Center the open in the main chart.
-    ('click', '1814, 76'),           # Click the Show Thumbnail Chart button.
+    ('click', '1814, 76'),           # Click the 'Show Thumbnail Chart' button.
     # Return the cursor to the previous position.
     ('back_to',)]
 ```
@@ -456,24 +462,24 @@ order, it prepares a sell order for repayment.
 [HYPERSBI2 Actions]
 open_close_long_position = [
     # Open Long Position
-    # Show the Chart window.
+    # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    # Show the Summary window.
+    # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('click', '208, 726'),           # Select the New Order tab.
-    ('click', '541, 797'),           # Focus on the Share Size text box.
+    ('click', '208, 726'),           # Select the 'New Order' tab.
+    ('click', '541, 797'),           # Focus on the 'Share Size' text box.
     ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
-    # Get the symbol from the Summary window.
+    # Get the symbol from the 'Summary' window.
     ('get_symbol', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    # Recognize the cash balance on the Summary window.
+    # Recognize the cash balance on the 'Summary' window.
     ('get_cash_balance',),
-    # Check if the daily loss limit is reached.  If it is, speak the alert text
-    # and exit.
+    # Check if the loss has reached the daily loss limit.  If it has, speak the
+    # alert text and exit.
     ('check_daily_loss_limit', 'Daily loss limit hit.'),
     ('calculate_share_size', 'long'), # Calculate the share size.
     ('write_share_size',),           # Enter the calculated share size.
-    ('click', '477, 819'),           # Click the Market Order button.
-    ('press_key', 'tab, 3'),         # Focus on the Buy Order button.
+    ('click', '477, 819'),           # Click the 'Market Order' button.
+    ('press_key', 'tab, 3'),         # Focus on the 'Buy Order' button.
     ('speak_text', 'Long.'),         # Speak the readiness of a buy order.
     # Return the cursor to the previous position.
     ('back_to',),
@@ -481,12 +487,12 @@ open_close_long_position = [
     ('wait_for_prices', '201, 956, 470, 20, 0'), # Wait for the execution.
 
     # Close Long Position
-    ('click', '292, 726'),           # Select the Repayment tab.
-    ('click', '605, 838'),           # Focus on the Share Size text box.
+    ('click', '292, 726'),           # Select the 'Repayment' tab.
+    ('click', '605, 838'),           # Focus on the 'Share Size' text box.
     ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
     ('write_share_size',),           # Enter the calculated share size.
-    ('click', '448, 935'),           # Click the Market Order button.
-    ('press_key', 'tab, 5'),         # Focus on the Sell Order button.
+    ('click', '448, 935'),           # Click the 'Market Order' button.
+    ('press_key', 'tab, 5'),         # Focus on the 'Sell Order' button.
     ('count_trades',),               # Count the number of trades for the day.
     # Speak the number above and notify you of the readiness of a sell order.
     ('speak_config', 'Variables', 'number_of_trades'),
@@ -503,8 +509,9 @@ The following input map maps mouse buttons and keyboard keys to actions.
 input_map = {
     # The left button is used to click widgets.
     'left': '',
-    # Execute the show_hide_watchlists action above.  The middle button also
-    # toggles between prices and price changes in the order book.
+    # Execute the 'show_hide_watchlists' action in the 'Startup Script'
+    # section.  The middle button also toggles between prices and price changes
+    # in the order books.
     'middle': 'show_hide_watchlists',
     # The right button is used for context menus.
     'right': '',
@@ -512,26 +519,32 @@ input_map = {
     'x2': '',
     # Execute an action to open and close a short position.
     'f1': 'open_close_short_position',
-    # Execute the open_close_long_position action above.
+    # Execute the 'open_close_long_position' action in the 'Open and Close Long
+    # Position' section.
     'f2': 'open_close_long_position',
     'f3': '',
-    # The F4 key is used to close a window above.
+    # The F4 key is used to close a window.
     'f4': '',
-    # Execute the show_hide_watchlists action above.
+    # Execute the 'show_hide_watchlists' action in the 'Startup Script'
+    # section.
     'f5': 'show_hide_watchlists',
     # Execute an action to watch favorite stocks.
     'f6': 'watch_favorites',
-    # Execute the watch_tick_count action above.
+    # Execute the 'watch_tick_count' action in the 'Replace Watchlist with
+    # Hyper SBI 2 Ranking' section.
     'f7': 'watch_tick_count',
-    # Execute the watch_active_stocks action above.
+    # Execute the 'watch_active_stocks' action in the 'Replace Watchlist with
+    # Market Data on Website' section.
     'f8': 'watch_active_stocks',
-    # The F9 key is used for manual recording below.
+    # The F9 key is used for manual recording in the 'Start and Stop Manual
+    # Recording' section.
     'f9': '',
-    # Execute the speak_cpu_utilization action below.
+    # Execute the 'speak_cpu_utilization' action in the 'Speak CPU Utilization'
+    # section.
     'f10': 'speak_cpu_utilization',
-    # Execute the center_open action above.
+    # Execute the 'center_open' action in the 'Center Open' section.
     'f11': 'center_open',
-    # Execute an action to undo the center_open action.
+    # Execute an action to undo the 'center_open' action.
     'f12': 'undo_center_open'}
 ```
 
@@ -556,9 +569,9 @@ stop_manual_recording = [
     ('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]
 
 [HYPERSBI2 Schedules]
-# Trigger the start_manual_recording action at 08:50:00.
+# Trigger the 'start_manual_recording' action at 08:50:00.
 start_new_manual_recording = ('08:50:00', 'start_manual_recording')
-# Trigger the stop_manual_recording action at 10:00:00.
+# Trigger the 'stop_manual_recording' action at 10:00:00.
 stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
 ```
 
@@ -573,7 +586,7 @@ speak_cpu_utilization = [
     ('speak_cpu_utilization', '1')]
 
 [HYPERSBI2 Schedules]
-# Trigger the speak_cpu_utilization action at 08:50:10.
+# Trigger the 'speak_cpu_utilization' action at 08:50:10.
 speak_cpu_utilization = ('08:50:10', 'speak_cpu_utilization')
 ```
 
@@ -588,9 +601,9 @@ speak_seconds_until_open = [
     ('speak_seconds_until_time', '${Market Data:opening_time}')]
 
 [HYPERSBI2 Schedules]
-# Trigger the speak_seconds_until_open action at 08:59:00.
+# Trigger the 'speak_seconds_until_open' action at 08:59:00.
 speak_60_seconds_until_open = ('08:59:00', 'speak_seconds_until_open')
-# Trigger the speak_seconds_until_open action at 08:59:30.
+# Trigger the 'speak_seconds_until_open' action at 08:59:30.
 speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 ```
 

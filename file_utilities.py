@@ -2,8 +2,6 @@ import os
 import re
 import sys
 
-import win32api
-
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
     import io
     import tarfile
@@ -146,6 +144,8 @@ def check_directory(directory):
             sys.exit(1)
 
 def get_file_description(executable):
+    import win32api
+
     try:
         language, codepage = win32api.GetFileVersionInfo(
             executable, r'\VarFileInfo\Translation')[0]
