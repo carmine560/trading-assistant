@@ -96,9 +96,9 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                 source_base + datetime.fromtimestamp(
                     os.path.getmtime(source)).strftime('-%Y%m%dT%H%M%S')
                 + source_suffix)
-            pattern = (source_base + r'-\d{8}T\d{6}' + source_suffix)
+            regex = (source_base + r'-\d{8}T\d{6}' + source_suffix)
             backups = sorted([f for f in os.listdir(backup_directory)
-                              if re.fullmatch(pattern, f)])
+                              if re.fullmatch(regex, f)])
 
             if not os.path.exists(backup):
                 should_copy = True
