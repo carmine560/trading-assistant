@@ -89,8 +89,8 @@ class Trade:
         self.cash_balance = 0
         self.share_size = 0
 
-    def get_symbol(self, hwnd, title_pattern):
-        matched = re.fullmatch(title_pattern, win32gui.GetWindowText(hwnd))
+    def get_symbol(self, hwnd, title_regex):
+        matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
             self.symbol = matched.group(1)
             return False
@@ -367,7 +367,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         os.path.join(os.path.expanduser('~'), 'Pictures'),
         'screencast_directory':
         os.path.join(os.path.expanduser('~'), r'Videos\Desktop'),
-        'screencast_pattern':
+        'screencast_regex':
         r'Desktop \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d{2}\.mp4',
         'fingerprint': ''}
     config['Market Holidays'] = {
@@ -861,9 +861,9 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'is_recording':
             section = config['General']
             screencast_directory = section['screencast_directory']
-            screencast_pattern = section['screencast_pattern']
+            screencast_regex = section['screencast_regex']
             files = [f for f in os.listdir(screencast_directory)
-                           if re.fullmatch(screencast_pattern, f)]
+                           if re.fullmatch(screencast_regex, f)]
             latest = os.path.join(screencast_directory, files[-1])
             if file_utilities.is_writing(latest) == ast.literal_eval(argument):
                 execute_action(trade, config, gui_state, additional_argument)
