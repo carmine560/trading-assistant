@@ -123,8 +123,12 @@ ACTION = [
     # alert text and exit.  This command requires that the 'get_cash_balance'
     # command below has been called beforehand.  The '-DLL' option configures
     # the non-percent, negative daily loss limit ratio (from -1.0 to 0.0) and:
+    #
     #     daily loss limit = cash balance * utilization ratio
     #                        / customer margin ratio * daily loss limit ratio.
+    #
+    # Note: Trading fees, not considered here, may cause further cash balance
+    # reduction.
     ('check_daily_loss_limit', 'ALERT_TEXT'),
     ('click', 'X, Y'),               # Click at coordinates X, Y.
     # Wait for and locate a widget image in a region and click it, assuming the
