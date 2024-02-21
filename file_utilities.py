@@ -158,7 +158,7 @@ def get_file_description(executable):
 
     return file_description
 
-def create_icon(basename, icon_directory=None):
+def create_icon(base, icon_directory=None):
     def get_scaled_font(text, font_path, desired_width, desired_height,
                         variation_name=''):
         temp_font_size = 100
@@ -186,7 +186,7 @@ def create_icon(basename, icon_directory=None):
     from PIL import Image, ImageDraw, ImageFont
 
     acronym = ''.join(word[0].upper()
-                      for word in re.split(r'[\W_]+', basename) if word)
+                      for word in re.split(r'[\W_]+', base) if word)
     font_path = 'bahnschrift.ttf'
     variation_name = 'Bold'
     image_width = image_height = 256
@@ -223,26 +223,26 @@ def create_icon(basename, icon_directory=None):
                             fill=fill, font=font, align='center')
 
     if icon_directory:
-        icon = os.path.join(icon_directory, basename + '.ico')
+        icon = os.path.join(icon_directory, base + '.ico')
     else:
         icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                            basename + '.ico')
+                            base + '.ico')
 
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
 
-def create_shortcut(basename, target_path, arguments, program_group_base=None,
+def create_shortcut(base, target_path, arguments, program_group_base=None,
                     icon_directory=None, hotkey=None):
     import win32com.client
 
     program_group = get_program_group(program_group_base)
     check_directory(program_group)
     shell = win32com.client.Dispatch('WScript.Shell')
-    title = re.sub(r'[\W_]+', ' ', basename).strip().title()
+    title = re.sub(r'[\W_]+', ' ', base).strip().title()
     shortcut = shell.CreateShortCut(os.path.join(program_group,
                                                  title + '.lnk'))
     shortcut.WindowStyle = 7
-    shortcut.IconLocation = create_icon(basename,
+    shortcut.IconLocation = create_icon(base,
                                         icon_directory=icon_directory)
     shortcut.TargetPath = target_path
     shortcut.Arguments = arguments
@@ -252,12 +252,12 @@ def create_shortcut(basename, target_path, arguments, program_group_base=None,
 
     shortcut.save()
 
-def delete_shortcut(basename, program_group_base=None, icon_directory=None):
+def delete_shortcut(base, program_group_base=None, icon_directory=None):
     if icon_directory:
-        icon = os.path.join(icon_directory, basename + '.ico')
+        icon = os.path.join(icon_directory, base + '.ico')
     else:
         icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                            basename + '.ico')
+                            base + '.ico')
     if os.path.exists(icon):
         try:
             os.remove(icon)
@@ -266,7 +266,7 @@ def delete_shortcut(basename, program_group_base=None, icon_directory=None):
             sys.exit(1)
 
     program_group = get_program_group(program_group_base)
-    title = re.sub(r'[\W_]+', ' ', basename).strip().title()
+    title = re.sub(r'[\W_]+', ' ', base).strip().title()
     shortcut = os.path.join(program_group, title + '.lnk')
     if os.path.exists(shortcut):
         try:
@@ -286,8 +286,8 @@ def get_program_group(program_group_base=None):
 
     shell = win32com.client.Dispatch('WScript.Shell')
     if not program_group_base:
-        basename = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-        program_group_base = re.sub(r'[\W_]+', ' ', basename).strip().title()
+        base = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        program_group_base = re.sub(r'[\W_]+', ' ', base).strip().title()
 
     program_group = os.path.join(shell.SpecialFolders('Programs'),
                                  program_group_base)
