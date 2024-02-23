@@ -450,7 +450,7 @@ center_open_1_minute_chart = [
     ('click', '1814, 76'),           # Click the 'Show Thumbnail Chart' button.
     # Move to the current viewport of the thumbnail chart.
     ('move_to', '1621, 1018'),
-    ('drag_to', '1411, 1018'),       # Center the open in the main chart.
+    ('drag_to', '1411, 1018'),       # Center the open in the 1-minute chart.
     ('click', '1814, 76'),           # Click the 'Show Thumbnail Chart' button.
     # Return the cursor to the previous position.
     ('back_to',)]
