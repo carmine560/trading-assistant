@@ -437,14 +437,14 @@ watch_tick_count = [
     ('back_to',)]
 ```
 
-#### Center Open ####
+#### Center Open for 1-minute Chart ####
 
-The following `center_open` action centers the open in the main chart of the
-‘Chart’ window.
+The following `center_open_1_minute_chart` action centers the open in the
+1-minute chart of the ‘Chart’ window.
 
 ``` ini
 [HYPERSBI2 Actions]
-center_open = [
+center_open_1_minute_chart = [
     # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('click', '1814, 76'),           # Click the 'Show Thumbnail Chart' button.
@@ -546,10 +546,11 @@ input_map = {
     # Execute the 'speak_cpu_utilization' action in the 'Speak CPU Utilization'
     # section.
     'f10': 'speak_cpu_utilization',
-    # Execute the 'center_open' action in the 'Center Open' section.
-    'f11': 'center_open',
-    # Execute an action to undo the 'center_open' action.
-    'f12': 'undo_center_open'}
+    # Execute the 'center_open_1_minute_chart' action in the 'Center Open for
+    # 1-minute Chart' section.
+    'f11': 'center_open_1_minute_chart',
+    # Execute an action to undo the 'center_open_1_minute_chart' action.
+    'f12': 'undo_center_open_1_minute_chart'}
 ```
 
 ### Schedules ###
