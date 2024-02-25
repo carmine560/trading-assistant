@@ -120,9 +120,11 @@ ACTION = [
     # 'get_cash_balance' commands below have been called beforehand.
     ('calculate_share_size', 'long|short'),
     # Check if the loss has reached the daily loss limit.  If it has, speak the
-    # alert text and exit.  This command requires that the 'get_cash_balance'
-    # command below has been called beforehand.  The '-DLL' option configures
-    # the non-percent, negative daily loss limit ratio (from -1.0 to 0.0) and:
+    # alert text and exit.  This command requires that the 'count_trades'
+    # command below has been called in a previous action and the
+    # 'get_cash_balance' command below has been called beforehand.  The '-DLL'
+    # option configures the non-percent, negative daily loss limit ratio (from
+    # -1.0 to 0.0) and:
     #
     #     daily loss limit = cash balance * utilization ratio
     #                        / customer margin ratio * daily loss limit ratio.
@@ -130,6 +132,12 @@ ACTION = [
     # Note: Trading fees, not considered here, may cause further cash balance
     # reduction.
     ('check_daily_loss_limit', 'ALERT_TEXT'),
+    # Check if the current number of trades for the day exceeds the maximum
+    # daily number of trades.  If it does, speak the alert text and exit.  This
+    # command requires that the 'count_trades' command below has been called in
+    # a previous action.  The '-MDN' option configures the maximum daily number
+    # of trades.  A zero value for it indicates unlimited trades.
+    ('check_maximum_daily_number_of_trades', 'ALERT_TEXT'),
     ('click', 'X, Y'),               # Click at coordinates X, Y.
     # Wait for and locate a widget image in a region and click it, assuming the
     # image file is located in the 'HYPERSBI2' subdirectory of the same
@@ -139,7 +147,9 @@ ACTION = [
     ('copy_symbols_from_market_data',),
     # Recognize a numeric column and copy symbols to the clipboard.
     ('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT'),
-    ('count_trades',),               # Count the number of trades for the day.
+    # Count the number of trades for the day.  Assume you call this command
+    # after order execution.
+    ('count_trades',),
     ('drag_to', 'X, Y'),             # Drag the cursor to a position.
     # Recognize the cash balance in the cash balance region specified in the
     # 'Configure Cash Balance and Price Limit Regions' section.
@@ -274,6 +284,7 @@ python trading_assistant.py -a action
   * `-U`: configure the utilization ratio of the cash balance and exit
   * `-PL`: configure the price limit region and exit
   * `-DLL`: configure the daily loss limit ratio and exit
+  * `-MDN`: configure the maximum daily number of trades and exit.
   * `-D SCRIPT_BASE | ACTION`: delete the startup script or an action, delete
     the shortcut to it, and exit
   * `-C`: check configuration changes and exit
@@ -480,6 +491,10 @@ open_close_long_position = [
     # Check if the loss has reached the daily loss limit.  If it has, speak the
     # alert text and exit.
     ('check_daily_loss_limit', 'Daily loss limit hit.'),
+    # Check if the current number of trades for the day exceeds the maximum
+    # daily number of trades.  If it does, speak the alert text and exit.
+    ('check_maximum_daily_number_of_trades',
+     'Maximum daily number of trades exceeded.')
     ('calculate_share_size', 'long'), # Calculate the share size.
     ('write_share_size',),           # Enter the calculated share size.
     ('click', '477, 819'),           # Click the 'Market Order' button.
@@ -488,7 +503,8 @@ open_close_long_position = [
     # Return the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
-    ('wait_for_prices', '201, 956, 470, 20, 0'), # Wait for the execution.
+    # Wait for the order execution.
+    ('wait_for_prices', '201, 956, 470, 20, 0'),
 
     # Close Long Position
     ('click', '292, 726'),           # Select the 'Repayment' tab.

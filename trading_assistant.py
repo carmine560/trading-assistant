@@ -170,6 +170,9 @@ def main():
         '-DLL', action='store_true',
         help='configure the daily loss limit ratio and exit')
     group.add_argument(
+        '-MDN', action='store_true',
+        help='configure the maximum daily number of trades and exit')
+    group.add_argument(
         '-D', metavar='SCRIPT_BASE | ACTION', nargs=1,
         help=('delete the startup script or an action, '
               'delete the shortcut to it, and exit'))
@@ -183,7 +186,7 @@ def main():
                    'backup_parameters': {'number_of_backups': 8}}
 
     if (args.SS or args.A or args.L or args.S or args.CB or args.U or args.PL
-        or args.DLL):
+        or args.DLL or args.MDN):
         config = configure(trade, can_interpolate=False)
         if args.SS and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_path,
@@ -269,6 +272,10 @@ def main():
             return
         elif args.DLL and configuration.modify_option(
                 config, trade.process, 'daily_loss_limit_ratio',
+                trade.config_path, **backup_file):
+            return
+        elif args.MDN and configuration.modify_option(
+                config, trade.process, 'maximum_daily_number_of_trades',
                 trade.config_path, **backup_file):
             return
 
@@ -411,8 +418,9 @@ def configure(trade, can_interpolate=True, can_override=True):
             'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '', 'f12': ''},
         'cash_balance_region': '0, 0, 0, 0, 0',
         'utilization_ratio': '1.0',
-        'daily_loss_limit_ratio': '-0.01',
         'price_limit_region': '0, 0, 0, 0, 0',
+        'daily_loss_limit_ratio': '-0.01',
+        'maximum_daily_number_of_trades': '0',
         'image_magnification': '2',
         'binarization_threshold': '128'}
     config[trade.startup_script_section] = {
@@ -422,9 +430,8 @@ def configure(trade, can_interpolate=True, can_override=True):
     config[trade.actions_section] = {}
     config[trade.schedule_section] = {}
     config['Variables'] = {
-        'daily_loss_limit_current_date': date.min.strftime('%Y-%m-%d'),
+        'current_date': date.min.strftime('%Y-%m-%d'),
         'initial_cash_balance': '0',
-        'trades_current_date': date.min.strftime('%Y-%m-%d'),
         'current_number_of_trades': '0'}
 
     if can_override:
@@ -713,20 +720,30 @@ def execute_action(trade, config, gui_state, action):
                                 * float(section['daily_loss_limit_ratio']))
 
             section = config['Variables']
-            previous_date = date.fromisoformat(
-                section['daily_loss_limit_current_date'])
-            daily_loss_limit_current_date = date.today()
-            if previous_date == daily_loss_limit_current_date:
+            previous_date = date.fromisoformat(section['current_date'])
+            current_date = date.today()
+            if previous_date == current_date:
                 daily_profit = (trade.cash_balance
                                 - int(section['initial_cash_balance']))
                 if daily_profit < daily_loss_limit:
                     trade.speech_manager.set_speech_text(argument)
                     return False
             else:
-                section['daily_loss_limit_current_date'] = (
-                    str(daily_loss_limit_current_date))
                 section['initial_cash_balance'] = str(trade.cash_balance)
                 configuration.write_config(config, trade.config_path)
+        elif command == 'check_maximum_daily_number_of_trades':
+            section = config['Variables']
+            previous_date = date.fromisoformat(section['current_date'])
+            current_date = date.today()
+            if previous_date == current_date:
+                maximum_daily_number_of_trades = int(
+                    config[trade.process]['maximum_daily_number_of_trades'])
+                current_number_of_trades = int(
+                    section['current_number_of_trades'])
+                if (0 < maximum_daily_number_of_trades
+                    <= current_number_of_trades):
+                    trade.speech_manager.set_speech_text(argument)
+                    return False
         elif command == 'click':
             coordinates = ast.literal_eval(argument)
             if gui_state.swapped:
@@ -752,13 +769,13 @@ def execute_action(trade, config, gui_state, action):
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
             section = config['Variables']
-            previous_date = date.fromisoformat(section['trades_current_date'])
-            trades_current_date = date.today()
-            if previous_date == trades_current_date:
+            previous_date = date.fromisoformat(section['current_date'])
+            current_date = date.today()
+            if previous_date == current_date:
                 section['current_number_of_trades'] = (
                     str(int(section['current_number_of_trades']) + 1))
             else:
-                section['trades_current_date'] = str(date.today())
+                section['current_date'] = str(date.today())
                 section['current_number_of_trades'] = '1'
 
             configuration.write_config(config, trade.config_path)
@@ -821,10 +838,10 @@ def execute_action(trade, config, gui_state, action):
             trade.speech_manager.set_speech_text(argument)
         elif command == 'take_screenshot':
             section = config['Variables']
-            previous_date = date.fromisoformat(section['trades_current_date'])
-            trades_current_date = date.today()
-            base = str(trades_current_date)
-            if previous_date == trades_current_date:
+            previous_date = date.fromisoformat(section['current_date'])
+            current_date = date.today()
+            base = str(current_date)
+            if previous_date == current_date:
                 base += f"-{int(section['current_number_of_trades']):02}"
             if trade.symbol:
                 base += f'-{trade.symbol}'
