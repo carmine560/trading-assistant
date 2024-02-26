@@ -373,9 +373,10 @@ def configure(trade, can_interpolate=True, can_override=True):
         'screenshot_directory':
         os.path.join(os.path.expanduser('~'), 'Pictures'),
         'screencast_directory':
-        os.path.join(os.path.expanduser('~'), r'Videos\Desktop'),
+        os.path.join(os.path.expanduser('~'), 'Videos', trade.process.title()),
         'screencast_regex':
-        r'Desktop \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d{2}\.mp4',
+        (trade.process.title()
+         + r' \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d{2}\.mp4'),
         'fingerprint': ''}
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
