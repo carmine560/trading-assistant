@@ -709,9 +709,9 @@ def execute_action(trade, config, gui_state, action):
 
             winsound.Beep(*ast.literal_eval(argument))
         elif command == 'calculate_share_size':
-            if not calculate_share_size(trade, config, argument):
-                # TODO: calculation_failed_text
-                trade.speech_manager.set_speech_text('Calculation failed.')
+            is_successful, text = calculate_share_size(trade, config, argument)
+            if not is_successful and text:
+                trade.speech_manager.set_speech_text(text)
                 return False
         elif command == 'check_daily_loss_limit':
             section = config[trade.process]
@@ -947,7 +947,7 @@ def calculate_share_size(trade, config, position):
                 for row in reader:
                     if row[0] == trade.symbol:
                         if row[1] == 'suspended':
-                            return False
+                            return (False, 'Margin trading suspended.')
                         else:
                             customer_margin_ratio = float(row[1])
                         break
@@ -961,15 +961,15 @@ def calculate_share_size(trade, config, position):
                           / customer_margin_ratio / price_limit / trading_unit)
                       * trading_unit)
         if share_size == 0:
-            return False
+            return (False, 'Insufficient cash balance.')
         else:
             if position == 'short' and share_size > 50 * trading_unit:
                 share_size = 50 * trading_unit
 
             trade.share_size = share_size
-            return True
+            return (True, None)
     else:
-        return False
+        return (False, 'Symbol or cash balance not provided.')
 
 def get_price_limit(trade, config):
     closing_price = 0.0

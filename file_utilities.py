@@ -150,7 +150,7 @@ def get_file_description(executable):
         language, codepage = win32api.GetFileVersionInfo(
             executable, r'\VarFileInfo\Translation')[0]
         string_file_info = (u'\\StringFileInfo\\%04X%04X\\%s'
-                            % (language, codepage, "FileDescription"))
+                            % (language, codepage, 'FileDescription'))
         file_description = win32api.GetFileVersionInfo(executable,
                                                        string_file_info)
     except:
