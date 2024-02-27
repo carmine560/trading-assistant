@@ -1,5 +1,6 @@
 from datetime import date
 from multiprocessing.managers import BaseManager
+from tkinter import Tk, Label
 import argparse
 import ast
 import configparser
@@ -82,6 +83,8 @@ class Trade:
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
 
+        self.clock_thread = None
+
         self.initialize_attributes()
 
     def initialize_attributes(self):
@@ -121,6 +124,37 @@ class Trade:
                 elif key == keyboard.Key.esc:
                     self.should_continue = False
                     self.keyboard_listener_state = 0
+
+# TODO
+class ClockThread(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self._stop_event = threading.Event()
+
+    def run(self):
+        root = Tk()
+        root.attributes('-topmost', True)
+        root.config(background='black')
+        root.geometry('56x17+4+128')
+        root.overrideredirect(True)
+        root.title('Clock')
+
+        label = Label(root, font=('Tahoma', 9), background='black',
+                      foreground='orange')
+        label.pack(expand=True)
+
+        while not self._stop_event.is_set():
+            label.config(text=time.strftime('%H:%M:%S'))
+            root.update()
+            time.sleep(0.01)
+
+        root.destroy()
+
+    def stop(self):
+        self._stop_event.set()
+
+    def is_stopped(self):
+        return self._stop_event.is_set()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -850,6 +884,14 @@ def execute_action(trade, config, gui_state, action):
             base += '-screenshot.png'
             gui_interactions.take_screenshot(
                 os.path.join(config['General']['screenshot_directory'], base))
+        elif command == 'toggle_clock':
+            # TODO
+            if trade.clock_thread:
+                trade.clock_thread.stop()
+                trade.clock_thread = None
+            else:
+                trade.clock_thread = ClockThread()
+                trade.clock_thread.start()
         elif command == 'wait_for_key':
             trade.keyboard_listener_state = 1
             if len(argument) == 1:
@@ -925,9 +967,9 @@ def create_startup_script(trade, config):
         lines.append(f'$workingDirectory = "{os.path.dirname(__file__)}"\n'
                      f'\n'
                      f'if (Get-Process "{trade.process}" '
-                     f'-ErrorAction SilentlyContinue)\n{{\n')
+                     f'-ErrorAction SilentlyContinue) {{\n')
         lines.extend(generate_start_process_lines(running_options))
-        lines.append('}\nelse\n{\n')
+        lines.append('}\nelse {\n')
         lines.extend(generate_start_process_lines(pre_start_options))
         lines.append(f'    Start-Process `\n'
                      f'      "{config[trade.process]["executable"]}" `\n'

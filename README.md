@@ -173,6 +173,8 @@ ACTION = [
     # This command requires that the 'count_trades' command above has been
     # called beforehand.
     ('take_screenshot',),
+    # TODO
+    ('toggle_clock',),               # Toggle the clock.
     ('wait_for_key', 'KEY'),         # Wait for keyboard input.
     # Wait for prices to be displayed in a region.
     ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'),
@@ -494,7 +496,7 @@ open_close_long_position = [
     # Check if the current number of trades for the day exceeds the maximum
     # daily number of trades.  If it does, speak the alert text and exit.
     ('check_maximum_daily_number_of_trades',
-     'Maximum daily number of trades exceeded.')
+     'Maximum daily number of trades exceeded.'),
     ('calculate_share_size', 'long'), # Calculate the share size.
     ('write_share_size',),           # Enter the calculated share size.
     ('click', '477, 819'),           # Click the 'Market Order' button.
