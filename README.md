@@ -120,11 +120,9 @@ ACTION = [
     # 'get_cash_balance' commands below have been called beforehand.
     ('calculate_share_size', 'long|short'),
     # Check if the loss has reached the daily loss limit.  If it has, speak the
-    # alert text and exit.  This command requires that the 'count_trades'
-    # command below has been called in a previous action and the
-    # 'get_cash_balance' command below has been called beforehand.  The '-DLL'
-    # option configures the non-percent, negative daily loss limit ratio (from
-    # -1.0 to 0.0) and:
+    # alert text and exit.  This command requires that the 'get_cash_balance'
+    # command below has been called beforehand.  The '-DLL' option configures
+    # the non-percent, negative daily loss limit ratio (from -1.0 to 0.0) and:
     #
     #     daily loss limit = cash balance * utilization ratio
     #                        / customer margin ratio * daily loss limit ratio.
@@ -135,7 +133,7 @@ ACTION = [
     # Check if the current number of trades for the day exceeds the maximum
     # daily number of trades.  If it does, speak the alert text and exit.  This
     # command requires that the 'count_trades' command below has been called in
-    # a previous action.  The '-MDN' option configures the maximum daily number
+    # previous actions.  The '-MDN' option configures the maximum daily number
     # of trades.  A zero value for it indicates unlimited trades.
     ('check_maximum_daily_number_of_trades', 'ALERT_TEXT'),
     ('click', 'X, Y'),               # Click at coordinates X, Y.
@@ -170,10 +168,7 @@ ACTION = [
     ('speak_show_text', 'TEXT'),     # Speak and show a text.
     ('speak_text', 'TEXT'),          # Speak a text.
     # Take a screenshot with the number of trades and symbol as the filename.
-    # This command requires that the 'count_trades' command above has been
-    # called beforehand.
     ('take_screenshot',),
-    # TODO
     ('toggle_osd',),                 # Toggle the OSD.
     ('wait_for_key', 'KEY'),         # Wait for keyboard input.
     # Wait for prices to be displayed in a region.

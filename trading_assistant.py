@@ -55,7 +55,6 @@ class Trade:
             f'{self.brokerage} Customer Margin Ratios')
         self.startup_script_section = f'{self.process} Startup Script'
         self.actions_section = f'{self.process} Actions'
-        # TODO
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
@@ -480,6 +479,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'running_options': ''}
     config[trade.actions_section] = {}
     config[trade.schedule_section] = {}
+    # TODO
     config['Variables'] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
         'initial_cash_balance': '0',
@@ -487,6 +487,14 @@ def configure(trade, can_interpolate=True, can_override=True):
 
     if can_override:
         configuration.read_config(config, trade.config_path)
+
+        section = config['Variables']
+        previous_date = date.fromisoformat(section['current_date'])
+        current_date = date.today()
+        if previous_date != current_date:
+            section['current_date'] = str(date.today())
+            section['initial_cash_balance'] = '0'
+            section['current_number_of_trades'] = '0'
 
     section = config[trade.process]
 
@@ -771,30 +779,21 @@ def execute_action(trade, config, gui_state, action):
                                 * float(section['daily_loss_limit_ratio']))
 
             section = config['Variables']
-            previous_date = date.fromisoformat(section['current_date'])
-            current_date = date.today()
-            if previous_date == current_date:
-                daily_profit = (trade.cash_balance
-                                - int(section['initial_cash_balance']))
+            initial_cash_balance = int(section['initial_cash_balance'])
+            if initial_cash_balance == 0:
+                section['initial_cash_balance'] = str(trade.cash_balance)
+                configuration.write_config(config, trade.config_path)
+            else:
+                daily_profit = (trade.cash_balance - initial_cash_balance)
                 if daily_profit < daily_loss_limit:
                     trade.speech_manager.set_speech_text(argument)
                     return False
-            else:
-                section['initial_cash_balance'] = str(trade.cash_balance)
-                configuration.write_config(config, trade.config_path)
         elif command == 'check_maximum_daily_number_of_trades':
-            section = config['Variables']
-            previous_date = date.fromisoformat(section['current_date'])
-            current_date = date.today()
-            if previous_date == current_date:
-                maximum_daily_number_of_trades = int(
-                    config[trade.process]['maximum_daily_number_of_trades'])
-                current_number_of_trades = int(
-                    section['current_number_of_trades'])
-                if (0 < maximum_daily_number_of_trades
-                    <= current_number_of_trades):
-                    trade.speech_manager.set_speech_text(argument)
-                    return False
+            if (0
+                < int(config[trade.process]['maximum_daily_number_of_trades'])
+                <= int(config['Variables']['current_number_of_trades'])):
+                trade.speech_manager.set_speech_text(argument)
+                return False
         elif command == 'click':
             coordinates = ast.literal_eval(argument)
             if gui_state.swapped:
@@ -820,15 +819,8 @@ def execute_action(trade, config, gui_state, action):
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
             section = config['Variables']
-            previous_date = date.fromisoformat(section['current_date'])
-            current_date = date.today()
-            if previous_date == current_date:
-                section['current_number_of_trades'] = (
-                    str(int(section['current_number_of_trades']) + 1))
-            else:
-                section['current_date'] = str(date.today())
-                section['current_number_of_trades'] = '1'
-
+            section['current_number_of_trades'] = (
+                str(int(section['current_number_of_trades']) + 1))
             configuration.write_config(config, trade.config_path)
         elif command == 'drag_to':
             pyautogui.dragTo(ast.literal_eval(argument))
@@ -889,16 +881,13 @@ def execute_action(trade, config, gui_state, action):
             trade.speech_manager.set_speech_text(argument)
         elif command == 'take_screenshot':
             section = config['Variables']
-            previous_date = date.fromisoformat(section['current_date'])
-            current_date = date.today()
-            base = str(current_date)
-            if previous_date == current_date:
-                base += f"-{int(section['current_number_of_trades']):02}"
+            base = section['current_date']
+            base += f"-{int(section['current_number_of_trades']):02}"
             if trade.symbol:
                 base += f'-{trade.symbol}'
 
             base += '-screenshot.png'
-            gui_interactions.take_screenshot(
+            pyautogui.screenshot(
                 os.path.join(config['General']['screenshot_directory'], base))
         elif command == 'toggle_osd':
             # TODO
