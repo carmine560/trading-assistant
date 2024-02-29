@@ -174,7 +174,7 @@ ACTION = [
     # called beforehand.
     ('take_screenshot',),
     # TODO
-    ('toggle_clock',),               # Toggle the clock.
+    ('toggle_osd',),                 # Toggle the OSD.
     ('wait_for_key', 'KEY'),         # Wait for keyboard input.
     # Wait for prices to be displayed in a region.
     ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'),
@@ -567,8 +567,8 @@ input_map = {
     # Execute the 'center_open_1_minute_chart' action in the 'Center Open for
     # 1-minute Chart' section.
     'f11': 'center_open_1_minute_chart',
-    # Execute an action to undo the 'center_open_1_minute_chart' action.
-    'f12': 'undo_center_open_1_minute_chart'}
+    # TODO
+    'f12': 'toggle_osd'}             # Execute a 'toggle_osd' action.
 ```
 
 ### Schedules ###

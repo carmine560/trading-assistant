@@ -55,6 +55,7 @@ class Trade:
             f'{self.brokerage} Customer Margin Ratios')
         self.startup_script_section = f'{self.process} Startup Script'
         self.actions_section = f'{self.process} Actions'
+        # TODO
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
@@ -62,7 +63,8 @@ class Trade:
             'additional_value_keys': ('click_widget', 'speak_config'),
             'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
                               'count_trades', 'get_cash_balance',
-                              'take_screenshot', 'write_share_size'),
+                              'take_screenshot', 'toggle_osd',
+                              'write_share_size'),
             'positioning_keys': ('click', 'move_to')}
         self.schedule_section = f'{self.process} Schedules'
 
@@ -83,7 +85,7 @@ class Trade:
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
 
-        self.clock_thread = None
+        self.osd_thread = None
 
         self.initialize_attributes()
 
@@ -126,35 +128,49 @@ class Trade:
                     self.keyboard_listener_state = 0
 
 # TODO
-class ClockThread(threading.Thread):
-    def __init__(self):
+class OSDThread(threading.Thread):
+    def __init__(self, trade, config, work_width, work_height):
         super().__init__()
+        self.trade = trade
+        self.config = config
+        self.work_width = work_width
+        self.work_height = work_height
         self._stop_event = threading.Event()
-
-    def run(self):
-        root = Tk()
-        root.attributes('-topmost', True)
-        root.config(background='black')
-        root.geometry('56x17+4+128')
-        root.overrideredirect(True)
-        root.title('Clock')
-
-        label = Label(root, font=('Tahoma', 9), background='black',
-                      foreground='orange')
-        label.pack(expand=True)
-
-        while not self._stop_event.is_set():
-            label.config(text=time.strftime('%H:%M:%S'))
-            root.update()
-            time.sleep(0.01)
-
-        root.destroy()
 
     def stop(self):
         self._stop_event.set()
 
     def is_stopped(self):
         return self._stop_event.is_set()
+
+    def run(self):
+        root = Tk()
+        root.attributes('-alpha', 0.8)
+        root.attributes('-topmost', True)
+        root.config(background='black')
+        root.geometry(f'{self.work_width}x{self.work_height}')
+        root.overrideredirect(True)
+        root.wm_attributes('-transparentcolor', 'black')
+
+        clock_label = Label(root, font=('Tahoma', -12), background='gray5',
+                            foreground='orange')
+        clock_label.place(x=4, y=126)
+
+        current_number_of_trades_label = Label(
+            root, font=('Bahnschrift', -24), background='gray5',
+            foreground='orange',
+            width=len(self.config[self.trade.process][
+                'maximum_daily_number_of_trades']))
+        current_number_of_trades_label.place(relx=0.0, rely=1.0, anchor='sw')
+
+        while not self._stop_event.is_set():
+            clock_label.config(text=time.strftime('%H:%M:%S'))
+            current_number_of_trades_label.config(
+                text=self.config['Variables']['current_number_of_trades'])
+            root.update()
+            time.sleep(0.01)
+
+        root.destroy()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -884,14 +900,19 @@ def execute_action(trade, config, gui_state, action):
             base += '-screenshot.png'
             gui_interactions.take_screenshot(
                 os.path.join(config['General']['screenshot_directory'], base))
-        elif command == 'toggle_clock':
+        elif command == 'toggle_osd':
             # TODO
-            if trade.clock_thread:
-                trade.clock_thread.stop()
-                trade.clock_thread = None
+            if trade.osd_thread:
+                trade.osd_thread.stop()
+                trade.osd_thread = None
             else:
-                trade.clock_thread = ClockThread()
-                trade.clock_thread.start()
+                from win32api import GetMonitorInfo, MonitorFromPoint
+
+                work_width, work_height = GetMonitorInfo(
+                    MonitorFromPoint((0, 0))).get('Work')[2:]
+                trade.osd_thread = OSDThread(trade, config, work_width,
+                                             work_height)
+                trade.osd_thread.start()
         elif command == 'wait_for_key':
             trade.keyboard_listener_state = 1
             if len(argument) == 1:
