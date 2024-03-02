@@ -21,51 +21,6 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
                           os.path.basename(source) + '.tar.xz.gpg')
     gpg.encrypt_file(tar_stream, fingerprint, armor=False, output=output)
 
-def decrypt_extract_file(source, output_directory):
-    import io
-    import shutil
-    import tarfile
-
-    import gnupg
-
-    gpg = gnupg.GPG()
-    with open(source, 'rb') as f:
-        decrypted_data = gpg.decrypt_file(f)
-
-    tar_stream = io.BytesIO(decrypted_data.data)
-    with tarfile.open(fileobj=tar_stream, mode='r:xz') as tar:
-        root = os.path.join(output_directory, tar.getmembers()[0].name)
-        backup = root + '.bak'
-
-        if os.path.isdir(root):
-            if os.path.isdir(backup):
-                try:
-                    shutil.rmtree(backup)
-                except Exception as e:
-                    print(e)
-                    sys.exit(1)
-            elif os.path.isfile(backup):
-                print(backup, 'file exists.')
-                sys.exit(1)
-
-            os.rename(root, backup)
-        elif os.path.isfile(root):
-            print(root, 'file exists.')
-            sys.exit(1)
-
-        try:
-            tar.extractall(path=output_directory)
-        except Exception as e:
-            print(e)
-            sys.exit(1)
-
-        if os.path.isdir(backup):
-            try:
-                shutil.rmtree(backup)
-            except Exception as e:
-                print(e)
-                sys.exit(1)
-
 def backup_file(source, backup_directory=None, number_of_backups=-1,
                 should_compare=True):
     from datetime import datetime
@@ -135,6 +90,56 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                 print(e)
                 sys.exit(1)
 
+def create_bash_completion(script_base, options, values, interpreters,
+                           completion):
+    options_str = ' '.join(options)
+
+    variable_str = '    values="'
+    line = ''
+    max_line_length = 79
+    lines = []
+    for value in values:
+        if len(variable_str) + len(line) + len(value) + 4 > max_line_length:
+            lines.append(line.rstrip(' '))
+            line = ''
+
+        line += f"'{value}' "
+
+    lines.append(line.rstrip(' '))
+    values_str = f"\n{' ' * len(variable_str)}".join(lines)
+
+    expression_str = ' || '.join(f'$previous == {option}'
+                                 for option in options)
+    interpreters_str = ' '.join(interpreters)
+    completion_str = fr'''_{script_base}()
+{{
+    local script current previous options values
+    script=${{COMP_WORDS[1]}}
+    current=${{COMP_WORDS[COMP_CWORD]}}
+    previous=${{COMP_WORDS[COMP_CWORD-1]}}
+    options="{options_str}"
+{variable_str}{values_str}"
+
+    if [[ $script =~ {script_base}\.py ]]; then
+        if [[ $current == -* ]]; then
+            COMPREPLY=($(compgen -W "$options" -- $current))
+            return 0
+        fi
+        if [[ {expression_str} ]]; then
+            COMPREPLY=($(compgen -W "$values" -- $current))
+            return 0
+        fi
+    else
+        COMPREPLY=($(compgen -f -- $current))
+        return 0
+    fi
+}}
+complete -F _{script_base} {interpreters_str}
+'''
+
+    with open(completion, 'w', newline='\n') as f:
+        f.write(completion_str)
+
 def check_directory(directory):
     if not os.path.isdir(directory):
         try:
@@ -142,21 +147,6 @@ def check_directory(directory):
         except OSError as e:
             print(e)
             sys.exit(1)
-
-def get_file_description(executable):
-    import win32api
-
-    try:
-        language, codepage = win32api.GetFileVersionInfo(
-            executable, r'\VarFileInfo\Translation')[0]
-        string_file_info = (u'\\StringFileInfo\\%04X%04X\\%s'
-                            % (language, codepage, 'FileDescription'))
-        file_description = win32api.GetFileVersionInfo(executable,
-                                                       string_file_info)
-    except:
-        file_description = False
-
-    return file_description
 
 def create_icon(base, icon_directory=None):
     def get_scaled_font(text, font_path, desired_width, desired_height,
@@ -231,93 +221,6 @@ def create_icon(base, icon_directory=None):
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
 
-def create_shortcut(base, target_path, arguments, program_group_base=None,
-                    icon_directory=None, hotkey=None):
-    import win32com.client
-
-    program_group = get_program_group(program_group_base)
-    check_directory(program_group)
-    shell = win32com.client.Dispatch('WScript.Shell')
-    title = re.sub(r'[\W_]+', ' ', base).strip().title()
-    shortcut = shell.CreateShortCut(os.path.join(program_group,
-                                                 title + '.lnk'))
-    shortcut.WindowStyle = 7
-    shortcut.IconLocation = create_icon(base,
-                                        icon_directory=icon_directory)
-    shortcut.TargetPath = target_path
-    shortcut.Arguments = arguments
-    shortcut.WorkingDirectory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    if hotkey:
-        shortcut.Hotkey = 'CTRL+ALT+' + hotkey
-
-    shortcut.save()
-
-def delete_shortcut(base, program_group_base=None, icon_directory=None):
-    if icon_directory:
-        icon = os.path.join(icon_directory, base + '.ico')
-    else:
-        icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                            base + '.ico')
-    if os.path.exists(icon):
-        try:
-            os.remove(icon)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
-    program_group = get_program_group(program_group_base)
-    title = re.sub(r'[\W_]+', ' ', base).strip().title()
-    shortcut = os.path.join(program_group, title + '.lnk')
-    if os.path.exists(shortcut):
-        try:
-            os.remove(shortcut)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-    if os.path.isdir(program_group) and not os.listdir(program_group):
-        try:
-            os.rmdir(program_group)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
-def get_program_group(program_group_base=None):
-    import win32com.client
-
-    shell = win32com.client.Dispatch('WScript.Shell')
-    if not program_group_base:
-        base = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-        program_group_base = re.sub(r'[\W_]+', ' ', base).strip().title()
-
-    program_group = os.path.join(shell.SpecialFolders('Programs'),
-                                 program_group_base)
-    return program_group
-
-def is_writing(target_path):
-    import time
-
-    if (os.path.exists(target_path)
-        and time.time() - os.path.getmtime(target_path) < 1):
-        return True
-    else:
-        return False
-
-def extract_commands(source, command='command'):
-    import ast
-
-    commands = []
-    tree = ast.parse(source)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.If):
-            test = node.test
-            if isinstance(test, ast.Compare):
-                left = test.left
-                if isinstance(left, ast.Name) and left.id == command:
-                    comparator = test.comparators[0]
-                    if isinstance(comparator, ast.Constant):
-                        commands.append(comparator.value)
-    return commands
-
 def create_powershell_completion(script_base, options, values, interpreters,
                                  completion):
     interpreters_regex = f"({'|'.join(interpreters)})"
@@ -359,52 +262,158 @@ Register-ArgumentCompleter -Native -CommandName {interpreters_array} `
     with open(completion, 'w') as f:
         f.write(completion_str)
 
-def create_bash_completion(script_base, options, values, interpreters,
-                           completion):
-    options_str = ' '.join(options)
+def create_shortcut(base, target_path, arguments, program_group_base=None,
+                    icon_directory=None, hotkey=None):
+    import win32com.client
 
-    variable_str = '    values="'
-    line = ''
-    max_line_length = 79
-    lines = []
-    for value in values:
-        if len(variable_str) + len(line) + len(value) + 4 > max_line_length:
-            lines.append(line.rstrip(' '))
-            line = ''
+    program_group = get_program_group(program_group_base)
+    check_directory(program_group)
+    shell = win32com.client.Dispatch('WScript.Shell')
+    title = re.sub(r'[\W_]+', ' ', base).strip().title()
+    shortcut = shell.CreateShortCut(os.path.join(program_group,
+                                                 title + '.lnk'))
+    shortcut.WindowStyle = 7
+    shortcut.IconLocation = create_icon(base,
+                                        icon_directory=icon_directory)
+    shortcut.TargetPath = target_path
+    shortcut.Arguments = arguments
+    shortcut.WorkingDirectory = os.path.dirname(os.path.abspath(sys.argv[0]))
+    if hotkey:
+        shortcut.Hotkey = 'CTRL+ALT+' + hotkey
 
-        line += f"'{value}' "
+    shortcut.save()
 
-    lines.append(line.rstrip(' '))
-    values_str = f"\n{' ' * len(variable_str)}".join(lines)
+def decrypt_extract_file(source, output_directory):
+    import io
+    import shutil
+    import tarfile
 
-    expression_str = ' || '.join(f'$previous == {option}'
-                                 for option in options)
-    interpreters_str = ' '.join(interpreters)
-    completion_str = fr'''_{script_base}()
-{{
-    local script current previous options values
-    script=${{COMP_WORDS[1]}}
-    current=${{COMP_WORDS[COMP_CWORD]}}
-    previous=${{COMP_WORDS[COMP_CWORD-1]}}
-    options="{options_str}"
-{variable_str}{values_str}"
+    import gnupg
 
-    if [[ $script =~ {script_base}\.py ]]; then
-        if [[ $current == -* ]]; then
-            COMPREPLY=($(compgen -W "$options" -- $current))
-            return 0
-        fi
-        if [[ {expression_str} ]]; then
-            COMPREPLY=($(compgen -W "$values" -- $current))
-            return 0
-        fi
-    else
-        COMPREPLY=($(compgen -f -- $current))
-        return 0
-    fi
-}}
-complete -F _{script_base} {interpreters_str}
-'''
+    gpg = gnupg.GPG()
+    with open(source, 'rb') as f:
+        decrypted_data = gpg.decrypt_file(f)
 
-    with open(completion, 'w', newline='\n') as f:
-        f.write(completion_str)
+    tar_stream = io.BytesIO(decrypted_data.data)
+    with tarfile.open(fileobj=tar_stream, mode='r:xz') as tar:
+        root = os.path.join(output_directory, tar.getmembers()[0].name)
+        backup = root + '.bak'
+
+        if os.path.isdir(root):
+            if os.path.isdir(backup):
+                try:
+                    shutil.rmtree(backup)
+                except Exception as e:
+                    print(e)
+                    sys.exit(1)
+            elif os.path.isfile(backup):
+                print(backup, 'file exists.')
+                sys.exit(1)
+
+            os.rename(root, backup)
+        elif os.path.isfile(root):
+            print(root, 'file exists.')
+            sys.exit(1)
+
+        try:
+            tar.extractall(path=output_directory)
+        except Exception as e:
+            print(e)
+            sys.exit(1)
+
+        if os.path.isdir(backup):
+            try:
+                shutil.rmtree(backup)
+            except Exception as e:
+                print(e)
+                sys.exit(1)
+
+def delete_shortcut(base, program_group_base=None, icon_directory=None):
+    if icon_directory:
+        icon = os.path.join(icon_directory, base + '.ico')
+    else:
+        icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                            base + '.ico')
+    if os.path.exists(icon):
+        try:
+            os.remove(icon)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+    program_group = get_program_group(program_group_base)
+    title = re.sub(r'[\W_]+', ' ', base).strip().title()
+    shortcut = os.path.join(program_group, title + '.lnk')
+    if os.path.exists(shortcut):
+        try:
+            os.remove(shortcut)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+    if os.path.isdir(program_group) and not os.listdir(program_group):
+        try:
+            os.rmdir(program_group)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+def extract_commands(source, command='command'):
+    import ast
+
+    commands = []
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.If):
+            test = node.test
+            if isinstance(test, ast.Compare):
+                left = test.left
+                if isinstance(left, ast.Name) and left.id == command:
+                    comparator = test.comparators[0]
+                    if isinstance(comparator, ast.Constant):
+                        commands.append(comparator.value)
+    return commands
+
+def get_file_description(executable):
+    import win32api
+
+    try:
+        language, codepage = win32api.GetFileVersionInfo(
+            executable, r'\VarFileInfo\Translation')[0]
+        string_file_info = (u'\\StringFileInfo\\%04X%04X\\%s'
+                            % (language, codepage, 'FileDescription'))
+        file_description = win32api.GetFileVersionInfo(executable,
+                                                       string_file_info)
+    except:
+        file_description = False
+
+    return file_description
+
+def get_program_group(program_group_base=None):
+    import win32com.client
+
+    shell = win32com.client.Dispatch('WScript.Shell')
+    if not program_group_base:
+        base = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        program_group_base = re.sub(r'[\W_]+', ' ', base).strip().title()
+
+    program_group = os.path.join(shell.SpecialFolders('Programs'),
+                                 program_group_base)
+    return program_group
+
+def is_writing(target_path):
+    import time
+
+    if (os.path.exists(target_path)
+        and time.time() - os.path.getmtime(target_path) < 1):
+        return True
+    else:
+        return False
+
+def move_to_trash(path):
+    import subprocess
+
+    try:
+        subprocess.run(['trash-put', path], check=True)
+        print(f'Moved {path} to trash.')
+    except Exception as e:
+        print(f'Failed to move {path} to trash: {str(e)}')

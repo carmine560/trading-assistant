@@ -147,20 +147,27 @@ class OSDThread(threading.Thread):
         root.attributes('-alpha', 0.8)
         root.attributes('-topmost', True)
         root.config(background='black')
-        root.geometry(f'{self.work_width}x{self.work_height}')
+        root.geometry(f'{self.work_width}x{self.work_height}+0+0')
         root.overrideredirect(True)
         root.wm_attributes('-transparentcolor', 'black')
 
-        clock_label = Label(root, font=('Tahoma', -12), background='gray5',
-                            foreground='orange')
-        clock_label.place(x=4, y=126)
+        section = self.config[self.trade.process]
 
+        x, y = map(int, section['clock_label_position'].split(','))
+        font_size = int(section['clock_label_font_size'])
+        clock_label = Label(root, font=('Tahoma', -font_size),
+                            background='gray5', foreground='orange')
+        clock_label.place(x=x, y=y)
+
+        x, y = map(
+            int, section['current_number_of_trades_label_position'].split(','))
+        font_size = int(section['current_number_of_trades_label_font_size'])
         current_number_of_trades_label = Label(
-            root, font=('Bahnschrift', -24), background='gray5',
+            root, font=('Bahnschrift', -font_size), background='gray5',
             foreground='orange',
-            width=len(self.config[self.trade.process][
-                'maximum_daily_number_of_trades']))
-        current_number_of_trades_label.place(relx=0.0, rely=1.0, anchor='sw')
+            width=len(section['maximum_daily_number_of_trades']))
+        position = section['current_number_of_trades_label_position']
+        current_number_of_trades_label.place(x=x, y=y)
 
         while not self._stop_event.is_set():
             clock_label.config(text=time.strftime('%H:%M:%S'))
@@ -472,7 +479,14 @@ def configure(trade, can_interpolate=True, can_override=True):
         'daily_loss_limit_ratio': '-0.01',
         'maximum_daily_number_of_trades': '0',
         'image_magnification': '2',
-        'binarization_threshold': '128'}
+        'binarization_threshold': '128',
+        'dark_theme': 'True',
+        # TODO
+        'clock_label_position': '0, 0',
+        'clock_label_font_size': '12',
+        'current_number_of_trades_label_position': '0, 0',
+        'current_number_of_trades_label_font_size': '24',
+    }
     config[trade.startup_script_section] = {
         'pre_start_options': '',
         'post_start_options': '',
@@ -519,9 +533,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         theme_config.read(theme_ini)
         if (theme_config.has_option('General', 'theme')
             and theme_config['General']['theme'] == 'Light'):
-            section['currently_dark_theme'] = 'False'
-        else:                   # Dark as a fallback
-            section['currently_dark_theme'] = 'True'
+            section['dark_theme'] = 'False'
 
     if section['executable'] and not section['title']:
         file_description = file_utilities.get_file_description(

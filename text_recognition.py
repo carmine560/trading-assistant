@@ -6,7 +6,7 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
 
     image_magnification = int(section['image_magnification'])
     binarization_threshold = int(section['binarization_threshold'])
-    currently_dark_theme = section.getboolean('currently_dark_theme')
+    dark_theme = section.getboolean('dark_theme')
 
     if text_type == 'integers':
         config = r'-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
@@ -27,7 +27,7 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
                                  Image.LANCZOS)
             image = image.point(lambda p:
                                 255 if p > binarization_threshold else 0)
-            if currently_dark_theme:
+            if dark_theme:
                 image = ImageOps.invert(image)
 
             string = pytesseract.image_to_string(image, config=config)
