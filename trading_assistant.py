@@ -1,6 +1,5 @@
 from datetime import date
 from multiprocessing.managers import BaseManager
-from tkinter import Tk, Label
 import argparse
 import ast
 import configparser
@@ -11,6 +10,7 @@ import re
 import sys
 import threading
 import time
+import tkinter as tk
 
 from pynput import keyboard
 from pynput import mouse
@@ -53,7 +53,12 @@ class Trade:
 
         self.customer_margin_ratios_section = (
             f'{self.brokerage} Customer Margin Ratios')
+
+        self.osd_section = f'{self.process} OSD'
+        self.osd_thread = None
+
         self.startup_script_section = f'{self.process} Startup Script'
+
         self.actions_section = f'{self.process} Actions'
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
@@ -65,6 +70,7 @@ class Trade:
                               'take_screenshot', 'toggle_osd',
                               'write_share_size'),
             'positioning_keys': ('click', 'move_to')}
+
         self.schedule_section = f'{self.process} Schedules'
 
         self.mouse_listener = None
@@ -83,8 +89,6 @@ class Trade:
 
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
-
-        self.osd_thread = None
 
         self.initialize_attributes()
 
@@ -128,13 +132,121 @@ class Trade:
 
 # TODO
 class OSDThread(threading.Thread):
-    def __init__(self, trade, config, work_width, work_height):
+    def __init__(self, trade, config):
         super().__init__()
         self.trade = trade
         self.config = config
-        self.work_width = work_width
-        self.work_height = work_height
+        self.root = None
         self._stop_event = threading.Event()
+
+    def run(self):
+        from win32api import GetMonitorInfo, MonitorFromPoint
+
+        work_width, work_height = GetMonitorInfo(
+            MonitorFromPoint((0, 0))).get('Work')[2:]
+
+        # self.root.attributes('-fullscreen', True)
+        self.root = tk.Tk()
+        self.root.attributes('-alpha', 0.8)
+        self.root.attributes('-topmost', True)
+        self.root.attributes('-transparentcolor', 'black')
+        self.root.config(bg='black')
+        self.root.geometry(f'{work_width}x{work_height}+0+0')
+        self.root.overrideredirect(True)
+        self.root.title(self.trade.osd_section)
+
+        process_section = self.config[self.trade.process]
+        osd_section = self.config[self.trade.osd_section]
+
+        clock_label = tk.Label(
+            self.root,
+            font=('Tahoma', -int(osd_section['clock_label_font_size'])),
+            bg='gray5', fg='tan1')
+        self.place_widget(clock_label, osd_section['clock_label_position'])
+        OSDTooltip(clock_label, 'Clock')
+
+        status_bar_frame_font_size = int(
+            osd_section['status_bar_frame_font_size'])
+        status_bar_frame = tk.Frame(self.root, bg='gray5')
+        self.place_widget(status_bar_frame,
+                          osd_section['status_bar_frame_position'])
+
+        current_number_of_trades_label = tk.Label(
+            status_bar_frame, bg='gray5', fg='tan1',
+            font=('Bahnschrift', -status_bar_frame_font_size), height=1,
+            width=5)
+        current_number_of_trades_label.grid(row=0, column=0)
+        OSDTooltip(
+            current_number_of_trades_label,
+            'Current Number of Trades / Maximum Daily Number of Trades')
+
+        utilization_ratio_entry = tk.Entry(
+            status_bar_frame, bd=0, bg='gray5', fg='tan1',
+            font=('Bahnschrift', -status_bar_frame_font_size),
+            insertbackground='tan1', justify='center', width=5)
+        utilization_ratio_entry.grid(row=0, column=1)
+        OSDTooltip(utilization_ratio_entry, 'Utilization Ratio')
+
+        utilization_ratio_entry.insert(0, process_section['utilization_ratio'])
+        utilization_ratio_string = tk.StringVar()
+        utilization_ratio_entry.bind(
+            '<<Modified>>',
+            lambda event: self.on_text_modified(
+                event, utilization_ratio_entry, utilization_ratio_string,
+                process_section, 'utilization_ratio'))
+        self.check_for_modifications(
+            utilization_ratio_entry, utilization_ratio_string,
+            process_section, 'utilization_ratio')
+
+        cmd = self.root.register(self.is_valid_float)
+        utilization_ratio_entry.configure(validate='key',
+                                          validatecommand=(cmd, '%P'))
+
+        while not self._stop_event.is_set():
+            clock_label.config(text=time.strftime('%H:%M:%S'))
+            current_number_of_trades_label.config(
+                text=(f"{self.config['Variables']['current_number_of_trades']}"
+                      f"/{process_section['maximum_daily_number_of_trades']}"))
+            self.root.update()
+            time.sleep(0.01)
+
+        self.root.destroy()
+
+    def place_widget(self, widget, position):
+        position_map = {
+            'n': (0.5, 0.0), 'ne': (1.0, 0.0), 'e': (1.0, 0.5),
+            'se': (1.0, 1.0), 's': (0.5, 1.0), 'sw': (0.0, 1.0),
+            'w': (0.0, 0.5), 'nw': (0.0, 0.0), 'center': (0.5, 0.5)}
+        if position in position_map:
+            widget.place(relx=position_map[position][0],
+                         rely=position_map[position][1], anchor=position)
+        elif ',' in position:
+            x, y = map(int, position.split(','))
+            widget.place(x=x, y=y)
+        else:
+            print(f'Invalid position: {position}')
+            widget.place(x=0, y=0)
+
+    def check_for_modifications(self, widget, string, section, key):
+        self.on_text_modified(None, widget, string, section, key)
+        self.root.after(
+            1000,
+            lambda: self.check_for_modifications(widget, string, section, key))
+
+    def on_text_modified(self, event, widget, string, section, key):
+        modified_text = widget.get()
+        string.set(modified_text)
+        section[key] = string.get()
+        configuration.write_config(self.config, self.trade.config_path)
+
+    def is_valid_float(self, user_input):
+        if user_input == '':
+            return True
+        try:
+            float(user_input)
+            return True
+        except ValueError:
+            return False
 
     def stop(self):
         self._stop_event.set()
@@ -142,41 +254,31 @@ class OSDThread(threading.Thread):
     def is_stopped(self):
         return self._stop_event.is_set()
 
-    def run(self):
-        root = Tk()
-        root.attributes('-alpha', 0.8)
-        root.attributes('-topmost', True)
-        root.config(background='black')
-        root.geometry(f'{self.work_width}x{self.work_height}+0+0')
-        root.overrideredirect(True)
-        root.wm_attributes('-transparentcolor', 'black')
+# TODO
+class OSDTooltip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.widget.bind('<Enter>', self.show_tooltip)
+        self.widget.bind('<Leave>', self.hide_tooltip)
 
-        section = self.config[self.trade.process]
+    def show_tooltip(self, event):
+        x, y, _, _ = self.widget.bbox('insert')
+        x += self.widget.winfo_rootx() + 20
+        y += self.widget.winfo_rooty() + 20
 
-        x, y = map(int, section['clock_label_position'].split(','))
-        font_size = int(section['clock_label_font_size'])
-        clock_label = Label(root, font=('Tahoma', -font_size),
-                            background='gray5', foreground='orange')
-        clock_label.place(x=x, y=y)
+        self.tooltip = tk.Toplevel(self.widget)
+        self.tooltip.attributes('-alpha', 0.8)
+        self.tooltip.attributes('-topmost', True)
+        self.tooltip.geometry(f'+{x}+{y}')
+        self.tooltip.overrideredirect(True)
 
-        x, y = map(
-            int, section['current_number_of_trades_label_position'].split(','))
-        font_size = int(section['current_number_of_trades_label_font_size'])
-        current_number_of_trades_label = Label(
-            root, font=('Bahnschrift', -font_size), background='gray5',
-            foreground='orange',
-            width=len(section['maximum_daily_number_of_trades']))
-        position = section['current_number_of_trades_label_position']
-        current_number_of_trades_label.place(x=x, y=y)
+        tk.Label(self.tooltip, bg='tan1', fg='gray5',
+                 font=('Bahnschrift', -12), text=self.text).pack()
 
-        while not self._stop_event.is_set():
-            clock_label.config(text=time.strftime('%H:%M:%S'))
-            current_number_of_trades_label.config(
-                text=self.config['Variables']['current_number_of_trades'])
-            root.update()
-            time.sleep(0.01)
-
-        root.destroy()
+    def hide_tooltip(self, event):
+        if hasattr(self, 'tooltip'):
+            self.tooltip.destroy()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -468,7 +570,8 @@ def configure(trade, can_interpolate=True, can_override=True):
             r'個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
             'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
             '取引ポップアップ', '通知設定',
-            r'全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)'),
+            r'全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
+            trade.osd_section),
         'input_map': {
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
@@ -480,20 +583,19 @@ def configure(trade, can_interpolate=True, can_override=True):
         'maximum_daily_number_of_trades': '0',
         'image_magnification': '2',
         'binarization_threshold': '128',
-        'dark_theme': 'True',
-        # TODO
-        'clock_label_position': '0, 0',
+        'is_dark_theme': 'True'}
+    # TODO
+    config[trade.osd_section] = {
+        'clock_label_position': 'nw',
         'clock_label_font_size': '12',
-        'current_number_of_trades_label_position': '0, 0',
-        'current_number_of_trades_label_font_size': '24',
-    }
+        'status_bar_frame_position': 'sw',
+        'status_bar_frame_font_size': '24'}
     config[trade.startup_script_section] = {
         'pre_start_options': '',
         'post_start_options': '',
         'running_options': ''}
     config[trade.actions_section] = {}
     config[trade.schedule_section] = {}
-    # TODO
     config['Variables'] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
         'initial_cash_balance': '0',
@@ -533,7 +635,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         theme_config.read(theme_ini)
         if (theme_config.has_option('General', 'theme')
             and theme_config['General']['theme'] == 'Light'):
-            section['dark_theme'] = 'False'
+            section['is_dark_theme'] = 'False'
 
     if section['executable'] and not section['title']:
         file_description = file_utilities.get_file_description(
@@ -907,12 +1009,7 @@ def execute_action(trade, config, gui_state, action):
                 trade.osd_thread.stop()
                 trade.osd_thread = None
             else:
-                from win32api import GetMonitorInfo, MonitorFromPoint
-
-                work_width, work_height = GetMonitorInfo(
-                    MonitorFromPoint((0, 0))).get('Work')[2:]
-                trade.osd_thread = OSDThread(trade, config, work_width,
-                                             work_height)
+                trade.osd_thread = OSDThread(trade, config)
                 trade.osd_thread.start()
         elif command == 'wait_for_key':
             trade.keyboard_listener_state = 1
