@@ -140,18 +140,38 @@ class OSDThread(threading.Thread):
         self._stop_event = threading.Event()
 
     def run(self):
-        from win32api import GetMonitorInfo, MonitorFromPoint
+        def place_widget(widget, position):
+            from win32api import GetMonitorInfo, MonitorFromPoint
 
-        work_width, work_height = GetMonitorInfo(
-            MonitorFromPoint((0, 0))).get('Work')[2:]
+            work_left, work_top, work_right, work_bottom = GetMonitorInfo(
+                MonitorFromPoint((0, 0))).get('Work')
+            work_center_x = 0.5 * work_right
+            work_center_y = 0.5 * work_bottom
+            position_map = {'n': (work_center_x, work_top),
+                            'ne': (work_right, work_top),
+                            'e': (work_right, work_center_y),
+                            'se': (work_right, work_bottom),
+                            's': (work_center_x, work_bottom),
+                            'sw': (work_left, work_bottom),
+                            'w': (work_left, work_center_y),
+                            'nw': (work_left, work_top),
+                            'center': (work_center_x, work_center_y)}
+            if position in position_map:
+                widget.place(x=position_map[position][0],
+                             y=position_map[position][1], anchor=position)
+            elif ',' in position:
+                x, y = map(int, position.split(','))
+                widget.place(x=x, y=y)
+            else:
+                print(f'Invalid position: {position}')
+                widget.place(x=0, y=0)
 
-        # self.root.attributes('-fullscreen', True)
         self.root = tk.Tk()
         self.root.attributes('-alpha', 0.8)
+        self.root.attributes('-fullscreen', True)
         self.root.attributes('-topmost', True)
         self.root.attributes('-transparentcolor', 'black')
         self.root.config(bg='black')
-        self.root.geometry(f'{work_width}x{work_height}+0+0')
         self.root.overrideredirect(True)
         self.root.title(self.trade.osd_section)
 
@@ -162,14 +182,14 @@ class OSDThread(threading.Thread):
             self.root,
             font=('Tahoma', -int(osd_section['clock_label_font_size'])),
             bg='gray5', fg='tan1')
-        self.place_widget(clock_label, osd_section['clock_label_position'])
-        OSDTooltip(clock_label, 'Clock')
+        place_widget(clock_label, osd_section['clock_label_position'])
+        OSDTooltip(clock_label, 'Current system time')
 
         status_bar_frame_font_size = int(
             osd_section['status_bar_frame_font_size'])
         status_bar_frame = tk.Frame(self.root, bg='gray5')
-        self.place_widget(status_bar_frame,
-                          osd_section['status_bar_frame_position'])
+        place_widget(status_bar_frame,
+                     osd_section['status_bar_frame_position'])
 
         current_number_of_trades_label = tk.Label(
             status_bar_frame, bg='gray5', fg='tan1',
@@ -178,14 +198,15 @@ class OSDThread(threading.Thread):
         current_number_of_trades_label.grid(row=0, column=0)
         OSDTooltip(
             current_number_of_trades_label,
-            'Current Number of Trades / Maximum Daily Number of Trades')
+            'Current number of trades / maximum daily number of trades')
 
         utilization_ratio_entry = tk.Entry(
             status_bar_frame, bd=0, bg='gray5', fg='tan1',
             font=('Bahnschrift', -status_bar_frame_font_size),
-            insertbackground='tan1', justify='center', width=5)
+            insertbackground='tan1', justify='center', selectbackground='tan1',
+            selectforeground='gray5', width=5)
         utilization_ratio_entry.grid(row=0, column=1)
-        OSDTooltip(utilization_ratio_entry, 'Utilization Ratio')
+        OSDTooltip(utilization_ratio_entry, 'Utilization ratio')
 
         utilization_ratio_entry.insert(0, process_section['utilization_ratio'])
         utilization_ratio_string = tk.StringVar()
@@ -211,21 +232,6 @@ class OSDThread(threading.Thread):
             time.sleep(0.01)
 
         self.root.destroy()
-
-    def place_widget(self, widget, position):
-        position_map = {
-            'n': (0.5, 0.0), 'ne': (1.0, 0.0), 'e': (1.0, 0.5),
-            'se': (1.0, 1.0), 's': (0.5, 1.0), 'sw': (0.0, 1.0),
-            'w': (0.0, 0.5), 'nw': (0.0, 0.0), 'center': (0.5, 0.5)}
-        if position in position_map:
-            widget.place(relx=position_map[position][0],
-                         rely=position_map[position][1], anchor=position)
-        elif ',' in position:
-            x, y = map(int, position.split(','))
-            widget.place(x=x, y=y)
-        else:
-            print(f'Invalid position: {position}')
-            widget.place(x=0, y=0)
 
     def check_for_modifications(self, widget, string, section, key):
         self.on_text_modified(None, widget, string, section, key)
