@@ -478,8 +478,8 @@ open_close_long_position = [
     ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('click', '208, 726'),           # Select the 'New Order' tab.
-    ('click', '541, 797'),           # Focus on the 'Share Size' text box.
+    ('click', '231, 722'),           # Select the 'New Order' tab.
+    ('click', '564, 793'),           # Focus on the 'Share Size' text box.
     ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
     # Get the symbol from the 'Summary' window.
     ('get_symbol', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
@@ -494,21 +494,21 @@ open_close_long_position = [
      'Maximum daily number of trades exceeded.'),
     ('calculate_share_size', 'long'), # Calculate the share size.
     ('write_share_size',),           # Enter the calculated share size.
-    ('click', '477, 819'),           # Click the 'Market Order' button.
+    ('click', '500, 815'),           # Click the 'Market Order' button.
     ('press_key', 'tab, 3'),         # Focus on the 'Buy Order' button.
     ('speak_text', 'Long.'),         # Speak the readiness of a buy order.
     # Return the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
     # Wait for the order execution.
-    ('wait_for_prices', '201, 956, 470, 20, 0'),
+    ('wait_for_prices', '359, 823, 247, 22, 0'),
 
     # Close Long Position
-    ('click', '292, 726'),           # Select the 'Repayment' tab.
-    ('click', '605, 838'),           # Focus on the 'Share Size' text box.
+    ('click', '315, 722'),           # Select the 'Repayment' tab.
+    ('click', '639, 834'),           # Focus on the 'Share Size' text box.
     ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
     ('write_share_size',),           # Enter the calculated share size.
-    ('click', '448, 935'),           # Click the 'Market Order' button.
+    ('click', '471, 928'),           # Click the 'Market Order' button.
     ('press_key', 'tab, 5'),         # Focus on the 'Sell Order' button.
     ('count_trades',),               # Count the number of trades for the day.
     # Speak the number above and notify you of the readiness of a sell order.
