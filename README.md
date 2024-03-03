@@ -562,8 +562,11 @@ input_map = {
     # Execute the 'center_open_1_minute_chart' action in the 'Center Open for
     # 1-minute Chart' section.
     'f11': 'center_open_1_minute_chart',
-    # TODO
-    'f12': 'toggle_osd'}             # Execute a 'toggle_osd' action.
+    'f12': 'toggle_osd'}             # Execute the 'toggle_osd' action below.
+
+[HYPERSBI2 Actions]
+toggle_osd = [
+    ('toggle_osd',)]                 # Toggle the OSD.
 ```
 
 ### Schedules ###

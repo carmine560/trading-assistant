@@ -14,6 +14,7 @@ import tkinter as tk
 
 from pynput import keyboard
 from pynput import mouse
+from win32api import GetMonitorInfo, MonitorFromPoint
 import pyautogui
 import win32gui
 
@@ -137,12 +138,10 @@ class OSDThread(threading.Thread):
         self.trade = trade
         self.config = config
         self.root = None
-        self._stop_event = threading.Event()
+        self.stop_event = threading.Event()
 
     def run(self):
         def place_widget(widget, position):
-            from win32api import GetMonitorInfo, MonitorFromPoint
-
             work_left, work_top, work_right, work_bottom = GetMonitorInfo(
                 MonitorFromPoint((0, 0))).get('Work')
             work_center_x = 0.5 * work_right
@@ -164,7 +163,7 @@ class OSDThread(threading.Thread):
                 widget.place(x=x, y=y)
             else:
                 print(f'Invalid position: {position}')
-                widget.place(x=0, y=0)
+                widget.place(x=work_left, y=work_top)
 
         self.root = tk.Tk()
         self.root.attributes('-alpha', 0.8)
@@ -223,7 +222,7 @@ class OSDThread(threading.Thread):
         utilization_ratio_entry.configure(validate='key',
                                           validatecommand=(cmd, '%P'))
 
-        while not self._stop_event.is_set():
+        while not self.stop_event.is_set():
             clock_label.config(text=time.strftime('%H:%M:%S'))
             current_number_of_trades_label.config(
                 text=(f"{self.config['Variables']['current_number_of_trades']}"
@@ -255,10 +254,10 @@ class OSDThread(threading.Thread):
             return False
 
     def stop(self):
-        self._stop_event.set()
+        self.stop_event.set()
 
     def is_stopped(self):
-        return self._stop_event.is_set()
+        return self.stop_event.is_set()
 
 # TODO
 class OSDTooltip:
