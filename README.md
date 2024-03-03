@@ -110,77 +110,171 @@ python trading_assistant.py -A ACTION
 An action is a list of sequential tuples, where each tuple consists of a
 command and its arguments.  Possible commands include:
 
-``` ini
-[HYPERSBI2 Actions]
-ACTION = [
-    # Return the cursor to the previous position.
-    ('back_to',),
-    ('beep', 'FREQUENCY, DURATION'), # Beep.
-    # Calculate a share size.  This command requires that the 'get_symbol' and
-    # 'get_cash_balance' commands below have been called beforehand.
-    ('calculate_share_size', 'long|short'),
-    # Check if the loss has reached the daily loss limit.  If it has, speak the
-    # alert text and exit.  This command requires that the 'get_cash_balance'
-    # command below has been called beforehand.  The '-DLL' option configures
-    # the non-percent, negative daily loss limit ratio (from -1.0 to 0.0) and:
-    #
-    #     daily loss limit = cash balance * utilization ratio
-    #                        / customer margin ratio * daily loss limit ratio.
-    #
-    # Note: Trading fees, not considered here, may cause further cash balance
-    # reduction.
-    ('check_daily_loss_limit', 'ALERT_TEXT'),
-    # Check if the current number of trades for the day exceeds the maximum
-    # daily number of trades.  If it does, speak the alert text and exit.  This
-    # command requires that the 'count_trades' command below has been called in
-    # previous actions.  The '-MDN' option configures the maximum daily number
-    # of trades.  A zero value for it indicates unlimited trades.
-    ('check_maximum_daily_number_of_trades', 'ALERT_TEXT'),
-    ('click', 'X, Y'),               # Click at coordinates X, Y.
-    # Wait for and locate a widget image in a region and click it, assuming the
-    # image file is located in the 'HYPERSBI2' subdirectory of the same
-    # directory as the configuration file.
-    ('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT'),
-    # Copy symbols from the current market data to the clipboard.
-    ('copy_symbols_from_market_data',),
-    # Recognize a numeric column and copy symbols to the clipboard.
-    ('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT'),
-    # Count the number of trades for the day.  Assume you call this command
-    # after order execution.
-    ('count_trades',),
-    ('drag_to', 'X, Y'),             # Drag the cursor to a position.
-    # Recognize the cash balance in the cash balance region specified in the
-    # 'Configure Cash Balance and Price Limit Regions' section.
-    ('get_cash_balance',),
-    ('get_symbol', 'TITLE_REGEX'),   # Get the symbol from a window title.
-    ('hide_window', 'TITLE_REGEX'),  # Hide a window.
-    ('move_to', 'X, Y'),             # Move the cursor to a position.
-    ('press_hotkeys', 'KEY[, ...]'), # Press hotkeys.
-    ('press_key', 'KEY[, PRESSES]'), # Press a key.
-    ('show_hide_window', 'TITLE_REGEX'), # Show or hide a window.
-    ('show_window', 'TITLE_REGEX'),  # Show a window.
-    ('sleep', 'PERIOD'),             # Sleep for a period.
-    ('speak_config', 'SECTION', 'OPTION'), # Speak a configuration value.
-    # Calculate CPU utilization for an interval and speak it.
-    ('speak_cpu_utilization', 'INTERVAL'),
-    # Speak seconds until a specific time.
-    ('speak_seconds_until_time', '%H:%M:%S'),
-    ('speak_show_text', 'TEXT'),     # Speak and show a text.
-    ('speak_text', 'TEXT'),          # Speak a text.
-    # Take a screenshot with the number of trades and symbol as the filename.
-    ('take_screenshot',),
-    ('toggle_osd',),                 # Toggle the OSD.
-    ('wait_for_key', 'KEY'),         # Wait for keyboard input.
-    # Wait for prices to be displayed in a region.
-    ('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX'),
-    ('wait_for_window', 'TITLE_REGEX'), # Wait for a window.
-    ('write_share_size',),           # Write the calculated share size.
-    ('write_string', 'STRING'),      # Write a string.
-
-    # Control Flow Command
-    # Execute an action if recording a screencast is a bool value.
-    ('is_recording', 'BOOL', ACTION)]
-```
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>('back_to',)</code></td>
+<td>Return the cursor to the previous position.</td>
+</tr>
+<tr>
+<td><code>('beep', 'FREQUENCY, DURATION')</code></td>
+<td>Beep.</td>
+</tr>
+<tr>
+<td><code>('calculate_share_size', 'long|short')</code></td>
+<td>Calculate a share size.  This command requires that the
+<code>get_symbol</code> and <code>get_cash_balance</code> commands below have
+been called beforehand.</td>
+</tr>
+<tr>
+<td><code>('check_daily_loss_limit', 'ALERT_TEXT')</code></td>
+<td>Check if the loss has reached the daily loss limit.  If it has, speak the
+alert text and exit.  This command requires that the
+<code>get_cash_balance</code> command below has been called beforehand.  The
+<code>-DLL</code> option configures the non-percent, negative daily loss limit
+ratio (from -1.0 to 0.0), and the daily loss limit is: $$\frac{cash\ balance
+\times utilization\ ratio \times daily\ loss\ limit\ ratio}{customer\ margin\
+ratio}.$$ <strong>Note</strong>: Trading fees, not considered here, may cause
+further cash balance reduction.</td>
+</tr>
+<tr>
+<td><code>('check_maximum_daily_number_of_trades', 'ALERT_TEXT')</code></td>
+<td>Check if the current number of trades for the day exceeds the maximum daily
+number of trades.  If it does, speak the alert text and exit.  This command
+requires that the <code>count_trades</code> command below has been called in
+previous actions.  The <code>-MDN</code> option configures the maximum daily
+number of trades.  A zero value for it indicates unlimited trades.</td>
+</tr>
+<tr>
+<td><code>('click', 'X, Y')</code></td>
+<td>Click on coordinates <code>X</code> and <code>Y</code>.</td>
+</tr>
+<tr>
+<td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
+<td>Wait for and locate a widget image in a region and click it, assuming the
+image file is located in the <code>HYPERSBI2</code> subdirectory of the same
+directory as the configuration file.</td>
+</tr>
+<tr>
+<td><code>('copy_symbols_from_market_data',)</code></td>
+<td>Copy symbols from the current market data to the clipboard.</td>
+</tr>
+<tr>
+<td><code>('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT')</code></td>
+<td>Recognize a numeric column and copy symbols to the clipboard.</td>
+</tr>
+<tr>
+<td><code>('count_trades',)</code></td>
+<td>Count the number of trades for the day.  Assume you call this command after
+order execution.</td>
+</tr>
+<tr>
+<td><code>('drag_to', 'X, Y')</code></td>
+<td>Drag the cursor to a position.</td>
+</tr>
+<tr>
+<td><code>('get_cash_balance',)</code></td>
+<td>Recognize the cash balance in the cash balance region specified in the ‘<a
+href="#configure-cash-balance-and-price-limit-regions">Configure Cash Balance
+and Price Limit Regions</a>’ section.</td>
+</tr>
+<tr>
+<td><code>('get_symbol', 'TITLE_REGEX')</code></td>
+<td>Get the symbol from a window title.</td>
+</tr>
+<tr>
+<td><code>('hide_window', 'TITLE_REGEX')</code></td>
+<td>Hide a window.</td>
+</tr>
+<tr>
+<td><code>('move_to', 'X, Y')</code></td>
+<td>Move the cursor to a position.</td>
+</tr>
+<tr>
+<td><code>('press_hotkeys', 'KEY[, ...]')</code></td>
+<td>Press hotkeys.</td>
+</tr>
+<tr>
+<td><code>('press_key', 'KEY[, PRESSES]')</code></td>
+<td>Press a key.</td>
+</tr>
+<tr>
+<td><code>('show_hide_window', 'TITLE_REGEX')</code></td>
+<td>Show or hide a window.</td>
+</tr>
+<tr>
+<td><code>('show_window', 'TITLE_REGEX')</code></td>
+<td>Show a window.</td>
+</tr>
+<tr>
+<td><code>('sleep', 'PERIOD')</code></td>
+<td>Sleep for a period.</td>
+</tr>
+<tr>
+<td><code>('speak_config', 'SECTION', 'OPTION')</code></td>
+<td>Speak a configuration value.</td>
+</tr>
+<tr>
+<td><code>('speak_cpu_utilization', 'INTERVAL')</code></td>
+<td>Calculate CPU utilization for an interval and speak it.</td>
+</tr>
+<tr>
+<td><code>('speak_seconds_until_time', '%H:%M:%S')</code></td>
+<td>Speak seconds until a specific time.</td>
+</tr>
+<tr>
+<td><code>('speak_show_text', 'TEXT')</code></td>
+<td>Speak and show a text.</td>
+</tr>
+<tr>
+<td><code>('speak_text', 'TEXT')</code></td>
+<td>Speak a text.</td>
+</tr>
+<tr>
+<td><code>('take_screenshot',)</code></td>
+<td>Take a screenshot with the number of trades and symbol as the
+filename.</td>
+</tr>
+<tr>
+<td><code>('toggle_osd',)</code></td>
+<td>Toggle the OSD.</td>
+</tr>
+<tr>
+<td><code>('wait_for_key', 'KEY')</code></td>
+<td>Wait for keyboard input.</td>
+</tr>
+<tr>
+<td><code>('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX')</code></td>
+<td>Wait for prices to be displayed in a region.</td>
+</tr>
+<tr>
+<td><code>('wait_for_window', 'TITLE_REGEX')</code></td>
+<td>Wait for a window.</td>
+</tr>
+<tr>
+<td><code>('write_share_size',)</code></td>
+<td>Write the calculated share size.</td>
+</tr>
+<tr>
+<td><code>('write_string', 'STRING')</code></td>
+<td>Write a string.</td>
+</tr>
+<tr>
+<th>Control Flow Command</th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code>('is_recording', 'BOOL', ACTION)</code></td>
+<td> Execute an action if recording a screencast is a bool value.</td>
+</tr>
+</tbody>
+</table>
 
 ### Execute Action ###
 
