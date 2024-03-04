@@ -937,10 +937,70 @@ def execute_action(trade, config, gui_state, action):
             win32clipboard.SetClipboardText(' '.join(split_string))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
+            # TODO
             section = config['Variables']
-            section['current_number_of_trades'] = (
-                str(int(section['current_number_of_trades']) + 1))
+            previous_number_of_trades = int(
+                section['current_number_of_trades'])
+            current_number_of_trades = previous_number_of_trades + 1
+            section['current_number_of_trades'] = str(current_number_of_trades)
             configuration.write_config(config, trade.config_path)
+
+            section = config['General']
+            screencast_directory = section['screencast_directory']
+            screencast_regex = section['screencast_regex']
+            files = [f for f in os.listdir(screencast_directory)
+                           if re.fullmatch(screencast_regex, f)]
+            latest = os.path.join(screencast_directory, files[-1])
+            if file_utilities.is_writing(latest):
+                ffmpeg_metadata = os.path.splitext(latest)[0] + '.txt'
+                trigger = time.localtime(os.path.getctime(latest))
+                trigger_seconds = (3600 * trigger.tm_hour
+                                   + 60 * trigger.tm_min + trigger.tm_sec)
+                now = time.localtime()
+                now_seconds = (3600 * now.tm_hour + 60 * now.tm_min
+                               + now.tm_sec)
+                start_milliseconds = int(
+                    1000 * (now_seconds - trigger_seconds))
+                default_duration_milliseconds = 60000
+
+                if os.path.exists(ffmpeg_metadata):
+                    with open(ffmpeg_metadata, 'r') as f:
+                        lines = f.readlines()
+                    for i in reversed(range(len(lines))):
+                        if 'END=' in lines[i]:
+                            lines[i] = re.sub(r'END=\d+',
+                                              f'END={start_milliseconds - 1}',
+                                              lines[i])
+                            with open(ffmpeg_metadata, 'w') as f:
+                                f.writelines(lines)
+                            break
+
+                    chapter = f'''
+[CHAPTER]
+TIMEBASE=1/1000
+START={start_milliseconds}
+END={start_milliseconds + default_duration_milliseconds}
+title={current_number_of_trades}
+'''
+                    with open(ffmpeg_metadata, 'a') as f:
+                        f.write(chapter)
+                else:
+                    chapters = f''';FFMETADATA1
+
+[CHAPTER]
+TIMEBASE=1/1000
+START=0
+END={start_milliseconds - 1}
+title={previous_number_of_trades}
+
+[CHAPTER]
+TIMEBASE=1/1000
+START={start_milliseconds}
+END={start_milliseconds + default_duration_milliseconds}
+title={current_number_of_trades}
+'''
+                    with open(ffmpeg_metadata, 'w') as f:
+                        f.write(chapters)
         elif command == 'drag_to':
             pyautogui.dragTo(ast.literal_eval(argument))
         elif command == 'get_cash_balance':
