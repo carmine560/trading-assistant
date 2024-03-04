@@ -172,9 +172,9 @@ of the same directory as the configuration file.</td></tr>
 
 <tr><td><code>('count_trades',)</code></td>
 
-<td>Count the number of trades for the day.  Call this command after order
-execution.  Additionally, output a chapter section for FFmpeg metadata when
-Nvidia ShadowPlay records a screencast.</td></tr>
+<td>Count the number of trades for the day.  Additionally, output a chapter
+section for FFmpeg metadata when Nvidia ShadowPlay records a screencast.  You
+must call this command after order execution.</td></tr>
 
 <tr><td><code>('drag_to', 'X, Y')</code></td>
 
