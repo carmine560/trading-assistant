@@ -112,167 +112,170 @@ command and its arguments.  Possible commands include:
 
 <table>
 <thead>
-<tr>
-<th>Command</th>
-<th>Description</th>
-</tr>
+
+<tr><th>Command</th>
+
+<th>Description</th></tr>
+
 </thead>
 <tbody>
-<tr>
-<td><code>('back_to',)</code></td>
-<td>Return the cursor to the previous position.</td>
-</tr>
-<tr>
-<td><code>('beep', 'FREQUENCY, DURATION')</code></td>
-<td>Beep.</td>
-</tr>
-<tr>
-<td><code>('calculate_share_size', 'long|short')</code></td>
-<td>Calculate a share size.  This command requires that the
-<code>get_symbol</code> and <code>get_cash_balance</code> commands below have
-been called beforehand.</td>
-</tr>
-<tr>
-<td><code>('check_daily_loss_limit', 'ALERT_TEXT')</code></td>
+
+<tr><td><code>('back_to',)</code></td>
+
+<td>Return the cursor to the previous position.</td></tr>
+
+<tr><td><code>('beep', 'FREQUENCY, DURATION')</code></td>
+
+<td>Beep.</td></tr>
+
+<tr><td><code>('calculate_share_size', 'long|short')</code></td>
+
+<td>Calculate a share size.  You must call the <code>get_symbol</code> and
+<code>get_cash_balance</code> commands below before using this
+command.</td></tr>
+
+<tr><td><code>('check_daily_loss_limit', 'ALERT_TEXT')</code></td>
+
 <td>Check if the loss has reached the daily loss limit.  If it has, speak the
-alert text and exit.  This command requires that the
-<code>get_cash_balance</code> command below has been called beforehand.  The
-<code>-DLL</code> option configures the non-percent, negative daily loss limit
-ratio (from -1.0 to 0.0), and the daily loss limit is: $$\frac{cash\ balance
-\times utilization\ ratio \times daily\ loss\ limit\ ratio}{customer\ margin\
-ratio}.$$ <strong>Note</strong>: Trading fees, not considered here, may cause
-further cash balance reduction.</td>
-</tr>
-<tr>
-<td><code>('check_maximum_daily_number_of_trades', 'ALERT_TEXT')</code></td>
+alert text and exit.  You must call the <code>get_cash_balance</code> command
+below before using this command.  The <code>-DLL</code> option configures the
+non-percent, negative daily loss limit ratio (from -1.0 to 0.0), and the daily
+loss limit is: $$\frac{cash\ balance \times utilization\ ratio \times daily\
+loss\ limit\ ratio}{customer\ margin\ ratio}.$$ <strong>Note</strong>: Trading
+fees, not considered here, may cause further cash balance reduction.</td></tr>
+
+<tr><td><code>('check_maximum_daily_number_of_trades', 'ALERT_TEXT')</code></td>
+
 <td>Check if the current number of trades for the day exceeds the maximum daily
-number of trades.  If it does, speak the alert text and exit.  This command
-requires that the <code>count_trades</code> command below has been called in
-previous actions.  The <code>-MDN</code> option configures the maximum daily
-number of trades.  A zero value for it indicates unlimited trades.</td>
-</tr>
-<tr>
-<td><code>('click', 'X, Y')</code></td>
-<td>Click on coordinates <code>X</code> and <code>Y</code>.</td>
-</tr>
-<tr>
-<td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
-<td>Wait for and locate a widget image in a region and click it, assuming the
-image file is located in the <code>HYPERSBI2</code> subdirectory of the same
-directory as the configuration file.</td>
-</tr>
-<tr>
-<td><code>('copy_symbols_from_market_data',)</code></td>
-<td>Copy symbols from the current market data to the clipboard.</td>
-</tr>
-<tr>
-<td><code>('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT')</code></td>
-<td>Recognize a numeric column and copy symbols to the clipboard.</td>
-</tr>
-<tr>
-<td><code>('count_trades',)</code></td>
-<td>Count the number of trades for the day.  Assume you call this command after
-order execution.</td>
-</tr>
-<tr>
-<td><code>('drag_to', 'X, Y')</code></td>
-<td>Drag the cursor to a position.</td>
-</tr>
-<tr>
-<td><code>('get_cash_balance',)</code></td>
+number of trades.  If it does, speak the alert text and exit.  You must call
+the <code>count_trades</code> command below before using this command.  The
+<code>-MDN</code> option configures the maximum daily number of trades.  A zero
+value for it indicates unlimited trades.</td></tr>
+
+<tr><td><code>('click', 'X, Y')</code></td>
+
+<td>Click on coordinates <code>X</code> and <code>Y</code>.</td></tr>
+
+<tr><td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
+
+<td>Wait for and locate a widget image in a region, then click it.  The
+<code>IMAGE_FILE</code> must reside in the <code>HYPERSBI2</code> subdirectory
+of the same directory as the configuration file.</td></tr>
+
+<tr><td><code>('copy_symbols_from_market_data',)</code></td>
+
+<td>Copy symbols from the current market data to the clipboard.</td></tr>
+
+<tr><td><code>('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT')</code></td>
+
+<td>Recognize a numeric column and copy symbols to the clipboard.</td></tr>
+
+<tr><td><code>('count_trades',)</code></td>
+
+<td>Count the number of trades for the day.  Call this command after order
+execution.  Additionally, output a chapter section for FFmpeg metadata when
+Nvidia ShadowPlay records a screencast.</td></tr>
+
+<tr><td><code>('drag_to', 'X, Y')</code></td>
+
+<td>Drag the cursor to a position.</td></tr>
+
+<tr><td><code>('get_cash_balance',)</code></td>
+
 <td>Recognize the cash balance in the cash balance region specified in the ‘<a
 href="#configure-cash-balance-and-price-limit-regions">Configure Cash Balance
-and Price Limit Regions</a>’ section.</td>
-</tr>
-<tr>
-<td><code>('get_symbol', 'TITLE_REGEX')</code></td>
-<td>Get the symbol from a window title.</td>
-</tr>
-<tr>
-<td><code>('hide_window', 'TITLE_REGEX')</code></td>
-<td>Hide a window.</td>
-</tr>
-<tr>
-<td><code>('move_to', 'X, Y')</code></td>
-<td>Move the cursor to a position.</td>
-</tr>
-<tr>
-<td><code>('press_hotkeys', 'KEY[, ...]')</code></td>
-<td>Press hotkeys.</td>
-</tr>
-<tr>
-<td><code>('press_key', 'KEY[, PRESSES]')</code></td>
-<td>Press a key.</td>
-</tr>
-<tr>
-<td><code>('show_hide_window', 'TITLE_REGEX')</code></td>
-<td>Show or hide a window.</td>
-</tr>
-<tr>
-<td><code>('show_window', 'TITLE_REGEX')</code></td>
-<td>Show a window.</td>
-</tr>
-<tr>
-<td><code>('sleep', 'PERIOD')</code></td>
-<td>Sleep for a period.</td>
-</tr>
-<tr>
-<td><code>('speak_config', 'SECTION', 'OPTION')</code></td>
-<td>Speak a configuration value.</td>
-</tr>
-<tr>
-<td><code>('speak_cpu_utilization', 'INTERVAL')</code></td>
-<td>Calculate CPU utilization for an interval and speak it.</td>
-</tr>
-<tr>
-<td><code>('speak_seconds_until_time', '%H:%M:%S')</code></td>
-<td>Speak seconds until a specific time.</td>
-</tr>
-<tr>
-<td><code>('speak_show_text', 'TEXT')</code></td>
-<td>Speak and show a text.</td>
-</tr>
-<tr>
-<td><code>('speak_text', 'TEXT')</code></td>
-<td>Speak a text.</td>
-</tr>
-<tr>
-<td><code>('take_screenshot',)</code></td>
+and Price Limit Regions</a>’ section.</td></tr>
+
+<tr><td><code>('get_symbol', 'TITLE_REGEX')</code></td>
+
+<td>Get the symbol from a window title.</td></tr>
+
+<tr><td><code>('hide_window', 'TITLE_REGEX')</code></td>
+
+<td>Hide a window.</td></tr>
+
+<tr><td><code>('move_to', 'X, Y')</code></td>
+
+<td>Move the cursor to a position.</td></tr>
+
+<tr><td><code>('press_hotkeys', 'KEY[, ...]')</code></td>
+
+<td>Press hotkeys.</td></tr>
+
+<tr><td><code>('press_key', 'KEY[, PRESSES]')</code></td>
+
+<td>Press a key.</td></tr>
+
+<tr><td><code>('show_hide_window', 'TITLE_REGEX')</code></td>
+
+<td>Show or hide a window.</td></tr>
+
+<tr><td><code>('show_window', 'TITLE_REGEX')</code></td>
+
+<td>Show a window.</td></tr>
+
+<tr><td><code>('sleep', 'PERIOD')</code></td>
+
+<td>Sleep for a period.</td></tr>
+
+<tr><td><code>('speak_config', 'SECTION', 'OPTION')</code></td>
+
+<td>Speak a configuration value.</td></tr>
+
+<tr><td><code>('speak_cpu_utilization', 'INTERVAL')</code></td>
+
+<td>Calculate CPU utilization for an interval and speak it.</td></tr>
+
+<tr><td><code>('speak_seconds_until_time', '%H:%M:%S')</code></td>
+
+<td>Speak seconds until a specific time.</td></tr>
+
+<tr><td><code>('speak_show_text', 'TEXT')</code></td>
+
+<td>Speak and show a text.</td></tr>
+
+<tr><td><code>('speak_text', 'TEXT')</code></td>
+
+<td>Speak a text.</td></tr>
+
+<tr><td><code>('take_screenshot',)</code></td>
+
 <td>Take a screenshot with the number of trades and symbol as the
-filename.</td>
-</tr>
-<tr>
-<td><code>('toggle_osd',)</code></td>
-<td>Toggle the OSD.</td>
-</tr>
-<tr>
-<td><code>('wait_for_key', 'KEY')</code></td>
-<td>Wait for keyboard input.</td>
-</tr>
-<tr>
-<td><code>('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX')</code></td>
-<td>Wait for prices to be displayed in a region.</td>
-</tr>
-<tr>
-<td><code>('wait_for_window', 'TITLE_REGEX')</code></td>
-<td>Wait for a window.</td>
-</tr>
-<tr>
-<td><code>('write_share_size',)</code></td>
-<td>Write the calculated share size.</td>
-</tr>
-<tr>
-<td><code>('write_string', 'STRING')</code></td>
-<td>Write a string.</td>
-</tr>
-<tr>
-<th>Control Flow Command</th>
-<th>Description</th>
-</tr>
-<tr>
-<td><code>('is_recording', 'BOOL', ACTION)</code></td>
-<td> Execute an action if recording a screencast is a bool value.</td>
-</tr>
+filename.</td></tr>
+
+<tr><td><code>('toggle_osd',)</code></td>
+
+<td>Toggle the OSD.</td></tr>
+
+<tr><td><code>('wait_for_key', 'KEY')</code></td>
+
+<td>Wait for keyboard input.</td></tr>
+
+<tr><td><code>('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX')</code></td>
+
+<td>Wait until <code>trading_assistant.py</code> recognizes prices in a
+region.</td></tr>
+
+<tr><td><code>('wait_for_window', 'TITLE_REGEX')</code></td>
+
+<td>Wait for a window.</td></tr>
+
+<tr><td><code>('write_share_size',)</code></td>
+
+<td>Write the calculated share size.</td></tr>
+
+<tr><td><code>('write_string', 'STRING')</code></td>
+
+<td>Write a string.</td></tr>
+
+<tr><th>Control Flow Command</th>
+
+<th>Description</th></tr>
+
+<tr><td><code>('is_recording', 'BOOL', ACTION)</code></td>
+
+<td>Execute an action if recording a screencast is a bool value.</td></tr>
+
 </tbody>
 </table>
 
@@ -726,22 +729,22 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 
 ### Hyper SBI 2 Window Titles ###
 
-| Window          | Regular Expression for Title                                                 |
-|-----------------|------------------------------------------------------------------------------|
-| Announcements   | `お知らせ`                                                                   |
-| Summary         | `個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     |
-| Watchlists      | `登録銘柄`                                                                   |
-| Holdings        | `保有証券`                                                                   |
-| Order Status    | `注文一覧`                                                                   |
-| Chart           | `個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` |
-| Markets         | `マーケット`                                                                 |
-| Rankings        | `ランキング`                                                                 |
-| Stock Lists     | `銘柄一覧`                                                                   |
-| Account         | `口座情報`                                                                   |
-| News            | `ニュース`                                                                   |
-| Trading         | `取引ポップアップ`                                                           |
-| Notifications   | `通知設定`                                                                   |
-| Full Order Book | `全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         |
+| Regular Expression for Title                                                 | Window          |
+|------------------------------------------------------------------------------|-----------------|
+| `お知らせ`                                                                   | Announcements   |
+| `個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     | Summary         |
+| `登録銘柄`                                                                   | Watchlists      |
+| `保有証券`                                                                   | Holdings        |
+| `注文一覧`                                                                   | Order Status    |
+| `個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` | Chart           |
+| `マーケット`                                                                 | Markets         |
+| `ランキング`                                                                 | Rankings        |
+| `銘柄一覧`                                                                   | Stock Lists     |
+| `口座情報`                                                                   | Account         |
+| `ニュース`                                                                   | News            |
+| `取引ポップアップ`                                                           | Trading         |
+| `通知設定`                                                                   | Notifications   |
+| `全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         | Full Order Book |
 
 ## License ##
 

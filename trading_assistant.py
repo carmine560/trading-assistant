@@ -953,23 +953,17 @@ def execute_action(trade, config, gui_state, action):
             latest = os.path.join(screencast_directory, files[-1])
             if file_utilities.is_writing(latest):
                 ffmpeg_metadata = os.path.splitext(latest)[0] + '.txt'
-                trigger = time.localtime(os.path.getctime(latest))
-                trigger_seconds = (3600 * trigger.tm_hour
-                                   + 60 * trigger.tm_min + trigger.tm_sec)
-                now = time.localtime()
-                now_seconds = (3600 * now.tm_hour + 60 * now.tm_min
-                               + now.tm_sec)
-                start_milliseconds = int(
-                    1000 * (now_seconds - trigger_seconds))
-                default_duration_milliseconds = 60000
+                creation_time = 1000 * os.path.getctime(latest)
+                now = 1000 * time.time()
+                start = int(now - creation_time)
+                default_duration = 60000
 
                 if os.path.exists(ffmpeg_metadata):
                     with open(ffmpeg_metadata, 'r') as f:
                         lines = f.readlines()
                     for i in reversed(range(len(lines))):
                         if 'END=' in lines[i]:
-                            lines[i] = re.sub(r'END=\d+',
-                                              f'END={start_milliseconds - 1}',
+                            lines[i] = re.sub(r'END=\d+', f'END={start - 1}',
                                               lines[i])
                             with open(ffmpeg_metadata, 'w') as f:
                                 f.writelines(lines)
@@ -978,8 +972,8 @@ def execute_action(trade, config, gui_state, action):
                     chapter = f'''
 [CHAPTER]
 TIMEBASE=1/1000
-START={start_milliseconds}
-END={start_milliseconds + default_duration_milliseconds}
+START={start}
+END={start + default_duration}
 title={current_number_of_trades}
 '''
                     with open(ffmpeg_metadata, 'a') as f:
@@ -990,13 +984,13 @@ title={current_number_of_trades}
 [CHAPTER]
 TIMEBASE=1/1000
 START=0
-END={start_milliseconds - 1}
+END={start - 1}
 title={previous_number_of_trades}
 
 [CHAPTER]
 TIMEBASE=1/1000
-START={start_milliseconds}
-END={start_milliseconds + default_duration_milliseconds}
+START={start}
+END={start + default_duration}
 title={current_number_of_trades}
 '''
                     with open(ffmpeg_metadata, 'w') as f:
