@@ -176,6 +176,8 @@ class OSDThread(threading.Thread):
 
         process_section = self.config[self.trade.process]
         osd_section = self.config[self.trade.osd_section]
+        maximum_daily_number_of_trades = int(
+            process_section['maximum_daily_number_of_trades'])
 
         clock_label = tk.Label(
             self.root,
@@ -195,9 +197,12 @@ class OSDThread(threading.Thread):
             font=('Bahnschrift', -status_bar_frame_font_size), height=1,
             width=5)
         current_number_of_trades_label.grid(row=0, column=0)
-        OSDTooltip(
-            current_number_of_trades_label,
-            'Current number of trades / maximum daily number of trades')
+        if maximum_daily_number_of_trades:
+            text = 'Current number of trades / maximum daily number of trades'
+        else:
+            text = 'Current number of trades'
+
+        OSDTooltip(current_number_of_trades_label, text)
 
         utilization_ratio_entry = tk.Entry(
             status_bar_frame, bd=0, bg='gray5', fg='tan1',
@@ -218,15 +223,22 @@ class OSDThread(threading.Thread):
             utilization_ratio_entry, utilization_ratio_string,
             process_section, 'utilization_ratio')
 
-        cmd = self.root.register(self.is_valid_float)
-        utilization_ratio_entry.configure(validate='key',
-                                          validatecommand=(cmd, '%P'))
+        command = self.root.register(self.is_valid_float)
+        utilization_ratio_entry.config(validate='key',
+                                       validatecommand=(command, '%P'))
 
         while not self.stop_event.is_set():
             clock_label.config(text=time.strftime('%H:%M:%S'))
-            current_number_of_trades_label.config(
-                text=(f"{self.config['Variables']['current_number_of_trades']}"
-                      f"/{process_section['maximum_daily_number_of_trades']}"))
+            current_number_of_trades = self.config['Variables'][
+                'current_number_of_trades']
+            if maximum_daily_number_of_trades:
+                current_number_of_trades_label.config(
+                    text=(f"{current_number_of_trades}"
+                          f"/{maximum_daily_number_of_trades}"))
+            else:
+                current_number_of_trades_label.config(
+                    text=current_number_of_trades)
+
             self.root.update()
             time.sleep(0.01)
 
@@ -945,7 +957,6 @@ def execute_action(trade, config, gui_state, action):
             win32clipboard.SetClipboardText(' '.join(split_string))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
-            # TODO
             section = config['Variables']
             previous_number_of_trades = int(
                 section['current_number_of_trades'])
@@ -960,6 +971,9 @@ def execute_action(trade, config, gui_state, action):
                 now = 1000 * time.time()
                 start = int(now - creation_time)
                 default_duration = 60000
+                title = (f"Trade {current_number_of_trades}"
+                         f"{f' for {trade.symbol}' if trade.symbol else ''}"
+                         f" at {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
                 if os.path.exists(ffmpeg_metadata):
                     with open(ffmpeg_metadata, 'r') as f:
@@ -977,7 +991,7 @@ def execute_action(trade, config, gui_state, action):
 TIMEBASE=1/1000
 START={start}
 END={start + default_duration}
-title={current_number_of_trades}
+title={title}
 '''
                     with open(ffmpeg_metadata, 'a') as f:
                         f.write(chapter)
@@ -988,13 +1002,13 @@ title={current_number_of_trades}
 TIMEBASE=1/1000
 START=0
 END={start - 1}
-title={previous_number_of_trades}
+title=Trade {previous_number_of_trades}
 
 [CHAPTER]
 TIMEBASE=1/1000
 START={start}
 END={start + default_duration}
-title={current_number_of_trades}
+title={title}
 '''
                     with open(ffmpeg_metadata, 'w') as f:
                         f.write(chapters)
