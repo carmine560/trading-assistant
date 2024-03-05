@@ -869,6 +869,14 @@ def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread.start()
 
 def execute_action(trade, config, gui_state, action):
+    def get_latest_screencast():
+        section = config['General']
+        screencast_directory = section['screencast_directory']
+        screencast_regex = section['screencast_regex']
+        files = [f for f in os.listdir(screencast_directory)
+                           if re.fullmatch(screencast_regex, f)]
+        return os.path.join(screencast_directory, files[-1])
+
     trade.initialize_attributes()
     gui_state.initialize_attributes()
 
@@ -945,12 +953,7 @@ def execute_action(trade, config, gui_state, action):
             section['current_number_of_trades'] = str(current_number_of_trades)
             configuration.write_config(config, trade.config_path)
 
-            section = config['General']
-            screencast_directory = section['screencast_directory']
-            screencast_regex = section['screencast_regex']
-            files = [f for f in os.listdir(screencast_directory)
-                           if re.fullmatch(screencast_regex, f)]
-            latest = os.path.join(screencast_directory, files[-1])
+            latest = get_latest_screencast()
             if file_utilities.is_writing(latest):
                 ffmpeg_metadata = os.path.splitext(latest)[0] + '.txt'
                 creation_time = 1000 * os.path.getctime(latest)
@@ -1097,12 +1100,7 @@ title={current_number_of_trades}
 
         # Control Flow Commands
         elif command == 'is_recording':
-            section = config['General']
-            screencast_directory = section['screencast_directory']
-            screencast_regex = section['screencast_regex']
-            files = [f for f in os.listdir(screencast_directory)
-                           if re.fullmatch(screencast_regex, f)]
-            latest = os.path.join(screencast_directory, files[-1])
+            latest = get_latest_screencast()
             if file_utilities.is_writing(latest) == ast.literal_eval(argument):
                 execute_action(trade, config, gui_state, additional_argument)
 

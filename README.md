@@ -729,7 +729,7 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 
 ### Hyper SBI 2 Window Titles ###
 
-| Regular Expression for Title                                                 | Window          |
+| Regular Expression for Window Title                                          | Window          |
 |------------------------------------------------------------------------------|-----------------|
 | `お知らせ`                                                                   | Announcements   |
 | `個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     | Summary         |
