@@ -165,6 +165,11 @@ class OSDThread(threading.Thread):
                 print(f'Invalid position: {position}')
                 widget.place(x=work_left, y=work_top)
 
+        process_section = self.config[self.trade.process]
+        osd_section = self.config[self.trade.osd_section]
+        maximum_daily_number_of_trades = int(
+            process_section['maximum_daily_number_of_trades'])
+
         self.root = tk.Tk()
         self.root.attributes('-alpha', 0.8)
         self.root.attributes('-fullscreen', True)
@@ -172,12 +177,7 @@ class OSDThread(threading.Thread):
         self.root.attributes('-transparentcolor', 'black')
         self.root.config(bg='black')
         self.root.overrideredirect(True)
-        self.root.title(self.trade.osd_section)
-
-        process_section = self.config[self.trade.process]
-        osd_section = self.config[self.trade.osd_section]
-        maximum_daily_number_of_trades = int(
-            process_section['maximum_daily_number_of_trades'])
+        self.root.title(process_section['title'] + ' OSD')
 
         clock_label = tk.Label(
             self.root,
@@ -588,7 +588,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
             '取引ポップアップ', '通知設定',
             r'全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
-            trade.osd_section),
+            '${title} OSD'),
         'input_map': {
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
@@ -1002,7 +1002,7 @@ title={title}
 TIMEBASE=1/1000
 START=0
 END={start - 1}
-title=Trade {previous_number_of_trades}
+title=Pre-Trading
 
 [CHAPTER]
 TIMEBASE=1/1000
