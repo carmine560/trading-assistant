@@ -131,7 +131,6 @@ class Trade:
                     self.should_continue = False
                     self.keyboard_listener_state = 0
 
-# TODO
 class OSDThread(threading.Thread):
     def __init__(self, trade, config):
         super().__init__()
@@ -144,8 +143,8 @@ class OSDThread(threading.Thread):
         def place_widget(widget, position):
             work_left, work_top, work_right, work_bottom = GetMonitorInfo(
                 MonitorFromPoint((0, 0))).get('Work')
-            work_center_x = 0.5 * work_right
-            work_center_y = 0.5 * work_bottom
+            work_center_x = int(0.5 * work_right)
+            work_center_y = int(0.5 * work_bottom)
             position_map = {'n': (work_center_x, work_top),
                             'ne': (work_right, work_top),
                             'e': (work_right, work_center_y),
@@ -271,7 +270,6 @@ class OSDThread(threading.Thread):
     def is_stopped(self):
         return self.stop_event.is_set()
 
-# TODO
 class OSDTooltip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -296,6 +294,41 @@ class OSDTooltip:
     def hide_tooltip(self, event):
         if hasattr(self, 'tooltip'):
             self.tooltip.destroy()
+
+# TODO
+class OSDMessage(threading.Thread):
+    def __init__(self, trade, config, text):
+        super().__init__()
+        self.trade = trade
+        self.config = config
+        self.text = text
+
+    def run(self):
+        process_section = self.config[self.trade.process]
+        osd_section = self.config[self.trade.osd_section]
+
+        root = tk.Tk()
+        root.attributes('-alpha', 0.8)
+        root.attributes('-toolwindow', True)
+        root.attributes('-topmost', True)
+        root.bind('<Escape>', lambda event: root.destroy())
+        root.resizable(False, False)
+        root.title(process_section['title'] + ' Message')
+        root.withdraw()
+
+        tk.Message(root, bg='gray5', fg='tan1',
+                   font=('Bahnschrift',
+                         -int(osd_section['message_font_size'])),
+                   text=self.text).pack()
+
+        root.update()
+        _, _, work_right, work_bottom = GetMonitorInfo(
+            MonitorFromPoint((0, 0))).get('Work')
+        root.geometry(f'+{int(0.5 * (work_right - root.winfo_width()))}'
+                      f'+{int(0.5 * (work_bottom - root.winfo_height()))}')
+        root.deiconify()
+
+        root.mainloop()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -579,7 +612,9 @@ def configure(trade, can_interpolate=True, can_override=True):
     config[trade.process] = {
         'customer_margin_ratio': '0.31',
         'executable': '',
+        # TODO
         'title': '',
+        # TODO
         'interactive_windows': (
             'お知らせ',
             r'個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
@@ -588,7 +623,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
             '取引ポップアップ', '通知設定',
             r'全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
-            '${title} OSD'),
+            '${title}\s.*'),
         'input_map': {
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
@@ -606,7 +641,8 @@ def configure(trade, can_interpolate=True, can_override=True):
         'clock_label_position': 'nw',
         'clock_label_font_size': '12',
         'status_bar_frame_position': 'sw',
-        'status_bar_frame_font_size': '24'}
+        'status_bar_frame_font_size': '24',
+        'message_font_size': '14'}
     config[trade.startup_script_section] = {
         'pre_start_options': '',
         'post_start_options': '',
@@ -631,6 +667,7 @@ def configure(trade, can_interpolate=True, can_override=True):
 
     section = config[trade.process]
 
+    # TODO
     if trade.process == 'HYPERSBI2':
         if not section['executable']:
             location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
@@ -967,9 +1004,7 @@ def execute_action(trade, config, gui_state, action):
             latest = get_latest_screencast()
             if file_utilities.is_writing(latest):
                 ffmpeg_metadata = os.path.splitext(latest)[0] + '.txt'
-                creation_time = 1000 * os.path.getctime(latest)
-                now = 1000 * time.time()
-                start = int(now - creation_time)
+                start = int(1000 * (time.time() - os.path.getctime(latest)))
                 default_duration = 60000
                 title = (f"Trade {current_number_of_trades}"
                          f"{f' for {trade.symbol}' if trade.symbol else ''}"
@@ -1066,7 +1101,7 @@ title={title}
                 str(math.ceil(event_time - time.time())) + ' seconds')
         elif command == 'speak_show_text':
             trade.speech_manager.set_speech_text(argument)
-            pyautogui.alert(argument, config[trade.process]['title'])
+            OSDMessage(trade, config, argument).start()
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
         elif command == 'take_screenshot':
@@ -1080,7 +1115,6 @@ title={title}
             pyautogui.screenshot(
                 os.path.join(config['General']['screenshot_directory'], base))
         elif command == 'toggle_osd':
-            # TODO
             if trade.osd_thread:
                 trade.osd_thread.stop()
                 trade.osd_thread = None
