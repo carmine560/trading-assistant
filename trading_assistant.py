@@ -1001,52 +1001,10 @@ def execute_action(trade, config, gui_state, action):
             section['current_number_of_trades'] = str(current_number_of_trades)
             configuration.write_config(config, trade.config_path)
 
-            latest = get_latest_screencast()
-            if file_utilities.is_writing(latest):
-                ffmpeg_metadata = os.path.splitext(latest)[0] + '.txt'
-                start = int(1000 * (time.time() - os.path.getctime(latest)))
-                default_duration = 60000
-                title = (f"Trade {current_number_of_trades}"
-                         f"{f' for {trade.symbol}' if trade.symbol else ''}"
-                         f" at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-                if os.path.exists(ffmpeg_metadata):
-                    with open(ffmpeg_metadata, 'r') as f:
-                        lines = f.readlines()
-                    for i in reversed(range(len(lines))):
-                        if 'END=' in lines[i]:
-                            lines[i] = re.sub(r'END=\d+', f'END={start - 1}',
-                                              lines[i])
-                            with open(ffmpeg_metadata, 'w') as f:
-                                f.writelines(lines)
-                            break
-
-                    chapter = f'''
-[CHAPTER]
-TIMEBASE=1/1000
-START={start}
-END={start + default_duration}
-title={title}
-'''
-                    with open(ffmpeg_metadata, 'a') as f:
-                        f.write(chapter)
-                else:
-                    chapters = f''';FFMETADATA1
-
-[CHAPTER]
-TIMEBASE=1/1000
-START=0
-END={start - 1}
-title=Pre-Trading
-
-[CHAPTER]
-TIMEBASE=1/1000
-START={start}
-END={start + default_duration}
-title={title}
-'''
-                    with open(ffmpeg_metadata, 'w') as f:
-                        f.write(chapters)
+            title = (f"Trade {current_number_of_trades}"
+                     f"{f' for {trade.symbol}' if trade.symbol else ''}"
+                     f" at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            file_utilities.write_chapter(get_latest_screencast(), title)
         elif command == 'drag_to':
             pyautogui.dragTo(ast.literal_eval(argument))
         elif command == 'get_cash_balance':
@@ -1148,8 +1106,8 @@ title={title}
 
         # Control Flow Commands
         elif command == 'is_recording':
-            latest = get_latest_screencast()
-            if file_utilities.is_writing(latest) == ast.literal_eval(argument):
+            if (file_utilities.is_writing(get_latest_screencast())
+                == ast.literal_eval(argument)):
                 execute_action(trade, config, gui_state, additional_argument)
 
         else:

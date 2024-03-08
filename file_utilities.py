@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import time
 
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
     import io
@@ -417,3 +418,46 @@ def move_to_trash(path):
         print(f'Moved {path} to trash.')
     except Exception as e:
         print(f'Failed to move {path} to trash: {str(e)}')
+
+def write_chapter(video, title):
+    if is_writing(video):
+        ffmpeg_metadata = os.path.splitext(video)[0] + '.txt'
+        start = int(1000 * (time.time() - os.path.getctime(video)))
+        default_duration = 60000
+
+        if os.path.exists(ffmpeg_metadata):
+            with open(ffmpeg_metadata, 'r') as f:
+                lines = f.readlines()
+            for i in reversed(range(len(lines))):
+                if 'END=' in lines[i]:
+                    lines[i] = re.sub(r'END=\d+', f'END={start - 1}', lines[i])
+                    with open(ffmpeg_metadata, 'w') as f:
+                        f.writelines(lines)
+                    break
+
+            chapter = f'''
+[CHAPTER]
+TIMEBASE=1/1000
+START={start}
+END={start + default_duration}
+title={title}
+'''
+            with open(ffmpeg_metadata, 'a') as f:
+                f.write(chapter)
+        else:
+            chapters = f''';FFMETADATA1
+
+[CHAPTER]
+TIMEBASE=1/1000
+START=0
+END={start - 1}
+title=Pre-Trading
+
+[CHAPTER]
+TIMEBASE=1/1000
+START={start}
+END={start + default_duration}
+title={title}
+'''
+            with open(ffmpeg_metadata, 'w') as f:
+                f.write(chapters)
