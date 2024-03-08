@@ -453,21 +453,29 @@ login = [
     ('back_to',)
 ```
 
-#### Replace Watchlist with Market Data on Website ####
+#### Replace Watchlist with Hyper SBI 2 Ranking ####
 
-The following `watch_active_stocks` action replaces the stocks in the
-‘Watchlists’ window with new ones scraped from the current market data in the
-‘[Create Startup Script](#create-startup-script)’ section.
+The following `watch_tick_count` action replaces the stocks in the ‘Watchlists’
+window with new ones recognized in the ‘Rankings’ window.
 
-> **Note**: The free market data provided by Kabutan has a 20-minute delay.
+> **Note**: Hyper SBI updates the ‘Rankings’ window in real time, but the text
+> recognition by Tesseract is not as accurate as the scraped market data in the
+> ‘[Create Startup Script](#create-startup-script)’ section.
 
 ``` ini
 [HYPERSBI2 Actions]
-watch_active_stocks = [
-    # Copy symbols from the current market data to the clipboard.
-    ('copy_symbols_from_market_data',),
+watch_tick_count = [
     ('show_window', '登録銘柄'),     # Show the 'Watchlists' window.
-    ('click', '44, 95'),             # Select the first watchlist.
+    ('press_hotkeys', 'ctrl, 7'),    # Open the 'Rankings' window.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
+    ('click', '38, 39'),             # Select the 'Rankings' tab.
+    ('click', '88, 338'),            # Select the 'Tick Count' ranking.
+    ('click', '315, 63'),            # Click the 'Prime Market' button.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
+    # Recognize a numeric column and copy symbols to the clipboard.
+    ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
+    ('press_hotkeys', 'alt, f4'),    # Close the window.
+    ('click', '44, 120'),            # Select the second watchlist.
     ('click', '1612, 41'),           # Select the 'List' view.
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
@@ -494,29 +502,21 @@ watch_active_stocks = [
     ('back_to',)]
 ```
 
-#### Replace Watchlist with Hyper SBI 2 Ranking ####
+#### Replace Watchlist with Market Data on Website ####
 
-The following `watch_tick_count` action replaces the stocks in the ‘Watchlists’
-window with new ones recognized in the ‘Rankings’ window.
+The following `watch_active_stocks` action replaces the stocks in the
+‘Watchlists’ window with new ones scraped from the current market data in the
+‘[Create Startup Script](#create-startup-script)’ section.
 
-> **Note**: Hyper SBI updates the ‘Rankings’ window in real time, but the text
-> recognition by Tesseract is not as accurate as the scraped market data in the
-> ‘[Create Startup Script](#create-startup-script)’ section.
+> **Note**: The free market data provided by Kabutan has a 20-minute delay.
 
 ``` ini
 [HYPERSBI2 Actions]
-watch_tick_count = [
+watch_active_stocks = [
+    # Copy symbols from the current market data to the clipboard.
+    ('copy_symbols_from_market_data',),
     ('show_window', '登録銘柄'),     # Show the 'Watchlists' window.
-    ('press_hotkeys', 'ctrl, 7'),    # Open the 'Rankings' window.
-    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '38, 39'),             # Select the 'Rankings' tab.
-    ('click', '88, 338'),            # Select the 'Tick Count' ranking.
-    ('click', '315, 63'),            # Click the 'Prime Market' button.
-    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    # Recognize a numeric column and copy symbols to the clipboard.
-    ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
-    ('press_hotkeys', 'alt, f4'),    # Close the window.
-    ('click', '44, 120'),            # Select the second watchlist.
+    ('click', '44, 145'),            # Select the third watchlist.
     ('click', '1612, 41'),           # Select the 'List' view.
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
