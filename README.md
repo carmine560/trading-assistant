@@ -129,7 +129,7 @@ command and its arguments.  Possible commands include:
 
 <tr><td><code>('calculate_share_size', 'long|short')</code></td>
 
-<td>Calculate a share size.  You must call the <code>get_symbol</code> and
+<td>Calculate the share size.  You must call the <code>get_symbol</code> and
 <code>get_cash_balance</code> commands below before using this
 command.</td></tr>
 
@@ -153,11 +153,11 @@ value for it indicates unlimited trades.</td></tr>
 
 <tr><td><code>('click', 'X, Y')</code></td>
 
-<td>Click on coordinates <code>X</code> and <code>Y</code>.</td></tr>
+<td>Click on the coordinates <code>X</code> and <code>Y</code>.</td></tr>
 
 <tr><td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
 
-<td>Wait for and locate a widget image in a region, then click it.  The
+<td>Wait for and locate the widget image in the region, then click it.  The
 <code>IMAGE_FILE</code> must reside in the <code>HYPERSBI2</code> subdirectory
 of the same directory as the configuration file.</td></tr>
 
@@ -167,7 +167,7 @@ of the same directory as the configuration file.</td></tr>
 
 <tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
 
-<td>Recognize a alphanumeric column and copy symbols to the
+<td>Recognize an alphanumeric column in the region, then copy symbols to the
 clipboard.</td></tr>
 
 <tr><td><code>('count_trades',)</code></td>
@@ -179,7 +179,7 @@ command after order execution.</td></tr>
 
 <tr><td><code>('drag_to', 'X, Y')</code></td>
 
-<td>Drag the cursor to a position.</td></tr>
+<td>Drag the cursor to the position.</td></tr>
 
 <tr><td><code>('get_cash_balance',)</code></td>
 
@@ -197,15 +197,15 @@ and Price Limit Regions</a>’ section.</td></tr>
 
 <tr><td><code>('move_to', 'X, Y')</code></td>
 
-<td>Move the cursor to a position.</td></tr>
+<td>Move the cursor to the position.</td></tr>
 
 <tr><td><code>('press_hotkeys', 'KEY[, ...]')</code></td>
 
-<td>Press hotkeys.</td></tr>
+<td>Press the hotkeys.</td></tr>
 
 <tr><td><code>('press_key', 'KEY[, PRESSES]')</code></td>
 
-<td>Press a key.</td></tr>
+<td>Press the key.</td></tr>
 
 <tr><td><code>('show_hide_window', 'TITLE_REGEX')</code></td>
 
@@ -217,27 +217,27 @@ and Price Limit Regions</a>’ section.</td></tr>
 
 <tr><td><code>('sleep', 'PERIOD')</code></td>
 
-<td>Sleep for a period.</td></tr>
+<td>Sleep for the period.</td></tr>
 
 <tr><td><code>('speak_config', 'SECTION', 'OPTION')</code></td>
 
-<td>Speak a configuration value.</td></tr>
+<td>Speak the configuration value.</td></tr>
 
 <tr><td><code>('speak_cpu_utilization', 'INTERVAL')</code></td>
 
-<td>Calculate CPU utilization for an interval and speak it.</td></tr>
+<td>Calculate CPU utilization for the interval and speak it.</td></tr>
 
 <tr><td><code>('speak_seconds_until_time', '%H:%M:%S')</code></td>
 
-<td>Speak seconds until a specific time.</td></tr>
+<td>Speak seconds until the time.</td></tr>
 
 <tr><td><code>('speak_show_text', 'TEXT')</code></td>
 
-<td>Speak and show a text.</td></tr>
+<td>Speak and show the text.</td></tr>
 
 <tr><td><code>('speak_text', 'TEXT')</code></td>
 
-<td>Speak a text.</td></tr>
+<td>Speak the text.</td></tr>
 
 <tr><td><code>('take_screenshot',)</code></td>
 
@@ -250,12 +250,12 @@ filename.</td></tr>
 
 <tr><td><code>('wait_for_key', 'KEY')</code></td>
 
-<td>Wait for keyboard input.</td></tr>
+<td>Wait for the keyboard input.</td></tr>
 
 <tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX')</code></td>
 
 <td>Wait until <code>trading_assistant.py</code> recognizes a decimal number in
-a region.</td></tr>
+the region.</td></tr>
 
 <tr><td><code>('wait_for_window', 'TITLE_REGEX')</code></td>
 
@@ -273,15 +273,19 @@ that precedes the current chapter.</td></tr>
 
 <tr><td><code>('write_string', 'STRING')</code></td>
 
-<td>Write a string.</td></tr>
+<td>Write the string.</td></tr>
 
 <tr><th>Control Flow Command</th>
 
 <th>Description</th></tr>
 
+<tr><td><code>('is_now_before', '%H:%M:%S', ACTION)</code></td>
+
+<td>Execute the action if the current system time is before the time.</td></tr>
+
 <tr><td><code>('is_recording', 'BOOL', ACTION)</code></td>
 
-<td>Execute an action if recording a screencast is a bool value.</td></tr>
+<td>Execute the action if recording a screencast is the bool value.</td></tr>
 
 </tbody>
 </table>
@@ -397,8 +401,8 @@ Because `trading_assistant.py` will execute anything that is an executable
 configuration, you should not use these configurations without understanding
 them.
 
-> **Note**: I tested these examples in an environment with 1080p resolution, a
-> maximized ‘Watchlists’ window, a left-snapped ‘Summary’ window, and a
+> **Note**: I tested these examples in the environment with 1080p resolution,
+> the maximized ‘Watchlists’ window, the left-snapped ‘Summary’ window, and the
 > right-snapped ‘Chart’ window.  Additionally, my Hyper SBI 2 settings differ
 > from the default settings.
 
@@ -436,7 +440,7 @@ File](#encrypt-configuration-file)’ section.
 ``` ini
 [HYPERSBI2 Actions]
 login = [
-    # Wait for and locate the 'Login' button in the region and click it.
+    # Wait for and locate the 'Login' button in the region, then click it.
     ('click_widget', 'login.png', '759, 320, 402, 381'),
     # Wait for the 'Pre-authentication of Trading Password' dialog box.
     ('wait_for_window', '取引パスワードのプレ認証'),
@@ -447,7 +451,7 @@ login = [
     ('press_key', 'space'),          # Check the checkbox.
     ('press_key', 'tab, 2'),         # Focus on the 'Authenticate' button.
     ('press_key', 'enter'),          # Press the button.
-    # Wait for and locate the 'OK' button in the region and click it.
+    # Wait for and locate the 'OK' button in the region, then click it.
     ('click_widget', 'ok.png', '793, 450, 334, 120'),
     ('hide_window', '登録銘柄'),     # Hide the 'Watchlists' window.
     # Show the 'Chart' window.
@@ -455,6 +459,11 @@ login = [
     ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
+    # Check the 'Skip Confirmation Screen' checkbox if the current system time
+    # is before 10:00:00.
+    ('is_now_before', '10:00:00', [('click', '273, 837, 12, 12')]),
+    # Open the 'News' window if the current system time is before the open.
+    ('is_now_before', '09:00:00', [('press_hotkeys', 'ctrl, n')]),
     # Return the cursor to the previous position.
     ('back_to',)
 ```
@@ -478,7 +487,8 @@ watch_tick_count = [
     ('click', '88, 338'),            # Select the 'Tick Count' ranking.
     ('click', '315, 63'),            # Click the 'Prime Market' button.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    # Recognize a numeric column and copy symbols to the clipboard.
+    # Recognize an alphanumeric column in the region, then copy symbols to the
+    # clipboard.
     ('copy_symbols_from_column', '328, 149, 52, 661'),
     ('press_hotkeys', 'alt, f4'),    # Close the window.
     ('click', '44, 120'),            # Select the second watchlist.
@@ -584,7 +594,7 @@ open_close_long_position = [
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('click', '231, 729'),           # Select the 'New Order' tab.
     ('click', '564, 800'),           # Focus on the 'Share Size' text box.
-    ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
+    ('press_hotkeys', 'ctrl, a'),    # Select the existing value.
     # Get the symbol from the 'Summary' window.
     ('get_symbol', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Recognize the cash balance on the 'Summary' window.
@@ -600,7 +610,7 @@ open_close_long_position = [
     ('write_share_size',),           # Enter the calculated share size.
     ('click', '499, 822'),           # Click the 'Market Order' button.
     ('press_key', 'tab, 3'),         # Focus on the 'Buy Order' button.
-    ('speak_text', 'Long.'),         # Speak the readiness of a buy order.
+    ('speak_text', 'Long.'),         # Speak the readiness of the buy order.
     # Return the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
@@ -610,12 +620,12 @@ open_close_long_position = [
     # Close Long Position
     ('click', '315, 729'),           # Select the 'Repayment' tab.
     ('click', '628, 841'),           # Focus on the 'Share Size' text box.
-    ('press_hotkeys', 'ctrl, a'),    # Select an existing value.
+    ('press_hotkeys', 'ctrl, a'),    # Select the existing value.
     ('write_share_size',),           # Enter the calculated share size.
     ('click', '471, 935'),           # Click the 'Market Order' button.
     ('press_key', 'tab, 5'),         # Focus on the 'Sell Order' button.
     ('count_trades',),               # Count the number of trades for the day.
-    # Speak the number above and notify you of the readiness of a sell order.
+    # Speak the number above and notify you of the readiness of the sell order.
     ('speak_config', 'Variables', 'number_of_trades'),
     # Return the cursor to the previous position.
     ('back_to',)]
