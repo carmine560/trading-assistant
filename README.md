@@ -165,7 +165,7 @@ of the same directory as the configuration file.</td></tr>
 
 <td>Copy symbols from the current market data to the clipboard.</td></tr>
 
-<tr><td><code>('copy_symbols_from_numeric_column', 'X, Y, WIDTH, HEIGHT')</code></td>
+<tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
 
 <td>Recognize a numeric column and copy symbols to the clipboard.</td></tr>
 
@@ -478,7 +478,7 @@ watch_tick_count = [
     ('click', '315, 63'),            # Click the 'Prime Market' button.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     # Recognize a numeric column and copy symbols to the clipboard.
-    ('copy_symbols_from_numeric_column', '328, 149, 52, 661'),
+    ('copy_symbols_from_column', '328, 149, 52, 661'),
     ('press_hotkeys', 'alt, f4'),    # Close the window.
     ('click', '44, 120'),            # Select the second watchlist.
     ('click', '1612, 41'),           # Select the 'List' view.

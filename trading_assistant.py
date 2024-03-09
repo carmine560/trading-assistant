@@ -982,7 +982,7 @@ def execute_action(trade, config, gui_state, action):
             gui_interactions.click_widget(gui_state, image, *region)
         elif command == 'copy_symbols_from_market_data':
             save_market_data(trade, config, clipboard=True)
-        elif command == 'copy_symbols_from_numeric_column':
+        elif command == 'copy_symbols_from_column':
             import win32clipboard
 
             argument = ast.literal_eval(argument)
