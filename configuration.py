@@ -24,6 +24,7 @@ def list_section(config, section):
         print(section, 'section does not exist.')
         return False
 
+# TODO: prompts
 def modify_section(config, section, config_path, backup_function=None,
                    backup_parameters=None, is_inserting=False,
                    value_format='string', prompts={}, categorized_keys={},

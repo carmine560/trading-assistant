@@ -419,11 +419,12 @@ def move_to_trash(path):
     except Exception as e:
         print(f'Failed to move {path} to trash: {str(e)}')
 
-def write_chapter(video, title):
+def write_chapter(video, current_title, previous_title=None):
     if is_writing(video):
         ffmpeg_metadata = os.path.splitext(video)[0] + '.txt'
         start = int(1000 * (time.time() - os.path.getctime(video)))
         default_duration = 60000
+        end = start + default_duration
 
         if os.path.exists(ffmpeg_metadata):
             with open(ffmpeg_metadata, 'r') as f:
@@ -439,8 +440,8 @@ def write_chapter(video, title):
 [CHAPTER]
 TIMEBASE=1/1000
 START={start}
-END={start + default_duration}
-title={title}
+END={end}
+title={current_title}
 '''
             with open(ffmpeg_metadata, 'a') as f:
                 f.write(chapter)
@@ -451,13 +452,13 @@ title={title}
 TIMEBASE=1/1000
 START=0
 END={start - 1}
-title=Pre-Trading
+title={previous_title}
 
 [CHAPTER]
 TIMEBASE=1/1000
 START={start}
-END={start + default_duration}
-title={title}
+END={end}
+title={current_title}
 '''
             with open(ffmpeg_metadata, 'w') as f:
                 f.write(chapters)

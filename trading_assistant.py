@@ -65,7 +65,8 @@ class Trade:
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
             'control_flow_keys': ('is_recording',),
-            'additional_value_keys': ('click_widget', 'speak_config'),
+            'additional_value_keys': ('click_widget', 'speak_config',
+                                      'write_chapter'),
             'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
                               'count_trades', 'get_cash_balance',
                               'take_screenshot', 'toggle_osd',
@@ -295,7 +296,6 @@ class OSDTooltip:
         if hasattr(self, 'tooltip'):
             self.tooltip.destroy()
 
-# TODO
 class OSDMessage(threading.Thread):
     def __init__(self, trade, config, text):
         super().__init__()
@@ -459,7 +459,7 @@ def main():
         elif args.S and configuration.modify_section(
                 config, trade.schedule_section, trade.config_path,
                 **backup_file, is_inserting=True, value_format='tuple',
-                prompts={'end_of_list': 'end of commands'},
+                prompts={'end_of_list': 'end of schedules'},
                 tuple_info={'element_index': 1,
                             'possible_values': configuration.list_section(
                                 config, trade.actions_section)}):
@@ -616,7 +616,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'title': '',
         # TODO
         'interactive_windows': (
-            'お知らせ',
+            'HYPER SBI 2', 'お知らせ',
             r'個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
             '登録銘柄', '保有証券', '注文一覧',
             r'個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
@@ -1004,7 +1004,8 @@ def execute_action(trade, config, gui_state, action):
             title = (f"Trade {current_number_of_trades}"
                      f"{f' for {trade.symbol}' if trade.symbol else ''}"
                      f" at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-            file_utilities.write_chapter(get_latest_screencast(), title)
+            file_utilities.write_chapter(get_latest_screencast(), title,
+                                         'Pre-Trading')
         elif command == 'drag_to':
             pyautogui.dragTo(ast.literal_eval(argument))
         elif command == 'get_cash_balance':
@@ -1099,6 +1100,9 @@ def execute_action(trade, config, gui_state, action):
             text_recognition.recognize_text(config[trade.process], *argument)
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(argument)
+        elif command == 'write_chapter':
+            file_utilities.write_chapter(get_latest_screencast(), argument,
+                                         additional_argument)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
         elif command == 'write_string':

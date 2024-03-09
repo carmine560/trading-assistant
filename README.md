@@ -8,7 +8,6 @@ of stocks on margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining an
 action consisting of a sequence of commands, this script can:
 
-  * Show required windows,
   * Calculate the maximum number of shares for a market order on margin
     trading,
   * Manipulate widgets to prepare your order,
@@ -172,7 +171,7 @@ of the same directory as the configuration file.</td></tr>
 
 <tr><td><code>('count_trades',)</code></td>
 
-<td>Count the number of trades for the day.  Additionally, output a chapter
+<td>Count the number of trades for the day.  Additionally, write a chapter
 section for <a href="https://ffmpeg.org/ffmpeg-formats.html#Metadata-1">FFmpeg
 metadata</a> when Nvidia ShadowPlay records a screencast.  You must call this
 command after order execution.</td></tr>
@@ -260,6 +259,12 @@ region.</td></tr>
 <tr><td><code>('wait_for_window', 'TITLE_REGEX')</code></td>
 
 <td>Wait for a window.</td></tr>
+
+<tr><td><code>('write_chapter', 'CURRENT_TITLE'[, 'PREVIOUS_TITLE'])</code></td>
+
+<td>Write a chapter section for FFmpeg metadata.  When creating a new metadata
+file, the <code>PREVIOUS_TITLE</code> parameter gives the title to the chapter
+that precedes the current chapter.</td></tr>
 
 <tr><td><code>('write_share_size',)</code></td>
 
@@ -683,6 +688,8 @@ start_manual_recording = [
         ('sleep', '2'),              # Sleep for 2 seconds.
         # Check if recording is currently in progress.
         ('is_recording', 'False', [('speak_text', 'Not recording.')])])]
+# Write a chapter section for FFmpeg metadata.
+create_pre_trading_chapter = [('write_chapter', 'Pre-Trading', 'Pre-Market'),]
 stop_manual_recording = [
     # Stop a recording if one is currently in progress.
     ('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]
@@ -690,6 +697,8 @@ stop_manual_recording = [
 [HYPERSBI2 Schedules]
 # Trigger the 'start_manual_recording' action at 08:50:00.
 start_new_manual_recording = ('08:50:00', 'start_manual_recording')
+# Trigger the 'create_pre_trading_chapter' action at 09:00:00.
+start_pre_trading_chapter = ('09:00:00', 'create_pre_trading_chapter')
 # Trigger the 'stop_manual_recording' action at 10:00:00.
 stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
 ```
