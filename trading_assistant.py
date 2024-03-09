@@ -1095,9 +1095,10 @@ def execute_action(trade, config, gui_state, action):
 
                 trade.speech_manager.set_speech_text('Canceled.')
                 return
-        elif command == 'wait_for_prices':
+        elif command == 'wait_for_price':
             argument = ast.literal_eval(argument)
-            text_recognition.recognize_text(config[trade.process], *argument)
+            text_recognition.recognize_text(config[trade.process], *argument,
+                                            text_type='decimal_numbers')
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(argument)
         elif command == 'write_chapter':

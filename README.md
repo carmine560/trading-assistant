@@ -167,7 +167,8 @@ of the same directory as the configuration file.</td></tr>
 
 <tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
 
-<td>Recognize a numeric column and copy symbols to the clipboard.</td></tr>
+<td>Recognize a alphanumeric column and copy symbols to the
+clipboard.</td></tr>
 
 <tr><td><code>('count_trades',)</code></td>
 
@@ -251,10 +252,10 @@ filename.</td></tr>
 
 <td>Wait for keyboard input.</td></tr>
 
-<tr><td><code>('wait_for_prices', 'X, Y, WIDTH, HEIGHT, INDEX')</code></td>
+<tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX')</code></td>
 
-<td>Wait until <code>trading_assistant.py</code> recognizes prices in a
-region.</td></tr>
+<td>Wait until <code>trading_assistant.py</code> recognizes a decimal number in
+a region.</td></tr>
 
 <tr><td><code>('wait_for_window', 'TITLE_REGEX')</code></td>
 
@@ -604,7 +605,7 @@ open_close_long_position = [
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
     # Wait for the order execution.
-    ('wait_for_prices', '224, 956, 470, 20, 0'),
+    ('wait_for_price', '224, 956, 470, 20, 0'),
 
     # Close Long Position
     ('click', '315, 729'),           # Select the 'Repayment' tab.
