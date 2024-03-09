@@ -48,7 +48,7 @@ def enumerate_windows(callback, extra):
     try:
         win32gui.EnumWindows(callback, extra)
     except Exception as e:
-        if e.args[0] == 0:
+        if e.args[0] in (0, 5):
             pass
         else:
             print(e)

@@ -167,7 +167,7 @@ of the same directory as the configuration file.</td></tr>
 
 <tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
 
-<td>Recognize a alphanumeric column and copy symbols to the
+<td>Recognize an alphanumeric column and copy symbols to the
 clipboard.</td></tr>
 
 <tr><td><code>('count_trades',)</code></td>
