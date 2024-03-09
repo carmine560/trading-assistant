@@ -12,8 +12,6 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
         config = r'-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
     elif text_type == 'decimal_numbers':
         config = r'-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
-    elif text_type == 'numeric_column':
-        config = '-c tessedit_char_whitelist=0123456789 --psm 6'
     elif text_type == 'securities_code_column':
         config = ('-c tessedit_char_whitelist=0123456789ACDFGHJKLMNPRSTUWXY '
                   '--psm 6')
@@ -34,8 +32,7 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
             if text_type == 'integers' or text_type == 'decimal_numbers':
                 split_string = list(map(lambda s: float(s.replace(',', '')),
                                         string.split(' ')))
-            elif (text_type == 'numeric_column'
-                  or text_type == 'securities_code_column'):
+            elif text_type == 'securities_code_column':
                 for item in string.splitlines():
                     split_string.append(item)
         except:
