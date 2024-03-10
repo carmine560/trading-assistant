@@ -14,6 +14,127 @@ INDENT = '    '
 if sys.platform == 'win32':
     os.system('color')
 
+def check_config_changes(default_config, config_path, excluded_sections=(),
+                         backup_function=None, backup_parameters=None):
+    # TODO: config[trade.actions_title]
+    import configparser
+
+    def truncate_string(string):
+        max_length = 256
+        if len(string) > max_length:
+            string = string[:max_length] + '...'
+        return string
+
+    def display_changes(config, config_path, section, option, option_status):
+        global previous_section
+        if section != previous_section:
+            print(f'[{ANSI_BOLD}{section}{ANSI_RESET}]')
+            previous_section = section
+
+        print(option_status)
+        answer = tidy_answer(['default', 'quit'])
+        if answer == 'default':
+            config.remove_option(section, option)
+            write_config(config, config_path)
+        elif answer == 'quit':
+            return False
+        return True
+
+    if backup_function:
+        backup_function(config_path, **backup_parameters)
+
+    user_config = configparser.ConfigParser()
+    read_config(user_config, config_path)
+
+    global previous_section
+    previous_section = None
+    for section in default_config.sections():
+        if (section not in excluded_sections
+            and default_config.options(section)):
+            for option in default_config[section]:
+                if (user_config.has_option(section, option)
+                    and default_config[section][option]
+                    != user_config[section][option]):
+                    default_value = (
+                        truncate_string(default_config[section][option])
+                                  if default_config[section][option]
+                                  else '(empty)')
+                    user_value = (truncate_string(user_config[section][option])
+                                  if user_config[section][option]
+                                  else '(empty)')
+
+                    option_status = (
+                        f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
+                        f'{default_value} → '
+                        f'{ANSI_CURRENT}{user_value}{ANSI_RESET}')
+                    if not display_changes(user_config, config_path, section,
+                                           option, option_status):
+                        return
+            for option in user_config[section]:
+                if not default_config.has_option(section, option):
+                    default_value = '(not exist)'
+                    user_value = (truncate_string(user_config[section][option])
+                                  if user_config[section][option]
+                                  else '(empty)')
+                    option_status = (
+                        f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
+                        f'{ANSI_WARNING}{default_value}{ANSI_RESET} → '
+                        f'{user_value}')
+                    if not display_changes(user_config, config_path, section,
+                                           option, option_status):
+                        return
+
+def configure_position(answer, level=0, value=''):
+    import time
+
+    import pyautogui
+    import win32api
+
+    from prompt_toolkit import ANSI
+    from prompt_toolkit import prompt as pt_prompt
+    from prompt_toolkit.completion import WordCompleter
+    from prompt_toolkit.shortcuts import CompleteStyle
+
+    prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
+    if answer == 'modify' and value:
+        completer = WordCompleter([value])
+        value = pt_prompt(
+            ANSI(prompt_prefix + ': '), completer=completer,
+            complete_style=CompleteStyle.READLINE_LIKE).strip() or value
+    else:
+        value = input(prompt_prefix + ': ').strip()
+
+    if value and value[0].lower() == 'c':
+        previous_key_state = win32api.GetKeyState(0x01)
+        current_number = 0
+        coordinates = ''
+        while True:
+            key_state = win32api.GetKeyState(0x01)
+            if key_state != previous_key_state:
+                if key_state not in [0, 1]:
+                    x, y = pyautogui.position()
+                    coordinates = str(x) + ', ' + str(y)
+                    break
+
+            time.sleep(0.001)
+
+        return coordinates
+    else:
+        return value
+
+def delete_option(config, section, option, config_path, backup_function=None,
+                  backup_parameters=None):
+    if backup_function:
+        backup_function(config_path, **backup_parameters)
+
+    if config.has_option(section, option):
+        config.remove_option(section, option)
+        write_config(config, config_path)
+        return True
+    else:
+        print(option, 'option does not exist.')
+        return False
+
 def list_section(config, section):
     options = []
     if config.has_section(section):
@@ -24,50 +145,51 @@ def list_section(config, section):
         print(section, 'section does not exist.')
         return False
 
-# TODO: prompts
-def modify_section(config, section, config_path, backup_function=None,
-                   backup_parameters=None, is_inserting=False,
-                   value_format='string', prompts={}, categorized_keys={},
-                   tuple_info={}):
-    if backup_function:
-        backup_function(config_path, **backup_parameters)
+def modify_data(prompt, level=0, data='', all_data=[]):
+    from prompt_toolkit import prompt as pt_prompt
+    from prompt_toolkit.completion import WordCompleter
+    from prompt_toolkit.shortcuts import CompleteStyle
 
-    if config.has_section(section):
-        for option in config[section]:
-            result = modify_option(config, section, option, config_path,
-                                   categorized_keys=categorized_keys,
-                                   tuple_info=tuple_info)
-            if result == 'quit' or result == False:
-                return result
+    completer = None
+    if all_data:
+        completer = WordCompleter(all_data, ignore_case=True)
+    elif data:
+        completer = WordCompleter([data])
 
-        if is_inserting:
-            end_of_list_prompt = prompts.get('end_of_list', 'end of section')
-            is_inserted = False
-            while is_inserting:
-                print(ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
-                answer = tidy_answer(['insert'])
-                if answer == 'insert':
-                    option = modify_data('option')
-                    if value_format == 'string':
-                        config[section][option] = modify_data('value')
-                        if config[section][option]:
-                            is_inserted = True
-                    elif value_format == 'tuple':
-                        config[section][option] = '()'
-                        config[section][option] = modify_tuple(
-                            config[section][option], True, level=1,
-                            tuple_info=tuple_info)
-                        if config[section][option] != '()':
-                            is_inserted = True
-                else:
-                    is_inserting = False
-            if is_inserted:
-                write_config(config, config_path)
-
-        return True
+    prompt_prefix = INDENT * level + prompt
+    if completer:
+        data = pt_prompt(
+            prompt_prefix + ': ', completer=completer,
+            complete_style=CompleteStyle.READLINE_LIKE).strip() or data
+    elif data:
+        data = input(prompt_prefix + ' '
+                     + ANSI_CURRENT + data + ANSI_RESET + ': ').strip() or data
     else:
-        print(section, 'section does not exist.')
-        return False
+        data = input(prompt_prefix + ': ').strip()
+    return data
+
+def modify_dictionary(data, level=0, prompts={}, dictionary_info={}):
+    data = ast.literal_eval(data)
+    value_prompt = prompts.get('value', 'value')
+    possible_values = dictionary_info.get('possible_values')
+
+    for key, value in data.items():
+        print(f'{INDENT * level}{ANSI_IDENTIFIER}{key}{ANSI_RESET}: '
+              f'{ANSI_CURRENT}{data[key]}{ANSI_RESET}')
+        answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
+        if answer == 'modify':
+            if possible_values:
+                data[key] = modify_data(value_prompt, level=level,
+                                        all_data=possible_values)
+            else:
+                data[key] = modify_data(value_prompt, level=level,
+                                        data=data[key])
+        elif answer == 'empty':
+            data[key] = ''
+        elif answer == 'quit':
+            break
+
+    return str(data)
 
 def modify_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None, prompts={}, categorized_keys={},
@@ -117,6 +239,97 @@ def modify_option(config, section, option, config_path, backup_function=None,
     else:
         print(option, 'option does not exist.')
         return False
+
+def modify_section(config, section, config_path, backup_function=None,
+                   backup_parameters=None, is_inserting=False,
+                   value_format='string', prompts={}, categorized_keys={},
+                   tuple_info={}):
+    # TODO: contextual prompt
+    if backup_function:
+        backup_function(config_path, **backup_parameters)
+
+    if config.has_section(section):
+        for option in config[section]:
+            result = modify_option(config, section, option, config_path,
+                                   categorized_keys=categorized_keys,
+                                   tuple_info=tuple_info)
+            if result == 'quit' or result == False:
+                return result
+
+        if is_inserting:
+            end_of_list_prompt = prompts.get('end_of_list', 'end of section')
+            is_inserted = False
+            while is_inserting:
+                print(ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
+                answer = tidy_answer(['insert'])
+                if answer == 'insert':
+                    option = modify_data('option')
+                    if value_format == 'string':
+                        config[section][option] = modify_data('value')
+                        if config[section][option]:
+                            is_inserted = True
+                    elif value_format == 'tuple':
+                        config[section][option] = '()'
+                        config[section][option] = modify_tuple(
+                            config[section][option], True, level=1,
+                            tuple_info=tuple_info)
+                        if config[section][option] != '()':
+                            is_inserted = True
+                else:
+                    is_inserting = False
+            if is_inserted:
+                write_config(config, config_path)
+
+        return True
+    else:
+        print(section, 'section does not exist.')
+        return False
+
+def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
+    data = list(ast.literal_eval(data))
+    value_prompt = prompts.get('value', 'value')
+    end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
+    element_index = tuple_info.get('element_index')
+    possible_values = tuple_info.get('possible_values')
+
+    index = 0
+    while index <= len(data):
+        if is_created or index == len(data):
+            print(INDENT * level
+                  + ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
+            answer = tidy_answer(['insert', 'quit'], level=level)
+        else:
+            print(INDENT * level
+                  + ANSI_CURRENT + str(data[index]) + ANSI_RESET)
+            answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
+                                 level=level)
+
+        if answer == 'insert':
+            if ((element_index == -1 or index == element_index)
+                and possible_values):
+                value = modify_data(value_prompt, level=level,
+                                    all_data=possible_values)
+            else:
+                value = modify_data(value_prompt, level=level)
+            if value:
+                data.insert(index, value)
+        elif answer == 'modify':
+            if ((element_index == -1 or index == element_index)
+                and possible_values):
+                data[index] = modify_data(value_prompt, level=level,
+                                          all_data=possible_values)
+            else:
+                data[index] = modify_data(value_prompt, level=level,
+                                          data=data[index])
+        elif answer == 'delete':
+            del data[index]
+            index -= 1
+        elif answer == 'quit':
+            index = len(data)
+
+        index += 1
+
+    return str(tuple(data))
 
 def modify_tuple_list(config, section, option, config_path,
                       backup_function=None, backup_parameters=None, prompts={},
@@ -240,97 +453,19 @@ def modify_tuples(tuples, is_created, level=0, prompts={},
 
     return tuples
 
-def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
-    data = list(ast.literal_eval(data))
-    value_prompt = prompts.get('value', 'value')
-    end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
-    element_index = tuple_info.get('element_index')
-    possible_values = tuple_info.get('possible_values')
+def read_config(config, config_path):
+    encrypted_config_path = config_path + '.gpg'
+    if os.path.exists(encrypted_config_path):
+        import gnupg
 
-    index = 0
-    while index <= len(data):
-        if is_created or index == len(data):
-            print(INDENT * level
-                  + ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
-            answer = tidy_answer(['insert', 'quit'], level=level)
-        else:
-            print(INDENT * level
-                  + ANSI_CURRENT + str(data[index]) + ANSI_RESET)
-            answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
-                                 level=level)
+        with open(encrypted_config_path, 'rb') as f:
+            encrypted_config = f.read()
 
-        if answer == 'insert':
-            if ((element_index == -1 or index == element_index)
-                and possible_values):
-                value = modify_data(value_prompt, level=level,
-                                    all_data=possible_values)
-            else:
-                value = modify_data(value_prompt, level=level)
-            if value:
-                data.insert(index, value)
-        elif answer == 'modify':
-            if ((element_index == -1 or index == element_index)
-                and possible_values):
-                data[index] = modify_data(value_prompt, level=level,
-                                          all_data=possible_values)
-            else:
-                data[index] = modify_data(value_prompt, level=level,
-                                          data=data[index])
-        elif answer == 'delete':
-            del data[index]
-            index -= 1
-        elif answer == 'quit':
-            index = len(data)
-
-        index += 1
-
-    return str(tuple(data))
-
-def modify_dictionary(data, level=0, prompts={}, dictionary_info={}):
-    data = ast.literal_eval(data)
-    value_prompt = prompts.get('value', 'value')
-    possible_values = dictionary_info.get('possible_values')
-
-    for key, value in data.items():
-        print(f'{INDENT * level}{ANSI_IDENTIFIER}{key}{ANSI_RESET}: '
-              f'{ANSI_CURRENT}{data[key]}{ANSI_RESET}')
-        answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
-        if answer == 'modify':
-            if possible_values:
-                data[key] = modify_data(value_prompt, level=level,
-                                        all_data=possible_values)
-            else:
-                data[key] = modify_data(value_prompt, level=level,
-                                        data=data[key])
-        elif answer == 'empty':
-            data[key] = ''
-        elif answer == 'quit':
-            break
-
-    return str(data)
-
-def modify_data(prompt, level=0, data='', all_data=[]):
-    from prompt_toolkit import prompt as pt_prompt
-    from prompt_toolkit.completion import WordCompleter
-    from prompt_toolkit.shortcuts import CompleteStyle
-
-    completer = None
-    if all_data:
-        completer = WordCompleter(all_data, ignore_case=True)
-    elif data:
-        completer = WordCompleter([data])
-
-    prompt_prefix = INDENT * level + prompt
-    if completer:
-        data = pt_prompt(
-            prompt_prefix + ': ', completer=completer,
-            complete_style=CompleteStyle.READLINE_LIKE).strip() or data
-    elif data:
-        data = input(prompt_prefix + ' '
-                     + ANSI_CURRENT + data + ANSI_RESET + ': ').strip() or data
+        gpg = gnupg.GPG()
+        decrypted_config = gpg.decrypt(encrypted_config)
+        config.read_string(decrypted_config.data.decode())
     else:
-        data = input(prompt_prefix + ': ').strip()
-    return data
+        config.read(config_path, encoding='utf-8')
 
 def tidy_answer(answers, level=0):
     initialism = ''
@@ -364,71 +499,6 @@ def tidy_answer(answers, level=0):
                     answer = answers[index]
     return answer
 
-def configure_position(answer, level=0, value=''):
-    import time
-
-    import pyautogui
-    import win32api
-
-    from prompt_toolkit import ANSI
-    from prompt_toolkit import prompt as pt_prompt
-    from prompt_toolkit.completion import WordCompleter
-    from prompt_toolkit.shortcuts import CompleteStyle
-
-    prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
-    if answer == 'modify' and value:
-        completer = WordCompleter([value])
-        value = pt_prompt(
-            ANSI(prompt_prefix + ': '), completer=completer,
-            complete_style=CompleteStyle.READLINE_LIKE).strip() or value
-    else:
-        value = input(prompt_prefix + ': ').strip()
-
-    if value and value[0].lower() == 'c':
-        previous_key_state = win32api.GetKeyState(0x01)
-        current_number = 0
-        coordinates = ''
-        while True:
-            key_state = win32api.GetKeyState(0x01)
-            if key_state != previous_key_state:
-                if key_state not in [0, 1]:
-                    x, y = pyautogui.position()
-                    coordinates = str(x) + ', ' + str(y)
-                    break
-
-            time.sleep(0.001)
-
-        return coordinates
-    else:
-        return value
-
-def delete_option(config, section, option, config_path, backup_function=None,
-                  backup_parameters=None):
-    if backup_function:
-        backup_function(config_path, **backup_parameters)
-
-    if config.has_option(section, option):
-        config.remove_option(section, option)
-        write_config(config, config_path)
-        return True
-    else:
-        print(option, 'option does not exist.')
-        return False
-
-def read_config(config, config_path):
-    encrypted_config_path = config_path + '.gpg'
-    if os.path.exists(encrypted_config_path):
-        import gnupg
-
-        with open(encrypted_config_path, 'rb') as f:
-            encrypted_config = f.read()
-
-        gpg = gnupg.GPG()
-        decrypted_config = gpg.decrypt(encrypted_config)
-        config.read_string(decrypted_config.data.decode())
-    else:
-        config.read(config_path, encoding='utf-8')
-
 def write_config(config, config_path):
     encrypted_config_path = config_path + '.gpg'
     if os.path.exists(encrypted_config_path):
@@ -452,72 +522,3 @@ def write_config(config, config_path):
     else:
         with open(config_path, 'w', encoding='utf-8') as f:
             config.write(f)
-
-def check_config_changes(default_config, config_path, excluded_sections=(),
-                         backup_function=None, backup_parameters=None):
-    import configparser
-
-    def truncate_string(string):
-        max_length = 256
-        if len(string) > max_length:
-            string = string[:max_length] + '...'
-        return string
-
-    def display_changes(config, config_path, section, option, option_status):
-        global previous_section
-        if section != previous_section:
-            print(f'[{ANSI_BOLD}{section}{ANSI_RESET}]')
-            previous_section = section
-
-        print(option_status)
-        answer = tidy_answer(['default', 'quit'])
-        if answer == 'default':
-            config.remove_option(section, option)
-            write_config(config, config_path)
-        elif answer == 'quit':
-            return False
-        return True
-
-    if backup_function:
-        backup_function(config_path, **backup_parameters)
-
-    user_config = configparser.ConfigParser()
-    read_config(user_config, config_path)
-
-    global previous_section
-    previous_section = None
-    for section in default_config.sections():
-        if (section not in excluded_sections
-            and default_config.options(section)):
-            for option in default_config[section]:
-                if (user_config.has_option(section, option)
-                    and default_config[section][option]
-                    != user_config[section][option]):
-                    default_value = (
-                        truncate_string(default_config[section][option])
-                                  if default_config[section][option]
-                                  else '(empty)')
-                    user_value = (truncate_string(user_config[section][option])
-                                  if user_config[section][option]
-                                  else '(empty)')
-
-                    option_status = (
-                        f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
-                        f'{default_value} → '
-                        f'{ANSI_CURRENT}{user_value}{ANSI_RESET}')
-                    if not display_changes(user_config, config_path, section,
-                                           option, option_status):
-                        return
-            for option in user_config[section]:
-                if not default_config.has_option(section, option):
-                    default_value = '(not exist)'
-                    user_value = (truncate_string(user_config[section][option])
-                                  if user_config[section][option]
-                                  else '(empty)')
-                    option_status = (
-                        f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
-                        f'{ANSI_WARNING}{default_value}{ANSI_RESET} → '
-                        f'{user_value}')
-                    if not display_changes(user_config, config_path, section,
-                                           option, option_status):
-                        return
