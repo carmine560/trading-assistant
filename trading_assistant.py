@@ -654,48 +654,59 @@ def configure(trade, can_interpolate=True, can_override=True):
         'initial_cash_balance': '0',
         'current_number_of_trades': '0'}
 
+    # TODO: trade.actions_section -> trade.actions, etc.
+    process_section = config[trade.process]
+    actions_section = config[trade.actions_section]
+    variables_section = config['Variables']
+
+    # if trade.process == 'HYPERSBI2':
+    #     process_section['interactive_windows'] = (
+    #         'HYPER SBI 2',
+    #     )
+    #     # TODO: default or not
+    #     actions_section['toggle_osd'] = [('toggle_osd',)]
+
     if can_override:
         configuration.read_config(config, trade.config_path)
 
-        section = config['Variables']
-        previous_date = date.fromisoformat(section['current_date'])
+        previous_date = date.fromisoformat(variables_section['current_date'])
         current_date = date.today()
         if previous_date != current_date:
-            section['current_date'] = str(date.today())
-            section['initial_cash_balance'] = '0'
-            section['current_number_of_trades'] = '0'
-
-    section = config[trade.process]
+            variables_section['current_date'] = str(date.today())
+            variables_section['initial_cash_balance'] = '0'
+            variables_section['current_number_of_trades'] = '0'
 
     # TODO
     if trade.process == 'HYPERSBI2':
-        if not section['executable']:
+        if not process_section['executable']:
             location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
                                         trade.brokerage, trade.process,
                                         'location.dat')
             try:
                 with open(location_dat) as f:
-                    section['executable'] = os.path.normpath(
+                    process_section['executable'] = os.path.normpath(
                         os.path.join(f.read(), trade.process + '.exe'))
             except OSError as e:
                 print(e)
-                section['executable'] = os.path.join(
+                process_section['executable'] = os.path.join(
                     r'$${Env:ProgramFiles(x86)}\SBI SECURITIES',
                     trade.process, trade.process + '.exe')
 
+    # TODO
+    if trade.process == 'HYPERSBI2':
         theme_config = configparser.ConfigParser()
         theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
                                  trade.brokerage, trade.process, 'theme.ini')
         theme_config.read(theme_ini)
         if (theme_config.has_option('General', 'theme')
             and theme_config['General']['theme'] == 'Light'):
-            section['is_dark_theme'] = 'False'
+            process_section['is_dark_theme'] = 'False'
 
-    if section['executable'] and not section['title']:
+    if process_section['executable'] and not process_section['title']:
         file_description = file_utilities.get_file_description(
-            section['executable'])
+            process_section['executable'])
         if file_description:
-            section['title'] = file_description + ' Assistant'
+            process_section['title'] = file_description + ' Assistant'
 
     return config
 

@@ -410,14 +410,16 @@ def is_writing(target_path):
     else:
         return False
 
-def move_to_trash(path):
+def move_to_trash(path, option=None):
     import subprocess
 
+    command = ['trash-put', path]
+    if option:
+        command.insert(1, option)
     try:
-        subprocess.run(['trash-put', path], check=True)
-        print(f'Moved {path} to trash.')
+        subprocess.run(command, check=True)
     except Exception as e:
-        print(f'Failed to move {path} to trash: {str(e)}')
+        print(e)
 
 def write_chapter(video, current_title, previous_title=None):
     if is_writing(video):
