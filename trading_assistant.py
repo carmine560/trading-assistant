@@ -64,7 +64,7 @@ class Trade:
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
-            'control_flow_keys': ('is_recording',),
+            'control_flow_keys': ('is_now_before', 'is_recording'),
             'additional_value_keys': ('click_widget', 'speak_config',
                                       'write_chapter'),
             'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
@@ -883,7 +883,7 @@ def start_scheduler(trade, config, gui_state, process):
         schedule_time = time.strptime(time.strftime('%Y-%m-%d ')
                                       + schedule_time, '%Y-%m-%d %H:%M:%S')
         schedule_time = time.mktime(schedule_time)
-        if schedule_time > time.time():
+        if time.time() < schedule_time:
             schedule = scheduler.enterabs(
                 schedule_time, 1, execute_action,
                 argument=(trade, config, gui_state, action))
@@ -1121,6 +1121,12 @@ def execute_action(trade, config, gui_state, action):
             pyautogui.write(argument)
 
         # Control Flow Commands
+        elif command == 'is_now_before':
+            target_time = time.strptime(time.strftime('%Y-%m-%d ')
+                                        + argument, '%Y-%m-%d %H:%M:%S')
+            target_time = time.mktime(target_time)
+            if time.time() < target_time:
+                execute_action(trade, config, gui_state, additional_argument)
         elif command == 'is_recording':
             if (file_utilities.is_writing(get_latest_screencast())
                 == ast.literal_eval(argument)):
