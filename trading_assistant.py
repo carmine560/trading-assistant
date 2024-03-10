@@ -52,6 +52,7 @@ class Trade:
                           self.resource_directory]:
             file_utilities.check_directory(directory)
 
+        # TODO: move to configure()
         self.customer_margin_ratios_section = (
             f'{self.brokerage} Customer Margin Ratios')
 
@@ -577,6 +578,30 @@ def configure(trade, can_interpolate=True, can_override=True):
     else:
         config = configparser.ConfigParser()
 
+    if trade.process == 'HYPERSBI2':
+        location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
+                                    trade.brokerage, trade.process,
+                                    'location.dat')
+        try:
+            with open(location_dat) as f:
+                executable = os.path.normpath(
+                    os.path.join(f.read(), trade.process + '.exe'))
+        except OSError as e:
+            print(e)
+            executable = os.path.join(
+                os.path.expandvars('${ProgramFiles(x86)}'), trade.brokerage,
+                trade.process, trade.process + '.exe')
+            if not os.path.isfile(executable):
+                print(executable, 'file does not exist.')
+                sys.exit(1)
+    # TODO
+    # else:
+    #     executable =
+
+    file_description = file_utilities.get_file_description(executable)
+    if file_description:
+        title = file_description + ' Assistant'
+
     config['General'] = {
         'screenshot_directory':
         os.path.join(os.path.expanduser('~'), 'Pictures'),
@@ -611,19 +636,9 @@ def configure(trade, can_interpolate=True, can_override=True):
         'suspended': '新規建停止'}
     config[trade.process] = {
         'customer_margin_ratio': '0.31',
-        'executable': '',
-        # TODO
-        'title': '',
-        # TODO
-        'interactive_windows': (
-            'HYPER SBI 2', 'お知らせ',
-            r'個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
-            '登録銘柄', '保有証券', '注文一覧',
-            r'個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
-            'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
-            '取引ポップアップ', '通知設定',
-            r'全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)',
-            '${title}\s.*'),
+        'executable': executable,
+        'title': title,
+        'interactive_windows': '',
         'input_map': {
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
@@ -654,17 +669,26 @@ def configure(trade, can_interpolate=True, can_override=True):
         'initial_cash_balance': '0',
         'current_number_of_trades': '0'}
 
-    # TODO: trade.actions_section -> trade.actions, etc.
+    # TODO: categorized_keys, etc.
+
+    # TODO: trade.actions_section -> trade.actions_title, etc.
     process_section = config[trade.process]
     actions_section = config[trade.actions_section]
     variables_section = config['Variables']
 
-    # if trade.process == 'HYPERSBI2':
-    #     process_section['interactive_windows'] = (
-    #         'HYPER SBI 2',
-    #     )
-    #     # TODO: default or not
-    #     actions_section['toggle_osd'] = [('toggle_osd',)]
+    SECURITIES_CODE_REGEX = (
+        r'[1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?')
+    if trade.process == 'HYPERSBI2':
+        process_section['interactive_windows'] = str((
+            file_description, 'お知らせ',
+            fr'個別銘柄\s.*\(({SECURITIES_CODE_REGEX})\)', '登録銘柄',
+            '保有証券', '注文一覧',
+            fr'個別チャート\s.*\(({SECURITIES_CODE_REGEX})\)',
+            'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
+            '取引ポップアップ', '通知設定',
+            fr'全板\s.*\(({SECURITIES_CODE_REGEX})\)', r'${title}\s.*'))
+        # TODO: default or not
+        # actions_section['toggle_osd'] = [('toggle_osd',)]
 
     if can_override:
         configuration.read_config(config, trade.config_path)
@@ -676,37 +700,16 @@ def configure(trade, can_interpolate=True, can_override=True):
             variables_section['initial_cash_balance'] = '0'
             variables_section['current_number_of_trades'] = '0'
 
-    # TODO
-    if trade.process == 'HYPERSBI2':
-        if not process_section['executable']:
-            location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
-                                        trade.brokerage, trade.process,
-                                        'location.dat')
-            try:
-                with open(location_dat) as f:
-                    process_section['executable'] = os.path.normpath(
-                        os.path.join(f.read(), trade.process + '.exe'))
-            except OSError as e:
-                print(e)
-                process_section['executable'] = os.path.join(
-                    r'$${Env:ProgramFiles(x86)}\SBI SECURITIES',
-                    trade.process, trade.process + '.exe')
-
-    # TODO
-    if trade.process == 'HYPERSBI2':
-        theme_config = configparser.ConfigParser()
-        theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
-                                 trade.brokerage, trade.process, 'theme.ini')
-        theme_config.read(theme_ini)
-        if (theme_config.has_option('General', 'theme')
-            and theme_config['General']['theme'] == 'Light'):
-            process_section['is_dark_theme'] = 'False'
-
-    if process_section['executable'] and not process_section['title']:
-        file_description = file_utilities.get_file_description(
-            process_section['executable'])
-        if file_description:
-            process_section['title'] = file_description + ' Assistant'
+        # TODO: move to variables_section
+        if trade.process == 'HYPERSBI2':
+            theme_config = configparser.ConfigParser()
+            theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
+                                     trade.brokerage, trade.process,
+                                     'theme.ini')
+            theme_config.read(theme_ini)
+            if (theme_config.has_option('General', 'theme')
+                and theme_config['General']['theme'] == 'Light'):
+                process_section['is_dark_theme'] = 'False'
 
     return config
 
