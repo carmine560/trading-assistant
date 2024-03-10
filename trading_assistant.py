@@ -28,6 +28,7 @@ import text_recognition
 class Trade:
     def __init__(self, brokerage, process):
         self.brokerage = brokerage
+        # TODO: path
         self.process = process
         self.config_directory = os.path.join(
             os.path.expandvars('%LOCALAPPDATA%'),
@@ -594,13 +595,18 @@ def configure(trade, can_interpolate=True, can_override=True):
             if not os.path.isfile(executable):
                 print(executable, 'file does not exist.')
                 sys.exit(1)
-    # TODO
-    # else:
-    #     executable =
+    else:
+        # TODO
+        executable = trade.process
 
     file_description = file_utilities.get_file_description(executable)
     if file_description:
+        if trade.process == 'HYPERSBI2':
+            file_description = file_utilities.title_except_acronyms(
+                file_description, ['SBI'])
         title = file_description + ' Assistant'
+    else:
+        title = re.sub(r'[\W_]+', ' ', trade.script_base).strip().title()
 
     config['General'] = {
         'screenshot_directory':
