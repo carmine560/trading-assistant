@@ -559,7 +559,7 @@ watch_active_stocks = [
     ('back_to',)]
 ```
 
-#### Center Open for 1-minute Chart ####
+#### Center Open for 1-Minute Chart ####
 
 The following `center_open_1_minute_chart` action centers the open in the
 1-minute chart of the ‘Chart’ window.
