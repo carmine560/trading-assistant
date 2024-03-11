@@ -455,17 +455,19 @@ login = [
     ('click_widget', 'ok.png', '793, 450, 334, 120'),
     ('hide_window', '登録銘柄'),     # Hide the 'Watchlists' window.
     # Show the 'Chart' window.
-    ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the 'Summary' window.
-    ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
-    # Check the 'Skip Confirmation Screen' checkbox if the current system time
-    # is before 10:00:00.
-    ('is_now_before', '10:00:00', [('click', '273, 837, 12, 12')]),
-    # Open the 'News' window if the current system time is before the open.
-    ('is_now_before', '09:00:00', [('press_hotkeys', 'ctrl, n')]),
+    ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Return the cursor to the previous position.
     ('back_to',)
+    # Check the 'Skip Confirmation Screen' checkbox if the current system time
+    # is before 10:00:00.
+    ('is_now_before', '10:00:00', [
+        ('click', '273, 837, 12, 12'),
+        ('back_to',)]),
+    # Open the 'News' window if the current system time is before the open.
+    ('is_now_before', '09:00:00', [('press_hotkeys', 'ctrl, n')])]
 ```
 
 #### Replace Watchlist with Hyper SBI 2 Ranking ####
@@ -568,7 +570,7 @@ The following `center_open_1_minute_chart` action centers the open in the
 [HYPERSBI2 Actions]
 center_open_1_minute_chart = [
     # Show the 'Chart' window.
-    ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('click', '1814, 76'),           # Click the 'Show Thumbnail Chart' button.
     # Move to the current viewport of the thumbnail chart.
     ('move_to', '1621, 1018'),
@@ -589,14 +591,14 @@ order, it prepares a sell order for repayment.
 open_close_long_position = [
     # Open Long Position
     # Show the 'Chart' window.
-    ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Show the 'Summary' window.
-    ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('click', '231, 729'),           # Select the 'New Order' tab.
     ('click', '564, 800'),           # Focus on the 'Share Size' text box.
     ('press_hotkeys', 'ctrl, a'),    # Select the existing value.
     # Get the symbol from the 'Summary' window.
-    ('get_symbol', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('get_symbol', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Recognize the cash balance on the 'Summary' window.
     ('get_cash_balance',),
     # Check if the loss has reached the daily loss limit.  If it has, speak the
@@ -627,7 +629,6 @@ open_close_long_position = [
     ('count_trades',),               # Count the number of trades for the day.
     # Speak the number above and notify you of the readiness of the sell order.
     ('speak_config', 'Variables', 'number_of_trades'),
-    # Return the cursor to the previous position.
     ('back_to',)]
 ```
 
@@ -753,11 +754,11 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 | Regular Expression for Window Title                                          | Window          |
 |------------------------------------------------------------------------------|-----------------|
 | `お知らせ`                                                                   | Announcements   |
-| `個別銘柄\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     | Summary         |
+| `個別銘柄\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     | Summary         |
 | `登録銘柄`                                                                   | Watchlists      |
 | `保有証券`                                                                   | Holdings        |
 | `注文一覧`                                                                   | Order Status    |
-| `個別チャート\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` | Chart           |
+| `個別チャート\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` | Chart           |
 | `マーケット`                                                                 | Markets         |
 | `ランキング`                                                                 | Rankings        |
 | `銘柄一覧`                                                                   | Stock Lists     |
@@ -765,7 +766,7 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 | `ニュース`                                                                   | News            |
 | `取引ポップアップ`                                                           | Trading         |
 | `通知設定`                                                                   | Notifications   |
-| `全板\s.*\((\d[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         | Full Order Book |
+| `全板\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         | Full Order Book |
 
 ## License ##
 
