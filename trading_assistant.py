@@ -28,8 +28,14 @@ import text_recognition
 class Trade:
     def __init__(self, brokerage, process):
         self.brokerage = brokerage
-        # TODO: path
-        self.process = process
+        if os.path.exists(process):
+            self.executable = os.path.abspath(process)
+            self.process = os.path.splitext(
+                os.path.basename(self.executable))[0]
+        else:
+            self.executable = None
+            self.process = process
+
         self.config_directory = os.path.join(
             os.path.expandvars('%LOCALAPPDATA%'),
             os.path.basename(os.path.dirname(__file__)))
@@ -337,7 +343,7 @@ def main():
     group = parser.add_mutually_exclusive_group()
     parser.add_argument(
         '-P', default=('SBI Securities', 'HYPERSBI2'),
-        metavar=('BROKERAGE', 'PROCESS'), nargs=2,
+        metavar=('BROKERAGE', 'PROCESS|PATH_TO_EXECUTABLE'), nargs=2,
         help='set the brokerage and the process [defaults: %(default)s]')
     parser.add_argument(
         '-r', action='store_true',
@@ -383,7 +389,7 @@ def main():
         '-MDN', action='store_true',
         help='configure the maximum daily number of trades and exit')
     group.add_argument(
-        '-D', metavar='SCRIPT_BASE | ACTION', nargs=1,
+        '-D', metavar='SCRIPT_BASE|ACTION', nargs=1,
         help=('delete the startup script or an action, '
               'delete the shortcut to it, and exit'))
     group.add_argument(
@@ -582,32 +588,30 @@ def configure(trade, can_interpolate=True, can_override=True):
     else:
         config = configparser.ConfigParser()
 
-    if trade.process == 'HYPERSBI2':
+    if not trade.executable and trade.process == 'HYPERSBI2':
         location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
                                     trade.brokerage, trade.process,
                                     'location.dat')
         try:
             with open(location_dat) as f:
-                executable = os.path.normpath(
+                trade.executable = os.path.normpath(
                     os.path.join(f.read(), trade.process + '.exe'))
         except OSError as e:
             print(e)
-            executable = os.path.join(
+            trade.executable = os.path.join(
                 os.path.expandvars('${ProgramFiles(x86)}'), trade.brokerage,
                 trade.process, trade.process + '.exe')
-            if not os.path.isfile(executable):
-                print(executable, 'file does not exist.')
+            if not os.path.isfile(trade.executable):
+                print(trade.executable, 'file does not exist.')
                 sys.exit(1)
-    else:
-        # TODO: path
-        executable = trade.process
 
-    file_description = file_utilities.get_file_description(executable)
+    file_description = file_utilities.get_file_description(trade.executable)
     if file_description:
         if trade.process == 'HYPERSBI2':
             file_description = file_utilities.title_except_acronyms(
                 file_description, ['SBI'])
-            title = file_description + ' Assistant'
+
+        title = file_description + ' Assistant'
     else:
         title = re.sub(r'[\W_]+', ' ', trade.script_base).strip().title()
 
@@ -646,9 +650,9 @@ def configure(trade, can_interpolate=True, can_override=True):
     config[trade.process] = {
         # TODO: move to config[trade.customer_margin_ratios_title]
         'customer_margin_ratio': '0.31',
-        'executable': executable,
+        'executable': trade.executable,
         'title': title,
-        'interactive_windows': '',
+        'interactive_windows': (),
         'input_map': {
             'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
             'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
@@ -682,7 +686,6 @@ def configure(trade, can_interpolate=True, can_override=True):
     # TODO: categorized_keys, etc.
 
     process_section = config[trade.process]
-    actions_section = config[trade.actions_title]
     variables_section = config['Variables']
 
     SECURITIES_CODE_REGEX = (
@@ -702,7 +705,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             'f5': 'show_hide_watchlists', 'f6': '', 'f7': '', 'f8': '',
             'f9': '', 'f10': 'speak_cpu_utilization', 'f11': '',
             'f12': 'toggle_osd'})
-        # Directly assigning a new dictionary to 'config[trade.actions_title]'
+        # Directly assigning a new dictionary to 'config[trade.SECTION_TITLE]'
         # updates the original dictionary.
         config[trade.startup_script_title] = {
             'pre_start_options': '-rd',

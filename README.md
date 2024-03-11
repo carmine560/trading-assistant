@@ -374,8 +374,8 @@ python trading_assistant.py -a action
 
 ### Options ###
 
-  * `-P BROKERAGE PROCESS`: set the brokerage and the process [defaults: `SBI
-    Securities` and `HYPERSBI2`]
+  * `-P BROKERAGE PROCESS|PATH_TO_EXECUTABLE`: set the brokerage and the
+    process [defaults: `SBI Securities` and `HYPERSBI2`]
   * `-r`: save the customer margin ratios
   * `-d`: save the previous market data
   * `-s`: start the scheduler
@@ -390,8 +390,8 @@ python trading_assistant.py -a action
   * `-PL`: configure the price limit region and exit
   * `-DLL`: configure the daily loss limit ratio and exit
   * `-MDN`: configure the maximum daily number of trades and exit.
-  * `-D SCRIPT_BASE | ACTION`: delete the startup script or an action, delete
-    the shortcut to it, and exit
+  * `-D SCRIPT_BASE|ACTION`: delete the startup script or an action, delete the
+    shortcut to it, and exit
   * `-C`: check configuration changes and exit
 
 ## Examples ##
