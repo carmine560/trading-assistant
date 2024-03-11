@@ -1060,7 +1060,7 @@ def execute_action(trade, config, gui_state, action):
             import psutil
 
             trade.speech_manager.set_speech_text(
-                str(round(psutil.cpu_percent(interval=float(argument)))) + '%')
+                f'{round(psutil.cpu_percent(interval=float(argument)))}%.')
         elif command == 'speak_seconds_until_time':
             import math
 
@@ -1068,7 +1068,7 @@ def execute_action(trade, config, gui_state, action):
                                        '%Y-%m-%d %H:%M:%S')
             event_time = time.mktime(event_time)
             trade.speech_manager.set_speech_text(
-                str(math.ceil(event_time - time.time())) + ' seconds')
+                f'{math.ceil(event_time - time.time())} seconds.')
         elif command == 'speak_show_text':
             trade.speech_manager.set_speech_text(argument)
             OSDMessage(trade, config, argument).start()
