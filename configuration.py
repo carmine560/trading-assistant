@@ -219,7 +219,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
                     tuple_info=tuple_info)
             elif re.sub(r'\s+', '', config[section][option])[:1] == '{':
                 config[section][option] = modify_dictionary(
-                    config[section][option], level=1,
+                    config[section][option], level=1, prompts=prompts,
                     dictionary_info=dictionary_info)
             else:
                 config[section][option] = modify_data(
@@ -244,7 +244,6 @@ def modify_section(config, section, config_path, backup_function=None,
                    backup_parameters=None, is_inserting=False,
                    value_format='string', prompts={}, categorized_keys={},
                    tuple_info={}):
-    # TODO: contextual prompt
     if backup_function:
         backup_function(config_path, **backup_parameters)
 
@@ -261,6 +260,7 @@ def modify_section(config, section, config_path, backup_function=None,
             is_inserted = False
             while is_inserting:
                 print(ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
+                # TODO: unify
                 answer = tidy_answer(['insert'])
                 if answer == 'insert':
                     option = modify_data('option')

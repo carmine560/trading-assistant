@@ -322,6 +322,7 @@ format:
 python trading_assistant.py -S
 ```
 
+<!-- TODO: change to dictionary -->
 ``` ini
 [HYPERSBI2 Schedules]
 SCHEDULE = ('%H:%M:%S', 'ACTION')
@@ -690,6 +691,7 @@ toggle_osd = [
 The following actions and schedules start and stop manual recording of a
 screencast using Nvidia ShadowPlay.
 
+<!-- TODO: change to dictionary -->
 ``` ini
 [HYPERSBI2 Actions]
 start_manual_recording = [
@@ -718,6 +720,7 @@ stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
 
 The following action and schedule calculate CPU utilization and speak it.
 
+<!-- TODO: change to dictionary -->
 ``` ini
 [HYPERSBI2 Actions]
 speak_cpu_utilization = [
@@ -733,6 +736,7 @@ speak_cpu_utilization = ('08:50:10', 'speak_cpu_utilization')
 
 The following action and schedules speak the number of seconds until the open.
 
+<!-- TODO: change to dictionary -->
 ``` ini
 [HYPERSBI2 Actions]
 speak_seconds_until_open = [

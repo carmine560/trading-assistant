@@ -78,7 +78,7 @@ class Trade:
                               'count_trades', 'get_cash_balance',
                               'take_screenshot', 'toggle_osd',
                               'write_share_size'),
-            'positioning_keys': ('click', 'move_to')}
+            'positioning_keys': ('click', 'drag_to', 'move_to')}
 
         self.schedules_title = f'{self.process} Schedules'
 
@@ -462,7 +462,7 @@ def main():
             return
         elif args.L and configuration.modify_option(
                 config, trade.process, 'input_map', trade.config_path,
-                **backup_file,
+                **backup_file, prompts={'value': 'action'},
                 dictionary_info={'possible_values': configuration.list_section(
                     config, trade.actions_title)}):
             return
@@ -473,6 +473,7 @@ def main():
                 tuple_info={'element_index': 1,
                             'possible_values': configuration.list_section(
                                 config, trade.actions_title)}):
+            # TODO: change to dictionary
             return
         elif args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
@@ -676,14 +677,12 @@ def configure(trade, can_interpolate=True, can_override=True):
         'post_start_options': '',
         'running_options': ''}
     config[trade.actions_title] = {}
+    # TODO: change to dictionary
     config[trade.schedules_title] = {}
     config['Variables'] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
         'initial_cash_balance': '0',
         'current_number_of_trades': '0'}
-
-    # TODO: contextual prompt
-    # TODO: categorized_keys, etc.
 
     process_section = config[trade.process]
     variables_section = config['Variables']
@@ -922,14 +921,17 @@ def start_scheduler(trade, config, gui_state, process):
 
     section = config[trade.schedules_title]
     for option in section:
-        schedule_time, action = ast.literal_eval(section[option])
+        # TODO: change to dictionary
+        # schedule = {'trigger': 'actions'}
+        # (trigger, action), = schedule.items()
+        trigger, action = ast.literal_eval(section[option])
         action = ast.literal_eval(config[trade.actions_title][action])
-        schedule_time = time.strptime(time.strftime('%Y-%m-%d ')
-                                      + schedule_time, '%Y-%m-%d %H:%M:%S')
-        schedule_time = time.mktime(schedule_time)
-        if time.time() < schedule_time:
+        trigger = time.strptime(time.strftime('%Y-%m-%d ') + trigger,
+                                '%Y-%m-%d %H:%M:%S')
+        trigger = time.mktime(trigger)
+        if time.time() < trigger:
             schedule = scheduler.enterabs(
-                schedule_time, 1, execute_action,
+                trigger, 1, execute_action,
                 argument=(trade, config, gui_state, action))
             schedules.append(schedule)
 
