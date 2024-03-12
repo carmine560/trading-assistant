@@ -468,12 +468,12 @@ def main():
             return
         elif args.S and configuration.modify_section(
                 config, trade.schedules_title, trade.config_path,
-                **backup_file, is_inserting=True, value_format='tuple',
-                prompts={'end_of_list': 'end of schedules'},
+                **backup_file, is_inserting=True, value_type='tuple',
+                prompts={'values': ('%H:%M:%S', 'action'),
+                         'end_of_list': 'end of schedules'},
                 tuple_info={'element_index': 1,
                             'possible_values': configuration.list_section(
                                 config, trade.actions_title)}):
-            # TODO: change to dictionary
             return
         elif args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
@@ -677,7 +677,6 @@ def configure(trade, can_interpolate=True, can_override=True):
         'post_start_options': '',
         'running_options': ''}
     config[trade.actions_title] = {}
-    # TODO: change to dictionary
     config[trade.schedules_title] = {}
     config['Variables'] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
@@ -921,9 +920,6 @@ def start_scheduler(trade, config, gui_state, process):
 
     section = config[trade.schedules_title]
     for option in section:
-        # TODO: change to dictionary
-        # schedule = {'trigger': 'actions'}
-        # (trigger, action), = schedule.items()
         trigger, action = ast.literal_eval(section[option])
         action = ast.literal_eval(config[trade.actions_title][action])
         trigger = time.strptime(time.strftime('%Y-%m-%d ') + trigger,

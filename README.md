@@ -322,7 +322,6 @@ format:
 python trading_assistant.py -S
 ```
 
-<!-- TODO: change to dictionary -->
 ``` ini
 [HYPERSBI2 Schedules]
 SCHEDULE = ('%H:%M:%S', 'ACTION')
@@ -462,9 +461,11 @@ login = [
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
     # is before 10:00:00.
-    ('is_now_before', '10:00:00', [('click', '273, 837, 12, 12')]),
+    ('is_now_before', '10:00:00', [
+        ('click', '273, 837, 12, 12')]),
     # Open the 'News' window if the current system time is before the open.
-    ('is_now_before', '09:00:00', [('press_hotkeys', 'ctrl, n')]),
+    ('is_now_before', '09:00:00', [
+        ('press_hotkeys', 'ctrl, n')]),
     # Return the cursor to the previous position.
     ('back_to',)
 ```
@@ -589,8 +590,6 @@ order, it prepares a sell order for repayment.
 [HYPERSBI2 Actions]
 open_close_long_position = [
     # Open Long Position
-    # Show the 'Chart' window.
-    ('show_window', '個別チャート\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('click', '231, 729'),           # Select the 'New Order' tab.
@@ -691,21 +690,23 @@ toggle_osd = [
 The following actions and schedules start and stop manual recording of a
 screencast using Nvidia ShadowPlay.
 
-<!-- TODO: change to dictionary -->
 ``` ini
 [HYPERSBI2 Actions]
 start_manual_recording = [
     # Start a new recording if one is not already in progress.
     ('is_recording', 'False', [
         ('press_hotkeys', 'alt, f9'),
-        ('sleep', '2'),              # Sleep for 2 seconds.
+        ('sleep', '2'),
         # Check if recording is currently in progress.
-        ('is_recording', 'False', [('speak_text', 'Not recording.')])])]
+        ('is_recording', 'False', [
+            ('speak_text', 'Not recording.')])])]
 # Write a chapter section for FFmpeg metadata.
-create_pre_trading_chapter = [('write_chapter', 'Pre-Trading', 'Pre-Market'),]
+create_pre_trading_chapter = [
+    ('write_chapter', 'Pre-Trading', 'Pre-Market')]
 stop_manual_recording = [
     # Stop a recording if one is currently in progress.
-    ('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]
+    ('is_recording', 'True', [
+        ('press_hotkeys', 'alt, f9')])]
 
 [HYPERSBI2 Schedules]
 # Trigger the 'start_manual_recording' action at 08:50:00.
@@ -720,7 +721,6 @@ stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
 
 The following action and schedule calculate CPU utilization and speak it.
 
-<!-- TODO: change to dictionary -->
 ``` ini
 [HYPERSBI2 Actions]
 speak_cpu_utilization = [
@@ -736,7 +736,6 @@ speak_cpu_utilization = ('08:50:10', 'speak_cpu_utilization')
 
 The following action and schedules speak the number of seconds until the open.
 
-<!-- TODO: change to dictionary -->
 ``` ini
 [HYPERSBI2 Actions]
 speak_seconds_until_open = [

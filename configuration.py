@@ -215,7 +215,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
                                   categorized_keys=categorized_keys)
             elif re.sub(r'\s+', '', config[section][option])[:1] == '(':
                 config[section][option] = modify_tuple(
-                    config[section][option], False, level=1,
+                    config[section][option], False, level=1, prompts=prompts,
                     tuple_info=tuple_info)
             elif re.sub(r'\s+', '', config[section][option])[:1] == '{':
                 config[section][option] = modify_dictionary(
@@ -242,7 +242,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
 
 def modify_section(config, section, config_path, backup_function=None,
                    backup_parameters=None, is_inserting=False,
-                   value_format='string', prompts={}, categorized_keys={},
+                   value_type='string', prompts={}, categorized_keys={},
                    tuple_info={}):
     if backup_function:
         backup_function(config_path, **backup_parameters)
@@ -250,6 +250,7 @@ def modify_section(config, section, config_path, backup_function=None,
     if config.has_section(section):
         for option in config[section]:
             result = modify_option(config, section, option, config_path,
+                                   prompts=prompts,
                                    categorized_keys=categorized_keys,
                                    tuple_info=tuple_info)
             if result == 'quit' or result == False:
@@ -260,19 +261,18 @@ def modify_section(config, section, config_path, backup_function=None,
             is_inserted = False
             while is_inserting:
                 print(ANSI_WARNING + end_of_list_prompt + ANSI_RESET)
-                # TODO: unify
                 answer = tidy_answer(['insert'])
                 if answer == 'insert':
                     option = modify_data('option')
-                    if value_format == 'string':
+                    if value_type == 'string':
                         config[section][option] = modify_data('value')
                         if config[section][option]:
                             is_inserted = True
-                    elif value_format == 'tuple':
+                    elif value_type == 'tuple':
                         config[section][option] = '()'
                         config[section][option] = modify_tuple(
                             config[section][option], True, level=1,
-                            tuple_info=tuple_info)
+                            prompts=prompts, tuple_info=tuple_info)
                         if config[section][option] != '()':
                             is_inserted = True
                 else:
@@ -288,6 +288,7 @@ def modify_section(config, section, config_path, backup_function=None,
 def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
     data = list(ast.literal_eval(data))
     value_prompt = prompts.get('value', 'value')
+    values_prompt = prompts.get('values', None)
     end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
     element_index = tuple_info.get('element_index')
     possible_values = tuple_info.get('possible_values')
@@ -304,6 +305,8 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
             answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
                                  level=level)
 
+        if values_prompt and index < len(values_prompt):
+            value_prompt = values_prompt[index]
         if answer == 'insert':
             if ((element_index == -1 or index == element_index)
                 and possible_values):
@@ -328,6 +331,8 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
             index = len(data)
 
         index += 1
+        if values_prompt and index == len(values_prompt):
+            break
 
     return str(tuple(data))
 
