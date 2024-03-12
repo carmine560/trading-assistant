@@ -374,8 +374,8 @@ python trading_assistant.py -a action
 
 ### Options ###
 
-  * `-P BROKERAGE PROCESS`: set the brokerage and the process [defaults: `SBI
-    Securities` and `HYPERSBI2`]
+  * `-P BROKERAGE PROCESS|PATH_TO_EXECUTABLE`: set the brokerage and the
+    process [defaults: `SBI Securities` and `HYPERSBI2`]
   * `-r`: save the customer margin ratios
   * `-d`: save the previous market data
   * `-s`: start the scheduler
@@ -390,8 +390,8 @@ python trading_assistant.py -a action
   * `-PL`: configure the price limit region and exit
   * `-DLL`: configure the daily loss limit ratio and exit
   * `-MDN`: configure the maximum daily number of trades and exit.
-  * `-D SCRIPT_BASE | ACTION`: delete the startup script or an action, delete
-    the shortcut to it, and exit
+  * `-D SCRIPT_BASE|ACTION`: delete the startup script or an action, delete the
+    shortcut to it, and exit
   * `-C`: check configuration changes and exit
 
 ## Examples ##
@@ -458,7 +458,14 @@ login = [
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the 'Summary' window.
-    ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
+    # Check the 'Skip Confirmation Screen' checkbox if the current system time
+    # is before 10:00:00.
+    ('is_now_before', '10:00:00', [
+        ('click', '273, 837, 12, 12')]),
+    # Open the 'News' window if the current system time is before the open.
+    ('is_now_before', '09:00:00', [
+        ('press_hotkeys', 'ctrl, n')]),
     # Return the cursor to the previous position.
     ('back_to',)
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
@@ -590,8 +597,6 @@ order, it prepares a sell order for repayment.
 [HYPERSBI2 Actions]
 open_close_long_position = [
     # Open Long Position
-    # Show the 'Chart' window.
-    ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('click', '231, 729'),           # Select the 'New Order' tab.
@@ -697,14 +702,17 @@ start_manual_recording = [
     # Start a new recording if one is not already in progress.
     ('is_recording', 'False', [
         ('press_hotkeys', 'alt, f9'),
-        ('sleep', '2'),              # Sleep for 2 seconds.
+        ('sleep', '2'),
         # Check if recording is currently in progress.
-        ('is_recording', 'False', [('speak_text', 'Not recording.')])])]
+        ('is_recording', 'False', [
+            ('speak_text', 'Not recording.')])])]
 # Write a chapter section for FFmpeg metadata.
-create_pre_trading_chapter = [('write_chapter', 'Pre-Trading', 'Pre-Market'),]
+create_pre_trading_chapter = [
+    ('write_chapter', 'Pre-Trading', 'Pre-Market')]
 stop_manual_recording = [
     # Stop a recording if one is currently in progress.
-    ('is_recording', 'True', [('press_hotkeys', 'alt, f9')])]
+    ('is_recording', 'True', [
+        ('press_hotkeys', 'alt, f9')])]
 
 [HYPERSBI2 Schedules]
 # Trigger the 'start_manual_recording' action at 08:50:00.
