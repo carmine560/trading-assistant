@@ -474,7 +474,8 @@ login = [
         ('click', '273, 837, 12, 12'),
         ('back_to',)]),
     # Open the 'News' window if the current system time is before the open.
-    ('is_now_before', '09:00:00', [('press_hotkeys', 'ctrl, n')])]
+    ('is_now_before', '09:00:00', [
+        ('press_hotkeys', 'ctrl, n')])]
 ```
 
 #### Replace Watchlist with Hyper SBI 2 Ranking ####

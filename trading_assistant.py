@@ -609,10 +609,10 @@ def configure(trade, can_interpolate=True, can_override=True):
     file_description = file_utilities.get_file_description(trade.executable)
     if file_description:
         if trade.process == 'HYPERSBI2':
-            file_description = file_utilities.title_except_acronyms(
-                file_description, ['SBI'])
-
-        title = file_description + ' Assistant'
+            title = file_utilities.title_except_acronyms(
+                file_description, ['SBI']) + ' Assistant'
+        else:
+            title = file_description + ' Assistant'
     else:
         title = re.sub(r'[\W_]+', ' ', trade.script_base).strip().title()
 
