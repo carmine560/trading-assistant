@@ -87,13 +87,12 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
 def configure_position(answer, level=0, value=''):
     import time
 
-    import pyautogui
-    import win32api
-
     from prompt_toolkit import ANSI
     from prompt_toolkit import prompt as pt_prompt
     from prompt_toolkit.completion import WordCompleter
     from prompt_toolkit.shortcuts import CompleteStyle
+    import pyautogui
+    import win32api
 
     prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
     if answer == 'modify' and value:
@@ -362,6 +361,9 @@ def modify_tuple_list(config, section, option, config_path,
 
 def modify_tuples(tuples, is_created, level=0, prompts={},
                   categorized_keys={}):
+    if not tuples:
+        tuples = []
+
     key_prompt = prompts.get('key', 'key')
     value_prompt = prompts.get('value', 'value')
     additional_value_prompt = prompts.get('additional_value',
