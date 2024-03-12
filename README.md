@@ -458,7 +458,7 @@ login = [
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the 'Summary' window.
-    ('show_window', '個別銘柄\\s.*\\((\\d[\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
+    ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
     # is before 10:00:00.
     ('is_now_before', '10:00:00', [
