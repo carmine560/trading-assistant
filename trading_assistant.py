@@ -502,9 +502,10 @@ def main():
     elif args.C:
         default_config = configure(trade, can_interpolate=False,
                                    can_override=False)
-        configuration.check_config_changes(default_config, trade.config_path,
-                                           excluded_sections=('Variables',),
-                                           **backup_file)
+        configuration.check_config_changes(
+            default_config, trade.config_path,
+            excluded_sections=('Variables',),
+            user_option_ignored_sections=(trade.actions_title,), **backup_file)
         return
     else:
         config = configure(trade)

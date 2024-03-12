@@ -15,8 +15,8 @@ if sys.platform == 'win32':
     os.system('color')
 
 def check_config_changes(default_config, config_path, excluded_sections=(),
+                         user_option_ignored_sections=(),
                          backup_function=None, backup_parameters=None):
-    # TODO: config[trade.actions_title]
     import configparser
 
     def truncate_string(string):
@@ -70,19 +70,21 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                     if not display_changes(user_config, config_path, section,
                                            option, option_status):
                         return
-            for option in user_config[section]:
-                if not default_config.has_option(section, option):
-                    default_value = '(not exist)'
-                    user_value = (truncate_string(user_config[section][option])
-                                  if user_config[section][option]
-                                  else '(empty)')
-                    option_status = (
-                        f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
-                        f'{ANSI_WARNING}{default_value}{ANSI_RESET} → '
-                        f'{user_value}')
-                    if not display_changes(user_config, config_path, section,
-                                           option, option_status):
-                        return
+            if section not in user_option_ignored_sections:
+                for option in user_config[section]:
+                    if not default_config.has_option(section, option):
+                        default_value = '(not exist)'
+                        user_value = (
+                            truncate_string(user_config[section][option])
+                            if user_config[section][option]
+                            else '(empty)')
+                        option_status = (
+                            f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
+                            f'{ANSI_WARNING}{default_value}{ANSI_RESET} → '
+                            f'{user_value}')
+                        if not display_changes(user_config, config_path,
+                                               section, option, option_status):
+                            return
 
 def configure_position(answer, level=0, value=''):
     import time
