@@ -244,9 +244,9 @@ and Price Limit Regions</a>’ section.</td></tr>
 <td>Take a screenshot with the number of trades and symbol as the
 filename.</td></tr>
 
-<tr><td><code>('toggle_osd',)</code></td>
+<tr><td><code>('toggle_indicator',)</code></td>
 
-<td>Toggle the OSD.</td></tr>
+<td>Toggle the indicator.</td></tr>
 
 <tr><td><code>('wait_for_key', 'KEY')</code></td>
 
@@ -683,11 +683,12 @@ input_map = {
     # Execute the 'center_open_1_minute_chart' action in the 'Center Open for
     # 1-minute Chart' section.
     'f11': 'center_open_1_minute_chart',
-    'f12': 'toggle_osd'}             # Execute the 'toggle_osd' action below.
+    # Execute the 'toggle_indicator' action below.
+    'f12': 'toggle_indicator'}
 
 [HYPERSBI2 Actions]
-toggle_osd = [
-    ('toggle_osd',)]                 # Toggle the OSD.
+toggle_indicator = [
+    ('toggle_indicator',)]           # Toggle the indicator.
 ```
 
 ### Schedules ###

@@ -62,8 +62,8 @@ class Trade:
         self.customer_margin_ratios_title = (
             f'{self.brokerage} Customer Margin Ratios')
 
-        self.osd_title = f'{self.process} OSD'
-        self.osd_thread = None
+        self.widgets_title = f'{self.process} Widgets'
+        self.indicator_thread = None
 
         self.startup_script_title = f'{self.process} Startup Script'
 
@@ -76,7 +76,7 @@ class Trade:
                                       'write_chapter'),
             'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
                               'count_trades', 'get_cash_balance',
-                              'take_screenshot', 'toggle_osd',
+                              'take_screenshot', 'toggle_indicator',
                               'write_share_size'),
             'positioning_keys': ('click', 'drag_to', 'move_to')}
 
@@ -139,8 +139,7 @@ class Trade:
                     self.should_continue = False
                     self.keyboard_listener_state = 0
 
-class OSDThread(threading.Thread):
-    # TODO: rename OSD
+class IndicatorThread(threading.Thread):
     def __init__(self, trade, config):
         super().__init__()
         self.trade = trade
@@ -174,7 +173,7 @@ class OSDThread(threading.Thread):
                 widget.place(x=work_left, y=work_top)
 
         process_section = self.config[self.trade.process]
-        osd_section = self.config[self.trade.osd_title]
+        widgets_section = self.config[self.trade.widgets_title]
         maximum_daily_number_of_trades = int(
             process_section['maximum_daily_number_of_trades'])
 
@@ -185,20 +184,20 @@ class OSDThread(threading.Thread):
         self.root.attributes('-transparentcolor', 'black')
         self.root.config(bg='black')
         self.root.overrideredirect(True)
-        self.root.title(process_section['title'] + ' OSD')
+        self.root.title(process_section['title'] + ' Indicator')
 
         clock_label = tk.Label(
             self.root,
-            font=('Tahoma', -int(osd_section['clock_label_font_size'])),
+            font=('Tahoma', -int(widgets_section['clock_label_font_size'])),
             bg='gray5', fg='tan1')
-        place_widget(clock_label, osd_section['clock_label_position'])
-        OSDTooltip(clock_label, 'Current system time')
+        place_widget(clock_label, widgets_section['clock_label_position'])
+        IndicatorTooltip(clock_label, 'Current system time')
 
         status_bar_frame_font_size = int(
-            osd_section['status_bar_frame_font_size'])
+            widgets_section['status_bar_frame_font_size'])
         status_bar_frame = tk.Frame(self.root, bg='gray5')
         place_widget(status_bar_frame,
-                     osd_section['status_bar_frame_position'])
+                     widgets_section['status_bar_frame_position'])
 
         current_number_of_trades_label = tk.Label(
             status_bar_frame, bg='gray5', fg='tan1',
@@ -210,7 +209,7 @@ class OSDThread(threading.Thread):
         else:
             text = 'Current number of trades'
 
-        OSDTooltip(current_number_of_trades_label, text)
+        IndicatorTooltip(current_number_of_trades_label, text)
 
         utilization_ratio_entry = tk.Entry(
             status_bar_frame, bd=0, bg='gray5', fg='tan1',
@@ -218,7 +217,7 @@ class OSDThread(threading.Thread):
             insertbackground='tan1', justify='center', selectbackground='tan1',
             selectforeground='gray5', width=5)
         utilization_ratio_entry.grid(row=0, column=1)
-        OSDTooltip(utilization_ratio_entry, 'Utilization ratio')
+        IndicatorTooltip(utilization_ratio_entry, 'Utilization ratio')
 
         utilization_ratio_entry.insert(0, process_section['utilization_ratio'])
         utilization_ratio_string = tk.StringVar()
@@ -279,7 +278,7 @@ class OSDThread(threading.Thread):
     def is_stopped(self):
         return self.stop_event.is_set()
 
-class OSDTooltip:
+class IndicatorTooltip:
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
@@ -304,7 +303,7 @@ class OSDTooltip:
         if hasattr(self, 'tooltip'):
             self.tooltip.destroy()
 
-class OSDMessage(threading.Thread):
+class MessageThread(threading.Thread):
     def __init__(self, trade, config, text):
         super().__init__()
         self.trade = trade
@@ -313,7 +312,7 @@ class OSDMessage(threading.Thread):
 
     def run(self):
         process_section = self.config[self.trade.process]
-        osd_section = self.config[self.trade.osd_title]
+        widgets_section = self.config[self.trade.widgets_title]
 
         root = tk.Tk()
         root.attributes('-alpha', 0.8)
@@ -326,7 +325,7 @@ class OSDMessage(threading.Thread):
 
         tk.Message(root, bg='gray5', fg='tan1',
                    font=('Bahnschrift',
-                         -int(osd_section['message_font_size'])),
+                         -int(widgets_section['message_font_size'])),
                    text=self.text).pack()
 
         root.update()
@@ -666,7 +665,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'image_magnification': '2',
         'binarization_threshold': '128',
         'is_dark_theme': 'True'}
-    config[trade.osd_title] = {
+    config[trade.widgets_title] = {
         'clock_label_position': 'nw',
         'clock_label_font_size': '12',
         'status_bar_frame_position': 'sw',
@@ -702,7 +701,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             'x1': '', 'x2': '', 'f1': '', 'f2': '', 'f3': '', 'f4': '',
             'f5': 'show_hide_watchlists', 'f6': '', 'f7': '', 'f8': '',
             'f9': '', 'f10': 'speak_cpu_utilization', 'f11': '',
-            'f12': 'toggle_osd'})
+            'f12': 'toggle_indicator'})
         # Directly assigning a new dictionary to 'config[trade.SECTION_TITLE]'
         # updates the original dictionary.
         config[trade.startup_script_title] = {
@@ -727,8 +726,8 @@ def configure(trade, can_interpolate=True, can_override=True):
             'stop_manual_recording': [
                 ('is_recording', 'True', [
                     ('press_hotkeys', 'alt, f9')])],
-            'toggle_osd': [
-                ('toggle_osd',)]}
+            'toggle_indicator': [
+                ('toggle_indicator',)]}
 
     if can_override:
         configuration.read_config(config, trade.config_path)
@@ -1113,7 +1112,7 @@ def execute_action(trade, config, gui_state, action):
                 f'{math.ceil(event_time - time.time())} seconds.')
         elif command == 'speak_show_text':
             trade.speech_manager.set_speech_text(argument)
-            OSDMessage(trade, config, argument).start()
+            MessageThread(trade, config, argument).start()
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
         elif command == 'take_screenshot':
@@ -1126,13 +1125,13 @@ def execute_action(trade, config, gui_state, action):
             base += '-screenshot.png'
             pyautogui.screenshot(
                 os.path.join(config['General']['screenshot_directory'], base))
-        elif command == 'toggle_osd':
-            if trade.osd_thread:
-                trade.osd_thread.stop()
-                trade.osd_thread = None
+        elif command == 'toggle_indicator':
+            if trade.indicator_thread:
+                trade.indicator_thread.stop()
+                trade.indicator_thread = None
             else:
-                trade.osd_thread = OSDThread(trade, config)
-                trade.osd_thread.start()
+                trade.indicator_thread = IndicatorThread(trade, config)
+                trade.indicator_thread.start()
         elif command == 'wait_for_key':
             trade.keyboard_listener_state = 1
             if len(argument) == 1:
