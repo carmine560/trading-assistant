@@ -25,6 +25,10 @@ import process_utilities
 import speech_synthesis
 import text_recognition
 
+SANS_INITIAL_SECURITIES_CODE_REGEX = (
+    r'[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?')
+SECURITIES_CODE_REGEX = '[1-9]' + SANS_INITIAL_SECURITIES_CODE_REGEX
+
 class Trade:
     def __init__(self, brokerage, process):
         self.brokerage = brokerage
@@ -468,11 +472,12 @@ def main():
         elif args.S and configuration.modify_section(
                 config, trade.schedules_title, trade.config_path,
                 **backup_file, is_inserting=True, value_type='tuple',
-                prompts={'values': ('%H:%M:%S', 'action'),
+                prompts={'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
-                tuple_info={'element_index': 1,
-                            'possible_values': configuration.list_section(
-                                config, trade.actions_title)}):
+                tuple_info=(('${Market Data:opening_time}',
+                             '${Market Data:closing_time}'),
+                            configuration.list_section(config,
+                                                       trade.actions_title))):
             return
         elif args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
@@ -686,8 +691,6 @@ def configure(trade, can_interpolate=True, can_override=True):
     process_section = config[trade.process]
     variables_section = config['Variables']
 
-    SECURITIES_CODE_REGEX = (
-        r'[1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?')
     if trade.process == 'HYPERSBI2':
         process_section['interactive_windows'] = str((
             file_description, 'お知らせ',
@@ -842,9 +845,8 @@ def save_market_data(trade, config, clipboard=False):
             df.sort_values(by=symbol_header, inplace=True)
 
         for i in range(1, 10):
-            subset = df.loc[df[symbol_header].astype(str).str.match(
-                str(i)
-                + r'[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?$')]
+            subset = df.loc[df[symbol_header].astype(str).str.fullmatch(
+                f'{i}{SANS_INITIAL_SECURITIES_CODE_REGEX}')]
             subset.to_csv(trade.closing_prices + str(i) + '.csv', header=False,
                           index=False)
 

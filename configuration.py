@@ -291,8 +291,6 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
     value_prompt = prompts.get('value', 'value')
     values_prompt = prompts.get('values', None)
     end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
-    element_index = tuple_info.get('element_index')
-    possible_values = tuple_info.get('possible_values')
 
     index = 0
     while index <= len(data):
@@ -309,19 +307,17 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
         if values_prompt and index < len(values_prompt):
             value_prompt = values_prompt[index]
         if answer == 'insert':
-            if ((element_index == -1 or index == element_index)
-                and possible_values):
+            if index < len(tuple_info) and tuple_info[index]:
                 value = modify_data(value_prompt, level=level,
-                                    all_data=possible_values)
+                                    all_data=tuple_info[index])
             else:
                 value = modify_data(value_prompt, level=level)
             if value:
                 data.insert(index, value)
         elif answer == 'modify':
-            if ((element_index == -1 or index == element_index)
-                and possible_values):
+            if index < len(tuple_info) and tuple_info[index]:
                 data[index] = modify_data(value_prompt, level=level,
-                                          all_data=possible_values)
+                                          all_data=tuple_info[index])
             else:
                 data[index] = modify_data(value_prompt, level=level,
                                           data=data[index])
