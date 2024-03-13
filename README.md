@@ -279,6 +279,10 @@ that precedes the current chapter.</td></tr>
 
 <th>Description</th></tr>
 
+<tr><td><code>('is_now_after', '%H:%M:%S', ACTION)</code></td>
+
+<td>Execute the action if the current system time is after the time.</td></tr>
+
 <tr><td><code>('is_now_before', '%H:%M:%S', ACTION)</code></td>
 
 <td>Execute the action if the current system time is before the time.</td></tr>
@@ -458,7 +462,7 @@ login = [
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the 'Summary' window.
-    ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)')],
+    ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
     # is before 10:00:00.
     ('is_now_before', '10:00:00', [
@@ -475,7 +479,18 @@ login = [
         ('back_to',)]),
     # Open the 'News' window if the current system time is before the open.
     ('is_now_before', '09:00:00', [
-        ('press_hotkeys', 'ctrl, n')])]
+        ('press_hotkeys', 'ctrl, n')]),
+    # Start a new recording if one is not already in progress at
+    # 08:50:00-10:00:00.  This is a fallback if the
+    # 'start_new_manual_recording' schedule in the 'Start and Stop Manual
+    # Recording' section does not start recording.
+    ('is_now_after', '08:50:00', [
+        ('is_now_before', '10:00:00', [
+            ('is_recording', 'False', [
+                ('press_hotkeys', 'alt, f9'),
+                ('sleep', '2'),
+                ('is_recording', 'False', [
+                    ('speak_text', 'Not recording.')])])])])]
 ```
 
 #### Replace Watchlist with Hyper SBI 2 Ranking ####
@@ -622,6 +637,7 @@ open_close_long_position = [
     # Return the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
+    ('speak_text', 'Placed.'),       # Speak the order placement.
     # Wait for the order execution.
     ('wait_for_price', '224, 956, 470, 20, 0'),
 
