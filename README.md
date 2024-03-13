@@ -468,7 +468,7 @@ login = [
     ('is_now_before', '10:00:00', [
         ('click', '273, 837, 12, 12')]),
     # Open the 'News' window if the current system time is before the open.
-    ('is_now_before', '09:00:00', [
+    ('is_now_before', '${Market Data:opening_time}', [
         ('press_hotkeys', 'ctrl, n')]),
     # Return the cursor to the previous position.
     ('back_to',)
@@ -478,7 +478,7 @@ login = [
         ('click', '273, 837, 12, 12'),
         ('back_to',)]),
     # Open the 'News' window if the current system time is before the open.
-    ('is_now_before', '09:00:00', [
+    ('is_now_before', '${Market Data:opening_time}', [
         ('press_hotkeys', 'ctrl, n')]),
     # Start a new recording if one is not already in progress at
     # 08:50:00-10:00:00.  This is a fallback if the
@@ -735,8 +735,9 @@ stop_manual_recording = [
 [HYPERSBI2 Schedules]
 # Trigger the 'start_manual_recording' action at 08:50:00.
 start_new_manual_recording = ('08:50:00', 'start_manual_recording')
-# Trigger the 'create_pre_trading_chapter' action at 09:00:00.
-start_pre_trading_chapter = ('09:00:00', 'create_pre_trading_chapter')
+# Trigger the 'create_pre_trading_chapter' action at the open.
+start_pre_trading_chapter = ('${Market Data:opening_time}',
+                             'create_pre_trading_chapter')
 # Trigger the 'stop_manual_recording' action at 10:00:00.
 stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
 ```
