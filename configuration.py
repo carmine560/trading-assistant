@@ -146,7 +146,7 @@ def list_section(config, section):
         print(section, 'section does not exist.')
         return False
 
-def modify_data(prompt, level=0, data='', all_data=[]):
+def modify_data(prompt, level=0, data='', all_data=None):
     from prompt_toolkit import prompt as pt_prompt
     from prompt_toolkit.completion import WordCompleter
     from prompt_toolkit.shortcuts import CompleteStyle
@@ -169,7 +169,7 @@ def modify_data(prompt, level=0, data='', all_data=[]):
         data = input(prompt_prefix + ': ').strip()
     return data
 
-def modify_dictionary(data, level=0, prompts={}, dictionary_info={}):
+def modify_dictionary(data, level=0, prompts=None, dictionary_info=None):
     data = ast.literal_eval(data)
     value_prompt = prompts.get('value', 'value')
     possible_values = dictionary_info.get('possible_values')
@@ -193,12 +193,18 @@ def modify_dictionary(data, level=0, prompts={}, dictionary_info={}):
     return str(data)
 
 def modify_option(config, section, option, config_path, backup_function=None,
-                  backup_parameters=None, prompts={}, categorized_keys={},
-                  tuple_info={}, dictionary_info={}):
+                  backup_parameters=None, prompts=None, categorized_keys=None,
+                  tuple_info=(), dictionary_info=None):
     import re
 
     if backup_function:
         backup_function(config_path, **backup_parameters)
+    if prompts is None:
+        prompts = {}
+    if categorized_keys is None:
+        categorized_keys = {}
+    if dictionary_info is None:
+        dictionary_info = {}
 
     if config.has_option(section, option):
         print(f'{ANSI_IDENTIFIER}{option}{ANSI_RESET} = '
@@ -243,10 +249,14 @@ def modify_option(config, section, option, config_path, backup_function=None,
 
 def modify_section(config, section, config_path, backup_function=None,
                    backup_parameters=None, is_inserting=False,
-                   value_type='string', prompts={}, categorized_keys={},
-                   tuple_info={}):
+                   value_type='string', prompts=None, categorized_keys=None,
+                   tuple_info=()):
     if backup_function:
         backup_function(config_path, **backup_parameters)
+    if prompts is None:
+        prompts = {}
+    if categorized_keys is None:
+        categorized_keys = {}
 
     if config.has_section(section):
         for option in config[section]:
@@ -286,7 +296,7 @@ def modify_section(config, section, config_path, backup_function=None,
         print(section, 'section does not exist.')
         return False
 
-def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
+def modify_tuple(data, is_created, level=0, prompts=None, tuple_info=()):
     data = list(ast.literal_eval(data))
     value_prompt = prompts.get('value', 'value')
     values_prompt = prompts.get('values', None)
@@ -334,10 +344,14 @@ def modify_tuple(data, is_created, level=0, prompts={}, tuple_info={}):
     return str(tuple(data))
 
 def modify_tuple_list(config, section, option, config_path,
-                      backup_function=None, backup_parameters=None, prompts={},
-                      categorized_keys={}):
+                      backup_function=None, backup_parameters=None,
+                      prompts=None, categorized_keys=None):
     if backup_function:
         backup_function(config_path, **backup_parameters)
+    if prompts is None:
+        prompts = {}
+    if categorized_keys is None:
+        categorized_keys = {}
 
     is_created = False
     if not config.has_section(section):
@@ -357,8 +371,8 @@ def modify_tuple_list(config, section, option, config_path,
         delete_option(config, section, option, config_path)
         return False
 
-def modify_tuples(tuples, is_created, level=0, prompts={},
-                  categorized_keys={}):
+def modify_tuples(tuples, is_created, level=0, prompts=None,
+                  categorized_keys=None):
     if not tuples:
         tuples = []
 

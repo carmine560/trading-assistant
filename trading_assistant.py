@@ -475,8 +475,10 @@ def main():
                 **backup_file, is_inserting=True, value_type='tuple',
                 prompts={'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
-                tuple_info=(('${Market Data:opening_time}',
-                             '${Market Data:closing_time}'),
+                # TODO: ${Market Data:
+                # tuple_info=(('${Market Data:opening_time}',
+                #              '${Market Data:closing_time}'),
+                tuple_info=((),
                             configuration.list_section(config,
                                                        trade.actions_title))):
             return
