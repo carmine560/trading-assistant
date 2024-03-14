@@ -57,7 +57,7 @@ Install each package as needed.  For example:
 winget install UB-Mannheim.TesseractOCR
 winget install GnuPG.GnuPG
 py -3.11 -m venv .venv
-.venv\Scripts\Activate.ps1
+. .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt -U
 ```
 
@@ -637,7 +637,6 @@ open_close_long_position = [
     # Return the cursor to the previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
-    ('speak_text', 'Placed.'),       # Speak the order placement.
     # Wait for the order execution.
     ('wait_for_price', '224, 956, 470, 20, 0'),
 

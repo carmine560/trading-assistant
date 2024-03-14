@@ -414,11 +414,14 @@ def main():
                 config, trade.startup_script_title, trade.config_path,
                 **backup_file):
             create_startup_script(trade, config)
-            file_utilities.create_shortcut(
-                trade.script_base, 'powershell.exe',
-                '-WindowStyle Hidden -File "' + trade.startup_script + '"',
-                program_group_base=process_section['title'],
-                icon_directory=trade.resource_directory)
+            powershell = file_utilities.select_executable(
+                ['pwsh.exe', 'powershell.exe'])
+            if powershell:
+                file_utilities.create_shortcut(
+                    trade.script_base, powershell,
+                    '-WindowStyle Hidden -File "' + trade.startup_script + '"',
+                    program_group_base=process_section['title'],
+                    icon_directory=trade.resource_directory)
             return
         elif args.A:
             if configuration.modify_tuple_list(
@@ -428,14 +431,16 @@ def main():
                              'additional_value': 'additional argument',
                              'end_of_list': 'end of commands'},
                     categorized_keys=trade.categorized_keys):
+                powershell = file_utilities.select_executable(
+                    ['pwsh.exe', 'powershell.exe'])
                 activate = None
                 if os.path.exists(r'.venv\Scripts\activate.ps1'):
                     activate = r'.venv\Scripts\activate.ps1'
 
                 # To pin the shortcut to the Taskbar, specify an executable
                 # file as the 'target_path' argument.
-                if activate:
-                    target_path = 'powershell.exe'
+                if powershell and activate:
+                    target_path = powershell
                     arguments = (
                         f'-Command ". {activate}; '
                         f'python.exe {trade.script_file} -a {args.A[0]}"')
@@ -1192,27 +1197,15 @@ def execute_action(trade, config, gui_state, action):
 def create_startup_script(trade, config):
     def generate_start_process_lines(options):
         lines = []
-        activate = None
-        if os.path.exists(r'.venv\Scripts\Activate.ps1'):
-            activate = r'.venv\Scripts\Activate.ps1'
-
-        parameters = '-WorkingDirectory "$workingDirectory" -NoNewWindow'
         for option in options:
             if option:
-                if activate:
-                    lines.append(
-                        f'    Start-Process powershell.exe `\n'
-                        f'      -ArgumentList "{activate};", `\n'
-                        f'      "python.exe {trade.script_file} '
-                        f'{option.strip()}" `\n'
-                        f'      {parameters}\n')
-                else:
-                    lines.append(
-                        f'    Start-Process py.exe `\n'
-                        f'      -ArgumentList "{trade.script_file} '
-                        f'{option.strip()}" `\n'
-                        f'      {parameters}\n')
+                lines.append(
+                    f'    python.exe {trade.script_file} {option.strip()}\n')
         return lines
+
+    activate = None
+    if os.path.exists(r'.venv\Scripts\Activate.ps1'):
+        activate = r'.venv\Scripts\Activate.ps1'
 
     section = config[trade.startup_script_title]
     pre_start_options = section.get('pre_start_options', '').split(',')
@@ -1221,18 +1214,23 @@ def create_startup_script(trade, config):
 
     with open(trade.startup_script, 'w') as f:
         lines = []
-        lines.append(f'$workingDirectory = "{os.path.dirname(__file__)}"\n'
-                     f'\n'
-                     f'if (Get-Process "{trade.process}" '
+        lines.append(f'Set-Location -Path "{os.path.dirname(__file__)}"\n')
+        if activate:
+            lines.append(f'. {activate}\n')
+
+        lines.append(f'if (Get-Process "{trade.process}" '
                      f'-ErrorAction SilentlyContinue) {{\n')
         lines.extend(generate_start_process_lines(running_options))
-        lines.append('}\nelse {\n')
+        lines.append('}\n')
+        lines.append('else {\n')
         lines.extend(generate_start_process_lines(pre_start_options))
         lines.append(f'    Start-Process `\n'
-                     f'      "{config[trade.process]["executable"]}" `\n'
-                     f'      -NoNewWindow\n')
+                     f'      "{config[trade.process]["executable"]}"\n')
         lines.extend(generate_start_process_lines(post_start_options))
         lines.append('}\n')
+        if activate:
+            lines.append(f'deactivate\n')
+
         f.writelines(lines)
 
 def calculate_share_size(trade, config, position):

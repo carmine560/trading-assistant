@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import sys
 import time
 
@@ -25,7 +26,6 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
 def backup_file(source, backup_directory=None, number_of_backups=-1,
                 should_compare=True):
     from datetime import datetime
-    import shutil
 
     decrypted_source = source
     encrypted_source = source + '.gpg'
@@ -286,7 +286,6 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
 
 def decrypt_extract_file(source, output_directory):
     import io
-    import shutil
     import tarfile
 
     import gnupg
@@ -420,6 +419,12 @@ def move_to_trash(path, option=None):
         subprocess.run(command, check=True)
     except Exception as e:
         print(e)
+
+def select_executable(executables=None):
+    if executables is None:
+        return None
+    for executable in executables:
+        return shutil.which(executable)
 
 def title_except_acronyms(string, acronyms):
     words = string.split()
