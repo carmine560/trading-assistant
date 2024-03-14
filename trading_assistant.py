@@ -230,10 +230,10 @@ class IndicatorThread(threading.Thread):
             '<<Modified>>',
             lambda event: self.on_text_modified(
                 event, utilization_ratio_entry, utilization_ratio_string,
-                process_section, 'utilization_ratio'))
+                process_section, 'utilization_ratio', 0.0, 1.0))
         self.check_for_modifications(
-            utilization_ratio_entry, utilization_ratio_string,
-            process_section, 'utilization_ratio')
+            utilization_ratio_entry, utilization_ratio_string, process_section,
+            'utilization_ratio', 0.0, 1.0)
 
         command = self.root.register(self.is_valid_float)
         utilization_ratio_entry.config(validate='key',
@@ -256,14 +256,20 @@ class IndicatorThread(threading.Thread):
 
         self.root.destroy()
 
-    def check_for_modifications(self, widget, string, section, key):
-        self.on_text_modified(None, widget, string, section, key)
+    def check_for_modifications(self, widget, string, section, key,
+                                minimum_value, maximum_value):
+        self.on_text_modified(None, widget, string, section, key,
+                              minimum_value, maximum_value)
         self.root.after(
             1000,
-            lambda: self.check_for_modifications(widget, string, section, key))
+            lambda: self.check_for_modifications(widget, string, section, key,
+                                                 minimum_value, maximum_value))
 
-    def on_text_modified(self, event, widget, string, section, key):
-        modified_text = widget.get()
+    def on_text_modified(self, event, widget, string, section, key,
+                         minimum_value, maximum_value):
+        modified_text = widget.get() or '0.0'
+        modified_text = max(minimum_value, min(maximum_value,
+                                               float(modified_text)))
         string.set(modified_text)
         section[key] = string.get()
         configuration.write_config(self.config, self.trade.config_path)
@@ -495,6 +501,7 @@ def main():
         elif args.U and configuration.modify_option(
                 config, trade.process, 'utilization_ratio', trade.config_path,
                 **backup_file):
+            # TODO: limit range from 0.0 to 1.0
             return
         elif args.PL and configuration.modify_option(
                 config, trade.process, 'price_limit_region', trade.config_path,
@@ -504,6 +511,7 @@ def main():
         elif args.DLL and configuration.modify_option(
                 config, trade.process, 'daily_loss_limit_ratio',
                 trade.config_path, **backup_file):
+            # TODO: limit range from -1.0 to 0.0
             return
         elif args.MDN and configuration.modify_option(
                 config, trade.process, 'maximum_daily_number_of_trades',
