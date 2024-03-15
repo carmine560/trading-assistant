@@ -146,7 +146,8 @@ def list_section(config, section):
         print(section, 'section does not exist.')
         return False
 
-def modify_data(prompt, level=0, data='', all_data=None):
+def modify_data(prompt, level=0, data='', all_data=None, minimum_value=None,
+                maximum_value=None):
     from prompt_toolkit import prompt as pt_prompt
     from prompt_toolkit.completion import WordCompleter
     from prompt_toolkit.shortcuts import CompleteStyle
@@ -167,6 +168,19 @@ def modify_data(prompt, level=0, data='', all_data=None):
                      + ANSI_CURRENT + data + ANSI_RESET + ': ').strip() or data
     else:
         data = input(prompt_prefix + ': ').strip()
+
+    try:
+        float_value = float(data)
+    except ValueError:
+        float_value = None
+    if float_value is not None:
+        if minimum_value is not None:
+            float_value = max(minimum_value, float_value)
+        if maximum_value is not None:
+            float_value = min(maximum_value, float_value)
+
+        data = str(float_value)
+
     return data
 
 def modify_dictionary(data, level=0, prompts=None, dictionary_info=None):
@@ -194,7 +208,8 @@ def modify_dictionary(data, level=0, prompts=None, dictionary_info=None):
 
 def modify_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None, prompts=None, categorized_keys=None,
-                  tuple_info=(), dictionary_info=None):
+                  tuple_info=(), dictionary_info=None, minimum_value=None,
+                  maximum_value=None):
     import re
 
     if backup_function:
@@ -231,7 +246,8 @@ def modify_option(config, section, option, config_path, backup_function=None,
             else:
                 config[section][option] = modify_data(
                     prompts.get('value', 'value'),
-                    data=config[section][option])
+                    data=config[section][option], minimum_value=minimum_value,
+                    maximum_value=maximum_value)
         elif answer == 'toggle':
             config[section][option] = str(not boolean_value)
         elif answer == 'empty':

@@ -420,11 +420,11 @@ def move_to_trash(path, option=None):
     except Exception as e:
         print(e)
 
-def select_executable(executables=None):
-    if executables is None:
-        return None
+def select_executable(executables):
     for executable in executables:
-        return shutil.which(executable)
+        path = shutil.which(executable)
+        if path:
+            return path
 
 def title_except_acronyms(string, acronyms):
     words = string.split()

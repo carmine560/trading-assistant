@@ -500,8 +500,7 @@ def main():
             return
         elif args.U and configuration.modify_option(
                 config, trade.process, 'utilization_ratio', trade.config_path,
-                **backup_file):
-            # TODO: limit range from 0.0 to 1.0
+                **backup_file, minimum_value=0.0, maximum_value=1.0):
             return
         elif args.PL and configuration.modify_option(
                 config, trade.process, 'price_limit_region', trade.config_path,
@@ -510,8 +509,8 @@ def main():
             return
         elif args.DLL and configuration.modify_option(
                 config, trade.process, 'daily_loss_limit_ratio',
-                trade.config_path, **backup_file):
-            # TODO: limit range from -1.0 to 0.0
+                trade.config_path, **backup_file, minimum_value=-1.0,
+                maximum_value=0.0):
             return
         elif args.MDN and configuration.modify_option(
                 config, trade.process, 'maximum_daily_number_of_trades',
