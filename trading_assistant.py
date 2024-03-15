@@ -659,6 +659,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'symbol_header': 'コード',
         'price_header': '株価'}
     config[trade.customer_margin_ratios_title] = {
+        'customer_margin_ratio': '0.31',
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
         'url':
@@ -669,8 +670,6 @@ def configure(trade, can_interpolate=True, can_override=True):
         'customer_margin_ratio_string': '委託保証金率',
         'suspended': '新規建停止'}
     config[trade.process] = {
-        # TODO: move to config[trade.customer_margin_ratios_title]
-        'customer_margin_ratio': '0.31',
         'executable': trade.executable,
         'title': title,
         'interactive_windows': (),
@@ -989,12 +988,15 @@ def start_execute_action_thread(trade, config, gui_state, action):
 
 def execute_action(trade, config, gui_state, action):
     def get_latest_screencast():
-        section = config['General']
-        screencast_directory = section['screencast_directory']
-        screencast_regex = section['screencast_regex']
+        screencast_directory = general_section['screencast_directory']
+        screencast_regex = general_section['screencast_regex']
         files = [f for f in os.listdir(screencast_directory)
                            if re.fullmatch(screencast_regex, f)]
         return os.path.join(screencast_directory, files[-1])
+
+    general_section = config['General']
+    process_section = config[trade.process]
+    variables_section = config['Variables']
 
     trade.initialize_attributes()
     gui_state.initialize_attributes()
@@ -1018,16 +1020,17 @@ def execute_action(trade, config, gui_state, action):
                 trade.speech_manager.set_speech_text(text)
                 return False
         elif command == 'check_daily_loss_limit':
-            section = config[trade.process]
-            daily_loss_limit = (trade.cash_balance
-                                * float(section['utilization_ratio'])
-                                / float(section['customer_margin_ratio'])
-                                * float(section['daily_loss_limit_ratio']))
-
-            section = config['Variables']
-            initial_cash_balance = int(section['initial_cash_balance'])
+            daily_loss_limit = (
+                trade.cash_balance
+                * float(process_section['utilization_ratio'])
+                / float(config[trade.customer_margin_ratios_title][
+                    'customer_margin_ratio'])
+                * float(process_section['daily_loss_limit_ratio']))
+            initial_cash_balance = int(
+                variables_section['initial_cash_balance'])
             if initial_cash_balance == 0:
-                section['initial_cash_balance'] = str(trade.cash_balance)
+                variables_section['initial_cash_balance'] = str(
+                    trade.cash_balance)
                 configuration.write_config(config, trade.config_path)
             else:
                 daily_profit = (trade.cash_balance - initial_cash_balance)
@@ -1036,8 +1039,8 @@ def execute_action(trade, config, gui_state, action):
                     return False
         elif command == 'check_maximum_daily_number_of_trades':
             if (0
-                < int(config[trade.process]['maximum_daily_number_of_trades'])
-                <= int(config['Variables']['current_number_of_trades'])):
+                < int(process_section['maximum_daily_number_of_trades'])
+                <= int(variables_section['current_number_of_trades'])):
                 trade.speech_manager.set_speech_text(argument)
                 return False
         elif command == 'click':
@@ -1057,18 +1060,18 @@ def execute_action(trade, config, gui_state, action):
 
             argument = ast.literal_eval(argument)
             split_string = text_recognition.recognize_text(
-                config[trade.process], *argument, None,
+                process_section, *argument, None,
                 text_type='securities_code_column')
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(' '.join(split_string))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
-            section = config['Variables']
             previous_number_of_trades = int(
-                section['current_number_of_trades'])
+                variables_section['current_number_of_trades'])
             current_number_of_trades = previous_number_of_trades + 1
-            section['current_number_of_trades'] = str(current_number_of_trades)
+            variables_section['current_number_of_trades'] = str(
+                current_number_of_trades)
             configuration.write_config(config, trade.config_path)
 
             title = (f"Trade {current_number_of_trades}"
@@ -1079,10 +1082,9 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'drag_to':
             pyautogui.dragTo(ast.literal_eval(argument))
         elif command == 'get_cash_balance':
-            section = config[trade.process]
-            region = ast.literal_eval(section['cash_balance_region'])
-            trade.cash_balance = int(text_recognition.recognize_text(section,
-                                                                     *region))
+            region = ast.literal_eval(process_section['cash_balance_region'])
+            trade.cash_balance = int(
+                text_recognition.recognize_text(process_section, *region))
         elif command == 'get_symbol':
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_window':
@@ -1134,15 +1136,14 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
         elif command == 'take_screenshot':
-            section = config['Variables']
-            base = section['current_date']
-            base += f"-{int(section['current_number_of_trades']):02}"
+            base = variables_section['current_date']
+            base += f"-{int(variables_section['current_number_of_trades']):02}"
             if trade.symbol:
                 base += f'-{trade.symbol}'
 
             base += '-screenshot.png'
             pyautogui.screenshot(
-                os.path.join(config['General']['screenshot_directory'], base))
+                os.path.join(general_section['screenshot_directory'], base))
         elif command == 'toggle_indicator':
             if trade.indicator_thread:
                 trade.indicator_thread.stop()
@@ -1167,7 +1168,7 @@ def execute_action(trade, config, gui_state, action):
                 return
         elif command == 'wait_for_price':
             argument = ast.literal_eval(argument)
-            text_recognition.recognize_text(config[trade.process], *argument,
+            text_recognition.recognize_text(process_section, *argument,
                                             text_type='decimal_numbers')
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(argument)
@@ -1244,7 +1245,8 @@ def calculate_share_size(trade, config, position):
     if trade.symbol and trade.cash_balance:
         section = config[trade.process]
 
-        customer_margin_ratio = float(section['customer_margin_ratio'])
+        customer_margin_ratio = float(config[
+            trade.customer_margin_ratios_title]['customer_margin_ratio'])
         try:
             with open(trade.customer_margin_ratios) as f:
                 reader = csv.reader(f)
