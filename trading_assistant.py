@@ -486,10 +486,8 @@ def main():
                 **backup_file, is_inserting=True, value_type='tuple',
                 prompts={'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
-                # TODO: ${Market Data:
-                # tuple_info=(('${Market Data:opening_time}',
-                #              '${Market Data:closing_time}'),
-                tuple_info=((),
+                tuple_info=(('${Market Data:opening_time}',
+                             '${Market Data:closing_time}'),
                             configuration.list_section(config,
                                                        trade.actions_title))):
             return
@@ -514,7 +512,7 @@ def main():
             return
         elif args.MDN and configuration.modify_option(
                 config, trade.process, 'maximum_daily_number_of_trades',
-                trade.config_path, **backup_file):
+                trade.config_path, **backup_file, minimum_value=0):
             return
 
         sys.exit(1)
