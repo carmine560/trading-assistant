@@ -180,18 +180,26 @@ def modify_data(prompt, level=0, data='', all_data=None, minimum_value=None,
     else:
         data = input(prompt_prefix + ': ').strip()
 
-    try:
-        float_value = float(data)
+    numeric_value = None
+    if isinstance(minimum_value, int) and isinstance(maximum_value, int):
+        try:
+            numeric_value = int(float(data))
+        except ValueError as e:
+            print(e)
+            sys.exit(2)
+    if isinstance(minimum_value, float) and isinstance(maximum_value, float):
+        try:
+            numeric_value = float(data)
+        except ValueError as e:
+            print(e)
+            sys.exit(2)
+    if numeric_value is not None:
         if minimum_value is not None:
-            float_value = max(minimum_value, float_value)
+            numeric_value = max(minimum_value, numeric_value)
         if maximum_value is not None:
-            float_value = min(maximum_value, float_value)
-        if isinstance(minimum_value, int) or isinstance(maximum_value, int):
-            data = str(int(float_value))
-        else:
-            data = str(float_value)
-    except ValueError:
-        pass
+            numeric_value = min(maximum_value, numeric_value)
+
+        data = str(numeric_value)
 
     return data
 
@@ -242,6 +250,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
             answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
+            # TODO: try ast.literal_eval()
             if re.sub(r'\s+', '', config[section][option])[:2] == '[(':
                 modify_tuple_list(config, section, option, config_path,
                                   categorized_keys=categorized_keys)

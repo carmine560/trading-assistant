@@ -440,8 +440,8 @@ def main():
                 powershell = file_utilities.select_executable(
                     ['pwsh.exe', 'powershell.exe'])
                 activate = None
-                if os.path.exists(r'.venv\Scripts\activate.ps1'):
-                    activate = r'.venv\Scripts\activate.ps1'
+                if os.path.exists(r'.venv\Scripts\Activate.ps1'):
+                    activate = r'.venv\Scripts\Activate.ps1'
 
                 # To pin the shortcut to the Taskbar, specify an executable
                 # file as the 'target_path' argument.
@@ -487,7 +487,9 @@ def main():
                 prompts={'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
                 tuple_info=(('${Market Data:opening_time}',
-                             '${Market Data:closing_time}'),
+                             '${Market Data:closing_time}',
+                             f'${{{trade.process}:start_time}}',
+                             f'${{{trade.process}:end_time}}'),
                             configuration.list_section(config,
                                                        trade.actions_title))):
             return
@@ -512,7 +514,8 @@ def main():
             return
         elif args.MDN and configuration.modify_option(
                 config, trade.process, 'maximum_daily_number_of_trades',
-                trade.config_path, **backup_file, minimum_value=0):
+                trade.config_path, **backup_file, minimum_value=0,
+                maximum_value=sys.maxsize):
             return
 
         sys.exit(1)
@@ -668,6 +671,8 @@ def configure(trade, can_interpolate=True, can_override=True):
         'customer_margin_ratio_string': '委託保証金率',
         'suspended': '新規建停止'}
     config[trade.process] = {
+        'start_time': '${Market Data:opening_time}',
+        'end_time': '${Market Data:closing_time}',
         'executable': trade.executable,
         'title': title,
         'interactive_windows': (),

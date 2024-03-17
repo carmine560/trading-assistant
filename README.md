@@ -100,7 +100,7 @@ python trading_assistant.py -PL
 Create or modify an action for processing by `trading_assistant.py`.
 
 > **Note**: This option adds virtual environment activation to the target of a
-> shortcut to the action if the `.venv\Scripts\activate.bat` script exists.
+> shortcut to the action if the `.venv\Scripts\Activate.ps1` script exists.
 
 ``` powershell
 python trading_assistant.py -A ACTION
@@ -463,29 +463,22 @@ login = [
     ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    # Check the 'Skip Confirmation Screen' checkbox if the current system time
-    # is before 10:00:00.
-    ('is_now_before', '10:00:00', [
-        ('click', '273, 837, 12, 12')]),
-    # Open the 'News' window if the current system time is before the open.
-    ('is_now_before', '${Market Data:opening_time}', [
-        ('press_hotkeys', 'ctrl, n')]),
     # Return the cursor to the previous position.
     ('back_to',)
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
-    # is before 10:00:00.
-    ('is_now_before', '10:00:00', [
+    # is before ${HYPERSBI2:end_time}.
+    ('is_now_before', '${HYPERSBI2:end_time}', [
         ('click', '273, 837, 12, 12'),
         ('back_to',)]),
     # Open the 'News' window if the current system time is before the open.
     ('is_now_before', '${Market Data:opening_time}', [
         ('press_hotkeys', 'ctrl, n')]),
     # Start a new recording if one is not already in progress at
-    # 08:50:00-10:00:00.  This is a fallback if the
+    # 08:50:00-${HYPERSBI2:end_time}.  This is a fallback if the
     # 'start_new_manual_recording' schedule in the 'Start and Stop Manual
     # Recording' section does not start recording.
     ('is_now_after', '08:50:00', [
-        ('is_now_before', '10:00:00', [
+        ('is_now_before', '${HYPERSBI2:end_time}', [
             ('is_recording', 'False', [
                 ('press_hotkeys', 'alt, f9'),
                 ('sleep', '2'),
@@ -720,7 +713,6 @@ start_manual_recording = [
     ('is_recording', 'False', [
         ('press_hotkeys', 'alt, f9'),
         ('sleep', '2'),
-        # Check if recording is currently in progress.
         ('is_recording', 'False', [
             ('speak_text', 'Not recording.')])])]
 # Write a chapter section for FFmpeg metadata.
@@ -737,8 +729,9 @@ start_new_manual_recording = ('08:50:00', 'start_manual_recording')
 # Trigger the 'create_pre_trading_chapter' action at the open.
 start_pre_trading_chapter = ('${Market Data:opening_time}',
                              'create_pre_trading_chapter')
-# Trigger the 'stop_manual_recording' action at 10:00:00.
-stop_current_manual_recording = ('10:00:00', 'stop_manual_recording')
+# Trigger the 'stop_manual_recording' action at ${HYPERSBI2:end_time}.
+stop_current_manual_recording = ('${HYPERSBI2:end_time}',
+                                 'stop_manual_recording')
 ```
 
 #### Speak CPU Utilization ####
