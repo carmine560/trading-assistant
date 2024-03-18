@@ -1,9 +1,9 @@
-def recognize_text(section, x, y, width, height, index, text_type='integers'):
-    from PIL import Image
-    from PIL import ImageGrab
-    from PIL import ImageOps
-    import pytesseract
+from PIL import Image
+from PIL import ImageGrab
+from PIL import ImageOps
+import pytesseract
 
+def recognize_text(section, x, y, width, height, index, text_type='integers'):
     image_magnification = int(section['image_magnification'])
     binarization_threshold = int(section['binarization_threshold'])
     is_dark_theme = section.getboolean('is_dark_theme')
@@ -35,7 +35,8 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
             elif text_type == 'securities_code_column':
                 for item in string.splitlines():
                     split_string.append(item)
-        except:
+        except Exception as e:
+            print(e)
             pass
 
     if index is None:

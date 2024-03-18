@@ -251,15 +251,24 @@ def modify_option(config, section, option, config_path, backup_function=None,
             answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
 
         if answer == 'modify':
-            # TODO: try ast.literal_eval()
-            if re.sub(r'\s+', '', config[section][option])[:2] == '[(':
+            evaluated_option = None
+            try:
+                evaluated_option = ast.literal_eval(config[section][option])
+            except (SyntaxError, ValueError) as e:
+                pass
+            except Exception as e:
+                print(e)
+                sys.exit(1)
+
+            if (isinstance(evaluated_option, list)
+                and all(isinstance(item, tuple) for item in evaluated_option)):
                 modify_tuple_list(config, section, option, config_path,
                                   categorized_keys=categorized_keys)
-            elif re.sub(r'\s+', '', config[section][option])[:1] == '(':
+            elif isinstance(evaluated_option, tuple):
                 config[section][option] = modify_tuple(
                     config[section][option], False, level=1, prompts=prompts,
                     tuple_info=tuple_info)
-            elif re.sub(r'\s+', '', config[section][option])[:1] == '{':
+            elif isinstance(evaluated_option, dict):
                 config[section][option] = modify_dictionary(
                     config[section][option], level=1, prompts=prompts,
                     dictionary_info=dictionary_info)
@@ -396,6 +405,7 @@ def modify_tuple_list(config, section, option, config_path,
         is_created = True
         config[section][option] = '[]'
 
+    # TODO: ''
     tuples = modify_tuples(ast.literal_eval(config[section][option]),
                            is_created, prompts=prompts,
                            categorized_keys=categorized_keys)

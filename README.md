@@ -716,8 +716,8 @@ start_manual_recording = [
         ('sleep', '2'),
         ('is_recording', 'False', [
             ('speak_text', 'Not recording.')])])]
-# Write a chapter section for FFmpeg metadata.
 create_pre_trading_chapter = [
+    # Write a chapter section for FFmpeg metadata.
     ('write_chapter', 'Pre-Trading', 'Pre-Market')]
 stop_manual_recording = [
     # Stop a recording if one is currently in progress.

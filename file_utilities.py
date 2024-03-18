@@ -375,7 +375,8 @@ def get_file_description(executable):
                             % (language, codepage, 'FileDescription'))
         file_description = win32api.GetFileVersionInfo(executable,
                                                        string_file_info)
-    except:
+    except Exception as e:
+        print(e)
         file_description = False
 
     return file_description
