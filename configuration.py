@@ -11,8 +11,6 @@ from prompt_toolkit import prompt as pt_prompt
 from prompt_toolkit.completion import Completer, Completion, WordCompleter
 from prompt_toolkit.shortcuts import CompleteStyle
 import gnupg
-import pyautogui
-import win32api
 
 ANSI_BOLD = '\033[1m'
 ANSI_CURRENT = '\033[32m'
@@ -112,6 +110,9 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                             return
 
 def configure_position(answer, level=0, value=''):
+    import pyautogui
+    import win32api
+
     prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
     if answer == 'modify' and value:
         completer = WordCompleter([value])

@@ -1,15 +1,18 @@
+from datetime import datetime
+import ast
+import io
 import os
 import re
 import shutil
+import subprocess
 import sys
+import tarfile
 import time
+import winreg
+
+import gnupg
 
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
-    import io
-    import tarfile
-
-    import gnupg
-
     tar_stream = io.BytesIO()
     with tarfile.open(fileobj=tar_stream, mode='w:xz') as tar:
         tar.add(source, arcname=os.path.basename(source))
@@ -25,8 +28,6 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
 
 def backup_file(source, backup_directory=None, number_of_backups=-1,
                 should_compare=True):
-    from datetime import datetime
-
     decrypted_source = source
     encrypted_source = source + '.gpg'
     if os.path.exists(encrypted_source):
@@ -172,8 +173,6 @@ def create_icon(base, icon_directory=None):
             actual_font.set_variation_by_name(variation_name)
         return actual_font
 
-    import winreg
-
     from PIL import Image, ImageDraw, ImageFont
 
     acronym = ''.join(word[0].upper()
@@ -285,11 +284,6 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
     shortcut.save()
 
 def decrypt_extract_file(source, output_directory):
-    import io
-    import tarfile
-
-    import gnupg
-
     gpg = gnupg.GPG()
     with open(source, 'rb') as f:
         decrypted_data = gpg.decrypt_file(f)
@@ -358,8 +352,6 @@ def delete_shortcut(base, program_group_base=None, icon_directory=None):
             sys.exit(1)
 
 def extract_commands(source, command='command'):
-    import ast
-
     commands = []
     tree = ast.parse(source)
     for node in ast.walk(tree):
@@ -401,8 +393,6 @@ def get_program_group(program_group_base=None):
     return program_group
 
 def is_writing(target_path):
-    import time
-
     if (os.path.exists(target_path)
         and time.time() - os.path.getmtime(target_path) < 1):
         return True
@@ -410,8 +400,6 @@ def is_writing(target_path):
         return False
 
 def move_to_trash(path, option=None):
-    import subprocess
-
     command = ['trash-put', path]
     if option:
         command.insert(1, option)
@@ -433,10 +421,13 @@ def title_except_acronyms(string, acronyms):
             words[i] = words[i].title()
     return ' '.join(words)
 
-def write_chapter(video, current_title, previous_title=None):
+def write_chapter(video, current_title, previous_title=None, offset=None):
     if is_writing(video):
         ffmpeg_metadata = os.path.splitext(video)[0] + '.txt'
-        start = int(1000 * (time.time() - os.path.getctime(video)))
+        if offset is None:
+            offset = 0.0
+
+        start = int(1000 * (time.time() - os.path.getctime(video) + offset))
         default_duration = 60000
         end = start + default_duration
 

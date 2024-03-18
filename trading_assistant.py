@@ -5,17 +5,25 @@ import ast
 import configparser
 import csv
 import inspect
+import math
 import os
 import re
+import sched
 import sys
 import threading
 import time
 import tkinter as tk
+import win32clipboard
+import winsound
 
 from pynput import keyboard
 from pynput import mouse
 from win32api import GetMonitorInfo, MonitorFromPoint
+import chardet
+import pandas as pd
+import psutil
 import pyautogui
+import requests
 import win32gui
 
 import configuration
@@ -80,9 +88,8 @@ class Trade:
             'additional_value_keys': ('click_widget', 'speak_config',
                                       'write_chapter'),
             'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
-                              'count_trades', 'get_cash_balance',
-                              'take_screenshot', 'toggle_indicator',
-                              'write_share_size'),
+                              'get_cash_balance', 'take_screenshot',
+                              'toggle_indicator', 'write_share_size'),
             'positioning_keys': ('click', 'drag_to', 'move_to')}
 
         self.schedules_title = f'{self.process} Schedules'
@@ -773,10 +780,6 @@ def configure(trade, can_interpolate=True, can_override=True):
     return config
 
 def save_customer_margin_ratios(trade, config):
-    import chardet
-    import pandas as pd
-    import requests
-
     section = config[trade.customer_margin_ratios_title]
     update_time = section['update_time']
     time_zone = section['time_zone']
@@ -814,8 +817,6 @@ def save_customer_margin_ratios(trade, config):
         df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
 def save_market_data(trade, config, clipboard=False):
-    import pandas as pd
-
     section = config['Market Data']
     opening_time = section['opening_time']
     closing_time = section['closing_time']
@@ -869,9 +870,6 @@ def save_market_data(trade, config, clipboard=False):
 
 def get_latest(config, market_holidays, update_time, time_zone, *paths,
                volatile_time=None):
-    import pandas as pd
-    import requests
-
     section = config['Market Holidays']
     url = section['url']
     date_header = section['date_header']
@@ -932,8 +930,6 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
             return latest
 
 def start_scheduler(trade, config, gui_state, process):
-    import sched
-
     scheduler = sched.scheduler(time.time, time.sleep)
     schedules = []
 
@@ -1006,16 +1002,13 @@ def execute_action(trade, config, gui_state, action):
 
     for index in range(len(action)):
         command = action[index][0]
-        if len(action[index]) > 1:
-            argument = action[index][1]
-        if len(action[index]) > 2:
-            additional_argument = action[index][2]
+        argument = action[index][1] if len(action[index]) > 1 else None
+        additional_argument = (action[index][2] if len(action[index]) > 2
+                               else None)
 
         if command == 'back_to':
             pyautogui.moveTo(gui_state.previous_position)
         elif command == 'beep':
-            import winsound
-
             winsound.Beep(*ast.literal_eval(argument))
         elif command == 'calculate_share_size':
             is_successful, text = calculate_share_size(trade, config, argument)
@@ -1059,8 +1052,6 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'copy_symbols_from_market_data':
             save_market_data(trade, config, clipboard=True)
         elif command == 'copy_symbols_from_column':
-            import win32clipboard
-
             argument = ast.literal_eval(argument)
             split_string = text_recognition.recognize_text(
                 process_section, *argument, None,
@@ -1081,7 +1072,8 @@ def execute_action(trade, config, gui_state, action):
                      f"{f' for {trade.symbol}' if trade.symbol else ''}"
                      f" at {time.strftime('%Y-%m-%d %H:%M:%S')}")
             file_utilities.write_chapter(get_latest_screencast(), title,
-                                         'Pre-Trading')
+                                         previous_title='Pre-Trading',
+                                         offset=argument)
         elif command == 'drag_to':
             pyautogui.dragTo(ast.literal_eval(argument))
         elif command == 'get_cash_balance':
@@ -1121,13 +1113,9 @@ def execute_action(trade, config, gui_state, action):
             trade.speech_manager.set_speech_text(
                 config[argument][additional_argument])
         elif command == 'speak_cpu_utilization':
-            import psutil
-
             trade.speech_manager.set_speech_text(
                 f'{round(psutil.cpu_percent(interval=float(argument)))}%.')
         elif command == 'speak_seconds_until_time':
-            import math
-
             event_time = time.strptime(time.strftime('%Y-%m-%d ') + argument,
                                        '%Y-%m-%d %H:%M:%S')
             event_time = time.mktime(event_time)
@@ -1177,7 +1165,7 @@ def execute_action(trade, config, gui_state, action):
             gui_interactions.wait_for_window(argument)
         elif command == 'write_chapter':
             file_utilities.write_chapter(get_latest_screencast(), argument,
-                                         additional_argument)
+                                         previous_title=additional_argument)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
         elif command == 'write_string':

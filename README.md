@@ -170,12 +170,13 @@ of the same directory as the configuration file.</td></tr>
 <td>Recognize an alphanumeric column in the region, then copy symbols to the
 clipboard.</td></tr>
 
-<tr><td><code>('count_trades',)</code></td>
+<tr><td><code>('count_trades',[ 'CHAPTER_OFFSET'])</code></td>
 
 <td>Count the number of trades for the day.  Additionally, write a chapter
 section for <a href="https://ffmpeg.org/ffmpeg-formats.html#Metadata-1">FFmpeg
-metadata</a> when Nvidia ShadowPlay records a screencast.  You must call this
-command after order execution.</td></tr>
+metadata</a> when Nvidia ShadowPlay records a screencast.  The ‘CHAPTER_OFFSET’
+parameter specifies the offset in seconds for the chapter’s start time.  You
+must call this command after the execution of an order.</td></tr>
 
 <tr><td><code>('drag_to', 'X, Y')</code></td>
 
@@ -640,7 +641,7 @@ open_close_long_position = [
     ('write_share_size',),           # Enter the calculated share size.
     ('click', '471, 935'),           # Click the 'Market Order' button.
     ('press_key', 'tab, 5'),         # Focus on the 'Sell Order' button.
-    ('count_trades',),               # Count the number of trades for the day.
+    ('count_trades', '-10.0'),       # Count the number of trades for the day.
     # Speak the number above and notify you of the readiness of the sell order.
     ('speak_config', 'Variables', 'number_of_trades'),
     ('back_to',)]
