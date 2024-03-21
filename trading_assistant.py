@@ -437,11 +437,14 @@ def main():
                     icon_directory=trade.resource_directory)
             return
         elif args.A:
+            trade.categorized_keys['preset_additional_values'] = (
+                configuration.list_section(config, trade.actions_title))
             if configuration.modify_tuple_list(
                     config, trade.actions_title, args.A[0],
                     trade.config_path, **backup_file,
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
+                             'preset_additional_value': 'action',
                              'end_of_list': 'end of commands'},
                     categorized_keys=trade.categorized_keys):
                 powershell = file_utilities.select_executable(
@@ -733,8 +736,8 @@ def configure(trade, can_interpolate=True, can_override=True):
         # Directly assigning a new dictionary to 'config[trade.SECTION_TITLE]'
         # updates the original dictionary.
         config[trade.startup_script_title] = {
-            'pre_start_options': '-rd',
-            'post_start_options': '-l',
+            'pre_start_options': '',
+            'post_start_options': '-rdl',
             'running_options': '-a show_hide_watchlists'}
         config[trade.actions_title] = {
             'create_pre_trading_chapter': [
@@ -986,6 +989,18 @@ def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread.start()
 
 def execute_action(trade, config, gui_state, action):
+    def recursively_execute_action():
+        if isinstance(additional_argument, list):
+            execute_action(trade, config, gui_state, additional_argument)
+        elif isinstance(additional_argument, str):
+            execute_action(
+                trade, config, gui_state,
+                ast.literal_eval(
+                    config[trade.actions_title][additional_argument]))
+        else:
+            print(additional_argument, 'is not a list or a string.')
+            return False
+
     def get_latest_screencast():
         screencast_directory = general_section['screencast_directory']
         screencast_regex = general_section['screencast_regex']
@@ -1177,17 +1192,20 @@ def execute_action(trade, config, gui_state, action):
                                         + argument, '%Y-%m-%d %H:%M:%S')
             target_time = time.mktime(target_time)
             if target_time < time.time():
-                execute_action(trade, config, gui_state, additional_argument)
+                if recursively_execute_action() is False:
+                    return False
         elif command == 'is_now_before':
             target_time = time.strptime(time.strftime('%Y-%m-%d ')
                                         + argument, '%Y-%m-%d %H:%M:%S')
             target_time = time.mktime(target_time)
             if time.time() < target_time:
-                execute_action(trade, config, gui_state, additional_argument)
+                if recursively_execute_action() is False:
+                    return False
         elif command == 'is_recording':
             if (file_utilities.is_writing(get_latest_screencast())
                 == ast.literal_eval(argument)):
-                execute_action(trade, config, gui_state, additional_argument)
+                if recursively_execute_action() is False:
+                    return False
 
         else:
             print(command, 'is not a recognized command.')

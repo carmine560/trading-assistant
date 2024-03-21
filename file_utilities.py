@@ -8,11 +8,10 @@ import subprocess
 import sys
 import tarfile
 import time
-import winreg
-
-import gnupg
 
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
+    import gnupg
+
     tar_stream = io.BytesIO()
     with tarfile.open(fileobj=tar_stream, mode='w:xz') as tar:
         tar.add(source, arcname=os.path.basename(source))
@@ -151,6 +150,10 @@ def check_directory(directory):
             sys.exit(1)
 
 def create_icon(base, icon_directory=None):
+    import winreg
+
+    from PIL import Image, ImageDraw, ImageFont
+
     def get_scaled_font(text, font_path, desired_width, desired_height,
                         variation_name=''):
         temp_font_size = 100
@@ -172,8 +175,6 @@ def create_icon(base, icon_directory=None):
         if variation_name:
             actual_font.set_variation_by_name(variation_name)
         return actual_font
-
-    from PIL import Image, ImageDraw, ImageFont
 
     acronym = ''.join(word[0].upper()
                       for word in re.split(r'[\W_]+', base) if word)
@@ -284,6 +285,8 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
     shortcut.save()
 
 def decrypt_extract_file(source, output_directory):
+    import gnupg
+
     gpg = gnupg.GPG()
     with open(source, 'rb') as f:
         decrypted_data = gpg.decrypt_file(f)
@@ -425,7 +428,10 @@ def title_except_acronyms(string, acronyms):
 def write_chapter(video, current_title, previous_title=None, offset=None):
     if is_writing(video):
         ffmpeg_metadata = os.path.splitext(video)[0] + '.txt'
-        if offset is None:
+        try:
+            offset = float(offset)
+        except ValueError as e:
+            print(e)
             offset = 0.0
 
         start = int(1000 * (time.time() - os.path.getctime(video) + offset))
