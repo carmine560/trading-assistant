@@ -422,11 +422,10 @@ show_hide_watchlists = [
     ('show_hide_window', '登録銘柄')] # Show or hide the Watchlists window.
 
 [HYPERSBI2 Startup Script]
-# Save the customer margin ratios and the previous market data.
-pre_start_options = -rd
-# Start the mouse and keyboard listeners and the scheduler, and execute the
-# 'login' action in the 'Login' section.
-post_start_options = -lsa login
+# Save the customer margin ratios and the previous market data, start the mouse
+# and keyboard listeners and the scheduler, and execute the 'login' action in
+# the 'Login' section.
+post_start_options = -rdlsa login
 # Execute the 'show_hide_watchlists' action above.
 running_options = -a show_hide_watchlists
 ```
@@ -479,12 +478,7 @@ login = [
     # 'start_new_manual_recording' schedule in the 'Start and Stop Manual
     # Recording' section does not start recording.
     ('is_now_after', '08:50:00', [
-        ('is_now_before', '${HYPERSBI2:end_time}', [
-            ('is_recording', 'False', [
-                ('press_hotkeys', 'alt, f9'),
-                ('sleep', '2'),
-                ('is_recording', 'False', [
-                    ('speak_text', 'Not recording.')])])])])]
+        ('is_now_before', '${HYPERSBI2:end_time}', 'start_manual_recording')])]
 ```
 
 #### Replace Watchlist with Hyper SBI 2 Ranking ####
