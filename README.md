@@ -475,7 +475,7 @@ login = [
         ('press_hotkeys', 'ctrl, n')]),
     # Start a new recording if one is not already in progress at
     # 08:50:00-${HYPERSBI2:end_time}.  This is a fallback if the
-    # 'start_new_manual_recording' schedule in the 'Start and Stop Manual
+    # 'start_trading_recording' schedule in the 'Start and Stop Manual
     # Recording' section does not start recording.
     ('is_now_after', '08:50:00', [
         ('is_now_before', '${HYPERSBI2:end_time}', 'start_manual_recording')])]
@@ -720,13 +720,12 @@ stop_manual_recording = [
 
 [HYPERSBI2 Schedules]
 # Trigger the 'start_manual_recording' action at 08:50:00.
-start_new_manual_recording = ('08:50:00', 'start_manual_recording')
+start_trading_recording = ('08:50:00', 'start_manual_recording')
 # Trigger the 'create_pre_trading_chapter' action at the open.
 start_pre_trading_chapter = ('${Market Data:opening_time}',
                              'create_pre_trading_chapter')
 # Trigger the 'stop_manual_recording' action at ${HYPERSBI2:end_time}.
-stop_current_manual_recording = ('${HYPERSBI2:end_time}',
-                                 'stop_manual_recording')
+stop_trading_recording = ('${HYPERSBI2:end_time}', 'stop_manual_recording')
 ```
 
 #### Speak CPU Utilization ####

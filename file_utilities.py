@@ -430,6 +430,8 @@ def write_chapter(video, current_title, previous_title=None, offset=None):
         ffmpeg_metadata = os.path.splitext(video)[0] + '.txt'
         try:
             offset = float(offset)
+        except TypeError:
+            offset = 0.0
         except ValueError as e:
             print(e)
             offset = 0.0
