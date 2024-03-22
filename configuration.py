@@ -176,22 +176,23 @@ def list_section(config, section):
 
 def modify_data(prompt, level=0, data='', all_data=None, minimum_value=None,
                 maximum_value=None):
+    if data:
+        prompt_prefix = (f'{INDENT * level}{prompt} '
+                         f'{ANSI_CURRENT}{data}{ANSI_RESET}: ')
+    else:
+        prompt_prefix = f'{INDENT * level}{prompt}: '
+
     completer = None
     if all_data:
         completer = CustomWordCompleter(all_data, ignore_case=True)
     elif data:
         completer = CustomWordCompleter([data], ignore_case=True)
 
-    prompt_prefix = INDENT * level + prompt
     if completer:
-        data = pt_prompt(ANSI(f'{prompt_prefix} '
-                              f'{ANSI_CURRENT}{data}{ANSI_RESET}: '),
+        data = pt_prompt(ANSI(prompt_prefix),
                          completer=completer,).strip() or data
-    elif data:
-        data = input(f'{prompt_prefix} '
-                     f'{ANSI_CURRENT}{data}{ANSI_RESET}: ').strip() or data
     else:
-        data = input(prompt_prefix + ': ').strip()
+        data = input(prompt_prefix).strip()
 
     numeric_value = None
     if isinstance(minimum_value, int) and isinstance(maximum_value, int):
@@ -216,28 +217,25 @@ def modify_data(prompt, level=0, data='', all_data=None, minimum_value=None,
 
     return data
 
-def modify_dictionary(data, level=0, prompts=None, dictionary_info=None):
-    data = ast.literal_eval(data)
+def modify_dictionary(dictionary_data, level=0, prompts=None,
+                      dictionary_info=None):
     value_prompt = prompts.get('value', 'value')
     possible_values = dictionary_info.get('possible_values')
 
-    for key, value in data.items():
+    for key, value in dictionary_data.items():
         print(f'{INDENT * level}{ANSI_IDENTIFIER}{key}{ANSI_RESET}: '
-              f'{ANSI_CURRENT}{data[key]}{ANSI_RESET}')
+              f'{ANSI_CURRENT}{dictionary_data[key]}{ANSI_RESET}')
         answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
         if answer == 'modify':
-            if possible_values:
-                data[key] = modify_data(value_prompt, level=level,
-                                        all_data=possible_values)
-            else:
-                data[key] = modify_data(value_prompt, level=level,
-                                        data=data[key])
+            dictionary_data[key] = modify_data(value_prompt, level=level,
+                                               data=dictionary_data[key],
+                                               all_data=possible_values)
         elif answer == 'empty':
-            data[key] = ''
+            dictionary_data[key] = ''
         elif answer == 'quit':
             break
 
-    return str(data)
+    return str(dictionary_data)
 
 def modify_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None, prompts=None, categorized_keys=None,
@@ -270,11 +268,11 @@ def modify_option(config, section, option, config_path, backup_function=None,
                                   categorized_keys=categorized_keys)
             elif isinstance(evaluated_value, tuple):
                 config[section][option] = modify_tuple(
-                    config[section][option], False, level=1, prompts=prompts,
+                    evaluated_value, False, level=1, prompts=prompts,
                     tuple_info=tuple_info)
             elif isinstance(evaluated_value, dict):
                 config[section][option] = modify_dictionary(
-                    config[section][option], level=1, prompts=prompts,
+                    evaluated_value, level=1, prompts=prompts,
                     dictionary_info=dictionary_info)
             else:
                 config[section][option] = modify_data(
@@ -329,10 +327,9 @@ def modify_section(config, section, config_path, backup_function=None,
                         if config[section][option]:
                             is_inserted = True
                     elif value_type == 'tuple':
-                        config[section][option] = '()'
                         config[section][option] = modify_tuple(
-                            config[section][option], True, level=1,
-                            prompts=prompts, tuple_info=tuple_info)
+                            (), True, level=1, prompts=prompts,
+                            tuple_info=tuple_info)
                         if config[section][option] != '()':
                             is_inserted = True
                 else:
@@ -345,21 +342,23 @@ def modify_section(config, section, config_path, backup_function=None,
         print(section, 'section does not exist.')
         return False
 
-def modify_tuple(data, is_created, level=0, prompts=None, tuple_info=()):
-    data = list(ast.literal_eval(data))
+def modify_tuple(tuple_data, is_created, level=0, prompts=None, tuple_info=()):
+    tuple_data = list(tuple_data)
     value_prompt = prompts.get('value', 'value')
     values_prompt = prompts.get('values')
     end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
 
     index = 0
-    while index <= len(data):
-        if is_created or index == len(data):
+    while index <= len(tuple_data):
+        # TODO: refer to modify_tuples()
+        # TODO: fix insert for schedules
+        if is_created or index == len(tuple_data):
             print(f'{INDENT * level}'
                   f'{ANSI_WARNING}{end_of_list_prompt}{ANSI_RESET}')
             answer = tidy_answer(['insert', 'quit'], level=level)
         else:
             print(f'{INDENT * level}'
-                  f'{ANSI_CURRENT}{data[index]}{ANSI_RESET}')
+                  f'{ANSI_CURRENT}{tuple_data[index]}{ANSI_RESET}')
             answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
                                  level=level)
 
@@ -372,25 +371,26 @@ def modify_tuple(data, is_created, level=0, prompts=None, tuple_info=()):
             else:
                 value = modify_data(value_prompt, level=level)
             if value:
-                data.insert(index, value)
+                tuple_data.insert(index, value)
         elif answer == 'modify':
+            # TODO: refer to modify_dictionary()
             if index < len(tuple_info) and tuple_info[index]:
-                data[index] = modify_data(value_prompt, level=level,
-                                          all_data=tuple_info[index])
+                tuple_data[index] = modify_data(value_prompt, level=level,
+                                                all_data=tuple_info[index])
             else:
-                data[index] = modify_data(value_prompt, level=level,
-                                          data=data[index])
+                tuple_data[index] = modify_data(value_prompt, level=level,
+                                                data=tuple_data[index])
         elif answer == 'delete':
-            del data[index]
+            del tuple_data[index]
             index -= 1
         elif answer == 'quit':
-            index = len(data)
+            index = len(tuple_data)
 
         index += 1
         if values_prompt and index == len(values_prompt):
             break
 
-    return str(tuple(data))
+    return str(tuple(tuple_data))
 
 def modify_tuple_list(config, section, option, config_path,
                       backup_function=None, backup_parameters=None,

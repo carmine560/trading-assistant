@@ -1,7 +1,6 @@
 from datetime import date
 from multiprocessing.managers import BaseManager
 import argparse
-import ast
 import configparser
 import csv
 import inspect
@@ -127,7 +126,7 @@ class Trade:
     def on_click(self, x, y, button, pressed, config, gui_state):
         if gui_state.is_interactive_window():
             if not pressed:
-                action = ast.literal_eval(
+                action = configuration.evaluate_value(
                     config[self.process]['input_map']).get(button.name)
                 if action:
                     start_execute_action_thread(self, config, gui_state,
@@ -137,7 +136,7 @@ class Trade:
         if gui_state.is_interactive_window():
             if self.keyboard_listener_state == 0:
                 if key in self.function_keys:
-                    action = ast.literal_eval(
+                    action = configuration.evaluate_value(
                         config[self.process]['input_map']).get(key.name)
                     if action:
                         start_execute_action_thread(self, config, gui_state,
@@ -495,7 +494,10 @@ def main():
                 config, trade.schedules_title, trade.config_path,
                 **backup_file, is_inserting=True, value_type='tuple',
                 prompts={'values': ('trigger', 'action'),
-                         'end_of_list': 'end of schedules'},
+                         # TODO: fix prompts
+                         # 'end_of_list': 'end of schedules'
+                         },
+                # TODO: refer to dictionary_info
                 tuple_info=(('${Market Data:opening_time}',
                              '${Market Data:closing_time}',
                              f'${{{trade.process}:start_time}}',
@@ -542,7 +544,7 @@ def main():
         process_section = config[trade.process]
 
     gui_state = gui_interactions.GuiState(
-        ast.literal_eval(process_section['interactive_windows']))
+        configuration.evaluate_value(process_section['interactive_windows']))
 
     if args.a or args.l or args.s:
         BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
@@ -560,9 +562,8 @@ def main():
             start_listeners(trade, config, gui_state, base_manager,
                             trade.speech_manager, is_persistent=True)
 
-        execute_action(
-            trade, config, gui_state,
-            ast.literal_eval(config[trade.actions_title][args.a[0]]))
+        execute_action(trade, config, gui_state,
+                       config[trade.actions_title][args.a[0]])
         if not (is_running and args.l):
             process_utilities.stop_listeners(
                 trade.mouse_listener, trade.keyboard_listener, base_manager,
@@ -789,7 +790,7 @@ def save_customer_margin_ratios(trade, config):
     url = section['url']
     symbol_header = section['symbol_header']
     regulation_header = section['regulation_header']
-    headers = ast.literal_eval(section['headers'])
+    headers = configuration.evaluate_value(section['headers'])
     customer_margin_ratio_string = section['customer_margin_ratio_string']
     suspended = section['suspended']
 
@@ -938,15 +939,15 @@ def start_scheduler(trade, config, gui_state, process):
 
     section = config[trade.schedules_title]
     for option in section:
-        trigger, action = ast.literal_eval(section[option])
-        action = ast.literal_eval(config[trade.actions_title][action])
+        trigger, action = configuration.evaluate_value(section[option])
         trigger = time.strptime(time.strftime('%Y-%m-%d ') + trigger,
                                 '%Y-%m-%d %H:%M:%S')
         trigger = time.mktime(trigger)
         if time.time() < trigger:
             schedule = scheduler.enterabs(
                 trigger, 1, execute_action,
-                argument=(trade, config, gui_state, action))
+                argument=(trade, config, gui_state,
+                          config[trade.actions_title][action]))
             schedules.append(schedule)
 
     while scheduler.queue:
@@ -982,8 +983,7 @@ def start_listeners(trade, config, gui_state, base_manager, speech_manager,
 def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread = threading.Thread(
         target=execute_action,
-        args=(trade, config, gui_state,
-              ast.literal_eval(config[trade.actions_title][action])))
+        args=(trade, config, gui_state, config[trade.actions_title][action]))
     # TODO: Python 3.12.0: RuntimeError: can't create new thread at interpreter
     # shutdown
     execute_action_thread.start()
@@ -993,10 +993,8 @@ def execute_action(trade, config, gui_state, action):
         if isinstance(additional_argument, list):
             execute_action(trade, config, gui_state, additional_argument)
         elif isinstance(additional_argument, str):
-            execute_action(
-                trade, config, gui_state,
-                ast.literal_eval(
-                    config[trade.actions_title][additional_argument]))
+            execute_action(trade, config, gui_state,
+                           config[trade.actions_title][additional_argument])
         else:
             print(additional_argument, 'is not a list or a string.')
             return False
@@ -1015,6 +1013,9 @@ def execute_action(trade, config, gui_state, action):
     trade.initialize_attributes()
     gui_state.initialize_attributes()
 
+    if isinstance(action, str):
+        action = configuration.evaluate_value(action)
+
     for index in range(len(action)):
         command = action[index][0]
         argument = action[index][1] if len(action[index]) > 1 else None
@@ -1024,7 +1025,8 @@ def execute_action(trade, config, gui_state, action):
         if command == 'back_to':
             pyautogui.moveTo(gui_state.previous_position)
         elif command == 'beep':
-            winsound.Beep(*ast.literal_eval(argument))
+            frequency, duration = map(int, argument.split(','))
+            winsound.Beep(frequency, duration)
         elif command == 'calculate_share_size':
             is_successful, text = calculate_share_size(trade, config, argument)
             if not is_successful and text:
@@ -1055,21 +1057,22 @@ def execute_action(trade, config, gui_state, action):
                 trade.speech_manager.set_speech_text(argument)
                 return False
         elif command == 'click':
-            coordinates = ast.literal_eval(argument)
+            x, y = map(int, argument.split(','))
             if gui_state.swapped:
-                pyautogui.rightClick(coordinates)
+                pyautogui.rightClick(x, y)
             else:
-                pyautogui.click(coordinates)
+                pyautogui.click(x, y)
         elif command == 'click_widget':
             image = os.path.join(trade.resource_directory, argument)
-            region = ast.literal_eval(additional_argument)
-            gui_interactions.click_widget(gui_state, image, *region)
+            x, y, width, height = map(int, additional_argument.split(','))
+            gui_interactions.click_widget(gui_state, image, x, y, width,
+                                          height)
         elif command == 'copy_symbols_from_market_data':
             save_market_data(trade, config, clipboard=True)
         elif command == 'copy_symbols_from_column':
-            argument = ast.literal_eval(argument)
+            x, y, width, height = map(int, argument.split(','))
             split_string = text_recognition.recognize_text(
-                process_section, *argument, None,
+                process_section, x, y, width, height, None,
                 text_type='securities_code_column')
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
@@ -1090,18 +1093,22 @@ def execute_action(trade, config, gui_state, action):
                                          previous_title='Pre-Trading',
                                          offset=argument)
         elif command == 'drag_to':
-            pyautogui.dragTo(ast.literal_eval(argument))
+            x, y = map(int, argument.split(','))
+            pyautogui.dragTo(x, y)
         elif command == 'get_cash_balance':
-            region = ast.literal_eval(process_section['cash_balance_region'])
+            x, y, width, height, index = map(
+                int, process_section['cash_balance_region'].split(','))
             trade.cash_balance = int(
-                text_recognition.recognize_text(process_section, *region))
+                text_recognition.recognize_text(process_section, x, y, width,
+                                                height, index))
         elif command == 'get_symbol':
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_window':
             gui_interactions.enumerate_windows(
                 gui_interactions.hide_window, argument)
         elif command == 'move_to':
-            pyautogui.moveTo(ast.literal_eval(argument))
+            x, y = map(int, argument.split(','))
+            pyautogui.moveTo(x, y)
         elif command == 'press_hotkeys':
             keys = tuple(map(str.strip, argument.split(',')))
             pyautogui.hotkey(*keys)
@@ -1173,8 +1180,9 @@ def execute_action(trade, config, gui_state, action):
                 trade.speech_manager.set_speech_text('Canceled.')
                 return
         elif command == 'wait_for_price':
-            argument = ast.literal_eval(argument)
-            text_recognition.recognize_text(process_section, *argument,
+            x, y, width, height, index = map(int, argument.split(','))
+            text_recognition.recognize_text(process_section, x, y, width,
+                                            height, index,
                                             text_type='decimal_numbers')
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(argument)
@@ -1202,8 +1210,9 @@ def execute_action(trade, config, gui_state, action):
                 if recursively_execute_action() is False:
                     return False
         elif command == 'is_recording':
+            boolean_value = True if argument.lower() == 'true' else False
             if (file_utilities.is_writing(get_latest_screencast())
-                == ast.literal_eval(argument)):
+                == boolean_value):
                 if recursively_execute_action() is False:
                     return False
 
@@ -1369,9 +1378,10 @@ def get_price_limit(trade, config):
             price_limit = closing_price + 10000000
     else:
         section = config[trade.process]
-        region = ast.literal_eval(section['price_limit_region'])
+        x, y, width, height, index = map(
+            int, section['price_limit_region'].split(','))
         price_limit = text_recognition.recognize_text(
-            section, *region, text_type='decimal_numbers')
+            section, x, y, width, height, index, text_type='decimal_numbers')
     return price_limit
 
 if __name__ == '__main__':
