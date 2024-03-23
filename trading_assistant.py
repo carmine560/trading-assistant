@@ -28,6 +28,7 @@ import win32gui
 import configuration
 import file_utilities
 import gui_interactions
+import initializer
 import process_utilities
 import speech_synthesis
 import text_recognition
@@ -36,24 +37,11 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r'[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?')
 SECURITIES_CODE_REGEX = '[1-9]' + SANS_INITIAL_SECURITIES_CODE_REGEX
 
-class Trade:
+class Trade(initializer.Initializer):
     def __init__(self, brokerage, process):
-        self.brokerage = brokerage
-        if os.path.exists(process):
-            self.executable = os.path.abspath(process)
-            self.process = os.path.splitext(
-                os.path.basename(self.executable))[0]
-        else:
-            self.executable = None
-            self.process = process
+        super().__init__(brokerage, process, __file__)
+        self.brokerage = self.vendor
 
-        self.config_directory = os.path.join(
-            os.path.expandvars('%LOCALAPPDATA%'),
-            os.path.basename(os.path.dirname(__file__)))
-        self.script_file = os.path.basename(__file__)
-        self.script_base = os.path.splitext(self.script_file)[0]
-        self.config_path = os.path.join(self.config_directory,
-                                        self.script_base + '.ini')
         self.market_directory = os.path.join(self.config_directory, 'market')
         self.market_holidays = os.path.join(self.market_directory,
                                             'market_holidays.csv')
@@ -66,8 +54,7 @@ class Trade:
         self.startup_script = os.path.join(self.resource_directory,
                                            self.script_base + '.ps1')
 
-        for directory in [self.config_directory, self.market_directory,
-                          self.resource_directory]:
+        for directory in [self.market_directory, self.resource_directory]:
             file_utilities.check_directory(directory)
 
         self.customer_margin_ratios_title = (
@@ -382,7 +369,7 @@ def main():
               'and exit'))
     group.add_argument(
         '-A', metavar='ACTION', nargs=1,
-        help=('configure an action, create a shortcut to it, and exit'))
+        help='configure an action, create a shortcut to it, and exit')
     group.add_argument(
         '-L', action='store_true',
         help='configure the input map for buttons and keys and exit')
@@ -391,13 +378,13 @@ def main():
         help='configure schedules and exit')
     group.add_argument(
         '-CB', action='store_true',
-        help=('configure the cash balance region and exit'))
+        help='configure the cash balance region and exit')
     group.add_argument(
         '-U', action='store_true',
         help='configure the utilization ratio of the cash balance and exit')
     group.add_argument(
         '-PL', action='store_true',
-        help=('configure the price limit region and exit'))
+        help='configure the price limit region and exit')
     group.add_argument(
         '-DLL', action='store_true',
         help='configure the daily loss limit ratio and exit')
@@ -900,7 +887,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         df.to_csv(market_holidays, header=False, index=False)
 
     oldest_modified_time = pd.Timestamp.now(tz='UTC')
-    for i in range(len(paths)):
+    for i, _ in enumerate(paths):
         if os.path.exists(paths[i]):
             modified_time = pd.Timestamp(os.path.getmtime(paths[i]), tz='UTC',
                                          unit='s')
@@ -1016,7 +1003,7 @@ def execute_action(trade, config, gui_state, action):
     if isinstance(action, str):
         action = configuration.evaluate_value(action)
 
-    for index in range(len(action)):
+    for index, _ in enumerate(action):
         command = action[index][0]
         argument = action[index][1] if len(action[index]) > 1 else None
         additional_argument = (action[index][2] if len(action[index]) > 2
@@ -1046,7 +1033,7 @@ def execute_action(trade, config, gui_state, action):
                     trade.cash_balance)
                 configuration.write_config(config, trade.config_path)
             else:
-                daily_profit = (trade.cash_balance - initial_cash_balance)
+                daily_profit = trade.cash_balance - initial_cash_balance
                 if daily_profit < daily_loss_limit:
                     trade.speech_manager.set_speech_text(argument)
                     return False
