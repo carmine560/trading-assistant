@@ -280,15 +280,15 @@ that precedes the current chapter.</td></tr>
 
 <th>Description</th></tr>
 
-<tr><td><code>('is_now_after', '%H:%M:%S', ACTION)</code></td>
+<tr><td><code>('is_now_after', '%H:%M:%S', ACTION|'ACTION')</code></td>
 
 <td>Execute the action if the current system time is after the time.</td></tr>
 
-<tr><td><code>('is_now_before', '%H:%M:%S', ACTION)</code></td>
+<tr><td><code>('is_now_before', '%H:%M:%S', ACTION|'ACTION')</code></td>
 
 <td>Execute the action if the current system time is before the time.</td></tr>
 
-<tr><td><code>('is_recording', 'BOOL', ACTION)</code></td>
+<tr><td><code>('is_recording', 'BOOL', ACTION|'ACTION')</code></td>
 
 <td>Execute the action if recording a screencast is the bool value.</td></tr>
 
@@ -468,7 +468,7 @@ login = [
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
     # is before ${HYPERSBI2:end_time}.
     ('is_now_before', '${HYPERSBI2:end_time}', [
-        ('click', '273, 837, 12, 12'),
+        ('click', '279, 843'),
         ('back_to',)]),
     # Open the 'News' window if the current system time is before the open.
     ('is_now_before', '${Market Data:opening_time}', [

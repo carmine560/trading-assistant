@@ -97,6 +97,7 @@ class Trade(initializer.Initializer):
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
 
+        self.symbol = ''
         self.initialize_attributes()
 
     def initialize_attributes(self):
@@ -109,8 +110,9 @@ class Trade(initializer.Initializer):
         if matched:
             self.symbol = matched.group(1)
             return False
+        return True
 
-    def on_click(self, x, y, button, pressed, config, gui_state):
+    def on_click(self, _1, _2, button, pressed, config, gui_state):
         if gui_state.is_interactive_window():
             if not pressed:
                 action = configuration.evaluate_value(
@@ -258,7 +260,7 @@ class IndicatorThread(threading.Thread):
             lambda: self.check_for_modifications(widget, string, section, key,
                                                  minimum_value, maximum_value))
 
-    def on_text_modified(self, event, widget, string, section, key,
+    def on_text_modified(self, _, widget, string, section, key,
                          minimum_value, maximum_value):
         modified_text = widget.get() or '0.0'
         modified_text = max(minimum_value, min(maximum_value,
@@ -286,10 +288,11 @@ class IndicatorTooltip:
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
+        self.tooltip = None
         self.widget.bind('<Enter>', self.show_tooltip)
         self.widget.bind('<Leave>', self.hide_tooltip)
 
-    def show_tooltip(self, event):
+    def show_tooltip(self, _):
         x, y, _, _ = self.widget.bbox('insert')
         x += self.widget.winfo_rootx() + 20
         y += self.widget.winfo_rooty() + 20
@@ -303,7 +306,7 @@ class IndicatorTooltip:
         tk.Label(self.tooltip, bg='tan1', fg='gray5',
                  font=('Bahnschrift', -12), text=self.text).pack()
 
-    def hide_tooltip(self, event):
+    def hide_tooltip(self, _):
         if hasattr(self, 'tooltip'):
             self.tooltip.destroy()
 
@@ -404,8 +407,9 @@ def main():
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
 
-    if (args.SS or args.A or args.L or args.S or args.CB or args.U or args.PL
-        or args.DLL or args.MDN):
+    arguments = [args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
+                 args.DLL, args.MDN]
+    if any(arguments):
         config = configure(trade, can_interpolate=False)
         process_section = config[trade.process]
 
@@ -422,7 +426,7 @@ def main():
                     program_group_base=process_section['title'],
                     icon_directory=trade.resource_directory)
             return
-        elif args.A:
+        if args.A:
             trade.categorized_keys['preset_additional_values'] = (
                 configuration.list_section(config, trade.actions_title))
             if configuration.modify_tuple_list(
@@ -471,13 +475,13 @@ def main():
                 ('py.exe', 'python.exe'),
                 os.path.join(trade.resource_directory, 'completion.sh'))
             return
-        elif args.L and configuration.modify_option(
+        if args.L and configuration.modify_option(
                 config, trade.process, 'input_map', trade.config_path,
                 **backup_file, prompts={'value': 'action'},
                 dictionary_info={'possible_values': configuration.list_section(
                     config, trade.actions_title)}):
             return
-        elif args.S and configuration.modify_section(
+        if args.S and configuration.modify_section(
                 config, trade.schedules_title, trade.config_path,
                 **backup_file, is_inserting=True, value_type='tuple',
                 prompts={'values': ('trigger', 'action'),
@@ -492,26 +496,26 @@ def main():
                             configuration.list_section(config,
                                                        trade.actions_title))):
             return
-        elif args.CB and configuration.modify_option(
+        if args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
                 trade.config_path, **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
             return
-        elif args.U and configuration.modify_option(
+        if args.U and configuration.modify_option(
                 config, trade.process, 'utilization_ratio', trade.config_path,
                 **backup_file, minimum_value=0.0, maximum_value=1.0):
             return
-        elif args.PL and configuration.modify_option(
+        if args.PL and configuration.modify_option(
                 config, trade.process, 'price_limit_region', trade.config_path,
                 **backup_file,
                 prompts={'value': 'x, y, width, height, index'}):
             return
-        elif args.DLL and configuration.modify_option(
+        if args.DLL and configuration.modify_option(
                 config, trade.process, 'daily_loss_limit_ratio',
                 trade.config_path, **backup_file, minimum_value=-1.0,
                 maximum_value=0.0):
             return
-        elif args.MDN and configuration.modify_option(
+        if args.MDN and configuration.modify_option(
                 config, trade.process, 'maximum_daily_number_of_trades',
                 trade.config_path, **backup_file, minimum_value=0,
                 maximum_value=sys.maxsize):
@@ -613,7 +617,7 @@ def configure(trade, can_interpolate=True, can_override=True):
                                     trade.brokerage, trade.process,
                                     'location.dat')
         try:
-            with open(location_dat) as f:
+            with open(location_dat, encoding='utf-8') as f:
                 trade.executable = os.path.normpath(
                     os.path.join(f.read(), trade.process + '.exe'))
         except OSError as e:
@@ -772,73 +776,68 @@ def configure(trade, can_interpolate=True, can_override=True):
 
 def save_customer_margin_ratios(trade, config):
     section = config[trade.customer_margin_ratios_title]
-    update_time = section['update_time']
-    time_zone = section['time_zone']
-    url = section['url']
-    symbol_header = section['symbol_header']
-    regulation_header = section['regulation_header']
-    headers = configuration.evaluate_value(section['headers'])
-    customer_margin_ratio_string = section['customer_margin_ratio_string']
-    suspended = section['suspended']
 
-    if get_latest(config, trade.market_holidays, update_time, time_zone,
-                  trade.customer_margin_ratios):
+    if get_latest(config, trade.market_holidays, section['update_time'],
+                  section['time_zone'], trade.customer_margin_ratios):
         try:
-            response = requests.get(url)
+            response = requests.get(section['url'], timeout=5)
             encoding = chardet.detect(response.content)['encoding']
-            dfs = pd.read_html(response.content, match=regulation_header,
+            dfs = pd.read_html(response.content,
+                               match=section['regulation_header'],
                                flavor='lxml', header=0, encoding=encoding)
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             print(e)
             sys.exit(1)
 
+        df = None
+        headers = configuration.evaluate_value(section['headers'])
         for index, df in enumerate(dfs):
             if tuple(df.columns.values) == headers:
-                df = dfs[index][[symbol_header, regulation_header]]
+                df = dfs[index][[section['symbol_header'],
+                                 section['regulation_header']]]
                 break
-
-        df = df[df[regulation_header].str.contains(
-            suspended + '|' + customer_margin_ratio_string)]
-        df[regulation_header] = df[regulation_header].replace(
-            '.*' + suspended + '.*', 'suspended', regex=True)
-        df[regulation_header] = df[regulation_header].replace(
-            '.*' + customer_margin_ratio_string + r'(\d+).*', r'0.\1',
-            regex=True)
-
-        df.to_csv(trade.customer_margin_ratios, header=False, index=False)
+        if df is not None:
+            df = df[df[section['regulation_header']].str.contains(
+                f"{section['suspended']}|"
+                f"{section['customer_margin_ratio_string']}")]
+            df[section['regulation_header']] = df[
+                section['regulation_header']].replace(
+                    f".*{section['suspended']}.*", 'suspended', regex=True)
+            df[section['regulation_header']] = df[
+                section['regulation_header']].replace(
+                    fr".*{section['customer_margin_ratio_string']}(\d+).*",
+                    r'0.\1', regex=True)
+            df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
 def save_market_data(trade, config, clipboard=False):
     section = config['Market Data']
-    opening_time = section['opening_time']
-    closing_time = section['closing_time']
-    delay = int(section['delay'])
-    time_zone = section['time_zone']
-    url = section['url']
-    number_of_pages = int(section['number_of_pages'])
-    symbol_header = section['symbol_header']
-    price_header = section['price_header']
 
     if clipboard:
         latest = True
     else:
         paths = []
+        delay = int(section['delay'])
         for i in range(1, 10):
             paths.append(trade.closing_prices + str(i) + '.csv')
 
-        opening_time = (pd.Timestamp(opening_time, tz=time_zone)
-                        + pd.Timedelta(minutes=delay)).strftime('%H:%M:%S')
-        closing_time = (pd.Timestamp(closing_time, tz=time_zone)
-                        + pd.Timedelta(minutes=delay)).strftime('%H:%M:%S')
+        opening_time = (
+            pd.Timestamp(section['opening_time'], tz=section['time_zone'])
+            + pd.Timedelta(minutes=delay)).strftime('%H:%M:%S')
+        closing_time = (
+            pd.Timestamp(section['closing_time'], tz=section['time_zone'])
+            + pd.Timedelta(minutes=delay)).strftime('%H:%M:%S')
         latest = get_latest(config, trade.market_holidays, closing_time,
-                            time_zone, *paths, volatile_time=opening_time)
+                            section['time_zone'], *paths,
+                            volatile_time=opening_time)
 
     if latest:
+        number_of_pages = int(section['number_of_pages'])
         dfs = []
         for i in range(number_of_pages):
             try:
-                dfs = dfs + pd.read_html(url + '&page=' + str(i + 1),
-                                         match=symbol_header)
-            except Exception as e:
+                dfs.extend(pd.read_html(f"{section['url']}&page={i + 1}",
+                                        match=section['symbol_header']))
+            except ValueError as e:
                 print(e)
                 sys.exit(1)
             if i < number_of_pages - 1:
@@ -846,41 +845,38 @@ def save_market_data(trade, config, clipboard=False):
 
         df = pd.concat(dfs)
         if clipboard:
-            df = df[[symbol_header]]
+            df = df[[section['symbol_header']]]
             df.to_clipboard(index=False, header=False)
             return
-        else:
-            df = df[[symbol_header, price_header]]
-            df.sort_values(by=symbol_header, inplace=True)
 
+        df = df[[section['symbol_header'], section['price_header']]]
+        df.sort_values(by=section['symbol_header'], inplace=True)
         for i in range(1, 10):
-            subset = df.loc[df[symbol_header].astype(str).str.fullmatch(
-                f'{i}{SANS_INITIAL_SECURITIES_CODE_REGEX}')]
+            subset = (
+                df.loc[df[section['symbol_header']].astype(str).str.fullmatch(
+                    f'{i}{SANS_INITIAL_SECURITIES_CODE_REGEX}')])
             subset.to_csv(trade.closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
 def get_latest(config, market_holidays, update_time, time_zone, *paths,
                volatile_time=None):
     section = config['Market Holidays']
-    url = section['url']
-    date_header = section['date_header']
-    date_format = re.sub('%%', '%', section['date_format'])
 
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
     if os.path.exists(market_holidays):
         modified_time = pd.Timestamp(os.path.getmtime(market_holidays),
                                      tz='UTC', unit='s')
 
-    head = requests.head(url)
+    head = requests.head(section['url'], timeout=5)
     try:
         head.raise_for_status()
-    except Exception as e:
+    except requests.exceptions.HTTPError as e:
         print(e)
         sys.exit(1)
 
     if modified_time < pd.Timestamp(head.headers['last-modified']):
-        dfs = pd.read_html(url, match=date_header)
-        df = pd.concat(dfs)[date_header]
+        dfs = pd.read_html(section['url'], match=section['date_header'])
+        df = pd.concat(dfs)[section['date_header']]
         df.replace(r'^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True,
                    regex=True)
 
@@ -891,8 +887,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         if os.path.exists(paths[i]):
             modified_time = pd.Timestamp(os.path.getmtime(paths[i]), tz='UTC',
                                          unit='s')
-            if modified_time < oldest_modified_time:
-                oldest_modified_time = modified_time
+            oldest_modified_time = min(oldest_modified_time, modified_time)
         else:
             modified_time = pd.Timestamp(0, tz='UTC', unit='s')
             break
@@ -904,6 +899,8 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         latest -= pd.Timedelta(days=1)
 
     df = pd.read_csv(market_holidays, header=None)
+    date_format = re.sub('%%', '%', section['date_format'])
+
     while (df[0].str.contains(latest.strftime(date_format)).any()
            or latest.weekday() == 5 or latest.weekday() == 6):
         latest -= pd.Timedelta(days=1)
@@ -914,11 +911,12 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
             if (df[0].str.contains(now.strftime(date_format)).any()
                 or now.weekday() == 5 or now.weekday() == 6):
                 return latest
-            elif (not pd.Timestamp(volatile_time, tz=time_zone) <= now
-                  <= pd.Timestamp(update_time, tz=time_zone)):
+            if (not pd.Timestamp(volatile_time, tz=time_zone) <= now
+                <= pd.Timestamp(update_time, tz=time_zone)):
                 return latest
         else:
             return latest
+    return False
 
 def start_scheduler(trade, config, gui_state, process):
     scheduler = sched.scheduler(time.time, time.sleep)
@@ -978,13 +976,15 @@ def start_execute_action_thread(trade, config, gui_state, action):
 def execute_action(trade, config, gui_state, action):
     def recursively_execute_action():
         if isinstance(additional_argument, list):
-            execute_action(trade, config, gui_state, additional_argument)
-        elif isinstance(additional_argument, str):
-            execute_action(trade, config, gui_state,
-                           config[trade.actions_title][additional_argument])
-        else:
-            print(additional_argument, 'is not a list or a string.')
-            return False
+            return execute_action(trade, config, gui_state,
+                                  additional_argument)
+        if isinstance(additional_argument, str):
+            return execute_action(
+                trade, config, gui_state,
+                config[trade.actions_title][additional_argument])
+
+        print(additional_argument, 'is not a list or a string.')
+        return False
 
     def get_latest_screencast():
         screencast_directory = general_section['screencast_directory']
@@ -1165,7 +1165,7 @@ def execute_action(trade, config, gui_state, action):
                     pyautogui.hotkey('shift', 'tab')
 
                 trade.speech_manager.set_speech_text('Canceled.')
-                return
+                return True
         elif command == 'wait_for_price':
             x, y, width, height, index = map(int, argument.split(','))
             text_recognition.recognize_text(process_section, x, y, width,
@@ -1187,25 +1187,27 @@ def execute_action(trade, config, gui_state, action):
                                         + argument, '%Y-%m-%d %H:%M:%S')
             target_time = time.mktime(target_time)
             if target_time < time.time():
-                if recursively_execute_action() is False:
+                if not recursively_execute_action():
                     return False
         elif command == 'is_now_before':
             target_time = time.strptime(time.strftime('%Y-%m-%d ')
                                         + argument, '%Y-%m-%d %H:%M:%S')
             target_time = time.mktime(target_time)
             if time.time() < target_time:
-                if recursively_execute_action() is False:
+                if not recursively_execute_action():
                     return False
         elif command == 'is_recording':
-            boolean_value = True if argument.lower() == 'true' else False
+            boolean_value = argument.lower() == 'true'
             if (file_utilities.is_writing(get_latest_screencast())
                 == boolean_value):
-                if recursively_execute_action() is False:
+                if not recursively_execute_action():
                     return False
 
         else:
             print(command, 'is not a recognized command.')
             return False
+
+    return True
 
 def create_startup_script(trade, config):
     def generate_start_process_lines(options):
@@ -1225,7 +1227,7 @@ def create_startup_script(trade, config):
     post_start_options = section.get('post_start_options', '').split(',')
     running_options = section.get('running_options', '').split(',')
 
-    with open(trade.startup_script, 'w') as f:
+    with open(trade.startup_script, 'w', encoding='utf-8') as f:
         lines = []
         lines.append(f'Set-Location -Path "{os.path.dirname(__file__)}"\n')
         if activate:
@@ -1242,7 +1244,7 @@ def create_startup_script(trade, config):
         lines.extend(generate_start_process_lines(post_start_options))
         lines.append('}\n')
         if activate:
-            lines.append(f'deactivate\n')
+            lines.append('deactivate\n')
 
         f.writelines(lines)
 
@@ -1253,14 +1255,14 @@ def calculate_share_size(trade, config, position):
         customer_margin_ratio = float(config[
             trade.customer_margin_ratios_title]['customer_margin_ratio'])
         try:
-            with open(trade.customer_margin_ratios) as f:
+            with open(trade.customer_margin_ratios, encoding='utf-8') as f:
                 reader = csv.reader(f)
                 for row in reader:
                     if row[0] == trade.symbol:
                         if row[1] == 'suspended':
                             return (False, 'Margin trading suspended.')
-                        else:
-                            customer_margin_ratio = float(row[1])
+
+                        customer_margin_ratio = float(row[1])
                         break
         except OSError as e:
             print(e)
@@ -1273,19 +1275,20 @@ def calculate_share_size(trade, config, position):
                       * trading_unit)
         if share_size == 0:
             return (False, 'Insufficient cash balance.')
-        else:
-            if position == 'short' and share_size > 50 * trading_unit:
-                share_size = 50 * trading_unit
 
-            trade.share_size = share_size
-            return (True, None)
-    else:
-        return (False, 'Symbol or cash balance not provided.')
+        if position == 'short' and share_size > 50 * trading_unit:
+            share_size = 50 * trading_unit
+
+        trade.share_size = share_size
+        return (True, None)
+
+    return (False, 'Symbol or cash balance not provided.')
 
 def get_price_limit(trade, config):
     closing_price = 0.0
     try:
-        with open(trade.closing_prices + trade.symbol[0] + '.csv') as f:
+        with open(f'{trade.closing_prices}{trade.symbol[0]}.csv',
+                  encoding='utf-8') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row[0] == trade.symbol:
