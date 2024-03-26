@@ -2,7 +2,6 @@ from io import StringIO
 import ast
 import configparser
 import os
-import re
 import sys
 import time
 
@@ -48,11 +47,11 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
             string = string[:max_length] + '...'
         return string
 
-    def display_changes(config, config_path, section, option, option_status):
-        global previous_section
-        if section != previous_section:
+    def display_changes(config, config_path, previous_section, section, option,
+                        option_status):
+        if section != previous_section[0]:
             print(f'[{ANSI_BOLD}{section}{ANSI_RESET}]')
-            previous_section = section
+            previous_section[0] = section
 
         print(option_status)
         answer = tidy_answer(['default', 'quit'])
@@ -69,8 +68,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
     user_config = configparser.ConfigParser()
     read_config(user_config, config_path)
 
-    global previous_section
-    previous_section = None
+    previous_section = [None]
     for section in default_config.sections():
         if (section not in excluded_sections
             and default_config.options(section)):
@@ -90,8 +88,9 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                         f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
                         f'{default_value} → '
                         f'{ANSI_CURRENT}{user_value}{ANSI_RESET}')
-                    if not display_changes(user_config, config_path, section,
-                                           option, option_status):
+                    if not display_changes(user_config, config_path,
+                                           previous_section, section, option,
+                                           option_status):
                         return
             if section not in user_option_ignored_sections:
                 for option in user_config[section]:
@@ -106,7 +105,8 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                             f'{ANSI_WARNING}{default_value}{ANSI_RESET} → '
                             f'{user_value}')
                         if not display_changes(user_config, config_path,
-                                               section, option, option_status):
+                                               previous_section, section,
+                                               option, option_status):
                             return
 
 def configure_position(answer, level=0, value=''):
@@ -124,7 +124,6 @@ def configure_position(answer, level=0, value=''):
 
     if value and value[0].lower() == 'c':
         previous_key_state = win32api.GetKeyState(0x01)
-        current_number = 0
         coordinates = ''
         while True:
             key_state = win32api.GetKeyState(0x01)
@@ -135,10 +134,8 @@ def configure_position(answer, level=0, value=''):
                     break
 
             time.sleep(0.001)
-
         return coordinates
-    else:
-        return value
+    return value
 
 def delete_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None):
@@ -149,9 +146,9 @@ def delete_option(config, section, option, config_path, backup_function=None,
         config.remove_option(section, option)
         write_config(config, config_path)
         return True
-    else:
-        print(option, 'option does not exist.')
-        return False
+
+    print(option, 'option does not exist.')
+    return False
 
 def evaluate_value(value):
     evaluated_value = None
@@ -159,7 +156,7 @@ def evaluate_value(value):
         evaluated_value = ast.literal_eval(value)
     except (SyntaxError, ValueError):
         pass
-    except Exception as e:
+    except (TypeError, MemoryError, RecursionError) as e:
         print(e)
         sys.exit(1)
     return evaluated_value
@@ -170,9 +167,9 @@ def list_section(config, section):
         for option in config[section]:
             options.append(option)
         return options
-    else:
-        print(section, 'section does not exist.')
-        return False
+
+    print(section, 'section does not exist.')
+    return False
 
 def modify_data(prompt, level=0, data='', all_data=None, minimum_value=None,
                 maximum_value=None):
@@ -222,7 +219,7 @@ def modify_dictionary(dictionary_data, level=0, prompts=None,
     value_prompt = prompts.get('value', 'value')
     possible_values = dictionary_info.get('possible_values')
 
-    for key, value in dictionary_data.items():
+    for key, _ in dictionary_data.items():
         print(f'{INDENT * level}{ANSI_IDENTIFIER}{key}{ANSI_RESET}: '
               f'{ANSI_CURRENT}{dictionary_data[key]}{ANSI_RESET}')
         answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
@@ -290,9 +287,9 @@ def modify_option(config, section, option, config_path, backup_function=None,
 
         write_config(config, config_path)
         return True
-    else:
-        print(option, 'option does not exist.')
-        return False
+
+    print(option, 'option does not exist.')
+    return False
 
 def modify_section(config, section, config_path, backup_function=None,
                    backup_parameters=None, is_inserting=False,
@@ -311,7 +308,7 @@ def modify_section(config, section, config_path, backup_function=None,
                                    prompts=prompts,
                                    categorized_keys=categorized_keys,
                                    tuple_info=tuple_info)
-            if result == 'quit' or result == False:
+            if result in ('quit', False):
                 return result
 
         if is_inserting:
@@ -338,9 +335,9 @@ def modify_section(config, section, config_path, backup_function=None,
                 write_config(config, config_path)
 
         return True
-    else:
-        print(section, 'section does not exist.')
-        return False
+
+    print(section, 'section does not exist.')
+    return False
 
 def modify_tuple(tuple_data, is_created, level=0, prompts=None, tuple_info=()):
     tuple_data = list(tuple_data)
@@ -415,9 +412,9 @@ def modify_tuple_list(config, section, option, config_path,
         config[section][option] = str(tuples)
         write_config(config, config_path)
         return True
-    else:
-        delete_option(config, section, option, config_path)
-        return False
+
+    delete_option(config, section, option, config_path)
+    return False
 
 def modify_tuples(tuples, is_created, level=0, prompts=None,
                   categorized_keys=None):
@@ -432,13 +429,6 @@ def modify_tuples(tuples, is_created, level=0, prompts=None,
                                                  'preset additional value')
     end_of_list_prompt = prompts.get('end_of_list', 'end of list')
 
-    all_keys = categorized_keys.get('all_keys')
-    control_flow_keys = categorized_keys.get('control_flow_keys')
-    additional_value_keys = categorized_keys.get('additional_value_keys')
-    no_value_keys = categorized_keys.get('no_value_keys')
-    positioning_keys = categorized_keys.get('positioning_keys')
-    preset_additional_values = categorized_keys.get('preset_additional_values')
-
     index = 0
     while index <= len(tuples):
         if is_created or index == len(tuples):
@@ -452,8 +442,9 @@ def modify_tuples(tuples, is_created, level=0, prompts=None,
                                  level=level)
 
         if answer == 'insert':
-            key = modify_data(key_prompt, level=level, all_data=all_keys)
-            if key in control_flow_keys:
+            key = modify_data(key_prompt, level=level,
+                              all_data=categorized_keys.get('all_keys'))
+            if key in categorized_keys.get('control_flow_keys'):
                 # TODO: add trigger
                 value = modify_data(value_prompt, level=level)
                 answer = tidy_answer(['build', 'call'], level=level)
@@ -466,22 +457,25 @@ def modify_tuples(tuples, is_created, level=0, prompts=None,
                 elif answer == 'call':
                     additional_value = modify_data(
                         preset_additional_value_prompt, level=level,
-                        all_data=preset_additional_values)
+                        all_data=categorized_keys.get(
+                            'preset_additional_values'))
 
                 tuples.insert(index, (key, value, additional_value))
-            elif key in additional_value_keys:
+            elif key in categorized_keys.get('additional_value_keys'):
                 value = modify_data(value_prompt, level=level)
                 additional_value = modify_data(additional_value_prompt,
                                                level=level)
+                # TODO: write_chapter
                 if value and additional_value:
                     tuples.insert(index, (key, value, additional_value))
-            elif key in no_value_keys:
+            elif key in categorized_keys.get('no_value_keys'):
                 tuples.insert(index, (key,))
-            elif key in positioning_keys:
+            elif key in categorized_keys.get('positioning_keys'):
                 value = configure_position(answer, level=level)
                 tuples.insert(index, (key, value))
             else:
                 value = modify_data(value_prompt, level=level)
+                # TODO: count_trades
                 if value:
                     tuples.insert(index, (key, value))
         elif answer == 'modify':
@@ -493,8 +487,8 @@ def modify_tuples(tuples, is_created, level=0, prompts=None,
                 additional_value = tuples[index][2]
 
             key = modify_data(key_prompt, level=level, data=key,
-                              all_data=all_keys)
-            if key in control_flow_keys:
+                              all_data=categorized_keys.get('all_keys'))
+            if key in categorized_keys.get('control_flow_keys'):
                 # TODO: add trigger
                 value = modify_data(value_prompt, level=level, data=value)
                 answer = tidy_answer(['build', 'call'], level=level)
@@ -507,10 +501,11 @@ def modify_tuples(tuples, is_created, level=0, prompts=None,
                 elif answer == 'call':
                     additional_value = modify_data(
                         preset_additional_value_prompt, level=level,
-                        all_data=preset_additional_values)
+                        all_data=categorized_keys.get(
+                            'preset_additional_values'))
 
                 tuples[index] = (key, value, additional_value)
-            elif key in additional_value_keys:
+            elif key in categorized_keys.get('additional_value_keys'):
                 value = modify_data(value_prompt, level=level, data=value)
                 additional_value = modify_data(additional_value_prompt,
                                                level=level,
@@ -520,9 +515,9 @@ def modify_tuples(tuples, is_created, level=0, prompts=None,
                 else:
                     del tuples[index]
                     index -= 1
-            elif key in no_value_keys:
+            elif key in categorized_keys.get('no_value_keys'):
                 tuples[index] = (key,)
-            elif key in positioning_keys:
+            elif key in categorized_keys.get('positioning_keys'):
                 value = configure_position(answer, level=level, value=value)
                 tuples[index] = (key, value)
             else:
@@ -556,7 +551,7 @@ def tidy_answer(answers, level=0):
 
     previous_initialism = ''
     for word_index, word in enumerate(answers):
-        for char_index in range(len(word)):
+        for char_index, _ in enumerate(word):
             if not word[char_index].lower() in initialism:
                 mnemonics = word[char_index]
                 initialism = initialism + mnemonics.lower()
@@ -578,7 +573,7 @@ def tidy_answer(answers, level=0):
         if not answer[0] in initialism:
             answer = ''
         else:
-            for index in range(len(initialism)):
+            for index, _ in enumerate(initialism):
                 if initialism[index] == answer[0]:
                     answer = answers[index]
     return answer
