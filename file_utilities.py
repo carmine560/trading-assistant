@@ -27,7 +27,6 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
 
 def backup_file(source, backup_directory=None, number_of_backups=-1,
                 should_compare=True):
-    decrypted_source = source
     encrypted_source = source + '.gpg'
     if os.path.exists(encrypted_source):
         source = encrypted_source
@@ -39,10 +38,11 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
 
         if number_of_backups:
             check_directory(backup_directory)
-            if source == encrypted_source:
-                source_base = os.path.splitext(
-                    os.path.basename(decrypted_source))[0]
-                source_suffix = os.path.splitext(decrypted_source)[1] + '.gpg'
+            if not should_compare:
+                source_base = os.path.splitext(os.path.splitext(
+                    os.path.basename(source))[0])[0]
+                source_suffix = os.path.splitext(os.path.splitext(
+                    source)[0])[1] + '.gpg'
             else:
                 source_base = os.path.splitext(os.path.basename(source))[0]
                 source_suffix = os.path.splitext(source)[1]
@@ -52,9 +52,10 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                 source_base + datetime.fromtimestamp(
                     os.path.getmtime(source)).strftime('-%Y%m%dT%H%M%S')
                 + source_suffix)
-            regex = (source_base + r'-\d{8}T\d{6}' + source_suffix)
-            backups = sorted([f for f in os.listdir(backup_directory)
-                              if re.fullmatch(regex, f)])
+            backups = sorted(
+                [f for f in os.listdir(backup_directory)
+                 if re.fullmatch(
+                         fr'{source_base}-\d{{8}}T\d{{6}}{source_suffix}', f)])
 
             if not os.path.exists(backup):
                 should_copy = True
@@ -70,7 +71,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                     try:
                         shutil.copy2(source, backup)
                         backups.append(os.path.basename(backup))
-                    except Exception as e:
+                    except OSError as e:
                         print(e)
                         sys.exit(1)
 
@@ -87,20 +88,17 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
         elif os.path.isdir(backup_directory):
             try:
                 shutil.rmtree(backup_directory)
-            except Exception as e:
+            except OSError as e:
                 print(e)
                 sys.exit(1)
 
 def create_bash_completion(script_base, options, values, interpreters,
                            completion):
-    options_str = ' '.join(options)
-
     variable_str = '    values="'
     line = ''
-    max_line_length = 79
     lines = []
     for value in values:
-        if len(variable_str) + len(line) + len(value) + 4 > max_line_length:
+        if len(variable_str) + len(line) + len(value) + 4 > 79:
             lines.append(line.rstrip(' '))
             line = ''
 
@@ -111,14 +109,13 @@ def create_bash_completion(script_base, options, values, interpreters,
 
     expression_str = ' || '.join(f'$previous == {option}'
                                  for option in options)
-    interpreters_str = ' '.join(interpreters)
     completion_str = fr'''_{script_base}()
 {{
     local script current previous options values
     script=${{COMP_WORDS[1]}}
     current=${{COMP_WORDS[COMP_CWORD]}}
     previous=${{COMP_WORDS[COMP_CWORD-1]}}
-    options="{options_str}"
+    options="{' '.join(options)}"
 {variable_str}{values_str}"
 
     if [[ $script =~ {script_base}\.py ]]; then
@@ -135,10 +132,10 @@ def create_bash_completion(script_base, options, values, interpreters,
         return 0
     fi
 }}
-complete -F _{script_base} {interpreters_str}
+complete -F _{script_base} {' '.join(interpreters)}
 '''
 
-    with open(completion, 'w', newline='\n') as f:
+    with open(completion, 'w', encoding='utf-8', newline='\n') as f:
         f.write(completion_str)
 
 def check_directory(directory):
@@ -154,24 +151,19 @@ def create_icon(base, icon_directory=None):
 
     from PIL import Image, ImageDraw, ImageFont
 
-    def get_scaled_font(text, font_path, desired_width, desired_height,
-                        variation_name=''):
+    def get_scaled_font(text, font_path, desired_dimension, variation_name=''):
         temp_font_size = 100
         temp_font = ImageFont.truetype(font_path, temp_font_size)
         if variation_name:
             temp_font.set_variation_by_name(variation_name)
 
-        draw = ImageDraw.Draw(Image.new('RGB', (1, 1)))
-        left, top, right, bottom = draw.multiline_textbbox((0, 0), text,
-                                                           font=temp_font)
-        temp_text_width = right - left
-        temp_text_height = bottom - top
-
-        scaling_factor_width = desired_width / temp_text_width
-        scaling_factor_height = desired_height / temp_text_height
-        scaling_factor = min(scaling_factor_width, scaling_factor_height)
-        actual_font_size = int(temp_font_size * scaling_factor)
-        actual_font = ImageFont.truetype(font_path, actual_font_size)
+        left, top, right, bottom = ImageDraw.Draw(
+            Image.new('RGB', (1, 1))).multiline_textbbox((0, 0), text,
+                                                         font=temp_font)
+        scaling_factor = min(desired_dimension / (right - left),
+                             desired_dimension / (bottom - top))
+        actual_font = ImageFont.truetype(font_path,
+                                         int(temp_font_size * scaling_factor))
         if variation_name:
             actual_font.set_variation_by_name(variation_name)
         return actual_font
@@ -180,13 +172,15 @@ def create_icon(base, icon_directory=None):
                       for word in re.split(r'[\W_]+', base) if word)
     font_path = 'bahnschrift.ttf'
     variation_name = 'Bold'
-    image_width = image_height = 256
-    desired_width = desired_height = image_width - 2
-    image = Image.new('RGBA', (image_width, image_height), color=(0, 0, 0, 0))
+    image_dimension = 256
+    desired_dimension = image_dimension - 2
+    image = Image.new('RGBA', (image_dimension, image_dimension),
+                      color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
 
-    sub_key = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize'
-    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                        r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes'
+                        r'\Personalize') as key:
         try:
             is_light_theme, _ = winreg.QueryValueEx(key, 'AppsUseLightTheme')
         except OSError:
@@ -196,22 +190,22 @@ def create_icon(base, icon_directory=None):
 
     if not acronym:
         return False
-    elif len(acronym) < 3:
-        font = get_scaled_font(acronym, font_path, desired_width,
-                               desired_height, variation_name=variation_name)
+    if len(acronym) < 3:
+        font = get_scaled_font(acronym, font_path, desired_dimension,
+                               variation_name=variation_name)
         left, top, right, bottom = draw.textbbox((0, 0), acronym, font=font)
-        draw.text(((image_width - (right - left)) / 2 - left,
-                   (image_height - (bottom - top)) / 2 - top), acronym,
+        draw.text(((image_dimension - (right - left)) / 2 - left,
+                   (image_dimension - (bottom - top)) / 2 - top), acronym,
                   fill=fill, font=font)
     else:
         text = f'{acronym[:2]}\n{acronym[2:4]}'
-        font = get_scaled_font(text, font_path, desired_width, desired_height,
+        font = get_scaled_font(text, font_path, desired_dimension,
                                variation_name=variation_name)
         left, top, right, bottom = draw.multiline_textbbox((0, 0), text,
                                                            font=font)
-        draw.multiline_text(((image_width - (right - left)) / 2 - left,
-                             (image_height - (bottom - top)) / 2 - top), text,
-                            fill=fill, font=font, align='center')
+        draw.multiline_text(((image_dimension - (right - left)) / 2 - left,
+                             (image_dimension - (bottom - top)) / 2 - top),
+                            text, fill=fill, font=font, align='center')
 
     if icon_directory:
         icon = os.path.join(icon_directory, base + '.ico')
@@ -224,16 +218,15 @@ def create_icon(base, icon_directory=None):
 
 def create_powershell_completion(script_base, options, values, interpreters,
                                  completion):
-    interpreters_regex = f"({'|'.join(interpreters)})"
+    interpreters_regex = fr"({'|'.join(interpreters)})(\.exe)?"
     interpreters_array = f"@({', '.join(map(repr, interpreters))})"
     options_str = '|'.join(options)
 
     variable_str = '        $options = @('
     line = ''
-    max_line_length = 79
     lines = []
     for value in values:
-        if len(variable_str) + len(line) + len(value) + 5 > max_line_length:
+        if len(variable_str) + len(line) + len(value) + 5 > 79:
             lines.append(line.rstrip(' '))
             line = ''
 
@@ -246,7 +239,7 @@ def create_powershell_completion(script_base, options, values, interpreters,
     param($wordToComplete, $commandAst, $cursorPosition)
     $commandLine = $commandAst.ToString()
     $regex = `
-      '{interpreters_regex}(\.exe)?\s+.*{script_base}\.py(\s+.*)?\s+({options_str})'
+      '{interpreters_regex}\s+.*{script_base}\.py(\s+.*)?\s+({options_str})'
     if ($commandLine -cmatch $regex) {{
 {variable_str}{values_str})
         $options | Where-Object {{ $_ -like "$wordToComplete*" }} |
@@ -260,7 +253,7 @@ Register-ArgumentCompleter -Native -CommandName {interpreters_array} `
   -ScriptBlock $scriptblock
 '''
 
-    with open(completion, 'w') as f:
+    with open(completion, 'w', encoding='utf-8') as f:
         f.write(completion_str)
 
 def create_shortcut(base, target_path, arguments, program_group_base=None,
@@ -300,7 +293,7 @@ def decrypt_extract_file(source, output_directory):
             if os.path.isdir(backup):
                 try:
                     shutil.rmtree(backup)
-                except Exception as e:
+                except OSError as e:
                     print(e)
                     sys.exit(1)
             elif os.path.isfile(backup):
@@ -314,14 +307,14 @@ def decrypt_extract_file(source, output_directory):
 
         try:
             tar.extractall(path=output_directory)
-        except Exception as e:
+        except (OSError, tarfile.FilterError) as e:
             print(e)
             sys.exit(1)
 
         if os.path.isdir(backup):
             try:
                 shutil.rmtree(backup)
-            except Exception as e:
+            except OSError as e:
                 print(e)
                 sys.exit(1)
 
@@ -374,8 +367,8 @@ def get_file_description(executable):
     try:
         language, codepage = win32api.GetFileVersionInfo(
             executable, r'\VarFileInfo\Translation')[0]
-        string_file_info = (u'\\StringFileInfo\\%04X%04X\\%s'
-                            % (language, codepage, 'FileDescription'))
+        string_file_info = (f'\\StringFileInfo\\{language:04X}{codepage:04X}'
+                            f'\\FileDescription')
         file_description = win32api.GetFileVersionInfo(executable,
                                                        string_file_info)
     except Exception as e:
@@ -397,11 +390,8 @@ def get_program_group(program_group_base=None):
     return program_group
 
 def is_writing(target_path):
-    if (os.path.exists(target_path)
-        and time.time() - os.path.getmtime(target_path) < 1):
-        return True
-    else:
-        return False
+    return bool(os.path.exists(target_path)
+                and time.time() - os.path.getmtime(target_path) < 1)
 
 def move_to_trash(path, option=None):
     command = ['trash-put', path]
@@ -409,7 +399,7 @@ def move_to_trash(path, option=None):
         command.insert(1, option)
     try:
         subprocess.run(command, check=True)
-    except Exception as e:
+    except (OSError, subprocess.CalledProcessError) as e:
         print(e)
 
 def select_executable(executables):
@@ -417,10 +407,11 @@ def select_executable(executables):
         path = shutil.which(executable)
         if path:
             return path
+    return False
 
 def title_except_acronyms(string, acronyms):
     words = string.split()
-    for i in range(len(words)):
+    for i, _ in enumerate(words):
         if words[i] not in acronyms:
             words[i] = words[i].title()
     return ' '.join(words)
@@ -441,12 +432,12 @@ def write_chapter(video, current_title, previous_title=None, offset=None):
         end = start + default_duration
 
         if os.path.exists(ffmpeg_metadata):
-            with open(ffmpeg_metadata, 'r') as f:
+            with open(ffmpeg_metadata, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             for i in reversed(range(len(lines))):
                 if 'END=' in lines[i]:
                     lines[i] = re.sub(r'END=\d+', f'END={start - 1}', lines[i])
-                    with open(ffmpeg_metadata, 'w') as f:
+                    with open(ffmpeg_metadata, 'w', encoding='utf-8') as f:
                         f.writelines(lines)
                     break
 
@@ -457,7 +448,7 @@ START={start}
 END={end}
 title={current_title}
 '''
-            with open(ffmpeg_metadata, 'a') as f:
+            with open(ffmpeg_metadata, 'a', encoding='utf-8') as f:
                 f.write(chapter)
         else:
             chapters = f''';FFMETADATA1
@@ -474,5 +465,5 @@ START={start}
 END={end}
 title={current_title}
 '''
-            with open(ffmpeg_metadata, 'w') as f:
+            with open(ffmpeg_metadata, 'w', encoding='utf-8') as f:
                 f.write(chapters)
