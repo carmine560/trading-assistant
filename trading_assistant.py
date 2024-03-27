@@ -1001,11 +1001,10 @@ def execute_action(trade, config, gui_state, action):
     if isinstance(action, str):
         action = configuration.evaluate_value(action)
 
-    for index, _ in enumerate(action):
-        command = action[index][0]
-        argument = action[index][1] if len(action[index]) > 1 else None
-        additional_argument = (action[index][2] if len(action[index]) > 2
-                               else None)
+    for instruction in action:
+        command = instruction[0]
+        argument = instruction[1] if len(instruction) > 1 else None
+        additional_argument = instruction[2] if len(instruction) > 2 else None
 
         if command == 'back_to':
             pyautogui.moveTo(gui_state.previous_position)
@@ -1204,7 +1203,6 @@ def execute_action(trade, config, gui_state, action):
         else:
             print(command, 'is not a recognized command.')
             return False
-
     return True
 
 def create_startup_script(trade, config):
