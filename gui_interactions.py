@@ -2,6 +2,7 @@ import re
 import time
 
 import pyautogui
+import pywintypes
 import win32api
 import win32gui
 
@@ -47,7 +48,7 @@ def click_widget(gui_state, image, x, y, width, height):
 def enumerate_windows(callback, extra):
     try:
         win32gui.EnumWindows(callback, extra)
-    except Exception as e:
+    except pywintypes.error as e:
         if e.args[0] in (0, 5):
             pass
         else:
@@ -58,6 +59,7 @@ def hide_window(hwnd, title_regex):
         if not win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 6)
         return False
+    return True
 
 def show_hide_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
@@ -67,6 +69,7 @@ def show_hide_window(hwnd, title_regex):
         else:
             win32gui.ShowWindow(hwnd, 6)
         return False
+    return True
 
 def show_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
@@ -75,12 +78,14 @@ def show_window(hwnd, title_regex):
 
         win32gui.SetForegroundWindow(hwnd)
         return False
+    return True
 
 def wait_for_window(title_regex):
     def check_for_window(hwnd, extra):
         if re.fullmatch(extra[0], win32gui.GetWindowText(hwnd)):
             extra[1] = False
             return False
+        return True
 
     extra = [title_regex, True]
     while extra[1]:

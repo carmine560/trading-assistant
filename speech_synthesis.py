@@ -1,6 +1,8 @@
 from multiprocessing import Process
 import time
 
+import pyttsx3
+
 class SpeechManager:
     def __init__(self):
         self._can_speak = True
@@ -24,8 +26,6 @@ def start_speaking_process(speech_manager):
     return speaking_process
 
 def start_speaking(speech_manager):
-    import pyttsx3
-
     speech_engine = pyttsx3.init()
     voices = speech_engine.getProperty('voices')
     speech_engine.setProperty('voice', voices[1].id)

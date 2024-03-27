@@ -9,8 +9,22 @@ import sys
 import tarfile
 import time
 
-def archive_encrypt_directory(source, output_directory, fingerprint=''):
+try:
+    import winreg
+
+    from PIL import Image, ImageDraw, ImageFont
     import gnupg
+    import pywintypes
+    import win32api
+    import win32com.client
+    HAS_REQUIRED_MODULES = True
+except ModuleNotFoundError:
+    HAS_REQUIRED_MODULES = False
+
+def archive_encrypt_directory(source, output_directory, fingerprint=''):
+    if not HAS_REQUIRED_MODULES:
+        print('Required modules are not available.')
+        return
 
     tar_stream = io.BytesIO()
     with tarfile.open(fileobj=tar_stream, mode='w:xz') as tar:
@@ -92,6 +106,14 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                 print(e)
                 sys.exit(1)
 
+def check_directory(directory):
+    if not os.path.isdir(directory):
+        try:
+            os.makedirs(directory)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
 def create_bash_completion(script_base, options, values, interpreters,
                            completion):
     variable_str = '    values="'
@@ -138,19 +160,7 @@ complete -F _{script_base} {' '.join(interpreters)}
     with open(completion, 'w', encoding='utf-8', newline='\n') as f:
         f.write(completion_str)
 
-def check_directory(directory):
-    if not os.path.isdir(directory):
-        try:
-            os.makedirs(directory)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
 def create_icon(base, icon_directory=None):
-    import winreg
-
-    from PIL import Image, ImageDraw, ImageFont
-
     def get_scaled_font(text, font_path, desired_dimension, variation_name=''):
         temp_font_size = 100
         temp_font = ImageFont.truetype(font_path, temp_font_size)
@@ -167,6 +177,10 @@ def create_icon(base, icon_directory=None):
         if variation_name:
             actual_font.set_variation_by_name(variation_name)
         return actual_font
+
+    if not HAS_REQUIRED_MODULES:
+        print('Required modules are not available.')
+        return False
 
     acronym = ''.join(word[0].upper()
                       for word in re.split(r'[\W_]+', base) if word)
@@ -258,7 +272,9 @@ Register-ArgumentCompleter -Native -CommandName {interpreters_array} `
 
 def create_shortcut(base, target_path, arguments, program_group_base=None,
                     icon_directory=None, hotkey=None):
-    import win32com.client
+    if not HAS_REQUIRED_MODULES:
+        print('Required modules are not available.')
+        return
 
     program_group = get_program_group(program_group_base)
     check_directory(program_group)
@@ -278,7 +294,9 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
     shortcut.save()
 
 def decrypt_extract_file(source, output_directory):
-    import gnupg
+    if not HAS_REQUIRED_MODULES:
+        print('Required modules are not available.')
+        return
 
     gpg = gnupg.GPG()
     with open(source, 'rb') as f:
@@ -362,24 +380,24 @@ def extract_commands(source, command='command'):
     return commands
 
 def get_file_description(executable):
-    import win32api
+    if not HAS_REQUIRED_MODULES:
+        print('Required modules are not available.')
+        return False
 
     try:
         language, codepage = win32api.GetFileVersionInfo(
             executable, r'\VarFileInfo\Translation')[0]
-        string_file_info = (f'\\StringFileInfo\\{language:04X}{codepage:04X}'
-                            f'\\FileDescription')
+        string_file_info = (fr'\StringFileInfo\{language:04x}{codepage:04x}'
+                            r'\FileDescription')
         file_description = win32api.GetFileVersionInfo(executable,
                                                        string_file_info)
-    except Exception as e:
+    except pywintypes.error as e:
         print(e)
         file_description = False
 
     return file_description
 
 def get_program_group(program_group_base=None):
-    import win32com.client
-
     shell = win32com.client.Dispatch('WScript.Shell')
     if not program_group_base:
         base = os.path.splitext(os.path.basename(sys.argv[0]))[0]

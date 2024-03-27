@@ -407,11 +407,9 @@ def main():
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
 
-    arguments = [args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
-                 args.DLL, args.MDN]
-    if any(arguments):
+    if any([args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
+            args.DLL, args.MDN]):
         config = configure(trade, can_interpolate=False)
-        process_section = config[trade.process]
 
         if args.SS and configuration.modify_section(
                 config, trade.startup_script_title, trade.config_path,
@@ -423,7 +421,7 @@ def main():
                 file_utilities.create_shortcut(
                     trade.script_base, powershell,
                     '-WindowStyle Hidden -File "' + trade.startup_script + '"',
-                    program_group_base=process_section['title'],
+                    program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
             return
         if args.A:
@@ -456,12 +454,12 @@ def main():
 
                 file_utilities.create_shortcut(
                     args.A[0], target_path, arguments,
-                    program_group_base=process_section['title'],
+                    program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
             else:
                 file_utilities.delete_shortcut(
                     args.A[0],
-                    program_group_base=process_section['title'],
+                    program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
 
             file_utilities.create_powershell_completion(
@@ -532,10 +530,10 @@ def main():
         return
     else:
         config = configure(trade)
-        process_section = config[trade.process]
 
     gui_state = gui_interactions.GuiState(
-        configuration.evaluate_value(process_section['interactive_windows']))
+        configuration.evaluate_value(
+            config[trade.process]['interactive_windows']))
 
     if args.a or args.l or args.s:
         BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
@@ -591,7 +589,7 @@ def main():
                                         **backup_file)
 
         file_utilities.delete_shortcut(
-            args.D[0], program_group_base=process_section['title'],
+            args.D[0], program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
         file_utilities.create_powershell_completion(
             trade.script_base, ('-a', '-A', '-D'),

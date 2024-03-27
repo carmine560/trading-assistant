@@ -20,7 +20,7 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
             image = image.resize((image_magnification * width,
                                   image_magnification * height),
-                                 Image.LANCZOS)
+                                 Image.Resampling.LANCZOS)
             image = image.point(lambda p:
                                 255 if p > binarization_threshold else 0)
             if section.getboolean('is_dark_theme'):

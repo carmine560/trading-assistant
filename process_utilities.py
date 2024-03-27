@@ -6,10 +6,7 @@ def is_running(process):
     image = process + '.exe'
     output = subprocess.check_output(['tasklist', '/fi',
                                       'imagename eq ' + image])
-    if re.search(image, str(output)):
-        return True
-    else:
-        return False
+    return bool(re.search(image, str(output)))
 
 def wait_listeners(stop_listeners_event, process, mouse_listener,
                    keyboard_listener, base_manager, speech_manager,

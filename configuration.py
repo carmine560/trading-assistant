@@ -11,6 +11,13 @@ from prompt_toolkit.completion import Completer, Completion, WordCompleter
 from prompt_toolkit.shortcuts import CompleteStyle
 import gnupg
 
+try:
+    import pyautogui
+    import win32api
+    HAS_REQUIRED_MODULES = True
+except ModuleNotFoundError:
+    HAS_REQUIRED_MODULES = False
+
 ANSI_BOLD = '\033[1m'
 ANSI_CURRENT = '\033[32m'
 ANSI_ERROR = '\033[31m'
@@ -110,8 +117,9 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                             return
 
 def configure_position(answer, level=0, value=''):
-    import pyautogui
-    import win32api
+    if not HAS_REQUIRED_MODULES:
+        print('Required modules are not available.')
+        return False
 
     prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
     if answer == 'modify' and value:
