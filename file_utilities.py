@@ -10,20 +10,25 @@ import tarfile
 import time
 
 try:
+    import gnupg
+    GNUPG_IMPORT_ERROR = None
+except ModuleNotFoundError as import_error:
+    GNUPG_IMPORT_ERROR = import_error
+
+try:
     import winreg
 
     from PIL import Image, ImageDraw, ImageFont
-    import gnupg
     import pywintypes
     import win32api
     import win32com.client
-    HAS_REQUIRED_MODULES = True
-except ModuleNotFoundError:
-    HAS_REQUIRED_MODULES = False
+    WINDOWS_IMPORT_ERROR = None
+except ModuleNotFoundError as import_error:
+    WINDOWS_IMPORT_ERROR = import_error
 
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
-    if not HAS_REQUIRED_MODULES:
-        print('Required modules are not available.')
+    if GNUPG_IMPORT_ERROR:
+        print(GNUPG_IMPORT_ERROR)
         return
 
     tar_stream = io.BytesIO()
@@ -161,6 +166,10 @@ complete -F _{script_base} {' '.join(interpreters)}
         f.write(completion_str)
 
 def create_icon(base, icon_directory=None):
+    if WINDOWS_IMPORT_ERROR:
+        print(WINDOWS_IMPORT_ERROR)
+        return False
+
     def get_scaled_font(text, font_path, desired_dimension, variation_name=''):
         temp_font_size = 100
         temp_font = ImageFont.truetype(font_path, temp_font_size)
@@ -178,8 +187,8 @@ def create_icon(base, icon_directory=None):
             actual_font.set_variation_by_name(variation_name)
         return actual_font
 
-    if not HAS_REQUIRED_MODULES:
-        print('Required modules are not available.')
+    if GNUPG_IMPORT_ERROR:
+        print(GNUPG_IMPORT_ERROR)
         return False
 
     acronym = ''.join(word[0].upper()
@@ -272,8 +281,8 @@ Register-ArgumentCompleter -Native -CommandName {interpreters_array} `
 
 def create_shortcut(base, target_path, arguments, program_group_base=None,
                     icon_directory=None, hotkey=None):
-    if not HAS_REQUIRED_MODULES:
-        print('Required modules are not available.')
+    if WINDOWS_IMPORT_ERROR:
+        print(WINDOWS_IMPORT_ERROR)
         return
 
     program_group = get_program_group(program_group_base)
@@ -294,8 +303,8 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
     shortcut.save()
 
 def decrypt_extract_file(source, output_directory):
-    if not HAS_REQUIRED_MODULES:
-        print('Required modules are not available.')
+    if GNUPG_IMPORT_ERROR:
+        print(GNUPG_IMPORT_ERROR)
         return
 
     gpg = gnupg.GPG()
@@ -380,8 +389,8 @@ def extract_commands(source, command='command'):
     return commands
 
 def get_file_description(executable):
-    if not HAS_REQUIRED_MODULES:
-        print('Required modules are not available.')
+    if WINDOWS_IMPORT_ERROR:
+        print(WINDOWS_IMPORT_ERROR)
         return False
 
     try:
@@ -398,6 +407,10 @@ def get_file_description(executable):
     return file_description
 
 def get_program_group(program_group_base=None):
+    if WINDOWS_IMPORT_ERROR:
+        print(WINDOWS_IMPORT_ERROR)
+        return False
+
     shell = win32com.client.Dispatch('WScript.Shell')
     if not program_group_base:
         base = os.path.splitext(os.path.basename(sys.argv[0]))[0]

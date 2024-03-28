@@ -407,8 +407,8 @@ def main():
     backup_file = {'backup_function': file_utilities.backup_file,
                    'backup_parameters': {'number_of_backups': 8}}
 
-    if any([args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
-            args.DLL, args.MDN]):
+    if any((args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
+            args.DLL, args.MDN)):
         config = configure(trade, can_interpolate=False)
 
         if args.SS and configuration.modify_section(
@@ -728,7 +728,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         config[trade.startup_script_title] = {
             'pre_start_options': '',
             'post_start_options': '-rdl',
-            'running_options': '-a show_hide_watchlists'}
+            'running_options': '-l'}
         config[trade.actions_title] = {
             'create_pre_trading_chapter': [
                 ('write_chapter', 'Pre-Trading', 'Pre-Market')],
@@ -1230,7 +1230,15 @@ def create_startup_script(trade, config):
             lines.append(f'. {activate}\n')
 
         lines.append(f'if (Get-Process "{trade.process}" '
-                     f'-ErrorAction SilentlyContinue) {{\n')
+                     '-ErrorAction SilentlyContinue) {\n')
+        lines.append(f'    Stop-Process -Name "{trade.process}"\n')
+        lines.append(f'    while (Get-Process "{trade.process}" '
+                     '-ErrorAction SilentlyContinue) {\n')
+        lines.append('        Start-Sleep -Seconds 0.1\n')
+        lines.append('    }\n')
+        lines.append('    Start-Sleep -Seconds 1.0\n')
+        lines.append('    Start-Process `\n')
+        lines.append(f'      "{config[trade.process]["executable"]}"\n')
         lines.extend(generate_start_process_lines(running_options))
         lines.append('}\n')
         lines.append('else {\n')
