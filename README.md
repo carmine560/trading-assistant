@@ -72,7 +72,8 @@ page and the previous market data from the [*Most Active Stocks
 Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page beforehand.  The
 following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1` startup
-script that processes the above and starts Hyper SBI 2.
+script that processes the above and starts Hyper SBI 2.  This script forcibly
+stops and restarts Hyper SBI 2 if it is already running.
 
 > **Note**: This option adds virtual environment activation to the startup
 > script if the `.venv\Scripts\Activate.ps1` script exists.
@@ -417,17 +418,14 @@ The following action and options configure the processing of Hyper SBI 2 pre-
 and post-startup and during running.
 
 ``` ini
-[HYPERSBI2 Actions]
-show_hide_watchlists = [
-    ('show_hide_window', '登録銘柄')] # Show or hide the Watchlists window.
-
 [HYPERSBI2 Startup Script]
 # Save the customer margin ratios and the previous market data, start the mouse
 # and keyboard listeners and the scheduler, and execute the 'login' action in
 # the 'Login' section.
 post_start_options = -rdlsa login
-# Execute the 'show_hide_watchlists' action above.
-running_options = -a show_hide_watchlists
+# Start the mouse and keyboard listeners and the scheduler, and execute the
+# 'login' action.
+running_options = -lsa login
 ```
 
 ### Actions ###
@@ -461,6 +459,12 @@ login = [
     # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('sleep', '0.4'),                # Sleep for 0.4 seconds.
+    # Execute the 'center_open_1_minute_chart' action in the 'Center Open for
+    # 1-minute Chart' section if Hyper SBI 2 restarts during ${Market
+    # Data:opening_time}-${HYPERSBI2:end_time}.
+    ('is_now_after', '${Market Data:opening_time}', [
+        ('is_now_before', '${HYPERSBI2:end_time}',
+         'center_open_1_minute_chart')]),
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Return the cursor to the previous position.
@@ -650,9 +654,8 @@ The following input map maps mouse buttons and keyboard keys to actions.
 input_map = {
     # The left button is used to click widgets.
     'left': '',
-    # Execute the 'show_hide_watchlists' action in the 'Startup Script'
-    # section.  The middle button also toggles between prices and price changes
-    # in the order books.
+    # Execute an action to show or hide the 'Watchlists' window.  The middle
+    # button also toggles between prices and price changes in the order books.
     'middle': 'show_hide_watchlists',
     # The right button is used for context menus.
     'right': '',
@@ -666,8 +669,7 @@ input_map = {
     'f3': '',
     # The F4 key is used to close a window.
     'f4': '',
-    # Execute the 'show_hide_watchlists' action in the 'Startup Script'
-    # section.
+    # Execute the 'show_hide_watchlists' action above.
     'f5': 'show_hide_watchlists',
     # Execute an action to watch favorite stocks.
     'f6': 'watch_favorites',
