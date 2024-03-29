@@ -14,9 +14,9 @@ import gnupg
 try:
     import pyautogui
     import win32api
-    HAS_REQUIRED_MODULES = True
-except ModuleNotFoundError:
-    HAS_REQUIRED_MODULES = False
+    GUI_IMPORT_ERROR = None
+except ModuleNotFoundError as import_error:
+    GUI_IMPORT_ERROR = import_error
 
 ANSI_BOLD = '\033[1m'
 ANSI_CURRENT = '\033[32m'
@@ -117,8 +117,8 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                             return
 
 def configure_position(answer, level=0, value=''):
-    if not HAS_REQUIRED_MODULES:
-        print('Required modules are not available.')
+    if GUI_IMPORT_ERROR:
+        print(GUI_IMPORT_ERROR)
         return False
 
     prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
