@@ -443,7 +443,7 @@ File](#encrypt-configuration-file)’ section.
 [HYPERSBI2 Actions]
 login = [
     # Wait for and locate the 'Login' button in the region, then click it.
-    ('click_widget', 'login.png', '759, 320, 402, 381'),
+    ('click_widget', 'login.png', '749, 309, 402, 384'),
     # Wait for the 'Pre-authentication of Trading Password' dialog box.
     ('wait_for_window', '取引パスワードのプレ認証'),
     ('show_window', '取引パスワードのプレ認証'), # Show the dialog box.
@@ -454,7 +454,7 @@ login = [
     ('press_key', 'tab, 2'),         # Focus on the 'Authenticate' button.
     ('press_key', 'enter'),          # Press the button.
     # Wait for and locate the 'OK' button in the region, then click it.
-    ('click_widget', 'ok.png', '793, 450, 334, 120'),
+    ('click_widget', 'ok.png', '783, 442, 334, 118'),
     ('hide_window', '登録銘柄'),     # Hide the 'Watchlists' window.
     # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
@@ -472,7 +472,7 @@ login = [
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
     # is before ${HYPERSBI2:end_time}.
     ('is_now_before', '${HYPERSBI2:end_time}', [
-        ('click', '279, 843'),
+        ('click', '278, 838'),
         ('back_to',)]),
     # Open the 'News' window if the current system time is before the open.
     ('is_now_before', '${Market Data:opening_time}', [
@@ -501,14 +501,14 @@ watch_tick_count = [
     ('press_hotkeys', 'ctrl, 7'),    # Open the 'Rankings' window.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '38, 39'),             # Select the 'Rankings' tab.
-    ('click', '88, 338'),            # Select the 'Tick Count' ranking.
-    ('click', '315, 63'),            # Click the 'Prime Market' button.
+    ('click', '88, 311'),            # Select the 'Tick Count' ranking.
+    ('click', '310, 63'),            # Click the 'Prime Market' button.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     # Recognize an alphanumeric column in the region, then copy symbols to the
     # clipboard.
-    ('copy_symbols_from_column', '328, 149, 52, 661'),
+    ('copy_symbols_from_column', '331, 152, 63, 661'),
     ('press_hotkeys', 'alt, f4'),    # Close the window.
-    ('click', '44, 120'),            # Select the second watchlist.
+    ('click', '41, 115'),            # Select the second watchlist.
     ('click', '1612, 41'),           # Select the 'List' view.
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
@@ -520,7 +520,7 @@ watch_tick_count = [
     ('click', '1676, 41'),           # Select the 'Tile' view.
 
     # Optional Commands
-    ('press_key', 'tab, 5'),         # Focus on the number of columns field.
+    ('press_key', 'tab, 6'),         # Focus on the number of columns field.
     ('press_key', '6'),              # Enter 6.
     ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
@@ -530,7 +530,7 @@ watch_tick_count = [
     ('press_key', 'down, 2'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '561, 90'),            # Select the '1-day' date range.
+    ('click', '602, 88'),            # Select the '1-day' date range.
     # Return the cursor to the previous position.
     ('back_to',)]
 ```
@@ -549,7 +549,7 @@ watch_active_stocks = [
     # Copy symbols from the current market data to the clipboard.
     ('copy_symbols_from_market_data',),
     ('show_window', '登録銘柄'),     # Show the 'Watchlists' window.
-    ('click', '44, 145'),            # Select the third watchlist.
+    ('click', '41, 138'),            # Select the third watchlist.
     ('click', '1612, 41'),           # Select the 'List' view.
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
     ('press_hotkeys', 'ctrl, a'),    # Select all stocks.
@@ -561,7 +561,7 @@ watch_active_stocks = [
     ('click', '1676, 41'),           # Select the 'Tile' view.
 
     # Optional Commands
-    ('press_key', 'tab, 5'),         # Focus on the number of columns field.
+    ('press_key', 'tab, 6'),         # Focus on the number of columns field.
     ('press_key', '6'),              # Enter 6.
     ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
@@ -571,7 +571,7 @@ watch_active_stocks = [
     ('press_key', 'down, 2'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '561, 90'),            # Select the '1-day' date range.
+    ('click', '602, 88'),            # Select the '1-day' date range.
     # Return the cursor to the previous position.
     ('back_to',)]
 ```
@@ -607,8 +607,8 @@ open_close_long_position = [
     # Open Long Position
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('click', '231, 729'),           # Select the 'New Order' tab.
-    ('click', '564, 800'),           # Focus on the 'Share Size' text box.
+    ('click', '231, 727'),           # Select the 'New Order' tab.
+    ('click', '565, 796'),           # Focus on the 'Share Size' text box.
     ('press_hotkeys', 'ctrl, a'),    # Select the existing value.
     # Get the symbol from the 'Summary' window.
     ('get_symbol', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
@@ -623,7 +623,7 @@ open_close_long_position = [
      'Maximum daily number of trades exceeded.'),
     ('calculate_share_size', 'long'), # Calculate the share size.
     ('write_share_size',),           # Enter the calculated share size.
-    ('click', '499, 822'),           # Click the 'Market Order' button.
+    ('click', '499, 818'),           # Click the 'Market Order' button.
     ('press_key', 'tab, 3'),         # Focus on the 'Buy Order' button.
     ('speak_text', 'Long.'),         # Speak the readiness of the buy order.
     # Return the cursor to the previous position.
@@ -633,11 +633,11 @@ open_close_long_position = [
     ('wait_for_price', '224, 956, 470, 20, 0'),
 
     # Close Long Position
-    ('click', '315, 729'),           # Select the 'Repayment' tab.
-    ('click', '628, 841'),           # Focus on the 'Share Size' text box.
+    ('click', '315, 727'),           # Select the 'Repayment' tab.
+    ('click', '628, 837'),           # Focus on the 'Share Size' text box.
     ('press_hotkeys', 'ctrl, a'),    # Select the existing value.
     ('write_share_size',),           # Enter the calculated share size.
-    ('click', '471, 935'),           # Click the 'Market Order' button.
+    ('click', '470, 932'),           # Click the 'Market Order' button.
     ('press_key', 'tab, 5'),         # Focus on the 'Sell Order' button.
     ('count_trades', '-10.0'),       # Count the number of trades for the day.
     # Speak the number above and notify you of the readiness of the sell order.
