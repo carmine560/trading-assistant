@@ -568,10 +568,9 @@ def main():
                 speech_synthesis.start_speaking_process(
                     trade.speech_manager))
 
-        start_scheduler_thread = threading.Thread(
+        threading.Thread(
             target=start_scheduler,
-            args=(trade, config, gui_state, trade.process))
-        start_scheduler_thread.start()
+            args=(trade, config, gui_state, trade.process)).start()
 
         if not (args.a or args.l):
             speech_synthesis.stop_speaking_process(
@@ -858,14 +857,12 @@ def save_market_data(trade, config, clipboard=False):
 
 def get_latest(config, market_holidays, update_time, time_zone, *paths,
                volatile_time=None):
-    section = config['Market Holidays']
-
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
     if os.path.exists(market_holidays):
         modified_time = pd.Timestamp(os.path.getmtime(market_holidays),
                                      tz='UTC', unit='s')
 
-    head = requests.head(section['url'], timeout=5)
+    head = requests.head(config['Market Holidays']['url'], timeout=5)
     try:
         head.raise_for_status()
     except requests.exceptions.HTTPError as e:
@@ -873,31 +870,29 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         sys.exit(1)
 
     if modified_time < pd.Timestamp(head.headers['last-modified']):
-        dfs = pd.read_html(section['url'], match=section['date_header'])
-        df = pd.concat(dfs)[section['date_header']]
-        df.replace(r'^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True,
-                   regex=True)
-
+        dfs = pd.read_html(config['Market Holidays']['url'],
+                           match=config['Market Holidays']['date_header'])
+        df = pd.concat(dfs)[config['Market Holidays']['date_header']]
+        df.replace(r'^(\d{4}/\d{2}/\d{2}).*$', r'\1', inplace=True, regex=True)
         df.to_csv(market_holidays, header=False, index=False)
 
-    oldest_modified_time = pd.Timestamp.now(tz='UTC')
+    modified_time = pd.Timestamp.now(tz='UTC')
     for i, _ in enumerate(paths):
         if os.path.exists(paths[i]):
-            modified_time = pd.Timestamp(os.path.getmtime(paths[i]), tz='UTC',
-                                         unit='s')
-            oldest_modified_time = min(oldest_modified_time, modified_time)
+            modified_time = min(pd.Timestamp(os.path.getmtime(paths[i]),
+                                             tz='UTC', unit='s'),
+                                modified_time)
         else:
             modified_time = pd.Timestamp(0, tz='UTC', unit='s')
             break
 
     # Assume the web page is updated at 'update_time'.
-    now = pd.Timestamp.now(tz='UTC')
     latest = pd.Timestamp(update_time, tz=time_zone)
-    if now < latest:
+    if pd.Timestamp.now(tz='UTC') < latest:
         latest -= pd.Timedelta(days=1)
 
     df = pd.read_csv(market_holidays, header=None)
-    date_format = re.sub('%%', '%', section['date_format'])
+    date_format = re.sub('%%', '%', config['Market Holidays']['date_format'])
 
     while (df[0].str.contains(latest.strftime(date_format)).any()
            or latest.weekday() == 5 or latest.weekday() == 6):
@@ -972,6 +967,17 @@ def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread.start()
 
 def execute_action(trade, config, gui_state, action):
+    def get_latest_screencast():
+        screencast_directory = config['General']['screencast_directory']
+        screencast_regex = config['General']['screencast_regex']
+        files = [f for f in os.listdir(screencast_directory)
+                           if re.fullmatch(screencast_regex, f)]
+        return os.path.join(screencast_directory, files[-1])
+
+    def get_target_time(time_string):
+        return time.mktime(time.strptime(
+            time.strftime('%Y-%m-%d ') + time_string, '%Y-%m-%d %H:%M:%S'))
+
     def recursively_execute_action():
         if isinstance(additional_argument, list):
             return execute_action(trade, config, gui_state,
@@ -983,17 +989,6 @@ def execute_action(trade, config, gui_state, action):
 
         print(additional_argument, 'is not a list or a string.')
         return False
-
-    def get_latest_screencast():
-        screencast_directory = general_section['screencast_directory']
-        screencast_regex = general_section['screencast_regex']
-        files = [f for f in os.listdir(screencast_directory)
-                           if re.fullmatch(screencast_regex, f)]
-        return os.path.join(screencast_directory, files[-1])
-
-    general_section = config['General']
-    process_section = config[trade.process]
-    variables_section = config['Variables']
 
     trade.initialize_attributes()
     gui_state.initialize_attributes()
@@ -1009,8 +1004,7 @@ def execute_action(trade, config, gui_state, action):
         if command == 'back_to':
             pyautogui.moveTo(gui_state.previous_position)
         elif command == 'beep':
-            frequency, duration = map(int, argument.split(','))
-            winsound.Beep(frequency, duration)
+            winsound.Beep(*map(int, argument.split(',')))
         elif command == 'calculate_share_size':
             is_successful, text = calculate_share_size(trade, config, argument)
             if not is_successful and text:
@@ -1019,14 +1013,14 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'check_daily_loss_limit':
             daily_loss_limit = (
                 trade.cash_balance
-                * float(process_section['utilization_ratio'])
+                * float(config[trade.process]['utilization_ratio'])
                 / float(config[trade.customer_margin_ratios_title][
                     'customer_margin_ratio'])
-                * float(process_section['daily_loss_limit_ratio']))
+                * float(config[trade.process]['daily_loss_limit_ratio']))
             initial_cash_balance = int(
-                variables_section['initial_cash_balance'])
+                config['Variables']['initial_cash_balance'])
             if initial_cash_balance == 0:
-                variables_section['initial_cash_balance'] = str(
+                config['Variables']['initial_cash_balance'] = str(
                     trade.cash_balance)
                 configuration.write_config(config, trade.config_path)
             else:
@@ -1036,76 +1030,64 @@ def execute_action(trade, config, gui_state, action):
                     return False
         elif command == 'check_maximum_daily_number_of_trades':
             if (0
-                < int(process_section['maximum_daily_number_of_trades'])
-                <= int(variables_section['current_number_of_trades'])):
+                < int(config[trade.process]['maximum_daily_number_of_trades'])
+                <= int(config['Variables']['current_number_of_trades'])):
                 trade.speech_manager.set_speech_text(argument)
                 return False
         elif command == 'click':
-            x, y = map(int, argument.split(','))
             if gui_state.swapped:
-                pyautogui.rightClick(x, y)
+                pyautogui.rightClick(*map(int, argument.split(',')))
             else:
-                pyautogui.click(x, y)
+                pyautogui.click(*map(int, argument.split(',')))
         elif command == 'click_widget':
-            image = os.path.join(trade.resource_directory, argument)
-            x, y, width, height = map(int, additional_argument.split(','))
-            gui_interactions.click_widget(gui_state, image, x, y, width,
-                                          height)
+            gui_interactions.click_widget(
+                gui_state, os.path.join(trade.resource_directory, argument),
+                *map(int, additional_argument.split(',')))
         elif command == 'copy_symbols_from_market_data':
             save_market_data(trade, config, clipboard=True)
         elif command == 'copy_symbols_from_column':
-            x, y, width, height = map(int, argument.split(','))
-            split_string = text_recognition.recognize_text(
-                process_section, x, y, width, height, None,
-                text_type='securities_code_column')
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardText(' '.join(split_string))
+            win32clipboard.SetClipboardText(' '.join(
+                text_recognition.recognize_text(
+                    config[trade.process], *map(int, argument.split(',')), None,
+                    text_type='securities_code_column')))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
-            previous_number_of_trades = int(
-                variables_section['current_number_of_trades'])
-            current_number_of_trades = previous_number_of_trades + 1
-            variables_section['current_number_of_trades'] = str(
+            current_number_of_trades = int(
+                config['Variables']['current_number_of_trades']) + 1
+            config['Variables']['current_number_of_trades'] = str(
                 current_number_of_trades)
             configuration.write_config(config, trade.config_path)
 
-            title = (f"Trade {current_number_of_trades}"
-                     f"{f' for {trade.symbol}' if trade.symbol else ''}"
-                     f" at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-            file_utilities.write_chapter(get_latest_screencast(), title,
-                                         previous_title='Pre-Trading',
-                                         offset=argument)
+            file_utilities.write_chapter(
+                get_latest_screencast(),
+                (f"Trade {current_number_of_trades}"
+                 f"{f' for {trade.symbol}' if trade.symbol else ''}"
+                 f" at {time.strftime('%Y-%m-%d %H:%M:%S')}"),
+                previous_title='Pre-Trading', offset=argument)
         elif command == 'drag_to':
-            x, y = map(int, argument.split(','))
-            pyautogui.dragTo(x, y)
+            pyautogui.dragTo(*map(int, argument.split(',')))
         elif command == 'get_cash_balance':
-            x, y, width, height, index = map(
-                int, process_section['cash_balance_region'].split(','))
             trade.cash_balance = int(
-                text_recognition.recognize_text(process_section, x, y, width,
-                                                height, index))
+                text_recognition.recognize_text(
+                    config[trade.process],
+                    *map(int, config[trade.process]['cash_balance_region']
+                         .split(','))))
         elif command == 'get_symbol':
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_window':
             gui_interactions.enumerate_windows(
                 gui_interactions.hide_window, argument)
         elif command == 'move_to':
-            x, y = map(int, argument.split(','))
-            pyautogui.moveTo(x, y)
+            pyautogui.moveTo(*map(int, argument.split(',')))
         elif command == 'press_hotkeys':
-            keys = tuple(map(str.strip, argument.split(',')))
-            pyautogui.hotkey(*keys)
+            pyautogui.hotkey(*tuple(map(str.strip, argument.split(','))))
         elif command == 'press_key':
             argument = tuple(map(str.strip, argument.split(',')))
-            key = argument[0]
-            if len(argument) > 1:
-                presses = int(argument[1])
-            else:
-                presses = 1
-
-            pyautogui.press(key, presses=presses)
-            if key == 'tab':
+            presses = int(argument[1]) if len(argument) > 1 else 1
+            pyautogui.press(argument[0], presses=presses)
+            if argument[0] == 'tab':
                 gui_state.moved_focus = presses
         elif command == 'show_hide_window':
             gui_interactions.enumerate_windows(
@@ -1122,25 +1104,24 @@ def execute_action(trade, config, gui_state, action):
             trade.speech_manager.set_speech_text(
                 f'{round(psutil.cpu_percent(interval=float(argument)))}%.')
         elif command == 'speak_seconds_until_time':
-            event_time = time.strptime(time.strftime('%Y-%m-%d ') + argument,
-                                       '%Y-%m-%d %H:%M:%S')
-            event_time = time.mktime(event_time)
             trade.speech_manager.set_speech_text(
-                f'{math.ceil(event_time - time.time())} seconds.')
+                f'{math.ceil(get_target_time(argument) - time.time())} '
+                'seconds.')
         elif command == 'speak_show_text':
             trade.speech_manager.set_speech_text(argument)
             MessageThread(trade, config, argument).start()
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
         elif command == 'take_screenshot':
-            base = variables_section['current_date']
-            base += f"-{int(variables_section['current_number_of_trades']):02}"
+            base = (
+                f"{config['Variables']['current_date']}"
+                f"-{int(config['Variables']['current_number_of_trades']):02}")
             if trade.symbol:
                 base += f'-{trade.symbol}'
 
             base += '-screenshot.png'
             pyautogui.screenshot(
-                os.path.join(general_section['screenshot_directory'], base))
+                os.path.join(config['General']['screenshot_directory'], base))
         elif command == 'toggle_indicator':
             if trade.indicator_thread:
                 trade.indicator_thread.stop()
@@ -1164,9 +1145,8 @@ def execute_action(trade, config, gui_state, action):
                 trade.speech_manager.set_speech_text('Canceled.')
                 return True
         elif command == 'wait_for_price':
-            x, y, width, height, index = map(int, argument.split(','))
-            text_recognition.recognize_text(process_section, x, y, width,
-                                            height, index,
+            text_recognition.recognize_text(config[trade.process],
+                                            *map(int, argument.split(',')),
                                             text_type='decimal_numbers')
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(argument)
@@ -1180,23 +1160,16 @@ def execute_action(trade, config, gui_state, action):
 
         # Control Flow Commands
         elif command == 'is_now_after':
-            target_time = time.strptime(time.strftime('%Y-%m-%d ')
-                                        + argument, '%Y-%m-%d %H:%M:%S')
-            target_time = time.mktime(target_time)
-            if target_time < time.time():
+            if get_target_time(argument) < time.time():
                 if not recursively_execute_action():
                     return False
         elif command == 'is_now_before':
-            target_time = time.strptime(time.strftime('%Y-%m-%d ')
-                                        + argument, '%Y-%m-%d %H:%M:%S')
-            target_time = time.mktime(target_time)
-            if time.time() < target_time:
+            if time.time() < get_target_time(argument):
                 if not recursively_execute_action():
                     return False
         elif command == 'is_recording':
-            boolean_value = argument.lower() == 'true'
             if (file_utilities.is_writing(get_latest_screencast())
-                == boolean_value):
+                == (argument.lower() == 'true')):
                 if not recursively_execute_action():
                     return False
 
@@ -1206,56 +1179,52 @@ def execute_action(trade, config, gui_state, action):
     return True
 
 def create_startup_script(trade, config):
-    def generate_start_process_lines(options):
-        lines = []
-        for option in options:
-            if option:
-                lines.append(
-                    f'    python.exe {trade.script_file} {option.strip()}\n')
-        return lines
+    def generate_start_process_lines(trade, options):
+        return [f'    python.exe {trade.script_file} {option.strip()}\n'
+                for option in options if option]
 
     activate = None
     if os.path.exists(r'.venv\Scripts\Activate.ps1'):
         activate = r'.venv\Scripts\Activate.ps1'
 
-    section = config[trade.startup_script_title]
-    pre_start_options = section.get('pre_start_options', '').split(',')
-    post_start_options = section.get('post_start_options', '').split(',')
-    running_options = section.get('running_options', '').split(',')
+    pre_start_options=(
+        config[trade.startup_script_title]['pre_start_options'].split(','))
+    post_start_options=(
+        config[trade.startup_script_title]['post_start_options'].split(','))
+    running_options=(
+        config[trade.startup_script_title]['running_options'].split(','))
+
+    lines = []
+    lines.append(f'Set-Location -Path "{os.path.dirname(__file__)}"\n')
+    if activate:
+        lines.append(f'. {activate}\n')
+
+    lines.append(f'if (Get-Process "{trade.process}" '
+                 '-ErrorAction SilentlyContinue) {\n')
+    lines.append(f'    Stop-Process -Name "{trade.process}"\n')
+    lines.append(f'    while (Get-Process "{trade.process}" '
+                 '-ErrorAction SilentlyContinue) {\n')
+    lines.append('        Start-Sleep -Seconds 0.1\n')
+    lines.append('    }\n')
+    lines.append('    Start-Sleep -Seconds 1.0\n')
+    lines.append('    Start-Process `\n')
+    lines.append(f'      "{config[trade.process]["executable"]}"\n')
+    lines.extend(generate_start_process_lines(trade, running_options))
+    lines.append('}\n')
+    lines.append('else {\n')
+    lines.extend(generate_start_process_lines(trade, pre_start_options))
+    lines.append(f'    Start-Process `\n'
+                 f'      "{config[trade.process]["executable"]}"\n')
+    lines.extend(generate_start_process_lines(trade, post_start_options))
+    lines.append('}\n')
+    if activate:
+        lines.append('deactivate\n')
 
     with open(trade.startup_script, 'w', encoding='utf-8') as f:
-        lines = []
-        lines.append(f'Set-Location -Path "{os.path.dirname(__file__)}"\n')
-        if activate:
-            lines.append(f'. {activate}\n')
-
-        lines.append(f'if (Get-Process "{trade.process}" '
-                     '-ErrorAction SilentlyContinue) {\n')
-        lines.append(f'    Stop-Process -Name "{trade.process}"\n')
-        lines.append(f'    while (Get-Process "{trade.process}" '
-                     '-ErrorAction SilentlyContinue) {\n')
-        lines.append('        Start-Sleep -Seconds 0.1\n')
-        lines.append('    }\n')
-        lines.append('    Start-Sleep -Seconds 1.0\n')
-        lines.append('    Start-Process `\n')
-        lines.append(f'      "{config[trade.process]["executable"]}"\n')
-        lines.extend(generate_start_process_lines(running_options))
-        lines.append('}\n')
-        lines.append('else {\n')
-        lines.extend(generate_start_process_lines(pre_start_options))
-        lines.append(f'    Start-Process `\n'
-                     f'      "{config[trade.process]["executable"]}"\n')
-        lines.extend(generate_start_process_lines(post_start_options))
-        lines.append('}\n')
-        if activate:
-            lines.append('deactivate\n')
-
         f.writelines(lines)
 
 def calculate_share_size(trade, config, position):
     if trade.symbol and trade.cash_balance:
-        section = config[trade.process]
-
         customer_margin_ratio = float(config[
             trade.customer_margin_ratios_title]['customer_margin_ratio'])
         try:
@@ -1271,11 +1240,11 @@ def calculate_share_size(trade, config, position):
         except OSError as e:
             print(e)
 
-        utilization_ratio = float(section['utilization_ratio'])
-        price_limit = get_price_limit(trade, config)
         trading_unit = 100
-        share_size = (int(trade.cash_balance * utilization_ratio
-                          / customer_margin_ratio / price_limit / trading_unit)
+        share_size = (int(trade.cash_balance
+                          * float(config[trade.process]['utilization_ratio'])
+                          / customer_margin_ratio
+                          / get_price_limit(trade, config) / trading_unit)
                       * trading_unit)
         if share_size == 0:
             return (False, 'Insufficient cash balance.')
@@ -1302,80 +1271,26 @@ def get_price_limit(trade, config):
         print(e)
 
     if closing_price:
-        if closing_price < 100:
-            price_limit = closing_price + 30
-        elif closing_price < 200:
-            price_limit = closing_price + 50
-        elif closing_price < 500:
-            price_limit = closing_price + 80
-        elif closing_price < 700:
-            price_limit = closing_price + 100
-        elif closing_price < 1000:
-            price_limit = closing_price + 150
-        elif closing_price < 1500:
-            price_limit = closing_price + 300
-        elif closing_price < 2000:
-            price_limit = closing_price + 400
-        elif closing_price < 3000:
-            price_limit = closing_price + 500
-        elif closing_price < 5000:
-            price_limit = closing_price + 700
-        elif closing_price < 7000:
-            price_limit = closing_price + 1000
-        elif closing_price < 10000:
-            price_limit = closing_price + 1500
-        elif closing_price < 15000:
-            price_limit = closing_price + 3000
-        elif closing_price < 20000:
-            price_limit = closing_price + 4000
-        elif closing_price < 30000:
-            price_limit = closing_price + 5000
-        elif closing_price < 50000:
-            price_limit = closing_price + 7000
-        elif closing_price < 70000:
-            price_limit = closing_price + 10000
-        elif closing_price < 100000:
-            price_limit = closing_price + 15000
-        elif closing_price < 150000:
-            price_limit = closing_price + 30000
-        elif closing_price < 200000:
-            price_limit = closing_price + 40000
-        elif closing_price < 300000:
-            price_limit = closing_price + 50000
-        elif closing_price < 500000:
-            price_limit = closing_price + 70000
-        elif closing_price < 700000:
-            price_limit = closing_price + 100000
-        elif closing_price < 1000000:
-            price_limit = closing_price + 150000
-        elif closing_price < 1500000:
-            price_limit = closing_price + 300000
-        elif closing_price < 2000000:
-            price_limit = closing_price + 400000
-        elif closing_price < 3000000:
-            price_limit = closing_price + 500000
-        elif closing_price < 5000000:
-            price_limit = closing_price + 700000
-        elif closing_price < 7000000:
-            price_limit = closing_price + 1000000
-        elif closing_price < 10000000:
-            price_limit = closing_price + 1500000
-        elif closing_price < 15000000:
-            price_limit = closing_price + 3000000
-        elif closing_price < 20000000:
-            price_limit = closing_price + 4000000
-        elif closing_price < 30000000:
-            price_limit = closing_price + 5000000
-        elif closing_price < 50000000:
-            price_limit = closing_price + 7000000
-        else:
-            price_limit = closing_price + 10000000
+        price_ranges = (
+            (100, 30), (200, 50), (500, 80), (700, 100), (1000, 150),
+            (1500, 300), (2000, 400), (3000, 500), (5000, 700), (7000, 1000),
+            (10000, 1500), (15000, 3000), (20000, 4000), (30000, 5000),
+            (50000, 7000), (70000, 10000), (100000, 15000), (150000, 30000),
+            (200000, 40000), (300000, 50000), (500000, 70000),
+            (700000, 100000), (1000000, 150000), (1500000, 300000),
+            (2000000, 400000), (3000000, 500000), (5000000, 700000),
+            (7000000, 1000000), (10000000, 1500000), (15000000, 3000000),
+            (20000000, 4000000), (30000000, 5000000), (50000000, 7000000),
+            (float('inf'), 10000000))
+        for maximum_price, limit in price_ranges:
+            if closing_price < maximum_price:
+                price_limit = closing_price + limit
+                break
     else:
-        section = config[trade.process]
-        x, y, width, height, index = map(
-            int, section['price_limit_region'].split(','))
         price_limit = text_recognition.recognize_text(
-            section, x, y, width, height, index, text_type='decimal_numbers')
+            config[trade.process],
+            *map(int, config[trade.process]['price_limit_region'].split(',')),
+            text_type='decimal_numbers')
     return price_limit
 
 if __name__ == '__main__':

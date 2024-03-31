@@ -367,7 +367,7 @@ To enable action argument completion in Bash, source the script in your current
 shell:
 
 ``` shell
-. $USERPROFILE/AppData/Local/trading-assistant/HYPERSBI2/completion.sh
+. $LOCALAPPDATA/trading-assistant/HYPERSBI2/completion.sh
 ```
 
 After sourcing the script, you can use tab completion for action arguments when
