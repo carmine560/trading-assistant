@@ -476,23 +476,20 @@ def main():
         if args.L and configuration.modify_option(
                 config, trade.process, 'input_map', trade.config_path,
                 **backup_file, prompts={'value': 'action'},
-                dictionary_info={'possible_values': configuration.list_section(
-                    config, trade.actions_title)}):
+                dictionary_values=configuration.list_section(
+                    config, trade.actions_title)):
             return
         if args.S and configuration.modify_section(
                 config, trade.schedules_title, trade.config_path,
-                **backup_file, is_inserting=True, value_type='tuple',
-                prompts={'values': ('trigger', 'action'),
-                         # TODO: fix prompts
-                         # 'end_of_list': 'end of schedules'
-                         },
-                # TODO: refer to dictionary_info
-                tuple_info=(('${Market Data:opening_time}',
-                             '${Market Data:closing_time}',
-                             f'${{{trade.process}:start_time}}',
-                             f'${{{trade.process}:end_time}}'),
-                            configuration.list_section(config,
-                                                       trade.actions_title))):
+                **backup_file, can_insert=True, value_type='tuple',
+                prompts={'key': 'schedule', 'values': ('trigger', 'action'),
+                         'end_of_list': 'end of schedules'},
+                tuple_values=(('${Market Data:opening_time}',
+                               '${Market Data:closing_time}',
+                               f'${{{trade.process}:start_time}}',
+                               f'${{{trade.process}:end_time}}'),
+                              configuration.list_section(
+                                  config, trade.actions_title))):
             return
         if args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
