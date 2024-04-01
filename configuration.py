@@ -372,6 +372,9 @@ def modify_tuple(tuple_data, is_created, level=0, prompts=None,
             if tuple_values and tuple_values[index:index + 1]:
                 value = modify_data(value_prompt, level=level,
                                     all_data=tuple_values[index])
+            elif tuple_values and len(tuple_values) == 1:
+                value = modify_data(value_prompt, level=level,
+                                    all_data=tuple_values[0])
             else:
                 value = modify_data(value_prompt, level=level)
             if value:
@@ -381,6 +384,10 @@ def modify_tuple(tuple_data, is_created, level=0, prompts=None,
                 tuple_data[index] = modify_data(value_prompt, level=level,
                                                 data=tuple_data[index],
                                                 all_data=tuple_values[index])
+            elif tuple_values and len(tuple_values) == 1:
+                tuple_data[index] = modify_data(value_prompt, level=level,
+                                                data=tuple_data[index],
+                                                all_data=tuple_values[0])
             else:
                 tuple_data[index] = modify_data(value_prompt, level=level,
                                                 data=tuple_data[index])
