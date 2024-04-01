@@ -620,7 +620,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         except OSError as e:
             print(e)
             trade.executable = os.path.join(
-                os.path.expandvars('${ProgramFiles(x86)}'), trade.brokerage,
+                os.path.expandvars('$ProgramFiles'), trade.brokerage,
                 trade.process, trade.process + '.exe')
             if not os.path.isfile(trade.executable):
                 print(trade.executable, 'file does not exist.')
