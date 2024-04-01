@@ -179,8 +179,7 @@ def list_section(config, section):
     print(section, 'section does not exist.')
     return False
 
-def modify_data(prompt, level=0, data='', all_data=None, minimum_value=None,
-                maximum_value=None):
+def modify_data(prompt, level=0, data='', all_data=None, limits=None):
     if data:
         prompt_prefix = (f'{INDENT * level}{prompt} '
                          f'{ANSI_CURRENT}{data}{ANSI_RESET}: ')
@@ -199,6 +198,7 @@ def modify_data(prompt, level=0, data='', all_data=None, minimum_value=None,
     else:
         data = input(prompt_prefix).strip()
 
+    minimum_value, maximum_value = limits or (None, None)
     numeric_value = None
     if isinstance(minimum_value, int) and isinstance(maximum_value, int):
         try:
@@ -243,8 +243,7 @@ def modify_dictionary(dictionary_data, level=0, prompts=None,
 
 def modify_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None, prompts=None, categorized_keys=None,
-                  tuple_values=None, dictionary_values=None,
-                  minimum_value=None, maximum_value=None):
+                  tuple_values=None, dictionary_values=None, limits=None):
     if backup_function:
         backup_function(config_path, **backup_parameters)
     if prompts is None:
@@ -279,8 +278,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
             else:
                 config[section][option] = modify_data(
                     prompts.get('value', 'value'),
-                    data=config[section][option], minimum_value=minimum_value,
-                    maximum_value=maximum_value)
+                    data=config[section][option], limits=limits)
         elif answer == 'toggle':
             config[section][option] = str(not boolean_value)
         elif answer == 'empty':

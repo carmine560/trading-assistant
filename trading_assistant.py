@@ -262,6 +262,7 @@ class IndicatorThread(threading.Thread):
 
     def on_text_modified(self, _, widget, string, section, key,
                          minimum_value, maximum_value):
+        # TODO: replace minimum_value and maximum_value with limits
         modified_text = widget.get() or '0.0'
         modified_text = max(minimum_value, min(maximum_value,
                                                float(modified_text)))
@@ -498,7 +499,7 @@ def main():
             return
         if args.U and configuration.modify_option(
                 config, trade.process, 'utilization_ratio', trade.config_path,
-                **backup_file, minimum_value=0.0, maximum_value=1.0):
+                **backup_file, limits=(0.0, 1.0)):
             return
         if args.PL and configuration.modify_option(
                 config, trade.process, 'price_limit_region', trade.config_path,
@@ -507,13 +508,11 @@ def main():
             return
         if args.DLL and configuration.modify_option(
                 config, trade.process, 'daily_loss_limit_ratio',
-                trade.config_path, **backup_file, minimum_value=-1.0,
-                maximum_value=0.0):
+                trade.config_path, **backup_file, limits=(-1.0, 0.0)):
             return
         if args.MDN and configuration.modify_option(
                 config, trade.process, 'maximum_daily_number_of_trades',
-                trade.config_path, **backup_file, minimum_value=0,
-                maximum_value=sys.maxsize):
+                trade.config_path, **backup_file, limits=(0, sys.maxsize)):
             return
 
         sys.exit(1)
