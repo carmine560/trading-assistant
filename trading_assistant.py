@@ -225,10 +225,10 @@ class IndicatorThread(threading.Thread):
             '<<Modified>>',
             lambda event: self.on_text_modified(
                 event, utilization_ratio_entry, utilization_ratio_string,
-                process_section, 'utilization_ratio', 0.0, 1.0))
+                process_section, 'utilization_ratio', (0.0, 1.0)))
         self.check_for_modifications(
             utilization_ratio_entry, utilization_ratio_string, process_section,
-            'utilization_ratio', 0.0, 1.0)
+            'utilization_ratio', (0.0, 1.0))
 
         command = self.root.register(self.is_valid_float)
         utilization_ratio_entry.config(validate='key',
@@ -251,18 +251,15 @@ class IndicatorThread(threading.Thread):
 
         self.root.destroy()
 
-    def check_for_modifications(self, widget, string, section, key,
-                                minimum_value, maximum_value):
-        self.on_text_modified(None, widget, string, section, key,
-                              minimum_value, maximum_value)
+    def check_for_modifications(self, widget, string, section, key, limits):
+        self.on_text_modified(None, widget, string, section, key, limits)
         self.root.after(
             1000,
             lambda: self.check_for_modifications(widget, string, section, key,
-                                                 minimum_value, maximum_value))
+                                                 limits))
 
-    def on_text_modified(self, _, widget, string, section, key,
-                         minimum_value, maximum_value):
-        # TODO: replace minimum_value and maximum_value with limits
+    def on_text_modified(self, _, widget, string, section, key, limits):
+        minimum_value, maximum_value = limits
         modified_text = widget.get() or '0.0'
         modified_text = max(minimum_value, min(maximum_value,
                                                float(modified_text)))

@@ -179,7 +179,7 @@ def list_section(config, section):
     print(section, 'section does not exist.')
     return False
 
-def modify_data(prompt, level=0, data='', all_data=None, limits=None):
+def modify_data(prompt, level=0, data='', all_data=None, limits=()):
     if data:
         prompt_prefix = (f'{INDENT * level}{prompt} '
                          f'{ANSI_CURRENT}{data}{ANSI_RESET}: ')
@@ -243,7 +243,7 @@ def modify_dictionary(dictionary_data, level=0, prompts=None,
 
 def modify_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None, prompts=None, categorized_keys=None,
-                  tuple_values=None, dictionary_values=None, limits=None):
+                  tuple_values=None, dictionary_values=None, limits=()):
     if backup_function:
         backup_function(config_path, **backup_parameters)
     if prompts is None:
