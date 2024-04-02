@@ -69,14 +69,17 @@ class Trade(initializer.Initializer):
         self.categorized_keys = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
-            'control_flow_keys': ('is_now_after', 'is_now_before',
-                                  'is_recording'),
-            'additional_value_keys': ('click_widget', 'speak_config',
-                                      'write_chapter'),
-            'no_value_keys': ('back_to', 'copy_symbols_from_market_data',
+            # TODO: 'trigger_keys': {'is_now_after', 'is_now_before'},
+            # TODO: 'triggers': {},
+            'no_value_keys': {'back_to', 'copy_symbols_from_market_data',
                               'get_cash_balance', 'take_screenshot',
-                              'toggle_indicator', 'write_share_size'),
-            'positioning_keys': ('click', 'drag_to', 'move_to')}
+                              'toggle_indicator', 'write_share_size'},
+            'optional_value_keys': {'count_trades'},
+            'additional_value_keys': {'click_widget', 'speak_config'},
+            'optional_additional_value_keys': {'write_chapter'},
+            'positioning_keys': {'click', 'drag_to', 'move_to'},
+            'control_flow_keys': {'is_now_after', 'is_now_before',
+                                  'is_recording'}}
 
         self.schedules_title = f'{self.process} Schedules'
 
@@ -423,6 +426,7 @@ def main():
                     icon_directory=trade.resource_directory)
             return
         if args.A:
+            # TODO: move to Trade
             trade.categorized_keys['preset_additional_values'] = (
                 configuration.list_section(config, trade.actions_title))
             if configuration.modify_tuple_list(
