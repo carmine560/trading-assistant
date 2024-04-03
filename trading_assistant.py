@@ -584,12 +584,12 @@ def main():
             configuration.delete_option(config, trade.actions_title,
                                         args.D[0], trade.config_path,
                                         **backup_file)
+            trade.categorized_keys['preset_additional_values'] = (
+                configuration.list_section(config, trade.actions_title))
 
         file_utilities.delete_shortcut(
             args.D[0], program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
-        trade.categorized_keys['preset_additional_values'] = (
-            configuration.list_section(config, trade.actions_title))
         file_utilities.create_powershell_completion(
             trade.script_base, ('-a', '-A', '-D'),
             trade.categorized_keys.get('preset_additional_values'),
