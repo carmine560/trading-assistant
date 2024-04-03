@@ -411,6 +411,8 @@ def main():
     if any((args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
             args.DLL, args.MDN)):
         config = configure(trade, can_interpolate=False)
+        trade.categorized_keys['preset_additional_values'] = (
+            configuration.list_section(config, trade.actions_title))
 
         if args.SS and configuration.modify_section(
                 config, trade.startup_script_title, trade.config_path,
@@ -426,9 +428,6 @@ def main():
                     icon_directory=trade.resource_directory)
             return
         if args.A:
-            # TODO: move to Trade
-            trade.categorized_keys['preset_additional_values'] = (
-                configuration.list_section(config, trade.actions_title))
             if configuration.modify_tuple_list(
                     config, trade.actions_title, args.A[0],
                     trade.config_path, **backup_file,
@@ -464,22 +463,24 @@ def main():
                     program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
 
+            trade.categorized_keys['preset_additional_values'] = (
+                configuration.list_section(config, trade.actions_title))
             file_utilities.create_powershell_completion(
                 trade.script_base, ('-a', '-A', '-D'),
-                configuration.list_section(config, trade.actions_title),
+                trade.categorized_keys.get('preset_additional_values'),
                 ('py', 'python'),
                 os.path.join(trade.resource_directory, 'completion.ps1'))
             file_utilities.create_bash_completion(
                 trade.script_base, ('-a', '-A', '-D'),
-                configuration.list_section(config, trade.actions_title),
+                trade.categorized_keys.get('preset_additional_values'),
                 ('py.exe', 'python.exe'),
                 os.path.join(trade.resource_directory, 'completion.sh'))
             return
         if args.L and configuration.modify_option(
                 config, trade.process, 'input_map', trade.config_path,
                 **backup_file, prompts={'value': 'action'},
-                dictionary_values=configuration.list_section(
-                    config, trade.actions_title)):
+                dictionary_values=trade.categorized_keys.get(
+                    'preset_additional_values')):
             return
         if args.S and configuration.modify_section(
                 config, trade.schedules_title, trade.config_path,
@@ -490,8 +491,8 @@ def main():
                                '${Market Data:closing_time}',
                                f'${{{trade.process}:start_time}}',
                                f'${{{trade.process}:end_time}}'),
-                              configuration.list_section(
-                                  config, trade.actions_title))):
+                              trade.categorized_keys.get(
+                                  'preset_additional_values'))):
             return
         if args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
@@ -587,14 +588,16 @@ def main():
         file_utilities.delete_shortcut(
             args.D[0], program_group_base=config[trade.process]['title'],
             icon_directory=trade.resource_directory)
+        trade.categorized_keys['preset_additional_values'] = (
+            configuration.list_section(config, trade.actions_title))
         file_utilities.create_powershell_completion(
             trade.script_base, ('-a', '-A', '-D'),
-            configuration.list_section(config, trade.actions_title),
+            trade.categorized_keys.get('preset_additional_values'),
             ('py', 'python'),
             os.path.join(trade.resource_directory, 'completion.ps1'))
         file_utilities.create_bash_completion(
             trade.script_base, ('-a', '-A', '-D'),
-            configuration.list_section(config, trade.actions_title),
+            trade.categorized_keys.get('preset_additional_values'),
             ('py.exe', 'python.exe'),
             os.path.join(trade.resource_directory, 'completion.sh'))
         return
