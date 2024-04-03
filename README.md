@@ -171,7 +171,7 @@ of the same directory as the configuration file.</td></tr>
 <td>Recognize an alphanumeric column in the region, then copy symbols to the
 clipboard.</td></tr>
 
-<tr><td><code>('count_trades'[, 'CHAPTER_OFFSET'])</code></td>
+<tr><td><code>('count_trades',[ 'CHAPTER_OFFSET'])</code></td>
 
 <td>Count the number of trades for the day.  Additionally, write a chapter
 section for <a href="https://ffmpeg.org/ffmpeg-formats.html#Metadata-1">FFmpeg
