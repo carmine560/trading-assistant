@@ -271,7 +271,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
                                   categorized_keys=categorized_keys)
             elif isinstance(evaluated_value, tuple):
                 config[section][option] = modify_tuple(
-                    evaluated_value, False, level=1, prompts=prompts,
+                    evaluated_value, level=1, prompts=prompts,
                     tuple_values=tuple_values)
             elif isinstance(evaluated_value, dict):
                 config[section][option] = modify_dictionary(
@@ -330,7 +330,7 @@ def modify_section(config, section, config_path, backup_function=None,
                             is_inserted = True
                     elif value_type == 'tuple':
                         config[section][option] = modify_tuple(
-                            (), True, level=1, prompts=prompts,
+                            (), level=1, prompts=prompts,
                             tuple_values=tuple_values)
                         if config[section][option] != '()':
                             is_inserted = True
@@ -344,9 +344,7 @@ def modify_section(config, section, config_path, backup_function=None,
     print(section, 'section does not exist.')
     return False
 
-def modify_tuple(tuple_data, is_created, level=0, prompts=None,
-                 tuple_values=None):
-    # TODO: remove is_created
+def modify_tuple(tuple_data, level=0, prompts=None, tuple_values=None):
     tuple_data = list(tuple_data)
     value_prompt = prompts.get('value', 'value')
     values_prompt = prompts.get('values')
@@ -354,7 +352,7 @@ def modify_tuple(tuple_data, is_created, level=0, prompts=None,
 
     index = 0
     while index <= len(tuple_data):
-        if is_created or index == len(tuple_data):
+        if index == len(tuple_data):
             print(f'{INDENT * level}'
                   f'{ANSI_WARNING}{end_of_list_prompt}{ANSI_RESET}')
             answer = tidy_answer(['insert', 'quit'], level=level)
@@ -432,8 +430,6 @@ def modify_tuple_list(config, section, option, config_path,
     return False
 
 def modify_tuples(tuples, level=0, prompts=None, categorized_keys=None):
-    # TODO: add trigger_keys to categorized_keys
-    # TODO: add all_data for triggers
     if not isinstance(tuples, list):
         tuples = []
 
@@ -462,6 +458,9 @@ def modify_tuples(tuples, level=0, prompts=None, categorized_keys=None):
 
             key = modify_data(prompts.get('key', 'key'), level=level, data=key,
                               all_data=categorized_keys.get('all_keys'))
+            preset_values = (
+                categorized_keys.get('preset_values')
+                if key in categorized_keys.get('preset_values_keys') else None)
             if key in categorized_keys.get('no_value_keys'):
                 tuple_data = (key,)
             elif key in categorized_keys.get('optional_value_keys'):
@@ -488,7 +487,8 @@ def modify_tuples(tuples, level=0, prompts=None, categorized_keys=None):
                 value = configure_position(answer, level=level, value=value)
                 tuple_data = (key, value)
             elif key in categorized_keys.get('control_flow_keys'):
-                value = modify_data(value_prompt, level=level, data=value)
+                value = modify_data(value_prompt, level=level, data=value,
+                                    all_data=preset_values)
                 nested_answer = tidy_answer(['build', 'call'], level=level)
                 if nested_answer == 'build':
                     level += 1
@@ -507,7 +507,8 @@ def modify_tuples(tuples, level=0, prompts=None, categorized_keys=None):
 
                 tuple_data = (key, value, additional_value)
             else:
-                value = modify_data(value_prompt, level=level, data=value)
+                value = modify_data(value_prompt, level=level, data=value,
+                                    all_data=preset_values)
                 tuple_data = (key, value)
             if answer == 'insert':
                 tuples.insert(index, tuple_data)

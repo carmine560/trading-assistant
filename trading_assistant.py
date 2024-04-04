@@ -69,8 +69,6 @@ class Trade(initializer.Initializer):
         self.instruction_items = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
-            # TODO: 'trigger_keys': {'is_now_after', 'is_now_before'},
-            # TODO: 'triggers': {},
             'no_value_keys': {'back_to', 'copy_symbols_from_market_data',
                               'get_cash_balance', 'take_screenshot',
                               'toggle_indicator', 'write_share_size'},
@@ -80,11 +78,13 @@ class Trade(initializer.Initializer):
             'positioning_keys': {'click', 'drag_to', 'move_to'},
             'control_flow_keys': {'is_now_after', 'is_now_before',
                                   'is_recording'},
-            'preset_keys': set(),
-            'preset_values': set(),
-            'preset_additional_keys': set(),
-            'preset_additional_values': set(),
-        }
+            'preset_values_keys': {'is_now_after', 'is_now_before',
+                                   'speak_seconds_until_time'},
+            'preset_values': ('${Market Data:opening_time}',
+                              '${Market Data:closing_time}',
+                              f'${{{self.process}:start_time}}',
+                              f'${{{self.process}:end_time}}'),
+            'preset_additional_values': None}
 
         self.schedules_title = f'{self.process} Schedules'
 
@@ -492,12 +492,9 @@ def main():
                 **backup_file, can_insert=True, value_type='tuple',
                 prompts={'key': 'schedule', 'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
-                tuple_values=(('${Market Data:opening_time}',
-                               '${Market Data:closing_time}',
-                               f'${{{trade.process}:start_time}}',
-                               f'${{{trade.process}:end_time}}'),
-                              trade.instruction_items.get(
-                                  'preset_additional_values'))):
+                tuple_values=(
+                    trade.instruction_items.get('preset_values'),
+                    trade.instruction_items.get('preset_additional_values'))):
             return
         if args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
