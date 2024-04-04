@@ -1179,7 +1179,7 @@ def execute_action(trade, config, gui_state, action):
     return True
 
 def create_startup_script(trade, config):
-    def generate_start_process_lines(trade, options):
+    def generate_script_lines(trade, options):
         return [f'    python.exe {trade.script_file} {option.strip()}\n'
                 for option in options if option]
 
@@ -1187,6 +1187,11 @@ def create_startup_script(trade, config):
     if os.path.exists(r'.venv\Scripts\Activate.ps1'):
         activate = r'.venv\Scripts\Activate.ps1'
 
+    start_process = (
+        '    Start-Process '
+        f'"{os.path.basename(config[trade.process]["executable"])}" `\n'
+        '      -WorkingDirectory '
+        f'"{os.path.dirname(config[trade.process]["executable"])}"\n')
     pre_start_options=(
         config[trade.startup_script_title]['pre_start_options'].split(','))
     post_start_options=(
@@ -1207,15 +1212,13 @@ def create_startup_script(trade, config):
     lines.append('        Start-Sleep -Seconds 0.1\n')
     lines.append('    }\n')
     lines.append('    Start-Sleep -Seconds 1.0\n')
-    lines.append('    Start-Process `\n')
-    lines.append(f'      "{config[trade.process]["executable"]}"\n')
-    lines.extend(generate_start_process_lines(trade, running_options))
+    lines.append(start_process)
+    lines.extend(generate_script_lines(trade, running_options))
     lines.append('}\n')
     lines.append('else {\n')
-    lines.extend(generate_start_process_lines(trade, pre_start_options))
-    lines.append(f'    Start-Process `\n'
-                 f'      "{config[trade.process]["executable"]}"\n')
-    lines.extend(generate_start_process_lines(trade, post_start_options))
+    lines.extend(generate_script_lines(trade, pre_start_options))
+    lines.append(start_process)
+    lines.extend(generate_script_lines(trade, post_start_options))
     lines.append('}\n')
     if activate:
         lines.append('deactivate\n')
