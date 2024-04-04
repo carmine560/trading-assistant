@@ -66,7 +66,7 @@ class Trade(initializer.Initializer):
         self.startup_script_title = f'{self.process} Startup Script'
 
         self.actions_title = f'{self.process} Actions'
-        self.categorized_keys = {
+        self.instruction_items = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
             # TODO: 'trigger_keys': {'is_now_after', 'is_now_before'},
@@ -79,7 +79,12 @@ class Trade(initializer.Initializer):
             'optional_additional_value_keys': {'write_chapter'},
             'positioning_keys': {'click', 'drag_to', 'move_to'},
             'control_flow_keys': {'is_now_after', 'is_now_before',
-                                  'is_recording'}}
+                                  'is_recording'},
+            'preset_keys': set(),
+            'preset_values': set(),
+            'preset_additional_keys': set(),
+            'preset_additional_values': set(),
+        }
 
         self.schedules_title = f'{self.process} Schedules'
 
@@ -411,7 +416,7 @@ def main():
     if any((args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
             args.DLL, args.MDN)):
         config = configure(trade, can_interpolate=False)
-        trade.categorized_keys['preset_additional_values'] = (
+        trade.instruction_items['preset_additional_values'] = (
             configuration.list_section(config, trade.actions_title))
 
         if args.SS and configuration.modify_section(
@@ -435,7 +440,7 @@ def main():
                              'additional_value': 'additional argument',
                              'preset_additional_value': 'action',
                              'end_of_list': 'end of commands'},
-                    categorized_keys=trade.categorized_keys):
+                    categorized_keys=trade.instruction_items):
                 powershell = file_utilities.select_executable(
                     ['pwsh.exe', 'powershell.exe'])
                 activate = None
@@ -463,23 +468,23 @@ def main():
                     program_group_base=config[trade.process]['title'],
                     icon_directory=trade.resource_directory)
 
-            trade.categorized_keys['preset_additional_values'] = (
+            trade.instruction_items['preset_additional_values'] = (
                 configuration.list_section(config, trade.actions_title))
             file_utilities.create_powershell_completion(
                 trade.script_base, ('-a', '-A', '-D'),
-                trade.categorized_keys.get('preset_additional_values'),
+                trade.instruction_items.get('preset_additional_values'),
                 ('py', 'python'),
                 os.path.join(trade.resource_directory, 'completion.ps1'))
             file_utilities.create_bash_completion(
                 trade.script_base, ('-a', '-A', '-D'),
-                trade.categorized_keys.get('preset_additional_values'),
+                trade.instruction_items.get('preset_additional_values'),
                 ('py.exe', 'python.exe'),
                 os.path.join(trade.resource_directory, 'completion.sh'))
             return
         if args.L and configuration.modify_option(
                 config, trade.process, 'input_map', trade.config_path,
                 **backup_file, prompts={'value': 'action'},
-                dictionary_values=trade.categorized_keys.get(
+                dictionary_values=trade.instruction_items.get(
                     'preset_additional_values')):
             return
         if args.S and configuration.modify_section(
@@ -491,7 +496,7 @@ def main():
                                '${Market Data:closing_time}',
                                f'${{{trade.process}:start_time}}',
                                f'${{{trade.process}:end_time}}'),
-                              trade.categorized_keys.get(
+                              trade.instruction_items.get(
                                   'preset_additional_values'))):
             return
         if args.CB and configuration.modify_option(
@@ -584,7 +589,7 @@ def main():
             configuration.delete_option(config, trade.actions_title,
                                         args.D[0], trade.config_path,
                                         **backup_file)
-            trade.categorized_keys['preset_additional_values'] = (
+            trade.instruction_items['preset_additional_values'] = (
                 configuration.list_section(config, trade.actions_title))
 
         file_utilities.delete_shortcut(
@@ -592,12 +597,12 @@ def main():
             icon_directory=trade.resource_directory)
         file_utilities.create_powershell_completion(
             trade.script_base, ('-a', '-A', '-D'),
-            trade.categorized_keys.get('preset_additional_values'),
+            trade.instruction_items.get('preset_additional_values'),
             ('py', 'python'),
             os.path.join(trade.resource_directory, 'completion.ps1'))
         file_utilities.create_bash_completion(
             trade.script_base, ('-a', '-A', '-D'),
-            trade.categorized_keys.get('preset_additional_values'),
+            trade.instruction_items.get('preset_additional_values'),
             ('py.exe', 'python.exe'),
             os.path.join(trade.resource_directory, 'completion.sh'))
         return

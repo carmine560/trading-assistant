@@ -121,8 +121,10 @@ def configure_position(answer, level=0, value=''):
         print(GUI_IMPORT_ERROR)
         return False
 
+    # TODO: unify prompts
     prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
     if answer == 'modify' and value:
+        prompt_prefix += f' {ANSI_CURRENT}{value}{ANSI_RESET}'
         completer = WordCompleter([value])
         value = pt_prompt(
             ANSI(prompt_prefix + ': '), completer=completer,
@@ -344,6 +346,7 @@ def modify_section(config, section, config_path, backup_function=None,
 
 def modify_tuple(tuple_data, is_created, level=0, prompts=None,
                  tuple_values=None):
+    # TODO: remove is_created
     tuple_data = list(tuple_data)
     value_prompt = prompts.get('value', 'value')
     values_prompt = prompts.get('values')
@@ -413,14 +416,12 @@ def modify_tuple_list(config, section, option, config_path,
     if categorized_keys is None:
         categorized_keys = {}
 
-    is_created = False
     if not config.has_section(section):
         config[section] = {}
     if not config.has_option(section, option):
-        is_created = True
         config[section][option] = '[]'
 
-    tuples = modify_tuples(evaluate_value(config[section][option]), is_created,
+    tuples = modify_tuples(evaluate_value(config[section][option]),
                            prompts=prompts, categorized_keys=categorized_keys)
     if tuples:
         config[section][option] = str(tuples)
@@ -430,26 +431,22 @@ def modify_tuple_list(config, section, option, config_path,
     delete_option(config, section, option, config_path)
     return False
 
-def modify_tuples(tuples, is_created, level=0, prompts=None,
-                  categorized_keys=None):
+def modify_tuples(tuples, level=0, prompts=None, categorized_keys=None):
     # TODO: add trigger_keys to categorized_keys
     # TODO: add all_data for triggers
     if not isinstance(tuples, list):
         tuples = []
 
-    key_prompt = prompts.get('key', 'key')
     value_prompt = prompts.get('value', 'value')
     additional_value_prompt = prompts.get('additional_value',
                                           'additional value')
-    preset_additional_value_prompt = prompts.get('preset_additional_value',
-                                                 'preset additional value')
-    end_of_list_prompt = prompts.get('end_of_list', 'end of list')
 
     index = 0
     while index <= len(tuples):
-        if is_created or index == len(tuples):
+        if index == len(tuples):
             print(f'{INDENT * level}'
-                  f'{ANSI_WARNING}{end_of_list_prompt}{ANSI_RESET}')
+                  f"{ANSI_WARNING}{prompts.get('end_of_list', 'end of list')}"
+                  f'{ANSI_RESET}')
             answer = tidy_answer(['insert', 'quit'], level=level)
         else:
             print(f'{INDENT * level}'
@@ -457,100 +454,65 @@ def modify_tuples(tuples, is_created, level=0, prompts=None,
             answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
                                  level=level)
 
-        if answer == 'insert':
-            key = modify_data(key_prompt, level=level,
-                              all_data=categorized_keys.get('all_keys'))
-            if key in categorized_keys.get('no_value_keys'):
-                tuples.insert(index, (key,))
-            elif key in categorized_keys.get('optional_value_keys'):
-                value = modify_data(value_prompt, level=level,
-                                    all_data=('None',))
-                tuples.insert(index, (key,) if value.lower() in {'', 'none'}
-                              else (key, value))
-            elif key in categorized_keys.get('additional_value_keys'):
-                value = modify_data(value_prompt, level=level)
-                additional_value = modify_data(additional_value_prompt,
-                                               level=level)
-                tuples.insert(index, (key, value, additional_value))
-            elif key in categorized_keys.get('optional_additional_value_keys'):
-                value = modify_data(value_prompt, level=level)
-                additional_value = modify_data(additional_value_prompt,
-                                               level=level, all_data=('None',))
-                tuples.insert(index, (key, value) if additional_value.lower()
-                              in {'', 'none'}
-                              else (key, value, additional_value))
-            elif key in categorized_keys.get('positioning_keys'):
-                value = configure_position(answer, level=level)
-                tuples.insert(index, (key, value))
-            elif key in categorized_keys.get('control_flow_keys'):
-                # TODO: add trigger
-                value = modify_data(value_prompt, level=level)
-                answer = tidy_answer(['build', 'call'], level=level)
-                if answer == 'build':
-                    level += 1
-                    additional_value = modify_tuples(
-                        [], True, level=level, prompts=prompts,
-                        categorized_keys=categorized_keys)
-                    level -= 1
-                elif answer == 'call':
-                    additional_value = modify_data(
-                        preset_additional_value_prompt, level=level,
-                        all_data=categorized_keys.get(
-                            'preset_additional_values'))
-
-                tuples.insert(index, (key, value, additional_value))
+        if answer in {'insert', 'modify'}:
+            if answer == 'insert':
+                key = value = additional_value = ''
             else:
-                value = modify_data(value_prompt, level=level)
-                tuples.insert(index, (key, value))
-        elif answer == 'modify':
-            key, value, additional_value = (tuples[index] + ('', ''))[:3]
+                key, value, additional_value = (tuples[index] + ('', ''))[:3]
 
-            key = modify_data(key_prompt, level=level, data=key,
+            key = modify_data(prompts.get('key', 'key'), level=level, data=key,
                               all_data=categorized_keys.get('all_keys'))
             if key in categorized_keys.get('no_value_keys'):
-                tuples[index] = (key,)
+                tuple_data = (key,)
             elif key in categorized_keys.get('optional_value_keys'):
                 value = modify_data(value_prompt, level=level, data=value,
                                     all_data=('None',))
-                tuples[index] = ((key,) if value.lower() in {'', 'none'}
+                tuple_data = ((key,) if value.lower() in {'', 'none'}
                                  else (key, value))
             elif key in categorized_keys.get('additional_value_keys'):
                 value = modify_data(value_prompt, level=level, data=value)
                 additional_value = modify_data(additional_value_prompt,
                                                level=level,
                                                data=additional_value)
-                tuples[index] = (key, value, additional_value)
+                tuple_data = (key, value, additional_value)
             elif key in categorized_keys.get('optional_additional_value_keys'):
                 value = modify_data(value_prompt, level=level, data=value)
                 additional_value = modify_data(additional_value_prompt,
                                                level=level,
                                                data=additional_value,
                                                all_data=('None',))
-                tuples[index] = (
+                tuple_data = (
                     (key, value) if additional_value.lower() in {'', 'none'}
                     else (key, value, additional_value))
             elif key in categorized_keys.get('positioning_keys'):
                 value = configure_position(answer, level=level, value=value)
-                tuples[index] = (key, value)
+                tuple_data = (key, value)
             elif key in categorized_keys.get('control_flow_keys'):
                 value = modify_data(value_prompt, level=level, data=value)
-                answer = tidy_answer(['build', 'call'], level=level)
-                if answer == 'build':
+                nested_answer = tidy_answer(['build', 'call'], level=level)
+                if nested_answer == 'build':
                     level += 1
                     additional_value = modify_tuples(
-                        additional_value, is_created, level=level,
+                        additional_value,
+                        level=level,
                         prompts=prompts, categorized_keys=categorized_keys)
                     level -= 1
-                elif answer == 'call':
+                elif nested_answer == 'call':
                     additional_value = modify_data(
-                        preset_additional_value_prompt, level=level,
+                        prompts.get('preset_additional_value',
+                                    'preset additional value'),
+                        level=level, data=additional_value,
                         all_data=categorized_keys.get(
                             'preset_additional_values'))
 
-                tuples[index] = (key, value, additional_value)
+                tuple_data = (key, value, additional_value)
             else:
                 value = modify_data(value_prompt, level=level, data=value)
-                tuples[index] = (key, value)
+                tuple_data = (key, value)
+            if answer == 'insert':
+                tuples.insert(index, tuple_data)
+            else:
+                tuples[index] = tuple_data
         elif answer == 'delete':
             del tuples[index]
             index -= 1
