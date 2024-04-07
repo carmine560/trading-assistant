@@ -524,8 +524,7 @@ watch_tick_count = [
     ('press_key', '6'),              # Enter 6.
     ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
-    ('press_key', 'tab, 6'),         # Focus on the time frame drop-down menu.
-    ('press_hotkeys', 'alt, down'),  # Open the menu.
+    ('click', '524, 88'),            # Click the time frame drop-down menu.
     ('press_key', 'home'),           # Move to the first item.
     ('press_key', 'down, 2'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
