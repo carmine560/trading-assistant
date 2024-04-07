@@ -440,7 +440,7 @@ def main():
                              'additional_value': 'additional argument',
                              'preset_additional_value': 'action',
                              'end_of_list': 'end of commands'},
-                    categorized_keys=trade.instruction_items):
+                    items=trade.instruction_items):
                 powershell = file_utilities.select_executable(
                     ['pwsh.exe', 'powershell.exe'])
                 activate = None

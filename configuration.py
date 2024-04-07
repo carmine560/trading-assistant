@@ -7,8 +7,7 @@ import time
 
 from prompt_toolkit import ANSI
 from prompt_toolkit import prompt as pt_prompt
-from prompt_toolkit.completion import Completer, Completion, WordCompleter
-from prompt_toolkit.shortcuts import CompleteStyle
+from prompt_toolkit.completion import Completer, Completion
 import gnupg
 
 try:
@@ -116,36 +115,38 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                                                option, option_status):
                             return
 
-def configure_position(answer, level=0, value=''):
+def configure_position(level=0, value=''):
     if GUI_IMPORT_ERROR:
         print(GUI_IMPORT_ERROR)
         return False
 
-    # TODO: unify prompts
-    prompt_prefix = f'{INDENT * level}input/{ANSI_UNDERLINE}c{ANSI_RESET}lick'
-    if answer == 'modify' and value:
-        prompt_prefix += f' {ANSI_CURRENT}{value}{ANSI_RESET}'
-        completer = WordCompleter([value])
-        value = pt_prompt(
-            ANSI(prompt_prefix + ': '), completer=completer,
-            complete_style=CompleteStyle.READLINE_LIKE).strip() or value
-    else:
-        value = input(prompt_prefix + ': ').strip()
-
+    value = prompt_for_input(f'coordinates/{ANSI_UNDERLINE}c{ANSI_RESET}lick',
+                             level=level, value=value)
     if value and value[0].lower() == 'c':
         previous_key_state = win32api.GetKeyState(0x01)
         coordinates = ''
+        print(f'{ANSI_WARNING}waiting for click...{ANSI_RESET}')
         while True:
             key_state = win32api.GetKeyState(0x01)
             if key_state != previous_key_state:
                 if key_state not in [0, 1]:
                     x, y = pyautogui.position()
                     coordinates = f'{x}, {y}'
+                    print(f'coordinates: {coordinates}')
                     break
 
             time.sleep(0.001)
         return coordinates
-    return value
+
+    parts = value.split(',')
+    if len(parts) == 2:
+        x = parts[0].strip()
+        y = parts[1].strip()
+        if x.isdigit() and y.isdigit():
+            return f'{x}, {y}'
+
+    return configure_position(level=level,
+                              value=f'{ANSI_RESET}{ANSI_ERROR}{value}')
 
 def delete_option(config, section, option, config_path, backup_function=None,
                   backup_parameters=None):
@@ -181,77 +182,34 @@ def list_section(config, section):
     print(section, 'section does not exist.')
     return False
 
-def modify_data(prompt, level=0, data='', all_data=None, limits=()):
-    if data:
-        prompt_prefix = (f'{INDENT * level}{prompt} '
-                         f'{ANSI_CURRENT}{data}{ANSI_RESET}: ')
-    else:
-        prompt_prefix = f'{INDENT * level}{prompt}: '
-
-    completer = None
-    if all_data:
-        completer = CustomWordCompleter(all_data, ignore_case=True)
-    elif data:
-        completer = CustomWordCompleter([data], ignore_case=True)
-
-    if completer:
-        data = pt_prompt(ANSI(prompt_prefix),
-                         completer=completer,).strip() or data
-    else:
-        data = input(prompt_prefix).strip()
-
-    minimum_value, maximum_value = limits or (None, None)
-    numeric_value = None
-    if isinstance(minimum_value, int) and isinstance(maximum_value, int):
-        try:
-            numeric_value = int(float(data))
-        except ValueError as e:
-            print(e)
-            sys.exit(2)
-    if isinstance(minimum_value, float) and isinstance(maximum_value, float):
-        try:
-            numeric_value = float(data)
-        except ValueError as e:
-            print(e)
-            sys.exit(2)
-    if numeric_value is not None:
-        if minimum_value is not None:
-            numeric_value = max(minimum_value, numeric_value)
-        if maximum_value is not None:
-            numeric_value = min(maximum_value, numeric_value)
-
-        data = str(numeric_value)
-
-    return data
-
-def modify_dictionary(dictionary_data, level=0, prompts=None,
+def modify_dictionary(dictionary, level=0, prompts=None,
                       dictionary_values=None):
     value_prompt = prompts.get('value', 'value')
 
-    for key, value in dictionary_data.items():
+    for key, value in dictionary.items():
         print(f'{INDENT * level}{ANSI_IDENTIFIER}{key}{ANSI_RESET}: '
               f'{ANSI_CURRENT}{value}{ANSI_RESET}')
         answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
         if answer == 'modify':
-            dictionary_data[key] = modify_data(value_prompt, level=level,
-                                               data=value,
-                                               all_data=dictionary_values)
+            dictionary[key] = modify_value(value_prompt, level=level,
+                                           value=value,
+                                           all_values=dictionary_values)
         elif answer == 'empty':
-            dictionary_data[key] = ''
+            dictionary[key] = ''
         elif answer == 'quit':
             break
 
-    return str(dictionary_data)
+    return str(dictionary)
 
 def modify_option(config, section, option, config_path, backup_function=None,
-                  backup_parameters=None, prompts=None, categorized_keys=None,
+                  backup_parameters=None, prompts=None, items=None,
                   tuple_values=None, dictionary_values=None, limits=()):
     if backup_function:
         backup_function(config_path, **backup_parameters)
     if prompts is None:
         prompts = {}
-    if categorized_keys is None:
-        categorized_keys = {}
+    if items is None:
+        items = {}
 
     if config.has_option(section, option):
         print(f'{ANSI_IDENTIFIER}{option}{ANSI_RESET} = '
@@ -268,7 +226,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
             if (isinstance(evaluated_value, list)
                 and all(isinstance(item, tuple) for item in evaluated_value)):
                 modify_tuple_list(config, section, option, config_path,
-                                  categorized_keys=categorized_keys)
+                                  items=items)
             elif isinstance(evaluated_value, tuple):
                 config[section][option] = modify_tuple(
                     evaluated_value, level=1, prompts=prompts,
@@ -278,9 +236,9 @@ def modify_option(config, section, option, config_path, backup_function=None,
                     evaluated_value, level=1, prompts=prompts,
                     dictionary_values=dictionary_values)
             else:
-                config[section][option] = modify_data(
+                config[section][option] = modify_value(
                     prompts.get('value', 'value'),
-                    data=config[section][option], limits=limits)
+                    value=config[section][option], limits=limits)
         elif answer == 'toggle':
             config[section][option] = str(not boolean_value)
         elif answer == 'empty':
@@ -298,20 +256,19 @@ def modify_option(config, section, option, config_path, backup_function=None,
 
 def modify_section(config, section, config_path, backup_function=None,
                    backup_parameters=None, can_insert=False,
-                   value_type='string', prompts=None, categorized_keys=None,
+                   value_type='string', prompts=None, items=None,
                    tuple_values=None):
     if backup_function:
         backup_function(config_path, **backup_parameters)
     if prompts is None:
         prompts = {}
-    if categorized_keys is None:
-        categorized_keys = {}
+    if items is None:
+        items = {}
 
     if config.has_section(section):
         for option in config[section]:
             result = modify_option(config, section, option, config_path,
-                                   prompts=prompts,
-                                   categorized_keys=categorized_keys,
+                                   prompts=prompts, items=items,
                                    tuple_values=tuple_values)
             if result in ('quit', False):
                 return result
@@ -323,9 +280,9 @@ def modify_section(config, section, config_path, backup_function=None,
                 print(f'{ANSI_WARNING}{end_of_list_prompt}{ANSI_RESET}')
                 answer = tidy_answer(['insert', 'quit'])
                 if answer == 'insert':
-                    option = modify_data(prompts.get('key', 'option'))
+                    option = modify_value(prompts.get('key', 'option'))
                     if value_type == 'string':
-                        config[section][option] = modify_data('value')
+                        config[section][option] = modify_value('value')
                         if config[section][option]:
                             is_inserted = True
                     elif value_type == 'tuple':
@@ -344,21 +301,22 @@ def modify_section(config, section, config_path, backup_function=None,
     print(section, 'section does not exist.')
     return False
 
-def modify_tuple(tuple_data, level=0, prompts=None, tuple_values=None):
-    tuple_data = list(tuple_data)
+def modify_tuple(tuple_entry, level=0, prompts=None, tuple_values=None):
+    # TODO: merge into modify_tuples()
+    tuple_entry = list(tuple_entry)
     value_prompt = prompts.get('value', 'value')
     values_prompt = prompts.get('values')
     end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
 
     index = 0
-    while index <= len(tuple_data):
-        if index == len(tuple_data):
+    while index <= len(tuple_entry):
+        if index == len(tuple_entry):
             print(f'{INDENT * level}'
                   f'{ANSI_WARNING}{end_of_list_prompt}{ANSI_RESET}')
             answer = tidy_answer(['insert', 'quit'], level=level)
         else:
             print(f'{INDENT * level}'
-                  f'{ANSI_CURRENT}{tuple_data[index]}{ANSI_RESET}')
+                  f'{ANSI_CURRENT}{tuple_entry[index]}{ANSI_RESET}')
             if values_prompt:
                 answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
             else:
@@ -369,31 +327,31 @@ def modify_tuple(tuple_data, level=0, prompts=None, tuple_values=None):
             value_prompt = values_prompt[index]
         if answer == 'insert':
             if tuple_values and tuple_values[index:index + 1]:
-                value = modify_data(value_prompt, level=level,
-                                    all_data=tuple_values[index])
+                value = modify_value(value_prompt, level=level,
+                                     all_values=tuple_values[index])
             elif tuple_values and len(tuple_values) == 1:
-                value = modify_data(value_prompt, level=level,
-                                    all_data=tuple_values[0])
+                value = modify_value(value_prompt, level=level,
+                                     all_values=tuple_values[0])
             else:
-                value = modify_data(value_prompt, level=level)
+                value = modify_value(value_prompt, level=level)
             if value:
-                tuple_data.insert(index, value)
+                tuple_entry.insert(index, value)
         elif answer == 'modify':
             if tuple_values and tuple_values[index:index + 1]:
-                tuple_data[index] = modify_data(value_prompt, level=level,
-                                                data=tuple_data[index],
-                                                all_data=tuple_values[index])
+                tuple_entry[index] = modify_value(
+                    value_prompt, level=level, value=tuple_entry[index],
+                    all_values=tuple_values[index])
             elif tuple_values and len(tuple_values) == 1:
-                tuple_data[index] = modify_data(value_prompt, level=level,
-                                                data=tuple_data[index],
-                                                all_data=tuple_values[0])
+                tuple_entry[index] = modify_value(
+                    value_prompt, level=level, value=tuple_entry[index],
+                    all_values=tuple_values[0])
             else:
-                tuple_data[index] = modify_data(value_prompt, level=level,
-                                                data=tuple_data[index])
+                tuple_entry[index] = modify_value(value_prompt, level=level,
+                                                  value=tuple_entry[index])
         elif answer == 'empty':
-            tuple_data[index] = ''
+            tuple_entry[index] = ''
         elif answer == 'delete':
-            del tuple_data[index]
+            del tuple_entry[index]
             index -= 1
         elif answer == 'quit':
             break
@@ -402,17 +360,17 @@ def modify_tuple(tuple_data, level=0, prompts=None, tuple_values=None):
         if values_prompt and index == len(values_prompt):
             break
 
-    return str(tuple(tuple_data))
+    return str(tuple(tuple_entry))
 
 def modify_tuple_list(config, section, option, config_path,
                       backup_function=None, backup_parameters=None,
-                      prompts=None, categorized_keys=None):
+                      prompts=None, items=None):
     if backup_function:
         backup_function(config_path, **backup_parameters)
     if prompts is None:
         prompts = {}
-    if categorized_keys is None:
-        categorized_keys = {}
+    if items is None:
+        items = {}
 
     if not config.has_section(section):
         config[section] = {}
@@ -420,7 +378,7 @@ def modify_tuple_list(config, section, option, config_path,
         config[section][option] = '[]'
 
     tuples = modify_tuples(evaluate_value(config[section][option]),
-                           prompts=prompts, categorized_keys=categorized_keys)
+                           prompts=prompts, items=items)
     if tuples:
         config[section][option] = str(tuples)
         write_config(config, config_path)
@@ -429,7 +387,7 @@ def modify_tuple_list(config, section, option, config_path,
     delete_option(config, section, option, config_path)
     return False
 
-def modify_tuples(tuples, level=0, prompts=None, categorized_keys=None):
+def modify_tuples(tuples, level=0, prompts=None, items=None):
     if not isinstance(tuples, list):
         tuples = []
 
@@ -456,64 +414,61 @@ def modify_tuples(tuples, level=0, prompts=None, categorized_keys=None):
             else:
                 key, value, additional_value = (tuples[index] + ('', ''))[:3]
 
-            key = modify_data(prompts.get('key', 'key'), level=level, data=key,
-                              all_data=categorized_keys.get('all_keys'))
+            key = modify_value(prompts.get('key', 'key'), level=level,
+                               value=key, all_values=items.get('all_keys'))
             preset_values = (
-                categorized_keys.get('preset_values')
-                if key in categorized_keys.get('preset_values_keys') else None)
-            if key in categorized_keys.get('no_value_keys'):
-                tuple_data = (key,)
-            elif key in categorized_keys.get('optional_value_keys'):
-                value = modify_data(value_prompt, level=level, data=value,
-                                    all_data=('None',))
-                tuple_data = ((key,) if value.lower() in {'', 'none'}
+                items.get('preset_values')
+                if key in items.get('preset_values_keys') else None)
+            if key in items.get('no_value_keys'):
+                tuple_entry = (key,)
+            elif key in items.get('optional_value_keys'):
+                value = modify_value(value_prompt, level=level, value=value,
+                                     all_values=('None',))
+                tuple_entry = ((key,) if value.lower() in {'', 'none'}
                                  else (key, value))
-            elif key in categorized_keys.get('additional_value_keys'):
-                value = modify_data(value_prompt, level=level, data=value)
-                additional_value = modify_data(additional_value_prompt,
-                                               level=level,
-                                               data=additional_value)
-                tuple_data = (key, value, additional_value)
-            elif key in categorized_keys.get('optional_additional_value_keys'):
-                value = modify_data(value_prompt, level=level, data=value)
-                additional_value = modify_data(additional_value_prompt,
-                                               level=level,
-                                               data=additional_value,
-                                               all_data=('None',))
-                tuple_data = (
+            elif key in items.get('additional_value_keys'):
+                value = modify_value(value_prompt, level=level, value=value)
+                additional_value = modify_value(additional_value_prompt,
+                                                level=level,
+                                                value=additional_value)
+                tuple_entry = (key, value, additional_value)
+            elif key in items.get('optional_additional_value_keys'):
+                value = modify_value(value_prompt, level=level, value=value)
+                additional_value = modify_value(
+                    additional_value_prompt, level=level,
+                    value=additional_value, all_values=('None',))
+                tuple_entry = (
                     (key, value) if additional_value.lower() in {'', 'none'}
                     else (key, value, additional_value))
-            elif key in categorized_keys.get('positioning_keys'):
-                value = configure_position(answer, level=level, value=value)
-                tuple_data = (key, value)
-            elif key in categorized_keys.get('control_flow_keys'):
-                value = modify_data(value_prompt, level=level, data=value,
-                                    all_data=preset_values)
+            elif key in items.get('positioning_keys'):
+                value = configure_position(level=level, value=value)
+                tuple_entry = (key, value)
+            elif key in items.get('control_flow_keys'):
+                value = modify_value(value_prompt, level=level, value=value,
+                                     all_values=preset_values)
                 nested_answer = tidy_answer(['build', 'call'], level=level)
                 if nested_answer == 'build':
                     level += 1
                     additional_value = modify_tuples(
-                        additional_value,
-                        level=level,
-                        prompts=prompts, categorized_keys=categorized_keys)
+                        additional_value, level=level, prompts=prompts,
+                        items=items)
                     level -= 1
                 elif nested_answer == 'call':
-                    additional_value = modify_data(
+                    additional_value = modify_value(
                         prompts.get('preset_additional_value',
                                     'preset additional value'),
-                        level=level, data=additional_value,
-                        all_data=categorized_keys.get(
-                            'preset_additional_values'))
+                        level=level, value=additional_value,
+                        all_values=items.get('preset_additional_values'))
 
-                tuple_data = (key, value, additional_value)
+                tuple_entry = (key, value, additional_value)
             else:
-                value = modify_data(value_prompt, level=level, data=value,
-                                    all_data=preset_values)
-                tuple_data = (key, value)
+                value = modify_value(value_prompt, level=level, value=value,
+                                     all_values=preset_values)
+                tuple_entry = (key, value)
             if answer == 'insert':
-                tuples.insert(index, tuple_data)
+                tuples.insert(index, tuple_entry)
             else:
-                tuples[index] = tuple_data
+                tuples[index] = tuple_entry
         elif answer == 'delete':
             del tuples[index]
             index -= 1
@@ -523,6 +478,59 @@ def modify_tuples(tuples, level=0, prompts=None, categorized_keys=None):
         index += 1
 
     return tuples
+
+def modify_value(prompt, level=0, value='', all_values=None, limits=()):
+    value = prompt_for_input(prompt, level=level, value=value,
+                             all_values=all_values)
+
+    minimum_value, maximum_value = limits or (None, None)
+    numeric_value = None
+    if isinstance(minimum_value, int) and isinstance(maximum_value, int):
+        try:
+            numeric_value = int(float(value))
+        except ValueError as e:
+            print(e)
+            sys.exit(2)
+    if isinstance(minimum_value, float) and isinstance(maximum_value, float):
+        try:
+            numeric_value = float(value)
+        except ValueError as e:
+            print(e)
+            sys.exit(2)
+    if numeric_value is not None:
+        if minimum_value is not None:
+            numeric_value = max(minimum_value, numeric_value)
+        if maximum_value is not None:
+            numeric_value = min(maximum_value, numeric_value)
+
+        value = str(numeric_value)
+
+    if all_values and value not in all_values and all_values != ('None',):
+        value = modify_value(prompt, level=level,
+                             value=f'{ANSI_RESET}{ANSI_ERROR}{value}',
+                             all_values=all_values)
+
+    return value
+
+def prompt_for_input(prompt, level=0, value='', all_values=None):
+    if value:
+        prompt_prefix = (f'{INDENT * level}{prompt} '
+                         f'{ANSI_CURRENT}{value}{ANSI_RESET}: ')
+    else:
+        prompt_prefix = f'{INDENT * level}{prompt}: '
+
+    completer = None
+    if all_values:
+        completer = CustomWordCompleter(all_values, ignore_case=True)
+    elif value:
+        completer = CustomWordCompleter([value], ignore_case=True)
+
+    if completer:
+        value = (pt_prompt(ANSI(prompt_prefix), completer=completer).strip()
+                 or value)
+    else:
+        value = input(prompt_prefix).strip()
+    return value
 
 def read_config(config, config_path):
     encrypted_config_path = config_path + '.gpg'
@@ -542,7 +550,7 @@ def tidy_answer(answers, level=0):
     previous_initialism = ''
     for word_index, word in enumerate(answers):
         for char_index, _ in enumerate(word):
-            if not word[char_index].lower() in initialism:
+            if word[char_index].lower() not in initialism:
                 mnemonics = word[char_index]
                 initialism = initialism + mnemonics.lower()
                 break
@@ -560,7 +568,7 @@ def tidy_answer(answers, level=0):
 
     answer = input(f'{INDENT * level}{prompt}: ').strip().lower()
     if answer:
-        if not answer[0] in initialism:
+        if answer[0] not in initialism:
             answer = ''
         else:
             for index, _ in enumerate(initialism):
