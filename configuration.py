@@ -480,7 +480,6 @@ def modify_tuples(tuples, level=0, prompts=None, items=None):
     return tuples
 
 def modify_value(prompt, level=0, value='', all_values=None, limits=()):
-    # TODO: validate value
     value = prompt_for_input(prompt, level=level, value=value,
                              all_values=all_values)
 
@@ -505,6 +504,11 @@ def modify_value(prompt, level=0, value='', all_values=None, limits=()):
             numeric_value = min(maximum_value, numeric_value)
 
         value = str(numeric_value)
+
+    if all_values and value not in all_values and all_values != ('None',):
+        value = modify_value(prompt, level=level,
+                             value=f'{ANSI_RESET}{ANSI_ERROR}{value}',
+                             all_values=all_values)
 
     return value
 
@@ -546,7 +550,7 @@ def tidy_answer(answers, level=0):
     previous_initialism = ''
     for word_index, word in enumerate(answers):
         for char_index, _ in enumerate(word):
-            if not word[char_index].lower() in initialism:
+            if word[char_index].lower() not in initialism:
                 mnemonics = word[char_index]
                 initialism = initialism + mnemonics.lower()
                 break
@@ -564,7 +568,7 @@ def tidy_answer(answers, level=0):
 
     answer = input(f'{INDENT * level}{prompt}: ').strip().lower()
     if answer:
-        if not answer[0] in initialism:
+        if answer[0] not in initialism:
             answer = ''
         else:
             for index, _ in enumerate(initialism):
