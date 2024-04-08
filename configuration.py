@@ -125,14 +125,14 @@ def configure_position(level=0, value=''):
     if value and value[0].lower() == 'c':
         previous_key_state = win32api.GetKeyState(0x01)
         coordinates = ''
-        print(f'{ANSI_WARNING}waiting for click...{ANSI_RESET}')
+        print(
+            f'{INDENT * level}{ANSI_WARNING}waiting for click...{ANSI_RESET}')
         while True:
             key_state = win32api.GetKeyState(0x01)
             if key_state != previous_key_state:
                 if key_state not in [0, 1]:
-                    x, y = pyautogui.position()
-                    coordinates = f'{x}, {y}'
-                    print(f'coordinates: {coordinates}')
+                    coordinates = ', '.join(map(str, pyautogui.position()))
+                    print(f'{INDENT * level}coordinates: {coordinates}')
                     break
 
             time.sleep(0.001)
@@ -232,7 +232,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
             if (isinstance(evaluated_value, list)
                 and all(isinstance(item, tuple) for item in evaluated_value)):
                 modify_tuple_list(config, section, option, config_path,
-                                  items=items)
+                                  prompts=prompts, items=items)
             elif isinstance(evaluated_value, tuple):
                 config[section][option] = modify_tuple(
                     evaluated_value, level=1, prompts=prompts,
@@ -407,12 +407,15 @@ def modify_tuples(tuples, level=0, prompts=None, items=None):
             print(f'{INDENT * level}'
                   f"{ANSI_WARNING}{prompts.get('end_of_list', 'end of list')}"
                   f'{ANSI_RESET}')
-            answer = tidy_answer(['insert', 'quit'], level=level)
+            answers = ['insert', 'back', 'quit']
         else:
             print(f'{INDENT * level}'
                   f'{ANSI_CURRENT}{tuples[index]}{ANSI_RESET}')
-            answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
-                                 level=level)
+            answers = ['insert', 'modify', 'delete', 'back', 'quit']
+        if index == 0:
+            answers.remove('back')
+
+        answer = tidy_answer(answers, level=level)
 
         if answer in {'insert', 'modify'}:
             if answer == 'insert':
@@ -454,12 +457,18 @@ def modify_tuples(tuples, level=0, prompts=None, items=None):
                                      all_values=preset_values)
                 nested_answer = tidy_answer(['build', 'call'], level=level)
                 if nested_answer == 'build':
+                    if isinstance(additional_value, str):
+                        additional_value = None
+
                     level += 1
                     additional_value = modify_tuples(
                         additional_value, level=level, prompts=prompts,
                         items=items)
                     level -= 1
                 elif nested_answer == 'call':
+                    if isinstance(additional_value, list):
+                        additional_value = None
+
                     additional_value = modify_value(
                         prompts.get('preset_additional_value',
                                     'preset additional value'),
@@ -478,6 +487,8 @@ def modify_tuples(tuples, level=0, prompts=None, items=None):
         elif answer == 'delete':
             del tuples[index]
             index -= 1
+        elif answer == 'back':
+            index -= 2
         elif answer == 'quit':
             break
 
