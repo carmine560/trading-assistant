@@ -38,10 +38,8 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
 SECURITIES_CODE_REGEX = '[1-9]' + SANS_INITIAL_SECURITIES_CODE_REGEX
 
 class Trade(initializer.Initializer):
-    def __init__(self, brokerage, process):
-        super().__init__(brokerage, process, __file__)
-        self.brokerage = self.vendor
-
+    def __init__(self, vendor, process):
+        super().__init__(vendor, process, __file__)
         self.market_directory = os.path.join(self.config_directory, 'market')
         self.market_holidays = os.path.join(self.market_directory,
                                             'market_holidays.csv')
@@ -57,15 +55,14 @@ class Trade(initializer.Initializer):
         for directory in [self.market_directory, self.resource_directory]:
             file_utilities.check_directory(directory)
 
-        self.customer_margin_ratios_title = (
-            f'{self.brokerage} Customer Margin Ratios')
+        self.customer_margin_ratios_section = (
+            f'{self.vendor} Customer Margin Ratios')
 
-        self.widgets_title = f'{self.process} Widgets'
+        self.widgets_section = f'{self.process} Widgets'
         self.indicator_thread = None
 
-        self.startup_script_title = f'{self.process} Startup Script'
+        self.startup_script_section = f'{self.process} Startup Script'
 
-        self.actions_title = f'{self.process} Actions'
         self.instruction_items = {
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
@@ -86,7 +83,7 @@ class Trade(initializer.Initializer):
                               f'${{{self.process}:end_time}}'),
             'preset_additional_values': None}
 
-        self.schedules_title = f'{self.process} Schedules'
+        self.schedules_section = f'{self.process} Schedules'
 
         self.mouse_listener = None
         self.keyboard_listener = None
@@ -181,7 +178,7 @@ class IndicatorThread(threading.Thread):
                 widget.place(x=work_left, y=work_top)
 
         process_section = self.config[self.trade.process]
-        widgets_section = self.config[self.trade.widgets_title]
+        widgets_section = self.config[self.trade.widgets_section]
         maximum_daily_number_of_trades = int(
             process_section['maximum_daily_number_of_trades'])
 
@@ -325,7 +322,7 @@ class MessageThread(threading.Thread):
 
     def run(self):
         process_section = self.config[self.trade.process]
-        widgets_section = self.config[self.trade.widgets_title]
+        widgets_section = self.config[self.trade.widgets_section]
 
         root = tk.Tk()
         root.attributes('-alpha', 0.8)
@@ -417,10 +414,10 @@ def main():
             args.DLL, args.MDN)):
         config = configure(trade, can_interpolate=False)
         trade.instruction_items['preset_additional_values'] = (
-            configuration.list_section(config, trade.actions_title))
+            configuration.list_section(config, trade.actions_section))
 
         if args.SS and configuration.modify_section(
-                config, trade.startup_script_title, trade.config_path,
+                config, trade.startup_script_section, trade.config_path,
                 **backup_file):
             create_startup_script(trade, config)
             powershell = file_utilities.select_executable(
@@ -434,7 +431,7 @@ def main():
             return
         if args.A:
             if configuration.modify_tuple_list(
-                    config, trade.actions_title, args.A[0],
+                    config, trade.actions_section, args.A[0],
                     trade.config_path, **backup_file,
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
@@ -469,7 +466,7 @@ def main():
                     icon_directory=trade.resource_directory)
 
             trade.instruction_items['preset_additional_values'] = (
-                configuration.list_section(config, trade.actions_title))
+                configuration.list_section(config, trade.actions_section))
             file_utilities.create_powershell_completion(
                 trade.script_base, ('-a', '-A', '-D'),
                 trade.instruction_items.get('preset_additional_values'),
@@ -488,7 +485,7 @@ def main():
                     'preset_additional_values')):
             return
         if args.S and configuration.modify_section(
-                config, trade.schedules_title, trade.config_path,
+                config, trade.schedules_section, trade.config_path,
                 **backup_file, can_insert=True, value_type='tuple',
                 prompts={'key': 'schedule', 'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
@@ -526,7 +523,8 @@ def main():
         configuration.check_config_changes(
             default_config, trade.config_path,
             excluded_sections=('Variables',),
-            user_option_ignored_sections=(trade.actions_title,), **backup_file)
+            user_option_ignored_sections=(trade.actions_section,),
+            **backup_file)
         return
     else:
         config = configure(trade)
@@ -552,7 +550,7 @@ def main():
                             trade.speech_manager, is_persistent=True)
 
         execute_action(trade, config, gui_state,
-                       config[trade.actions_title][args.a[0]])
+                       config[trade.actions_section][args.a[0]])
         if not (is_running and args.l):
             process_utilities.stop_listeners(
                 trade.mouse_listener, trade.keyboard_listener, base_manager,
@@ -583,11 +581,11 @@ def main():
             except OSError as e:
                 print(e)
         else:
-            configuration.delete_option(config, trade.actions_title,
+            configuration.delete_option(config, trade.actions_section,
                                         args.D[0], trade.config_path,
                                         **backup_file)
             trade.instruction_items['preset_additional_values'] = (
-                configuration.list_section(config, trade.actions_title))
+                configuration.list_section(config, trade.actions_section))
 
         file_utilities.delete_shortcut(
             args.D[0], program_group_base=config[trade.process]['title'],
@@ -613,7 +611,7 @@ def configure(trade, can_interpolate=True, can_override=True):
 
     if not trade.executable and trade.process == 'HYPERSBI2':
         location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
-                                    trade.brokerage, trade.process,
+                                    trade.vendor, trade.process,
                                     'location.dat')
         try:
             with open(location_dat, encoding='utf-8') as f:
@@ -622,7 +620,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         except OSError as e:
             print(e)
             trade.executable = os.path.join(
-                os.path.expandvars('$ProgramFiles'), trade.brokerage,
+                os.path.expandvars('$ProgramFiles'), trade.vendor,
                 trade.process, trade.process + '.exe')
             if not os.path.isfile(trade.executable):
                 print(trade.executable, 'file does not exist.')
@@ -660,7 +658,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'number_of_pages': '2',
         'symbol_header': 'コード',
         'price_header': '株価'}
-    config[trade.customer_margin_ratios_title] = {
+    config[trade.customer_margin_ratios_section] = {
         'customer_margin_ratio': '0.31',
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
@@ -689,18 +687,18 @@ def configure(trade, can_interpolate=True, can_override=True):
         'image_magnification': '2',
         'binarization_threshold': '128',
         'is_dark_theme': 'True'}
-    config[trade.widgets_title] = {
+    config[trade.widgets_section] = {
         'clock_label_position': 'nw',
         'clock_label_font_size': '12',
         'status_bar_frame_position': 'sw',
         'status_bar_frame_font_size': '24',
         'message_font_size': '14'}
-    config[trade.startup_script_title] = {
+    config[trade.startup_script_section] = {
         'pre_start_options': '',
         'post_start_options': '',
         'running_options': ''}
-    config[trade.actions_title] = {}
-    config[trade.schedules_title] = {}
+    config[trade.actions_section] = {}
+    config[trade.schedules_section] = {}
     config['Variables'] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
         'initial_cash_balance': '0',
@@ -724,13 +722,13 @@ def configure(trade, can_interpolate=True, can_override=True):
             'f5': 'show_hide_watchlists', 'f6': '', 'f7': '', 'f8': '',
             'f9': '', 'f10': 'speak_cpu_utilization', 'f11': '',
             'f12': 'toggle_indicator'})
-        # Directly assigning a new dictionary to 'config[trade.SECTION_TITLE]'
+        # Directly assigning a new dictionary to 'config[trade.SECTION]'
         # updates the original dictionary.
-        config[trade.startup_script_title] = {
+        config[trade.startup_script_section] = {
             'pre_start_options': '',
             'post_start_options': '-rdl',
             'running_options': '-l'}
-        config[trade.actions_title] = {
+        config[trade.actions_section] = {
             'create_pre_trading_chapter': [
                 ('write_chapter', 'Pre-Trading', 'Pre-Market')],
             'show_hide_watchlists': [
@@ -764,7 +762,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         if trade.process == 'HYPERSBI2':
             theme_config = configparser.ConfigParser()
             theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
-                                     trade.brokerage, trade.process,
+                                     trade.vendor, trade.process,
                                      'theme.ini')
             theme_config.read(theme_ini)
             if (theme_config.has_option('General', 'theme')
@@ -774,7 +772,7 @@ def configure(trade, can_interpolate=True, can_override=True):
     return config
 
 def save_customer_margin_ratios(trade, config):
-    section = config[trade.customer_margin_ratios_title]
+    section = config[trade.customer_margin_ratios_section]
 
     if get_latest(config, trade.market_holidays, section['update_time'],
                   section['time_zone'], trade.customer_margin_ratios):
@@ -917,7 +915,7 @@ def start_scheduler(trade, config, gui_state, process):
     scheduler = sched.scheduler(time.time, time.sleep)
     schedules = []
 
-    section = config[trade.schedules_title]
+    section = config[trade.schedules_section]
     for option in section:
         trigger, action = configuration.evaluate_value(section[option])
         trigger = time.strptime(time.strftime('%Y-%m-%d ') + trigger,
@@ -927,7 +925,7 @@ def start_scheduler(trade, config, gui_state, process):
             schedule = scheduler.enterabs(
                 trigger, 1, execute_action,
                 argument=(trade, config, gui_state,
-                          config[trade.actions_title][action]))
+                          config[trade.actions_section][action]))
             schedules.append(schedule)
 
     while scheduler.queue:
@@ -963,7 +961,7 @@ def start_listeners(trade, config, gui_state, base_manager, speech_manager,
 def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread = threading.Thread(
         target=execute_action,
-        args=(trade, config, gui_state, config[trade.actions_title][action]))
+        args=(trade, config, gui_state, config[trade.actions_section][action]))
     # TODO: Python 3.12.0: RuntimeError: can't create new thread at interpreter
     # shutdown
     execute_action_thread.start()
@@ -987,7 +985,7 @@ def execute_action(trade, config, gui_state, action):
         if isinstance(additional_argument, str):
             return execute_action(
                 trade, config, gui_state,
-                config[trade.actions_title][additional_argument])
+                config[trade.actions_section][additional_argument])
 
         print(additional_argument, 'is not a list or a string.')
         return False
@@ -1016,7 +1014,7 @@ def execute_action(trade, config, gui_state, action):
             daily_loss_limit = (
                 trade.cash_balance
                 * float(config[trade.process]['utilization_ratio'])
-                / float(config[trade.customer_margin_ratios_title][
+                / float(config[trade.customer_margin_ratios_section][
                     'customer_margin_ratio'])
                 * float(config[trade.process]['daily_loss_limit_ratio']))
             initial_cash_balance = int(
@@ -1195,11 +1193,11 @@ def create_startup_script(trade, config):
         '      -WorkingDirectory '
         f'"{os.path.dirname(config[trade.process]["executable"])}"\n')
     pre_start_options=(
-        config[trade.startup_script_title]['pre_start_options'].split(','))
+        config[trade.startup_script_section]['pre_start_options'].split(','))
     post_start_options=(
-        config[trade.startup_script_title]['post_start_options'].split(','))
+        config[trade.startup_script_section]['post_start_options'].split(','))
     running_options=(
-        config[trade.startup_script_title]['running_options'].split(','))
+        config[trade.startup_script_section]['running_options'].split(','))
 
     lines = []
     lines.append(f'Set-Location -Path "{os.path.dirname(__file__)}"\n')
@@ -1231,7 +1229,7 @@ def create_startup_script(trade, config):
 def calculate_share_size(trade, config, position):
     if trade.symbol and trade.cash_balance:
         customer_margin_ratio = float(config[
-            trade.customer_margin_ratios_title]['customer_margin_ratio'])
+            trade.customer_margin_ratios_section]['customer_margin_ratio'])
         try:
             with open(trade.customer_margin_ratios, encoding='utf-8') as f:
                 reader = csv.reader(f)

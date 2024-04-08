@@ -472,6 +472,7 @@ login = [
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
     # is before ${HYPERSBI2:end_time}.
     ('is_now_before', '${HYPERSBI2:end_time}', [
+        ('click', '231, 727'),
         ('click', '278, 838'),
         ('back_to',)]),
     # Open the 'News' window if the current system time is before the open.

@@ -23,4 +23,4 @@ class Initializer:
 
         file_utilities.check_directory(self.config_directory)
 
-        self.actions_title = f'{self.process} Actions'
+        self.actions_section = f'{self.process} Actions'

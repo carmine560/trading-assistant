@@ -172,6 +172,12 @@ def evaluate_value(value):
         sys.exit(1)
     return evaluated_value
 
+def get_strict_boolean(config, section, option):
+    value = config.get(section, option)
+    if value.lower() not in {'true', 'false'}:
+        raise ValueError(f'Invalid boolean value for {option} in {section}.')
+    return config.getboolean(section, option)
+
 def list_section(config, section):
     options = []
     if config.has_section(section):
@@ -215,7 +221,7 @@ def modify_option(config, section, option, config_path, backup_function=None,
         print(f'{ANSI_IDENTIFIER}{option}{ANSI_RESET} = '
               f'{ANSI_CURRENT}{config[section][option]}{ANSI_RESET}')
         try:
-            boolean_value = config[section].getboolean(option)
+            boolean_value = get_strict_boolean(config, section, option)
             answer = tidy_answer(['modify', 'toggle', 'empty', 'default',
                                   'quit'])
         except ValueError:
@@ -418,21 +424,21 @@ def modify_tuples(tuples, level=0, prompts=None, items=None):
                                value=key, all_values=items.get('all_keys'))
             preset_values = (
                 items.get('preset_values')
-                if key in items.get('preset_values_keys') else None)
-            if key in items.get('no_value_keys'):
+                if key in items.get('preset_values_keys', set()) else None)
+            if key in items.get('no_value_keys', set()):
                 tuple_entry = (key,)
-            elif key in items.get('optional_value_keys'):
+            elif key in items.get('optional_value_keys', set()):
                 value = modify_value(value_prompt, level=level, value=value,
                                      all_values=('None',))
                 tuple_entry = ((key,) if value.lower() in {'', 'none'}
                                  else (key, value))
-            elif key in items.get('additional_value_keys'):
+            elif key in items.get('additional_value_keys', set()):
                 value = modify_value(value_prompt, level=level, value=value)
                 additional_value = modify_value(additional_value_prompt,
                                                 level=level,
                                                 value=additional_value)
                 tuple_entry = (key, value, additional_value)
-            elif key in items.get('optional_additional_value_keys'):
+            elif key in items.get('optional_additional_value_keys', set()):
                 value = modify_value(value_prompt, level=level, value=value)
                 additional_value = modify_value(
                     additional_value_prompt, level=level,
@@ -440,10 +446,10 @@ def modify_tuples(tuples, level=0, prompts=None, items=None):
                 tuple_entry = (
                     (key, value) if additional_value.lower() in {'', 'none'}
                     else (key, value, additional_value))
-            elif key in items.get('positioning_keys'):
+            elif key in items.get('positioning_keys', set()):
                 value = configure_position(level=level, value=value)
                 tuple_entry = (key, value)
-            elif key in items.get('control_flow_keys'):
+            elif key in items.get('control_flow_keys', set()):
                 value = modify_value(value_prompt, level=level, value=value,
                                      all_values=preset_values)
                 nested_answer = tidy_answer(['build', 'call'], level=level)
