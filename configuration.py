@@ -263,6 +263,7 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
             config[section][option] = ''
         elif answer == 'default':
             delete_option(config, section, option, config_path)
+            # TODO: remove return False
             return False
         elif answer == 'quit':
             return False
@@ -296,10 +297,11 @@ def modify_section(config, section, config_path, backup_parameters=None,
                 return result
 
         if can_insert:
-            end_of_list_prompt = prompts.get('end_of_list', 'end of section')
             is_inserted = False
             while True:
-                print(f'{ANSI_WARNING}{end_of_list_prompt}{ANSI_RESET}')
+                print(f'{ANSI_WARNING}'
+                      f"{prompts.get('end_of_list', 'end of section')}"
+                      f'{ANSI_RESET}')
                 answer = tidy_answer(['insert', 'quit'])
                 if answer == 'insert':
                     option = modify_value(prompts.get('key', 'option'))
@@ -325,55 +327,51 @@ def modify_section(config, section, config_path, backup_parameters=None,
 
 def modify_tuple(tuple_entry, level=0, prompts=None, tuple_values=None):
     tuple_entry = list(tuple_entry)
-    value_prompt = prompts.get('value', 'value')
     values_prompt = prompts.get('values')
-    end_of_list_prompt = prompts.get('end_of_list', 'end of tuple')
 
     index = 0
     while index <= len(tuple_entry):
         if index == len(tuple_entry):
             print(f'{INDENT * level}'
-                  f'{ANSI_WARNING}{end_of_list_prompt}{ANSI_RESET}')
-            answer = tidy_answer(['insert', 'quit'], level=level)
+                  f"{ANSI_WARNING}{prompts.get('end_of_list', 'end of tuple')}"
+                  f'{ANSI_RESET}')
+            answers = ['insert', 'back', 'quit']
         else:
             print(f'{INDENT * level}'
                   f'{ANSI_CURRENT}{tuple_entry[index]}{ANSI_RESET}')
             if values_prompt:
-                answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
+                answers = ['modify', 'empty', 'back', 'quit']
             else:
-                answer = tidy_answer(['insert', 'modify', 'delete', 'quit'],
-                                     level=level)
+                answers = ['insert', 'modify', 'delete', 'back', 'quit']
+        if index == 0:
+            answers.remove('back')
 
-        if values_prompt and index < len(values_prompt):
-            value_prompt = values_prompt[index]
-        if answer == 'insert':
-            if tuple_values and tuple_values[index:index + 1]:
-                value = modify_value(value_prompt, level=level,
-                                     all_values=tuple_values[index])
-            elif tuple_values and len(tuple_values) == 1:
-                value = modify_value(value_prompt, level=level,
+        answer = tidy_answer(answers, level=level)
+
+        if answer in {'insert', 'modify'}:
+            value = '' if answer == 'insert' else tuple_entry[index]
+            value_prompt = (values_prompt[index]
+                            if values_prompt[index:index + 1]
+                            else prompts.get('value', 'value'))
+            if tuple_values and len(tuple_values) == 1:
+                value = modify_value(value_prompt, level=level, value=value,
                                      all_values=tuple_values[0])
+            elif tuple_values and tuple_values[index:index + 1]:
+                value = modify_value(value_prompt, level=level, value=value,
+                                     all_values=tuple_values[index])
             else:
-                value = modify_value(value_prompt, level=level)
-            if value:
+                value = modify_value(value_prompt, level=level, value=value)
+            if answer == 'insert':
                 tuple_entry.insert(index, value)
-        elif answer == 'modify':
-            if tuple_values and tuple_values[index:index + 1]:
-                tuple_entry[index] = modify_value(
-                    value_prompt, level=level, value=tuple_entry[index],
-                    all_values=tuple_values[index])
-            elif tuple_values and len(tuple_values) == 1:
-                tuple_entry[index] = modify_value(
-                    value_prompt, level=level, value=tuple_entry[index],
-                    all_values=tuple_values[0])
             else:
-                tuple_entry[index] = modify_value(value_prompt, level=level,
-                                                  value=tuple_entry[index])
+                tuple_entry[index] = value
         elif answer == 'empty':
             tuple_entry[index] = ''
         elif answer == 'delete':
             del tuple_entry[index]
             index -= 1
+        elif answer == 'back':
+            index -= 2
         elif answer == 'quit':
             break
 
