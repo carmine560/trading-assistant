@@ -407,8 +407,7 @@ def main():
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     trade = Trade(*args.P)
-    backup_file = {'backup_function': file_utilities.backup_file,
-                   'backup_parameters': {'number_of_backups': 8}}
+    backup_parameters = {'number_of_backups': 8}
 
     if any((args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
             args.DLL, args.MDN)):
@@ -418,7 +417,7 @@ def main():
 
         if args.SS and configuration.modify_section(
                 config, trade.startup_script_section, trade.config_path,
-                **backup_file):
+                backup_parameters=backup_parameters):
             create_startup_script(trade, config)
             powershell = file_utilities.select_executable(
                 ['pwsh.exe', 'powershell.exe'])
@@ -432,7 +431,8 @@ def main():
         if args.A:
             if configuration.modify_option(
                     config, trade.actions_section, args.A[0],
-                    trade.config_path, **backup_file, default_value='[]',
+                    trade.config_path, backup_parameters=backup_parameters,
+                    default_value='[()]',
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
                              'preset_additional_value': 'action',
@@ -480,13 +480,15 @@ def main():
             return
         if args.L and configuration.modify_option(
                 config, trade.process, 'input_map', trade.config_path,
-                **backup_file, prompts={'value': 'action'},
+                backup_parameters=backup_parameters,
+                prompts={'value': 'action'},
                 dictionary_values=trade.instruction_items.get(
                     'preset_additional_values')):
             return
         if args.S and configuration.modify_section(
                 config, trade.schedules_section, trade.config_path,
-                **backup_file, can_insert=True, value_type='tuple',
+                backup_parameters=backup_parameters, can_insert=True,
+                value_type='tuple',
                 prompts={'key': 'schedule', 'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
                 tuple_values=(
@@ -495,25 +497,27 @@ def main():
             return
         if args.CB and configuration.modify_option(
                 config, trade.process, 'cash_balance_region',
-                trade.config_path, **backup_file,
+                trade.config_path, backup_parameters=backup_parameters,
                 prompts={'value': 'x, y, width, height, index'}):
             return
         if args.U and configuration.modify_option(
                 config, trade.process, 'utilization_ratio', trade.config_path,
-                **backup_file, limits=(0.0, 1.0)):
+                backup_parameters=backup_parameters, limits=(0.0, 1.0)):
             return
         if args.PL and configuration.modify_option(
                 config, trade.process, 'price_limit_region', trade.config_path,
-                **backup_file,
+                backup_parameters=backup_parameters,
                 prompts={'value': 'x, y, width, height, index'}):
             return
         if args.DLL and configuration.modify_option(
                 config, trade.process, 'daily_loss_limit_ratio',
-                trade.config_path, **backup_file, limits=(-1.0, 0.0)):
+                trade.config_path, backup_parameters=backup_parameters,
+                limits=(-1.0, 0.0)):
             return
         if args.MDN and configuration.modify_option(
                 config, trade.process, 'maximum_daily_number_of_trades',
-                trade.config_path, **backup_file, limits=(0, sys.maxsize)):
+                trade.config_path, backup_parameters=backup_parameters,
+                limits=(0, sys.maxsize)):
             return
 
         sys.exit(1)
@@ -524,7 +528,7 @@ def main():
             default_config, trade.config_path,
             excluded_sections=('Variables',),
             user_option_ignored_sections=(trade.actions_section,),
-            **backup_file)
+            backup_parameters=backup_parameters)
         return
     else:
         config = configure(trade)
@@ -583,7 +587,7 @@ def main():
         else:
             configuration.delete_option(config, trade.actions_section,
                                         args.D[0], trade.config_path,
-                                        **backup_file)
+                                        backup_parameters=backup_parameters)
             trade.instruction_items['preset_additional_values'] = (
                 configuration.list_section(config, trade.actions_section))
 

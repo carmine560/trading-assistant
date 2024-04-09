@@ -17,6 +17,8 @@ try:
 except ModuleNotFoundError as import_error:
     GUI_IMPORT_ERROR = import_error
 
+import file_utilities
+
 ANSI_BOLD = '\033[1m'
 ANSI_CURRENT = '\033[32m'
 ANSI_ERROR = '\033[31m'
@@ -46,7 +48,7 @@ class CustomWordCompleter(Completer):
 
 def check_config_changes(default_config, config_path, excluded_sections=(),
                          user_option_ignored_sections=(),
-                         backup_function=None, backup_parameters=None):
+                         backup_parameters=None):
     def truncate_string(string):
         max_length = 256
         if len(string) > max_length:
@@ -68,8 +70,8 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
             return False
         return True
 
-    if backup_function:
-        backup_function(config_path, **backup_parameters)
+    if backup_parameters:
+        file_utilities.backup_file(config_path, **backup_parameters)
 
     user_config = configparser.ConfigParser()
     read_config(user_config, config_path)
@@ -148,10 +150,10 @@ def configure_position(level=0, value=''):
     return configure_position(level=level,
                               value=f'{ANSI_RESET}{ANSI_ERROR}{value}')
 
-def delete_option(config, section, option, config_path, backup_function=None,
+def delete_option(config, section, option, config_path,
                   backup_parameters=None):
-    if backup_function:
-        backup_function(config_path, **backup_parameters)
+    if backup_parameters:
+        file_utilities.backup_file(config_path, **backup_parameters)
 
     if config.has_option(section, option):
         config.remove_option(section, option)
@@ -207,13 +209,11 @@ def modify_dictionary(dictionary, level=0, prompts=None,
 
     return str(dictionary)
 
-def modify_option(config, section, option, config_path, backup_function=None,
-                  backup_parameters=None, default_value=None, prompts=None,
-                  items=None, tuple_values=None, dictionary_values=None,
-                  limits=()):
-    # TODO: remove backup_function
-    if backup_function:
-        backup_function(config_path, **backup_parameters)
+def modify_option(config, section, option, config_path, backup_parameters=None,
+                  default_value=None, prompts=None, items=None,
+                  tuple_values=None, dictionary_values=None, limits=()):
+    if backup_parameters:
+        file_utilities.backup_file(config_path, **backup_parameters)
     if default_value:
         config[section].setdefault(option, default_value)
     if prompts is None:
@@ -242,7 +242,10 @@ def modify_option(config, section, option, config_path, backup_function=None,
                     evaluated_value, level=1, prompts=prompts,
                     tuple_values=tuple_values)
             elif (isinstance(evaluated_value, list)
-                and all(isinstance(item, tuple) for item in evaluated_value)):
+                  and all(isinstance(item, tuple) for item in evaluated_value)):
+                if evaluated_value == [()]:
+                    evaluated_value = []
+
                 tuple_list = modify_tuple_list(
                     evaluated_value, prompts=prompts, items=items)
                 if tuple_list:
@@ -274,12 +277,11 @@ def modify_option(config, section, option, config_path, backup_function=None,
     print(option, 'option does not exist.')
     return False
 
-def modify_section(config, section, config_path, backup_function=None,
-                   backup_parameters=None, can_insert=False,
-                   value_type='string', prompts=None, items=None,
-                   tuple_values=None):
-    if backup_function:
-        backup_function(config_path, **backup_parameters)
+def modify_section(config, section, config_path, backup_parameters=None,
+                   can_insert=False, value_type='string', prompts=None,
+                   items=None, tuple_values=None):
+    if backup_parameters:
+        file_utilities.backup_file(config_path, **backup_parameters)
     if prompts is None:
         prompts = {}
     if items is None:
