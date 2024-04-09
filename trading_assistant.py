@@ -430,9 +430,9 @@ def main():
                     icon_directory=trade.resource_directory)
             return
         if args.A:
-            if configuration.modify_tuple_list(
+            if configuration.modify_option(
                     config, trade.actions_section, args.A[0],
-                    trade.config_path, **backup_file,
+                    trade.config_path, **backup_file, default_value='[]',
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
                              'preset_additional_value': 'action',
