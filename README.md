@@ -124,10 +124,6 @@ command and its arguments.  Possible commands include:
 
 <td>Return the cursor to the previous position.</td></tr>
 
-<tr><td><code>('beep', 'FREQUENCY, DURATION')</code></td>
-
-<td>Beep.</td></tr>
-
 <tr><td><code>('calculate_share_size', 'long|short')</code></td>
 
 <td>Calculate the share size.  You must call the <code>get_symbol</code> and
@@ -240,11 +236,6 @@ and Price Limit Regions</a>’ section.</td></tr>
 <tr><td><code>('speak_text', 'TEXT')</code></td>
 
 <td>Speak the text.</td></tr>
-
-<tr><td><code>('take_screenshot',)</code></td>
-
-<td>Take a screenshot with the number of trades and symbol as the
-filename.</td></tr>
 
 <tr><td><code>('toggle_indicator',)</code></td>
 

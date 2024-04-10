@@ -13,7 +13,6 @@ import threading
 import time
 import tkinter as tk
 import win32clipboard
-import winsound
 
 from pynput import keyboard
 from pynput import mouse
@@ -67,8 +66,8 @@ class Trade(initializer.Initializer):
             'all_keys': file_utilities.extract_commands(
                 inspect.getsource(execute_action)),
             'no_value_keys': {'back_to', 'copy_symbols_from_market_data',
-                              'get_cash_balance', 'take_screenshot',
-                              'toggle_indicator', 'write_share_size'},
+                              'get_cash_balance', 'toggle_indicator',
+                              'write_share_size'},
             'optional_value_keys': {'count_trades'},
             'additional_value_keys': {'click_widget', 'speak_config'},
             'optional_additional_value_keys': {'write_chapter'},
@@ -637,8 +636,6 @@ def configure(trade, can_interpolate=True, can_override=True):
         title = re.sub(r'[\W_]+', ' ', trade.script_base).strip().title()
 
     config['General'] = {
-        'screenshot_directory':
-        os.path.join(os.path.expanduser('~'), 'Pictures'),
         'screencast_directory':
         os.path.join(os.path.expanduser('~'), 'Videos', trade.process.title()),
         'screencast_regex':
@@ -1003,8 +1000,6 @@ def execute_action(trade, config, gui_state, action):
 
         if command == 'back_to':
             pyautogui.moveTo(gui_state.previous_position)
-        elif command == 'beep':
-            winsound.Beep(*map(int, argument.split(',')))
         elif command == 'calculate_share_size':
             is_successful, text = calculate_share_size(trade, config, argument)
             if not is_successful and text:
@@ -1112,16 +1107,6 @@ def execute_action(trade, config, gui_state, action):
             MessageThread(trade, config, argument).start()
         elif command == 'speak_text':
             trade.speech_manager.set_speech_text(argument)
-        elif command == 'take_screenshot':
-            base = (
-                f"{config['Variables']['current_date']}"
-                f"-{int(config['Variables']['current_number_of_trades']):02}")
-            if trade.symbol:
-                base += f'-{trade.symbol}'
-
-            base += '-screenshot.png'
-            pyautogui.screenshot(
-                os.path.join(config['General']['screenshot_directory'], base))
         elif command == 'toggle_indicator':
             if trade.indicator_thread:
                 trade.indicator_thread.stop()
