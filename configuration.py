@@ -210,12 +210,12 @@ def modify_dictionary(dictionary, level=0, prompts=None,
     return str(dictionary)
 
 def modify_option(config, section, option, config_path, backup_parameters=None,
-                  default_value=None, prompts=None, items=None,
+                  initial_value=None, prompts=None, items=None,
                   tuple_values=None, dictionary_values=None, limits=()):
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
-    if default_value:
-        config[section].setdefault(option, default_value)
+    if initial_value:
+        config[section].setdefault(option, initial_value)
     if prompts is None:
         prompts = {}
     if items is None:
@@ -242,7 +242,8 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
                     evaluated_value, level=1, prompts=prompts,
                     tuple_values=tuple_values)
             elif (isinstance(evaluated_value, list)
-                  and all(isinstance(item, tuple) for item in evaluated_value)):
+                  and all(isinstance(item, tuple)
+                          for item in evaluated_value)):
                 if evaluated_value == [()]:
                     evaluated_value = []
 
@@ -263,14 +264,12 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
             config[section][option] = ''
         elif answer == 'default':
             delete_option(config, section, option, config_path)
-            # TODO: remove return False
             return False
-        elif answer == 'quit':
-            return False
-
-        if config[section][option] == default_value:
-            delete_option(config, section, option, config_path)
-            return False
+        elif answer in {'', 'quit'}:
+            if config[section][option] == initial_value:
+                delete_option(config, section, option, config_path)
+                return False
+            return answer
 
         write_config(config, config_path)
         return True
@@ -293,7 +292,7 @@ def modify_section(config, section, config_path, backup_parameters=None,
             result = modify_option(config, section, option, config_path,
                                    prompts=prompts, items=items,
                                    tuple_values=tuple_values)
-            if not result:
+            if result in {'quit'}:
                 return result
 
         if can_insert:

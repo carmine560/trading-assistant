@@ -432,7 +432,7 @@ def main():
             if configuration.modify_option(
                     config, trade.actions_section, args.A[0],
                     trade.config_path, backup_parameters=backup_parameters,
-                    default_value='[()]',
+                    initial_value='[()]',
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
                              'preset_additional_value': 'action',
