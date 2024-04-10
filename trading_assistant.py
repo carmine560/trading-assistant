@@ -482,16 +482,15 @@ def main():
                 config, trade.process, 'input_map', trade.config_path,
                 backup_parameters=backup_parameters,
                 prompts={'value': 'action'},
-                dictionary_values=trade.instruction_items.get(
+                all_values=trade.instruction_items.get(
                     'preset_additional_values')):
             return
         if args.S and configuration.modify_section(
                 config, trade.schedules_section, trade.config_path,
                 backup_parameters=backup_parameters, can_insert=True,
-                value_type='tuple',
                 prompts={'key': 'schedule', 'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
-                tuple_values=(
+                all_values=(
                     trade.instruction_items.get('preset_values'),
                     trade.instruction_items.get('preset_additional_values'))):
             return

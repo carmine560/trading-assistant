@@ -190,8 +190,7 @@ def list_section(config, section):
     print(section, 'section does not exist.')
     return False
 
-def modify_dictionary(dictionary, level=0, prompts=None,
-                      dictionary_values=None):
+def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
     value_prompt = prompts.get('value', 'value')
 
     for key, value in dictionary.items():
@@ -200,8 +199,7 @@ def modify_dictionary(dictionary, level=0, prompts=None,
         answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
         if answer == 'modify':
             dictionary[key] = modify_value(value_prompt, level=level,
-                                           value=value,
-                                           all_values=dictionary_values)
+                                           value=value, all_values=all_values)
         elif answer == 'empty':
             dictionary[key] = ''
         elif answer == 'quit':
@@ -211,19 +209,18 @@ def modify_dictionary(dictionary, level=0, prompts=None,
 
 def modify_option(config, section, option, config_path, backup_parameters=None,
                   initial_value=None, prompts=None, items=None,
-                  tuple_values=None, dictionary_values=None, limits=()):
+                  all_values=None, limits=()):
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
     if initial_value:
         config[section].setdefault(option, initial_value)
     if prompts is None:
         prompts = {}
-    if items is None:
-        items = {}
 
     if config.has_option(section, option):
         print(f'{ANSI_IDENTIFIER}{option}{ANSI_RESET} = '
               f'{ANSI_CURRENT}{config[section][option]}{ANSI_RESET}')
+        # TODO: use can_insert for default/delete
         try:
             boolean_value = get_strict_boolean(config, section, option)
             answer = tidy_answer(['modify', 'toggle', 'empty', 'default',
@@ -236,11 +233,11 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
             if isinstance(evaluated_value, dict):
                 config[section][option] = modify_dictionary(
                     evaluated_value, level=1, prompts=prompts,
-                    dictionary_values=dictionary_values)
+                    all_values=all_values)
             elif isinstance(evaluated_value, tuple):
                 config[section][option] = modify_tuple(
                     evaluated_value, level=1, prompts=prompts,
-                    tuple_values=tuple_values)
+                    all_values=all_values)
             elif (isinstance(evaluated_value, list)
                   and all(isinstance(item, tuple)
                           for item in evaluated_value)):
@@ -278,20 +275,18 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
     return False
 
 def modify_section(config, section, config_path, backup_parameters=None,
-                   can_insert=False, value_type='string', prompts=None,
-                   items=None, tuple_values=None):
+                   can_insert=False, prompts=None, items=None,
+                   all_values=None):
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
     if prompts is None:
         prompts = {}
-    if items is None:
-        items = {}
 
     if config.has_section(section):
         for option in config[section]:
             result = modify_option(config, section, option, config_path,
                                    prompts=prompts, items=items,
-                                   tuple_values=tuple_values)
+                                   all_values=all_values)
             if result in {'quit'}:
                 return result
 
@@ -304,15 +299,15 @@ def modify_section(config, section, config_path, backup_parameters=None,
                 answer = tidy_answer(['insert', 'quit'])
                 if answer == 'insert':
                     option = modify_value(prompts.get('key', 'option'))
-                    if value_type == 'string':
-                        config[section][option] = modify_value('value')
-                        if config[section][option]:
-                            is_inserted = True
-                    elif value_type == 'tuple':
+                    if all_values:
                         config[section][option] = modify_tuple(
                             (), level=1, prompts=prompts,
-                            tuple_values=tuple_values)
+                            all_values=all_values)
                         if config[section][option] != '()':
+                            is_inserted = True
+                    else:
+                        config[section][option] = modify_value('value')
+                        if config[section][option]:
                             is_inserted = True
                 else:
                     break
@@ -324,9 +319,9 @@ def modify_section(config, section, config_path, backup_parameters=None,
     print(section, 'section does not exist.')
     return False
 
-def modify_tuple(tuple_entry, level=0, prompts=None, tuple_values=None):
+def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
     tuple_entry = list(tuple_entry)
-    values_prompt = prompts.get('values')
+    values_prompt = prompts.get('values', ())
 
     index = 0
     while index <= len(tuple_entry):
@@ -352,12 +347,12 @@ def modify_tuple(tuple_entry, level=0, prompts=None, tuple_values=None):
             value_prompt = (values_prompt[index]
                             if values_prompt[index:index + 1]
                             else prompts.get('value', 'value'))
-            if tuple_values and len(tuple_values) == 1:
+            if all_values and len(all_values) == 1:
                 value = modify_value(value_prompt, level=level, value=value,
-                                     all_values=tuple_values[0])
-            elif tuple_values and tuple_values[index:index + 1]:
+                                     all_values=all_values[0])
+            elif all_values and all_values[index:index + 1]:
                 value = modify_value(value_prompt, level=level, value=value,
-                                     all_values=tuple_values[index])
+                                     all_values=all_values[index])
             else:
                 value = modify_value(value_prompt, level=level, value=value)
             if answer == 'insert':
@@ -383,6 +378,8 @@ def modify_tuple(tuple_entry, level=0, prompts=None, tuple_values=None):
 def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
     if not isinstance(tuple_list, list):
         tuple_list = []
+    if items is None:
+        items = {}
 
     value_prompt = prompts.get('value', 'value')
     additional_value_prompt = prompts.get('additional_value',
