@@ -208,8 +208,8 @@ def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
     return str(dictionary)
 
 def modify_option(config, section, option, config_path, backup_parameters=None,
-                  initial_value=None, prompts=None, items=None,
-                  all_values=None, limits=()):
+                  can_insert_delete=False, initial_value=None, prompts=None,
+                  items=None, all_values=None, limits=()):
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
     if initial_value:
@@ -220,13 +220,15 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
     if config.has_option(section, option):
         print(f'{ANSI_IDENTIFIER}{option}{ANSI_RESET} = '
               f'{ANSI_CURRENT}{config[section][option]}{ANSI_RESET}')
-        # TODO: use can_insert for default/delete
         try:
             boolean_value = get_strict_boolean(config, section, option)
-            answer = tidy_answer(['modify', 'toggle', 'empty', 'default',
-                                  'quit'])
+            answers = ['modify', 'toggle', 'empty', 'default', 'quit']
         except ValueError:
-            answer = tidy_answer(['modify', 'empty', 'default', 'quit'])
+            answers = ['modify', 'empty', 'default', 'quit']
+        if can_insert_delete:
+            answers[answers.index('default')] = 'delete'
+
+        answer = tidy_answer(answers)
 
         if answer == 'modify':
             evaluated_value = evaluate_value(config[section][option])
@@ -259,7 +261,7 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
             config[section][option] = str(not boolean_value)
         elif answer == 'empty':
             config[section][option] = ''
-        elif answer == 'default':
+        elif answer in {'default', 'delete'}:
             delete_option(config, section, option, config_path)
             return False
         elif answer in {'', 'quit'}:
@@ -275,7 +277,7 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
     return False
 
 def modify_section(config, section, config_path, backup_parameters=None,
-                   can_insert=False, prompts=None, items=None,
+                   can_insert_delete=False, prompts=None, items=None,
                    all_values=None):
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
@@ -285,12 +287,13 @@ def modify_section(config, section, config_path, backup_parameters=None,
     if config.has_section(section):
         for option in config[section]:
             result = modify_option(config, section, option, config_path,
+                                   can_insert_delete=can_insert_delete,
                                    prompts=prompts, items=items,
                                    all_values=all_values)
             if result in {'quit'}:
                 return result
 
-        if can_insert:
+        if can_insert_delete:
             is_inserted = False
             while True:
                 print(f'{ANSI_WARNING}'

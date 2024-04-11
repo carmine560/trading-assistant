@@ -432,7 +432,7 @@ def main():
             if configuration.modify_option(
                     config, trade.actions_section, args.A[0],
                     trade.config_path, backup_parameters=backup_parameters,
-                    initial_value='[()]',
+                    can_insert_delete=True, initial_value='[()]',
                     prompts={'key': 'command', 'value': 'argument',
                              'additional_value': 'additional argument',
                              'preset_additional_value': 'action',
@@ -487,7 +487,7 @@ def main():
             return
         if args.S and configuration.modify_section(
                 config, trade.schedules_section, trade.config_path,
-                backup_parameters=backup_parameters, can_insert=True,
+                backup_parameters=backup_parameters, can_insert_delete=True,
                 prompts={'key': 'schedule', 'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
                 all_values=(
