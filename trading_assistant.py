@@ -16,12 +16,12 @@ import win32clipboard
 
 from pynput import keyboard
 from pynput import mouse
-from win32api import GetMonitorInfo, MonitorFromPoint
 import chardet
 import pandas as pd
 import psutil
 import pyautogui
 import requests
+import win32api
 import win32gui
 
 import configuration
@@ -153,8 +153,9 @@ class IndicatorThread(threading.Thread):
 
     def run(self):
         def place_widget(widget, position):
-            work_left, work_top, work_right, work_bottom = GetMonitorInfo(
-                MonitorFromPoint((0, 0))).get('Work')
+            work_left, work_top, work_right, work_bottom = (
+                win32api.GetMonitorInfo(
+                    win32api.MonitorFromPoint((0, 0))).get('Work'))
             work_center_x = int(0.5 * work_right)
             work_center_y = int(0.5 * work_bottom)
             position_map = {'n': (work_center_x, work_top),
@@ -338,8 +339,8 @@ class MessageThread(threading.Thread):
                    text=self.text).pack()
 
         root.update()
-        _, _, work_right, work_bottom = GetMonitorInfo(
-            MonitorFromPoint((0, 0))).get('Work')
+        _, _, work_right, work_bottom = win32api.GetMonitorInfo(
+            win32api.MonitorFromPoint((0, 0))).get('Work')
         root.geometry(f'+{int(0.5 * (work_right - root.winfo_width()))}'
                       f'+{int(0.5 * (work_bottom - root.winfo_height()))}')
         root.deiconify()
@@ -622,6 +623,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         except OSError as e:
             print(e)
             trade.executable = os.path.join(
+                # TODO: check if ${ProgramFiles(x86)} or $ProgramFiles
                 os.path.expandvars('$ProgramFiles'), trade.vendor,
                 trade.process, trade.process + '.exe')
             if not os.path.isfile(trade.executable):
