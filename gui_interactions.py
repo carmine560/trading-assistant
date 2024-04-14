@@ -6,6 +6,7 @@ import pywintypes
 import win32api
 import win32gui
 
+
 class GuiState:
     def __init__(self, interactive_windows):
         self.interactive_windows = interactive_windows
@@ -24,6 +25,7 @@ class GuiState:
     def initialize_attributes(self):
         self.previous_position = pyautogui.position()
         self.moved_focus = 0
+
 
 def click_widget(gui_state, image, x, y, width, height):
     location = None
@@ -45,6 +47,7 @@ def click_widget(gui_state, image, x, y, width, height):
     else:
         pyautogui.click(pyautogui.center(location))
 
+
 def enumerate_windows(callback, extra):
     try:
         win32gui.EnumWindows(callback, extra)
@@ -54,12 +57,14 @@ def enumerate_windows(callback, extra):
         else:
             print(e)
 
+
 def hide_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         if not win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 6)
         return False
     return True
+
 
 def show_hide_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
@@ -71,6 +76,7 @@ def show_hide_window(hwnd, title_regex):
         return False
     return True
 
+
 def show_window(hwnd, title_regex):
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         if win32gui.IsIconic(hwnd):
@@ -79,6 +85,7 @@ def show_window(hwnd, title_regex):
         win32gui.SetForegroundWindow(hwnd)
         return False
     return True
+
 
 def wait_for_window(title_regex):
     def check_for_window(hwnd, extra):

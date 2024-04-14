@@ -31,6 +31,7 @@ INDENT = '    '
 if sys.platform == 'win32':
     os.system('color')
 
+
 class CustomWordCompleter(Completer):
     def __init__(self, words, ignore_case=False):
         self.words = words
@@ -45,6 +46,7 @@ class CustomWordCompleter(Completer):
             else:
                 if word.startswith(word_before_cursor):
                     yield Completion(word, -len(word_before_cursor))
+
 
 def check_config_changes(default_config, config_path, excluded_sections=(),
                          user_option_ignored_sections=(),
@@ -79,15 +81,15 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
     previous_section = [None]
     for section in default_config.sections():
         if (section not in excluded_sections
-            and default_config.options(section)):
+                and default_config.options(section)):
             for option in default_config[section]:
                 if (user_config.has_option(section, option)
                     and default_config[section][option]
-                    != user_config[section][option]):
+                        != user_config[section][option]):
                     default_value = (
                         truncate_string(default_config[section][option])
-                                  if default_config[section][option]
-                                  else '(empty)')
+                        if default_config[section][option]
+                        else '(empty)')
                     user_value = (truncate_string(user_config[section][option])
                                   if user_config[section][option]
                                   else '(empty)')
@@ -116,6 +118,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                                                previous_section, section,
                                                option, option_status):
                             return
+
 
 def configure_position(level=0, value=''):
     if GUI_IMPORT_ERROR:
@@ -150,6 +153,7 @@ def configure_position(level=0, value=''):
     return configure_position(level=level,
                               value=f'{ANSI_RESET}{ANSI_ERROR}{value}')
 
+
 def delete_option(config, section, option, config_path,
                   backup_parameters=None):
     if backup_parameters:
@@ -163,6 +167,7 @@ def delete_option(config, section, option, config_path,
     print(option, 'option does not exist.')
     return False
 
+
 def evaluate_value(value):
     evaluated_value = None
     try:
@@ -174,11 +179,13 @@ def evaluate_value(value):
         sys.exit(1)
     return evaluated_value
 
+
 def get_strict_boolean(config, section, option):
     value = config.get(section, option)
     if value.lower() not in {'true', 'false'}:
         raise ValueError(f'Invalid boolean value for {option} in {section}.')
     return config.getboolean(section, option)
+
 
 def list_section(config, section):
     options = []
@@ -189,6 +196,7 @@ def list_section(config, section):
 
     print(section, 'section does not exist.')
     return False
+
 
 def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
     value_prompt = prompts.get('value', 'value')
@@ -206,6 +214,7 @@ def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
             break
 
     return str(dictionary)
+
 
 def modify_option(config, section, option, config_path, backup_parameters=None,
                   can_insert_delete=False, initial_value=None, prompts=None,
@@ -276,6 +285,7 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
     print(option, 'option does not exist.')
     return False
 
+
 def modify_section(config, section, config_path, backup_parameters=None,
                    can_insert_delete=False, prompts=None, items=None,
                    all_values=None):
@@ -321,6 +331,7 @@ def modify_section(config, section, config_path, backup_parameters=None,
 
     print(section, 'section does not exist.')
     return False
+
 
 def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
     tuple_entry = list(tuple_entry)
@@ -378,6 +389,7 @@ def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
 
     return str(tuple(tuple_entry))
 
+
 def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
     if not isinstance(tuple_list, list):
         tuple_list = []
@@ -422,7 +434,7 @@ def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
                 value = modify_value(value_prompt, level=level, value=value,
                                      all_values=('None',))
                 tuple_entry = ((key,) if value.lower() in {'', 'none'}
-                                 else (key, value))
+                               else (key, value))
             elif key in items.get('additional_value_keys', set()):
                 value = modify_value(value_prompt, level=level, value=value)
                 additional_value = modify_value(additional_value_prompt,
@@ -484,6 +496,7 @@ def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
 
     return tuple_list
 
+
 def modify_value(prompt, level=0, value='', all_values=None, limits=()):
     value = prompt_for_input(prompt, level=level, value=value,
                              all_values=all_values)
@@ -517,6 +530,7 @@ def modify_value(prompt, level=0, value='', all_values=None, limits=()):
 
     return value
 
+
 def prompt_for_input(prompt, level=0, value='', all_values=None):
     if value:
         prompt_prefix = (f'{INDENT * level}{prompt} '
@@ -537,6 +551,7 @@ def prompt_for_input(prompt, level=0, value='', all_values=None):
         value = input(prompt_prefix).strip()
     return value
 
+
 def read_config(config, config_path):
     encrypted_config_path = config_path + '.gpg'
     if os.path.exists(encrypted_config_path):
@@ -548,6 +563,7 @@ def read_config(config, config_path):
         config.read_string(decrypted_config.data.decode())
     else:
         config.read(config_path, encoding='utf-8')
+
 
 def tidy_answer(answers, level=0):
     initialism = ''
@@ -580,6 +596,7 @@ def tidy_answer(answers, level=0):
                 if initialism[index] == answer[0]:
                     answer = answers[index]
     return answer
+
 
 def write_config(config, config_path):
     encrypted_config_path = config_path + '.gpg'

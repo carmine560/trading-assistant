@@ -26,6 +26,7 @@ try:
 except ModuleNotFoundError as import_error:
     WINDOWS_IMPORT_ERROR = import_error
 
+
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
     if GNUPG_IMPORT_ERROR:
         print(GNUPG_IMPORT_ERROR)
@@ -43,6 +44,7 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
     output = os.path.join(output_directory,
                           os.path.basename(source) + '.tar.xz.gpg')
     gpg.encrypt_file(tar_stream, fingerprint, armor=False, output=output)
+
 
 def backup_file(source, backup_directory=None, number_of_backups=-1,
                 should_compare=True):
@@ -74,7 +76,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
             backups = sorted(
                 [f for f in os.listdir(backup_directory)
                  if re.fullmatch(
-                         fr'{source_base}-\d{{8}}T\d{{6}}{source_suffix}', f)])
+                    fr'{source_base}-\d{{8}}T\d{{6}}{source_suffix}', f)])
 
             if not os.path.exists(backup):
                 should_copy = True
@@ -111,6 +113,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                 print(e)
                 sys.exit(1)
 
+
 def check_directory(directory):
     if not os.path.isdir(directory):
         try:
@@ -118,6 +121,7 @@ def check_directory(directory):
         except OSError as e:
             print(e)
             sys.exit(1)
+
 
 def create_bash_completion(script_base, options, values, interpreters,
                            completion):
@@ -164,6 +168,7 @@ complete -F _{script_base} {' '.join(interpreters)}
 
     with open(completion, 'w', encoding='utf-8', newline='\n') as f:
         f.write(completion_str)
+
 
 def create_icon(base, icon_directory=None):
     if WINDOWS_IMPORT_ERROR:
@@ -239,6 +244,7 @@ def create_icon(base, icon_directory=None):
     image.save(icon, sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
     return icon
 
+
 def create_powershell_completion(script_base, options, values, interpreters,
                                  completion):
     interpreters_regex = fr"({'|'.join(interpreters)})(\.exe)?"
@@ -279,6 +285,7 @@ Register-ArgumentCompleter -Native -CommandName {interpreters_array} `
     with open(completion, 'w', encoding='utf-8') as f:
         f.write(completion_str)
 
+
 def create_shortcut(base, target_path, arguments, program_group_base=None,
                     icon_directory=None, hotkey=None):
     if WINDOWS_IMPORT_ERROR:
@@ -301,6 +308,7 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
         shortcut.Hotkey = 'CTRL+ALT+' + hotkey
 
     shortcut.save()
+
 
 def decrypt_extract_file(source, output_directory):
     if GNUPG_IMPORT_ERROR:
@@ -345,6 +353,7 @@ def decrypt_extract_file(source, output_directory):
                 print(e)
                 sys.exit(1)
 
+
 def delete_shortcut(base, program_group_base=None, icon_directory=None):
     if icon_directory:
         icon = os.path.join(icon_directory, base + '.ico')
@@ -374,6 +383,7 @@ def delete_shortcut(base, program_group_base=None, icon_directory=None):
             print(e)
             sys.exit(1)
 
+
 def extract_commands(source, command='command'):
     commands = []
     tree = ast.parse(source)
@@ -387,6 +397,7 @@ def extract_commands(source, command='command'):
                     if isinstance(comparator, ast.Constant):
                         commands.append(comparator.value)
     return commands
+
 
 def get_file_description(executable):
     if WINDOWS_IMPORT_ERROR:
@@ -406,6 +417,7 @@ def get_file_description(executable):
 
     return file_description
 
+
 def get_program_group(program_group_base=None):
     if WINDOWS_IMPORT_ERROR:
         print(WINDOWS_IMPORT_ERROR)
@@ -420,9 +432,11 @@ def get_program_group(program_group_base=None):
                                  program_group_base)
     return program_group
 
+
 def is_writing(target_path):
     return bool(os.path.exists(target_path)
                 and time.time() - os.path.getmtime(target_path) < 1)
+
 
 def move_to_trash(path, option=None):
     command = ['trash-put', path]
@@ -433,6 +447,7 @@ def move_to_trash(path, option=None):
     except (OSError, subprocess.CalledProcessError) as e:
         print(e)
 
+
 def select_executable(executables):
     for executable in executables:
         path = shutil.which(executable)
@@ -440,12 +455,14 @@ def select_executable(executables):
             return path
     return False
 
+
 def title_except_acronyms(string, acronyms):
     words = string.split()
     for i, _ in enumerate(words):
         if words[i] not in acronyms:
             words[i] = words[i].title()
     return ' '.join(words)
+
 
 def write_chapter(video, current_title, previous_title=None, offset=None):
     if is_writing(video):

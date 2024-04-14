@@ -16,12 +16,12 @@ import win32clipboard
 
 from pynput import keyboard
 from pynput import mouse
+from win32api import GetMonitorInfo, MonitorFromPoint
 import chardet
 import pandas as pd
 import psutil
 import pyautogui
 import requests
-import win32api
 import win32gui
 
 import configuration
@@ -35,6 +35,7 @@ import text_recognition
 SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r'[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?')
 SECURITIES_CODE_REGEX = '[1-9]' + SANS_INITIAL_SECURITIES_CODE_REGEX
+
 
 class Trade(initializer.Initializer):
     def __init__(self, vendor, process):
@@ -136,12 +137,13 @@ class Trade(initializer.Initializer):
                                                     action)
             elif self.keyboard_listener_state == 1:
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
-                    or key == self.key_to_check):
+                        or key == self.key_to_check):
                     self.should_continue = True
                     self.keyboard_listener_state = 0
                 elif key == keyboard.Key.esc:
                     self.should_continue = False
                     self.keyboard_listener_state = 0
+
 
 class IndicatorThread(threading.Thread):
     def __init__(self, trade, config):
@@ -153,9 +155,8 @@ class IndicatorThread(threading.Thread):
 
     def run(self):
         def place_widget(widget, position):
-            work_left, work_top, work_right, work_bottom = (
-                win32api.GetMonitorInfo(
-                    win32api.MonitorFromPoint((0, 0))).get('Work'))
+            work_left, work_top, work_right, work_bottom = GetMonitorInfo(
+                MonitorFromPoint((0, 0))).get('Work')
             work_center_x = int(0.5 * work_right)
             work_center_y = int(0.5 * work_bottom)
             position_map = {'n': (work_center_x, work_top),
@@ -287,6 +288,7 @@ class IndicatorThread(threading.Thread):
     def is_stopped(self):
         return self.stop_event.is_set()
 
+
 class IndicatorTooltip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -312,6 +314,7 @@ class IndicatorTooltip:
     def hide_tooltip(self, _):
         if hasattr(self, 'tooltip'):
             self.tooltip.destroy()
+
 
 class MessageThread(threading.Thread):
     def __init__(self, trade, config, text):
@@ -339,13 +342,14 @@ class MessageThread(threading.Thread):
                    text=self.text).pack()
 
         root.update()
-        _, _, work_right, work_bottom = win32api.GetMonitorInfo(
-            win32api.MonitorFromPoint((0, 0))).get('Work')
+        _, _, work_right, work_bottom = GetMonitorInfo(
+            MonitorFromPoint((0, 0))).get('Work')
         root.geometry(f'+{int(0.5 * (work_right - root.winfo_width()))}'
                       f'+{int(0.5 * (work_bottom - root.winfo_height()))}')
         root.deiconify()
 
         root.mainloop()
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -578,7 +582,7 @@ def main():
                 base_manager, trade.speech_manager, trade.speaking_process)
     if args.D:
         if (args.D[0] == trade.script_base
-            and os.path.exists(trade.startup_script)):
+                and os.path.exists(trade.startup_script)):
             try:
                 os.remove(trade.startup_script)
             except OSError as e:
@@ -604,6 +608,7 @@ def main():
             ('py.exe', 'python.exe'),
             os.path.join(trade.resource_directory, 'completion.sh'))
         return
+
 
 def configure(trade, can_interpolate=True, can_override=True):
     if can_interpolate:
@@ -665,7 +670,8 @@ def configure(trade, can_interpolate=True, can_override=True):
         'update_time': '20:00:00',
         'time_zone': '${Market Data:time_zone}',
         'url':
-        'https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html',
+        ('https://search.sbisec.co.jp/v2/popwin/attention/stock/'
+         'margin_M29.html'),
         'symbol_header': 'コード',
         'regulation_header': '規制内容',
         'headers': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
@@ -768,10 +774,11 @@ def configure(trade, can_interpolate=True, can_override=True):
                                      'theme.ini')
             theme_config.read(theme_ini)
             if (theme_config.has_option('General', 'theme')
-                and theme_config['General']['theme'] == 'Light'):
+                    and theme_config['General']['theme'] == 'Light'):
                 process_section['is_dark_theme'] = 'False'
 
     return config
+
 
 def save_customer_margin_ratios(trade, config):
     section = config[trade.customer_margin_ratios_section]
@@ -807,6 +814,7 @@ def save_customer_margin_ratios(trade, config):
                     fr".*{section['customer_margin_ratio_string']}(\d+).*",
                     r'0.\1', regex=True)
             df.to_csv(trade.customer_margin_ratios, header=False, index=False)
+
 
 def save_market_data(trade, config, clipboard=False):
     section = config['Market Data']
@@ -857,6 +865,7 @@ def save_market_data(trade, config, clipboard=False):
             subset.to_csv(trade.closing_prices + str(i) + '.csv', header=False,
                           index=False)
 
+
 def get_latest(config, market_holidays, update_time, time_zone, *paths,
                volatile_time=None):
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
@@ -904,14 +913,15 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
         if volatile_time:
             now = pd.Timestamp.now(tz=time_zone)
             if (df[0].str.contains(now.strftime(date_format)).any()
-                or now.weekday() == 5 or now.weekday() == 6):
+                    or now.weekday() == 5 or now.weekday() == 6):
                 return latest
             if (not pd.Timestamp(volatile_time, tz=time_zone) <= now
-                <= pd.Timestamp(update_time, tz=time_zone)):
+                    <= pd.Timestamp(update_time, tz=time_zone)):
                 return latest
         else:
             return latest
     return False
+
 
 def start_scheduler(trade, config, gui_state, process):
     scheduler = sched.scheduler(time.time, time.sleep)
@@ -938,6 +948,7 @@ def start_scheduler(trade, config, gui_state, process):
             for schedule in schedules:
                 scheduler.cancel(schedule)
 
+
 def start_listeners(trade, config, gui_state, base_manager, speech_manager,
                     is_persistent=False):
     trade.mouse_listener = mouse.Listener(
@@ -960,6 +971,7 @@ def start_listeners(trade, config, gui_state, base_manager, speech_manager,
               trade.speaking_process, is_persistent))
     trade.wait_listeners_thread.start()
 
+
 def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread = threading.Thread(
         target=execute_action,
@@ -968,12 +980,13 @@ def start_execute_action_thread(trade, config, gui_state, action):
     # shutdown
     execute_action_thread.start()
 
+
 def execute_action(trade, config, gui_state, action):
     def get_latest_screencast():
         screencast_directory = config['General']['screencast_directory']
         screencast_regex = config['General']['screencast_regex']
         files = [f for f in os.listdir(screencast_directory)
-                           if re.fullmatch(screencast_regex, f)]
+                 if re.fullmatch(screencast_regex, f)]
         return os.path.join(screencast_directory, files[-1])
 
     def get_target_time(time_string):
@@ -1031,7 +1044,7 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'check_maximum_daily_number_of_trades':
             if (0
                 < int(config[trade.process]['maximum_daily_number_of_trades'])
-                <= int(config['Variables']['current_number_of_trades'])):
+                    <= int(config['Variables']['current_number_of_trades'])):
                 trade.speech_manager.set_speech_text(argument)
                 return False
         elif command == 'click':
@@ -1050,7 +1063,8 @@ def execute_action(trade, config, gui_state, action):
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(' '.join(
                 text_recognition.recognize_text(
-                    config[trade.process], *map(int, argument.split(',')), None,
+                    config[trade.process], *
+                    map(int, argument.split(',')), None,
                     text_type='securities_code_column')))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
@@ -1159,7 +1173,7 @@ def execute_action(trade, config, gui_state, action):
                     return False
         elif command == 'is_recording':
             if (file_utilities.is_writing(get_latest_screencast())
-                == (argument.lower() == 'true')):
+                    == (argument.lower() == 'true')):
                 if not recursively_execute_action():
                     return False
 
@@ -1167,6 +1181,7 @@ def execute_action(trade, config, gui_state, action):
             print(command, 'is not a recognized command.')
             return False
     return True
+
 
 def create_startup_script(trade, config):
     def generate_script_lines(trade, options):
@@ -1182,11 +1197,11 @@ def create_startup_script(trade, config):
         f'"{os.path.basename(config[trade.process]["executable"])}" `\n'
         '      -WorkingDirectory '
         f'"{os.path.dirname(config[trade.process]["executable"])}"\n')
-    pre_start_options=(
+    pre_start_options = (
         config[trade.startup_script_section]['pre_start_options'].split(','))
-    post_start_options=(
+    post_start_options = (
         config[trade.startup_script_section]['post_start_options'].split(','))
-    running_options=(
+    running_options = (
         config[trade.startup_script_section]['running_options'].split(','))
 
     lines = []
@@ -1215,6 +1230,7 @@ def create_startup_script(trade, config):
 
     with open(trade.startup_script, 'w', encoding='utf-8') as f:
         f.writelines(lines)
+
 
 def calculate_share_size(trade, config, position):
     if trade.symbol and trade.cash_balance:
@@ -1249,6 +1265,7 @@ def calculate_share_size(trade, config, position):
         return (True, None)
 
     return (False, 'Symbol or cash balance not provided.')
+
 
 def get_price_limit(trade, config):
     closing_price = 0.0
@@ -1285,6 +1302,7 @@ def get_price_limit(trade, config):
             *map(int, config[trade.process]['price_limit_region'].split(',')),
             text_type='decimal_numbers')
     return price_limit
+
 
 if __name__ == '__main__':
     main()

@@ -3,6 +3,7 @@ from PIL import ImageGrab
 from PIL import ImageOps
 import pytesseract
 
+
 def recognize_text(section, x, y, width, height, index, text_type='integers'):
     if text_type == 'integers':
         config = r'-c tessedit_char_whitelist=\ ,0123456789 --psm 7'

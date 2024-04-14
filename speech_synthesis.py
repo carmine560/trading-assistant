@@ -3,6 +3,7 @@ import time
 
 import pyttsx3
 
+
 class SpeechManager:
     def __init__(self):
         self._can_speak = True
@@ -20,10 +21,12 @@ class SpeechManager:
     def set_speech_text(self, text):
         self._speech_text = text
 
+
 def start_speaking_process(speech_manager):
     speaking_process = Process(target=start_speaking, args=(speech_manager,))
     speaking_process.start()
     return speaking_process
+
 
 def start_speaking(speech_manager):
     speech_engine = pyttsx3.init()
@@ -38,6 +41,7 @@ def start_speaking(speech_manager):
             speech_engine.runAndWait()
 
         time.sleep(0.01)
+
 
 def stop_speaking_process(base_manager, speech_manager, speaking_process):
     if speech_manager.get_speech_text():

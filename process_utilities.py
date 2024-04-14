@@ -2,11 +2,13 @@ import re
 import subprocess
 import time
 
+
 def is_running(process):
     image = process + '.exe'
     output = subprocess.check_output(['tasklist', '/fi',
                                       'imagename eq ' + image])
     return bool(re.search(image, str(output)))
+
 
 def wait_listeners(stop_listeners_event, process, mouse_listener,
                    keyboard_listener, base_manager, speech_manager,
@@ -18,6 +20,7 @@ def wait_listeners(stop_listeners_event, process, mouse_listener,
             stop_listeners(mouse_listener, keyboard_listener, base_manager,
                            speech_manager, speaking_process)
             break
+
 
 def stop_listeners(mouse_listener, keyboard_listener, base_manager,
                    speech_manager, speaking_process):

@@ -2,6 +2,7 @@ import os
 
 import file_utilities
 
+
 class Initializer:
     def __init__(self, vendor, process, script_path):
         self.vendor = vendor
