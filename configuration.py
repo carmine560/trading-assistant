@@ -48,9 +48,45 @@ class CustomWordCompleter(Completer):
                     yield Completion(word, -len(word_before_cursor))
 
 
+def read_config(config, config_path):
+    encrypted_config_path = config_path + '.gpg'
+    if os.path.exists(encrypted_config_path):
+        with open(encrypted_config_path, 'rb') as f:
+            encrypted_config = f.read()
+
+        gpg = gnupg.GPG()
+        decrypted_config = gpg.decrypt(encrypted_config)
+        config.read_string(decrypted_config.data.decode())
+    else:
+        config.read(config_path, encoding='utf-8')
+
+
+def write_config(config, config_path):
+    encrypted_config_path = config_path + '.gpg'
+    if os.path.exists(encrypted_config_path):
+        config_string = StringIO()
+        config.write(config_string)
+        gpg = gnupg.GPG()
+        gpg.encoding = 'utf-8'
+        fingerprint = ''
+        if config.has_option('General', 'fingerprint'):
+            fingerprint = config['General']['fingerprint']
+        if not fingerprint:
+            fingerprint = gpg.list_keys()[0]['fingerprint']
+
+        encrypted_config = gpg.encrypt(config_string.getvalue(), fingerprint,
+                                       armor=False)
+        with open(encrypted_config_path, 'wb') as f:
+            f.write(encrypted_config.data)
+    else:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            config.write(f)
+
+
 def check_config_changes(default_config, config_path, excluded_sections=(),
                          user_option_ignored_sections=(),
                          backup_parameters=None):
+    # TODO: add back
     def truncate_string(string):
         max_length = 256
         if len(string) > max_length:
@@ -120,73 +156,6 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                             return
 
 
-def configure_position(level=0, value=''):
-    if GUI_IMPORT_ERROR:
-        print(GUI_IMPORT_ERROR)
-        return False
-
-    value = prompt_for_input(f'coordinates/{ANSI_UNDERLINE}c{ANSI_RESET}lick',
-                             level=level, value=value)
-    if value and value[0].lower() == 'c':
-        previous_key_state = win32api.GetKeyState(0x01)
-        coordinates = ''
-        print(
-            f'{INDENT * level}{ANSI_WARNING}waiting for click...{ANSI_RESET}')
-        while True:
-            key_state = win32api.GetKeyState(0x01)
-            if key_state != previous_key_state:
-                if key_state not in [0, 1]:
-                    coordinates = ', '.join(map(str, pyautogui.position()))
-                    print(f'{INDENT * level}coordinates: {coordinates}')
-                    break
-
-            time.sleep(0.001)
-        return coordinates
-
-    parts = value.split(',')
-    if len(parts) == 2:
-        x = parts[0].strip()
-        y = parts[1].strip()
-        if x.isdigit() and y.isdigit():
-            return f'{x}, {y}'
-
-    return configure_position(level=level,
-                              value=f'{ANSI_RESET}{ANSI_ERROR}{value}')
-
-
-def delete_option(config, section, option, config_path,
-                  backup_parameters=None):
-    if backup_parameters:
-        file_utilities.backup_file(config_path, **backup_parameters)
-
-    if config.has_option(section, option):
-        config.remove_option(section, option)
-        write_config(config, config_path)
-        return True
-
-    print(option, 'option does not exist.')
-    return False
-
-
-def evaluate_value(value):
-    evaluated_value = None
-    try:
-        evaluated_value = ast.literal_eval(value)
-    except (SyntaxError, ValueError):
-        pass
-    except (TypeError, MemoryError, RecursionError) as e:
-        print(e)
-        sys.exit(1)
-    return evaluated_value
-
-
-def get_strict_boolean(config, section, option):
-    value = config.get(section, option)
-    if value.lower() not in {'true', 'false'}:
-        raise ValueError(f'Invalid boolean value for {option} in {section}.')
-    return config.getboolean(section, option)
-
-
 def list_section(config, section):
     options = []
     if config.has_section(section):
@@ -198,22 +167,52 @@ def list_section(config, section):
     return False
 
 
-def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
-    value_prompt = prompts.get('value', 'value')
+def modify_section(config, section, config_path, backup_parameters=None,
+                   can_insert_delete=False, prompts=None, items=None,
+                   all_values=None):
+    # TODO: add back
+    if backup_parameters:
+        file_utilities.backup_file(config_path, **backup_parameters)
+    if prompts is None:
+        prompts = {}
 
-    for key, value in dictionary.items():
-        print(f'{INDENT * level}{ANSI_IDENTIFIER}{key}{ANSI_RESET}: '
-              f'{ANSI_CURRENT}{value}{ANSI_RESET}')
-        answer = tidy_answer(['modify', 'empty', 'quit'], level=level)
-        if answer == 'modify':
-            dictionary[key] = modify_value(value_prompt, level=level,
-                                           value=value, all_values=all_values)
-        elif answer == 'empty':
-            dictionary[key] = ''
-        elif answer == 'quit':
-            break
+    if config.has_section(section):
+        for option in config[section]:
+            result = modify_option(config, section, option, config_path,
+                                   can_insert_delete=can_insert_delete,
+                                   prompts=prompts, items=items,
+                                   all_values=all_values)
+            if result in {'quit'}:
+                return result
 
-    return str(dictionary)
+        if can_insert_delete:
+            is_inserted = False
+            while True:
+                print(f'{ANSI_WARNING}'
+                      f"{prompts.get('end_of_list', 'end of section')}"
+                      f'{ANSI_RESET}')
+                answer = tidy_answer(['insert', 'quit'])
+                if answer == 'insert':
+                    option = modify_value(prompts.get('key', 'option'))
+                    if all_values:
+                        config[section][option] = modify_tuple(
+                            (), level=1, prompts=prompts,
+                            all_values=all_values)
+                        if config[section][option] != '()':
+                            is_inserted = True
+                    else:
+                        config[section][option] = modify_value('value')
+                        if config[section][option]:
+                            is_inserted = True
+                else:
+                    break
+            if is_inserted:
+                write_config(config, config_path)
+
+        return True
+
+    print(section, 'section does not exist.')
+    return False
 
 
 def modify_option(config, section, option, config_path, backup_parameters=None,
@@ -286,51 +285,49 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
     return False
 
 
-def modify_section(config, section, config_path, backup_parameters=None,
-                   can_insert_delete=False, prompts=None, items=None,
-                   all_values=None):
+def delete_option(config, section, option, config_path,
+                  backup_parameters=None):
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
-    if prompts is None:
-        prompts = {}
 
-    if config.has_section(section):
-        for option in config[section]:
-            result = modify_option(config, section, option, config_path,
-                                   can_insert_delete=can_insert_delete,
-                                   prompts=prompts, items=items,
-                                   all_values=all_values)
-            if result in {'quit'}:
-                return result
-
-        if can_insert_delete:
-            is_inserted = False
-            while True:
-                print(f'{ANSI_WARNING}'
-                      f"{prompts.get('end_of_list', 'end of section')}"
-                      f'{ANSI_RESET}')
-                answer = tidy_answer(['insert', 'quit'])
-                if answer == 'insert':
-                    option = modify_value(prompts.get('key', 'option'))
-                    if all_values:
-                        config[section][option] = modify_tuple(
-                            (), level=1, prompts=prompts,
-                            all_values=all_values)
-                        if config[section][option] != '()':
-                            is_inserted = True
-                    else:
-                        config[section][option] = modify_value('value')
-                        if config[section][option]:
-                            is_inserted = True
-                else:
-                    break
-            if is_inserted:
-                write_config(config, config_path)
-
+    if config.has_option(section, option):
+        config.remove_option(section, option)
+        write_config(config, config_path)
         return True
 
-    print(section, 'section does not exist.')
+    print(option, 'option does not exist.')
     return False
+
+
+def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
+    index = 0
+    keys = list(dictionary.keys())
+    value_prompt = prompts.get('value', 'value')
+
+    while index < len(keys):
+        key = keys[index]
+        value = dictionary[key]
+        print(f'{INDENT * level}{ANSI_IDENTIFIER}{key}{ANSI_RESET}: '
+              f'{ANSI_CURRENT}{value}{ANSI_RESET}')
+        answers = ['modify', 'empty', 'back', 'quit']
+        if index == 0:
+            answers.remove('back')
+
+        answer = tidy_answer(answers, level=level)
+
+        if answer == 'modify':
+            dictionary[key] = modify_value(value_prompt, level=level,
+                                           value=value, all_values=all_values)
+        elif answer == 'empty':
+            dictionary[key] = ''
+        elif answer == 'back':
+            index -= 2
+        elif answer == 'quit':
+            break
+
+        index += 1
+
+    return str(dictionary)
 
 
 def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
@@ -497,72 +494,23 @@ def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
     return tuple_list
 
 
-def modify_value(prompt, level=0, value='', all_values=None, limits=()):
-    value = prompt_for_input(prompt, level=level, value=value,
-                             all_values=all_values)
-
-    minimum_value, maximum_value = limits or (None, None)
-    numeric_value = None
-    if isinstance(minimum_value, int) and isinstance(maximum_value, int):
-        try:
-            numeric_value = int(float(value))
-        except ValueError as e:
-            print(e)
-            sys.exit(2)
-    if isinstance(minimum_value, float) and isinstance(maximum_value, float):
-        try:
-            numeric_value = float(value)
-        except ValueError as e:
-            print(e)
-            sys.exit(2)
-    if numeric_value is not None:
-        if minimum_value is not None:
-            numeric_value = max(minimum_value, numeric_value)
-        if maximum_value is not None:
-            numeric_value = min(maximum_value, numeric_value)
-
-        value = str(numeric_value)
-
-    if all_values and value not in all_values and all_values != ('None',):
-        value = modify_value(prompt, level=level,
-                             value=f'{ANSI_RESET}{ANSI_ERROR}{value}',
-                             all_values=all_values)
-
-    return value
+def get_strict_boolean(config, section, option):
+    value = config.get(section, option)
+    if value.lower() not in {'true', 'false'}:
+        raise ValueError(f'Invalid boolean value for {option} in {section}.')
+    return config.getboolean(section, option)
 
 
-def prompt_for_input(prompt, level=0, value='', all_values=None):
-    if value:
-        prompt_prefix = (f'{INDENT * level}{prompt} '
-                         f'{ANSI_CURRENT}{value}{ANSI_RESET}: ')
-    else:
-        prompt_prefix = f'{INDENT * level}{prompt}: '
-
-    completer = None
-    if all_values:
-        completer = CustomWordCompleter(all_values, ignore_case=True)
-    elif value:
-        completer = CustomWordCompleter([value], ignore_case=True)
-
-    if completer:
-        value = (pt_prompt(ANSI(prompt_prefix), completer=completer).strip()
-                 or value)
-    else:
-        value = input(prompt_prefix).strip()
-    return value
-
-
-def read_config(config, config_path):
-    encrypted_config_path = config_path + '.gpg'
-    if os.path.exists(encrypted_config_path):
-        with open(encrypted_config_path, 'rb') as f:
-            encrypted_config = f.read()
-
-        gpg = gnupg.GPG()
-        decrypted_config = gpg.decrypt(encrypted_config)
-        config.read_string(decrypted_config.data.decode())
-    else:
-        config.read(config_path, encoding='utf-8')
+def evaluate_value(value):
+    evaluated_value = None
+    try:
+        evaluated_value = ast.literal_eval(value)
+    except (SyntaxError, ValueError):
+        pass
+    except (TypeError, MemoryError, RecursionError) as e:
+        print(e)
+        sys.exit(1)
+    return evaluated_value
 
 
 def tidy_answer(answers, level=0):
@@ -598,23 +546,90 @@ def tidy_answer(answers, level=0):
     return answer
 
 
-def write_config(config, config_path):
-    encrypted_config_path = config_path + '.gpg'
-    if os.path.exists(encrypted_config_path):
-        config_string = StringIO()
-        config.write(config_string)
-        gpg = gnupg.GPG()
-        gpg.encoding = 'utf-8'
-        fingerprint = ''
-        if config.has_option('General', 'fingerprint'):
-            fingerprint = config['General']['fingerprint']
-        if not fingerprint:
-            fingerprint = gpg.list_keys()[0]['fingerprint']
+def modify_value(prompt, level=0, value='', all_values=None, limits=()):
+    value = prompt_for_input(prompt, level=level, value=value,
+                             all_values=all_values)
 
-        encrypted_config = gpg.encrypt(config_string.getvalue(), fingerprint,
-                                       armor=False)
-        with open(encrypted_config_path, 'wb') as f:
-            f.write(encrypted_config.data)
+    minimum_value, maximum_value = limits or (None, None)
+    numeric_value = None
+    if isinstance(minimum_value, int) and isinstance(maximum_value, int):
+        try:
+            numeric_value = int(float(value))
+        except ValueError as e:
+            print(e)
+            sys.exit(2)
+    if isinstance(minimum_value, float) and isinstance(maximum_value, float):
+        try:
+            numeric_value = float(value)
+        except ValueError as e:
+            print(e)
+            sys.exit(2)
+    if numeric_value is not None:
+        if minimum_value is not None:
+            numeric_value = max(minimum_value, numeric_value)
+        if maximum_value is not None:
+            numeric_value = min(maximum_value, numeric_value)
+
+        value = str(numeric_value)
+
+    if all_values and value not in all_values and all_values != ('None',):
+        value = modify_value(prompt, level=level,
+                             value=f'{ANSI_RESET}{ANSI_ERROR}{value}',
+                             all_values=all_values)
+
+    return value
+
+
+def configure_position(level=0, value=''):
+    if GUI_IMPORT_ERROR:
+        print(GUI_IMPORT_ERROR)
+        return False
+
+    value = prompt_for_input(f'coordinates/{ANSI_UNDERLINE}c{ANSI_RESET}lick',
+                             level=level, value=value)
+    if value and value[0].lower() == 'c':
+        previous_key_state = win32api.GetKeyState(0x01)
+        coordinates = ''
+        print(
+            f'{INDENT * level}{ANSI_WARNING}waiting for click...{ANSI_RESET}')
+        while True:
+            key_state = win32api.GetKeyState(0x01)
+            if key_state != previous_key_state:
+                if key_state not in [0, 1]:
+                    coordinates = ', '.join(map(str, pyautogui.position()))
+                    print(f'{INDENT * level}coordinates: {coordinates}')
+                    break
+
+            time.sleep(0.001)
+        return coordinates
+
+    parts = value.split(',')
+    if len(parts) == 2:
+        x = parts[0].strip()
+        y = parts[1].strip()
+        if x.isdigit() and y.isdigit():
+            return f'{x}, {y}'
+
+    return configure_position(level=level,
+                              value=f'{ANSI_RESET}{ANSI_ERROR}{value}')
+
+
+def prompt_for_input(prompt, level=0, value='', all_values=None):
+    if value:
+        prompt_prefix = (f'{INDENT * level}{prompt} '
+                         f'{ANSI_CURRENT}{value}{ANSI_RESET}: ')
     else:
-        with open(config_path, 'w', encoding='utf-8') as f:
-            config.write(f)
+        prompt_prefix = f'{INDENT * level}{prompt}: '
+
+    completer = None
+    if all_values:
+        completer = CustomWordCompleter(all_values, ignore_case=True)
+    elif value:
+        completer = CustomWordCompleter([value], ignore_case=True)
+
+    if completer:
+        value = (pt_prompt(ANSI(prompt_prefix), completer=completer).strip()
+                 or value)
+    else:
+        value = input(prompt_prefix).strip()
+    return value
