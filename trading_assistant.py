@@ -491,7 +491,8 @@ def main():
             return
         if args.S and configuration.modify_section(
                 config, trade.schedules_section, trade.config_path,
-                backup_parameters=backup_parameters, can_insert_delete=True,
+                backup_parameters=backup_parameters, can_back=True,
+                can_insert_delete=True,
                 prompts={'key': 'schedule', 'values': ('trigger', 'action'),
                          'end_of_list': 'end of schedules'},
                 all_values=(

@@ -168,46 +168,79 @@ def list_section(config, section):
 
 
 def modify_section(config, section, config_path, backup_parameters=None,
-                   can_insert_delete=False, prompts=None, items=None,
-                   all_values=None):
-    # TODO: add back
+                   can_back=False, can_insert_delete=False, prompts=None,
+                   items=None, all_values=None):
+    """
+    Modifies a section of a configuration based on user input.
+
+    Args:
+        config: The configuration to be modified.
+        section: The section of the configuration to be modified.
+        config_path: The path to the configuration file.
+        backup_parameters: Parameters for backing up the file.
+        can_back: Whether the user can go back during modification.
+        can_insert_delete: Whether the user can insert or delete options.
+        prompts: Prompts for user input.
+        items: Items to be modified.
+        all_values: All possible values for the items.
+
+    Returns:
+        True if the section exists and is modified, False otherwise.
+    """
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
-    if prompts is None:
-        prompts = {}
 
     if config.has_section(section):
-        for option in config[section]:
-            result = modify_option(config, section, option, config_path,
-                                   can_insert_delete=can_insert_delete,
-                                   prompts=prompts, items=items,
-                                   all_values=all_values)
-            if result in {'quit'}:
-                return result
+        index = 0
+        options = config.options(section)
+        length = len(options) + 1 if can_insert_delete else len(options)
+        if prompts is None:
+            prompts = {}
 
-        if can_insert_delete:
-            is_inserted = False
-            while True:
+        while index < length:
+            if index < len(options):
+                option = options[index]
+                current_can_back = False if index == 0 else can_back
+                result = modify_option(config, section, option, config_path,
+                                       can_back=current_can_back,
+                                       can_insert_delete=can_insert_delete,
+                                       prompts=prompts, items=items,
+                                       all_values=all_values)
+
+                if result == 'back':
+                    index -= 1
+                    continue
+                elif result == 'quit':
+                    return result
+            else:
                 print(f'{ANSI_WARNING}'
                       f"{prompts.get('end_of_list', 'end of section')}"
                       f'{ANSI_RESET}')
-                answer = tidy_answer(['insert', 'quit'])
+                answer = tidy_answer(['insert', 'back', 'quit'])
+
                 if answer == 'insert':
                     option = modify_value(prompts.get('key', 'option'))
                     if all_values:
-                        config[section][option] = modify_tuple(
+                        config[section][option] = str(modify_tuple(
                             (), level=1, prompts=prompts,
-                            all_values=all_values)
+                            all_values=all_values))
                         if config[section][option] != '()':
-                            is_inserted = True
+                            write_config(config, config_path)
+                            options.append(option)
+                            length += 1
                     else:
                         config[section][option] = modify_value('value')
                         if config[section][option]:
-                            is_inserted = True
-                else:
+                            write_config(config, config_path)
+                            options.append(option)
+                            length += 1
+                elif answer == 'back':
+                    index -= 1
+                    continue
+                elif answer in {'', 'quit'}:
                     break
-            if is_inserted:
-                write_config(config, config_path)
+
+            index += 1
 
         return True
 
@@ -216,8 +249,8 @@ def modify_section(config, section, config_path, backup_parameters=None,
 
 
 def modify_option(config, section, option, config_path, backup_parameters=None,
-                  can_insert_delete=False, initial_value=None, prompts=None,
-                  items=None, all_values=None, limits=()):
+                  can_back=False, can_insert_delete=False, initial_value=None,
+                  prompts=None, items=None, all_values=None, limits=()):
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
     if initial_value:
@@ -233,6 +266,8 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
             answers = ['modify', 'toggle', 'empty', 'default', 'quit']
         except ValueError:
             answers = ['modify', 'empty', 'default', 'quit']
+        if can_back:
+            answers.insert(answers.index('quit'), 'back')
         if can_insert_delete:
             answers[answers.index('default')] = 'delete'
 
@@ -241,13 +276,13 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
         if answer == 'modify':
             evaluated_value = evaluate_value(config[section][option])
             if isinstance(evaluated_value, dict):
-                config[section][option] = modify_dictionary(
+                config[section][option] = str(modify_dictionary(
                     evaluated_value, level=1, prompts=prompts,
-                    all_values=all_values)
+                    all_values=all_values))
             elif isinstance(evaluated_value, tuple):
-                config[section][option] = modify_tuple(
+                config[section][option] = str(modify_tuple(
                     evaluated_value, level=1, prompts=prompts,
-                    all_values=all_values)
+                    all_values=all_values))
             elif (isinstance(evaluated_value, list)
                   and all(isinstance(item, tuple)
                           for item in evaluated_value)):
@@ -272,6 +307,8 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
         elif answer in {'default', 'delete'}:
             delete_option(config, section, option, config_path)
             return False
+        elif answer == 'back':
+            return answer
         elif answer in {'', 'quit'}:
             if config[section][option] == initial_value:
                 delete_option(config, section, option, config_path)
@@ -300,6 +337,18 @@ def delete_option(config, section, option, config_path,
 
 
 def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
+    """
+    Iterates over a dictionary and modifies its values based on user input.
+
+    Args:
+        dictionary: The dictionary to be modified.
+        level: The indentation level for the printed key-value pairs.
+        prompts: A dictionary of prompts for user input.
+        all_values: A list of all possible values for dictionary items.
+
+    Returns:
+        The modified dictionary.
+    """
     index = 0
     keys = list(dictionary.keys())
     value_prompt = prompts.get('value', 'value')
@@ -321,13 +370,14 @@ def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
         elif answer == 'empty':
             dictionary[key] = ''
         elif answer == 'back':
-            index -= 2
+            index -= 1
+            continue
         elif answer == 'quit':
             break
 
         index += 1
 
-    return str(dictionary)
+    return dictionary
 
 
 def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
@@ -376,7 +426,8 @@ def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
             del tuple_entry[index]
             index -= 1
         elif answer == 'back':
-            index -= 2
+            index -= 1
+            continue
         elif answer == 'quit':
             break
 
@@ -384,7 +435,7 @@ def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
         if values_prompt and index == len(values_prompt):
             break
 
-    return str(tuple(tuple_entry))
+    return tuple(tuple_entry)
 
 
 def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
@@ -485,7 +536,8 @@ def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
             del tuple_list[index]
             index -= 1
         elif answer == 'back':
-            index -= 2
+            index -= 1
+            continue
         elif answer == 'quit':
             break
 
