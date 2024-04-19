@@ -86,74 +86,119 @@ def write_config(config, config_path):
 def check_config_changes(default_config, config_path, excluded_sections=(),
                          user_option_ignored_sections=(),
                          backup_parameters=None):
-    # TODO: add back
+    """
+    Checks and displays differences between a default and user configuration.
+
+    This function iterates over the sections and options in the default
+    configuration, compares them with the user's configuration, and prints any
+    differences. It also provides options to revert changes to the default
+    configuration.
+
+    Args:
+        default_config (ConfigParser): The default configuration.
+        config_path (str): Path to the user's configuration file.
+        excluded_sections (tuple, optional): Sections to be excluded from
+        checking.
+        user_option_ignored_sections (tuple, optional): Sections where user
+        options are ignored.
+        backup_parameters (dict, optional): Parameters for backing up the
+        configuration file.
+
+    Returns:
+        None
+    """
     def truncate_string(string):
+        """
+        Truncates a string to a maximum length and appends '...' if it exceeds
+        the limit.
+
+        Args:
+            string (str): The string to be truncated.
+
+        Returns:
+            str: The truncated string.
+        """
         max_length = 256
         if len(string) > max_length:
             string = string[:max_length] + '...'
         return string
 
-    def display_changes(config, config_path, previous_section, section, option,
-                        option_status):
-        if section != previous_section[0]:
-            print(f'[{ANSI_BOLD}{section}{ANSI_RESET}]')
-            previous_section[0] = section
-
-        print(option_status)
-        answer = tidy_answer(['default', 'quit'])
-        if answer == 'default':
-            config.remove_option(section, option)
-            write_config(config, config_path)
-        elif answer == 'quit':
-            return False
-        return True
-
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
+
+    section_index = 0
+    section_indices = []
+    sections = []
+    for section in default_config.sections():
+        if (section not in excluded_sections
+                and default_config.options(section)):
+            sections.append(section)
 
     user_config = configparser.ConfigParser()
     read_config(user_config, config_path)
 
-    previous_section = [None]
-    for section in default_config.sections():
-        if (section not in excluded_sections
-                and default_config.options(section)):
-            for option in default_config[section]:
-                if (user_config.has_option(section, option)
-                    and default_config[section][option]
-                        != user_config[section][option]):
-                    default_value = (
-                        truncate_string(default_config[section][option])
-                        if default_config[section][option]
-                        else '(empty)')
-                    user_value = (truncate_string(user_config[section][option])
-                                  if user_config[section][option]
-                                  else '(empty)')
+    while section_index < len(sections):
+        section = sections[section_index]
+        answer = ''
 
-                    option_status = (
-                        f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
-                        f'{default_value} → '
-                        f'{ANSI_CURRENT}{user_value}{ANSI_RESET}')
-                    if not display_changes(user_config, config_path,
-                                           previous_section, section, option,
-                                           option_status):
-                        return
-            if section not in user_option_ignored_sections:
-                for option in user_config[section]:
-                    if not default_config.has_option(section, option):
-                        default_value = '(not exist)'
-                        user_value = (
-                            truncate_string(user_config[section][option])
-                            if user_config[section][option]
-                            else '(empty)')
-                        option_status = (
-                            f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
-                            f'{ANSI_WARNING}{default_value}{ANSI_RESET} → '
-                            f'{user_value}')
-                        if not display_changes(user_config, config_path,
-                                               previous_section, section,
-                                               option, option_status):
-                            return
+        option_index = 0
+        option_indices = []
+        options = list(default_config[section])
+        for option in user_config[section]:
+            if (section not in user_option_ignored_sections
+                    and option not in default_config[section]):
+                options.append(option)
+
+        while option_index < len(options):
+            option = options[option_index]
+            default_value = default_config[section].get(option)
+            user_value = user_config[section].get(option)
+
+            if user_value is not None and default_value != user_value:
+                if not option_indices:
+                    print(f'[{ANSI_BOLD}{section}{ANSI_RESET}]')
+
+                if default_config.has_option(section, option):
+                    tidied_default_value = (
+                        truncate_string(default_value)
+                        if default_value
+                        else f'{ANSI_WARNING}(empty){ANSI_RESET}')
+                else:
+                    tidied_default_value = (
+                        f'{ANSI_WARNING}(not exist){ANSI_RESET}')
+                tidied_user_value = (
+                    f'{ANSI_CURRENT}{truncate_string(user_value)}{ANSI_RESET}'
+                    if user_value else f'{ANSI_WARNING}(empty){ANSI_RESET}')
+                print(f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
+                      f'{tidied_default_value} → {tidied_user_value}')
+
+                answers = ['default', 'back', 'quit']
+                if not section_indices and not option_indices:
+                    answers.remove('back')
+                answer = tidy_answer(answers)
+
+                if answer == 'default':
+                    user_config.remove_option(section, option)
+                    write_config(user_config, config_path)
+                elif answer == 'back':
+                    if option_indices:
+                        option_index = option_indices.pop()
+                        continue
+                    break
+                elif answer == 'quit':
+                    return
+
+                option_indices.append(option_index)
+
+            option_index += 1
+
+        if answer == 'back':
+            section_index = section_indices.pop()
+            continue
+        if option_indices:
+            section_indices.append(section_index)
+
+        section_index += 1
 
 
 def list_section(config, section):
