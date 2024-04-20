@@ -5,8 +5,8 @@ margin using Hyper SBI 2 -->
 
 The `trading_assistant.py` Python script assists with discretionary day trading
 of stocks on margin using [Hyper SBI
-2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html).  By defining an
-action consisting of a sequence of commands, this script can:
+2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html). By defining an action
+consisting of a sequence of commands, this script can:
 
   * Calculate the maximum number of shares for a market order on margin
     trading,
@@ -15,8 +15,8 @@ action consisting of a sequence of commands, this script can:
   * Schedule actions.
 
 > **Disclaimer**: `trading_assistant.py` does not analyze or make decisions for
-> you.  If you operate under incorrect assumptions, the potential for loss may
-> increase because of the script’s fast and frequent order placement.  Use at
+> you. If you operate under incorrect assumptions, the potential for loss may
+> increase because of the script’s fast and frequent order placement. Use at
 > your own risk.
 
 > **Warning**: `trading_assistant.py` is currently under heavy development.
@@ -51,7 +51,7 @@ Hyper SBI 2 on Windows 10 and uses the following packages:
     [GnuPG](https://gnupg.org/index.html) to encrypt and decrypt the
     configuration file
 
-Install each package as needed.  For example:
+Install each package as needed. For example:
 
 ``` powershell
 winget install UB-Mannheim.TesseractOCR
@@ -69,11 +69,12 @@ To calculate the maximum number of shares, save the customer margin ratios from
 the [*Stocks Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
 page and the previous market data from the [*Most Active Stocks
-Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page beforehand.  The
+Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page beforehand. The
 following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1` startup
-script that processes the above and starts Hyper SBI 2.  This script forcibly
-stops and restarts Hyper SBI 2 if it is already running.
+script that processes the above and starts Hyper SBI 2. This script forcibly
+stops and restarts Hyper SBI 2 if it is already running, potentially discarding
+unsaved status.
 
 > **Note**: This option adds virtual environment activation to the startup
 > script if the `.venv\Scripts\Activate.ps1` script exists.
@@ -85,11 +86,11 @@ python trading_assistant.py -SS
 ### Configure Cash Balance and Price Limit Regions ###
 
 Configure the cash balance and (optional) price limit regions on Hyper SBI 2
-for Tesseract to recognize these prices.  `trading_assistant.py` only
-references a price limit if the previous closing price does not exist in the
-market data in the ‘[Create Startup Script](#create-startup-script)’ section.
-Because a region may contain more than one price, you need to specify the index
-of the price you want to refer to.
+for Tesseract to recognize these prices. `trading_assistant.py` only references
+a price limit if the previous closing price does not exist in the market data
+in the ‘[Create Startup Script](#create-startup-script)’ section. Because a
+region may contain more than one price, you need to specify the index of the
+price you want to refer to.
 
 ``` powershell
 python trading_assistant.py -CB
@@ -108,7 +109,7 @@ python trading_assistant.py -A ACTION
 ```
 
 An action is a list of sequential tuples, where each tuple consists of a
-command and its arguments.  Possible commands include:
+command and its arguments. Possible commands include:
 
 <table>
 <thead>
@@ -126,15 +127,15 @@ command and its arguments.  Possible commands include:
 
 <tr><td><code>('calculate_share_size', 'long|short')</code></td>
 
-<td>Calculate the share size.  You must call the <code>get_symbol</code> and
+<td>Calculate the share size. You must call the <code>get_symbol</code> and
 <code>get_cash_balance</code> commands below before using this
 command.</td></tr>
 
 <tr><td><code>('check_daily_loss_limit', 'ALERT_TEXT')</code></td>
 
-<td>Check if the loss has reached the daily loss limit.  If it has, speak the
-alert text and exit.  You must call the <code>get_cash_balance</code> command
-below before using this command.  The <code>-DLL</code> option configures the
+<td>Check if the loss has reached the daily loss limit. If it has, speak the
+alert text and exit. You must call the <code>get_cash_balance</code> command
+below before using this command. The <code>-DLL</code> option configures the
 non-percent, negative daily loss limit ratio (from -1.0 to 0.0), and the daily
 loss limit is: $$\frac{cash\ balance \times utilization\ ratio \times daily\
 loss\ limit\ ratio}{customer\ margin\ ratio}.$$ <strong>Note</strong>: Trading
@@ -143,9 +144,9 @@ fees, not considered here, may cause further cash balance reduction.</td></tr>
 <tr><td><code>('check_maximum_daily_number_of_trades', 'ALERT_TEXT')</code></td>
 
 <td>Check if the current number of trades for the day exceeds the maximum daily
-number of trades.  If it does, speak the alert text and exit.  You must call
-the <code>count_trades</code> command below before using this command.  The
-<code>-MDN</code> option configures the maximum daily number of trades.  A zero
+number of trades. If it does, speak the alert text and exit. You must call the
+<code>count_trades</code> command below before using this command. The
+<code>-MDN</code> option configures the maximum daily number of trades. A zero
 value for it indicates unlimited trades.</td></tr>
 
 <tr><td><code>('click', 'X, Y')</code></td>
@@ -154,7 +155,7 @@ value for it indicates unlimited trades.</td></tr>
 
 <tr><td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
 
-<td>Wait for and locate the widget image in the region, then click it.  The
+<td>Wait for and locate the widget image in the region, then click it. The
 <code>IMAGE_FILE</code> must reside in the <code>HYPERSBI2</code> subdirectory
 of the same directory as the configuration file.</td></tr>
 
@@ -169,10 +170,10 @@ clipboard.</td></tr>
 
 <tr><td><code>('count_trades',[ 'CHAPTER_OFFSET'])</code></td>
 
-<td>Count the number of trades for the day.  Additionally, write a chapter
+<td>Count the number of trades for the day. Additionally, write a chapter
 section for <a href="https://ffmpeg.org/ffmpeg-formats.html#Metadata-1">FFmpeg
-metadata</a> when Nvidia ShadowPlay records a screencast.  The ‘CHAPTER_OFFSET’
-parameter specifies the offset in seconds for the chapter’s start time.  You
+metadata</a> when Nvidia ShadowPlay records a screencast. The ‘CHAPTER_OFFSET’
+parameter specifies the offset in seconds for the chapter’s start time. You
 must call this command after the execution of an order.</td></tr>
 
 <tr><td><code>('drag_to', 'X, Y')</code></td>
@@ -256,7 +257,7 @@ the region.</td></tr>
 
 <tr><td><code>('write_chapter', 'CURRENT_TITLE'[, 'PREVIOUS_TITLE'])</code></td>
 
-<td>Write a chapter section for FFmpeg metadata.  When creating a new metadata
+<td>Write a chapter section for FFmpeg metadata. When creating a new metadata
 file, the <code>PREVIOUS_TITLE</code> parameter gives the title to the chapter
 that precedes the current chapter.</td></tr>
 
@@ -333,12 +334,12 @@ python trading_assistant.py -s
 ### Encrypt Configuration File ###
 
 The `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
-configuration file stores the configurations.  If your GnuPG-encrypted
+configuration file stores the configurations. If your GnuPG-encrypted
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini.gpg`
 configuration file exists, `trading_assistant.py` will read from and write to
-that file.  By default, it uses the default key pair of GnuPG.  However, you
-can also specify a key fingerprint as the value of the `fingerprint` option in
-the `General` section of your configuration file.
+that file. By default, it uses the default key pair of GnuPG. However, you can
+also specify a key fingerprint as the value of the `fingerprint` option in the
+`General` section of your configuration file.
 
 ### Action Argument Completion ###
 
@@ -400,7 +401,7 @@ them.
 
 > **Note**: I tested these examples in the environment with 1080p resolution,
 > the maximized ‘Watchlists’ window, the left-snapped ‘Summary’ window, and the
-> right-snapped ‘Chart’ window.  Additionally, my Hyper SBI 2 settings differ
+> right-snapped ‘Chart’ window. Additionally, my Hyper SBI 2 settings differ
 > from the default settings.
 
 ### Startup Script ###
@@ -424,10 +425,10 @@ running_options = -lsa login
 #### Login ####
 
 The following `login` action waits for the ‘Login’ dialog box to appear and
-then clicks its button.  Next, it enters your trading password and
-authenticates in the ‘Pre-authentication of Trading Password’ dialog box.  If
-you want to include your password as the value of an option, as demonstrated in
-this example, refer to the ‘[Encrypt Configuration
+then clicks its button. Next, it enters your trading password and authenticates
+in the ‘Pre-authentication of Trading Password’ dialog box. If you want to
+include your password as the value of an option, as demonstrated in this
+example, refer to the ‘[Encrypt Configuration
 File](#encrypt-configuration-file)’ section.
 
 ``` ini
@@ -470,7 +471,7 @@ login = [
     ('is_now_before', '${Market Data:opening_time}', [
         ('press_hotkeys', 'ctrl, n')]),
     # Start a new recording if one is not already in progress at
-    # 08:50:00-${HYPERSBI2:end_time}.  This is a fallback if the
+    # 08:50:00-${HYPERSBI2:end_time}. This is a fallback if the
     # 'start_trading_recording' schedule in the 'Start and Stop Manual
     # Recording' section does not start recording.
     ('is_now_after', '08:50:00', [
@@ -589,7 +590,7 @@ center_open_1_minute_chart = [
 #### Open and Close Long Position ####
 
 The following `open_close_long_position` action shows the required windows and
-waits for a buy order with the maximum number of shares.  If you place the
+waits for a buy order with the maximum number of shares. If you place the
 order, it prepares a sell order for repayment.
 
 ``` ini
@@ -605,11 +606,11 @@ open_close_long_position = [
     ('get_symbol', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Recognize the cash balance on the 'Summary' window.
     ('get_cash_balance',),
-    # Check if the loss has reached the daily loss limit.  If it has, speak the
+    # Check if the loss has reached the daily loss limit. If it has, speak the
     # alert text and exit.
     ('check_daily_loss_limit', 'Daily loss limit hit.'),
     # Check if the current number of trades for the day exceeds the maximum
-    # daily number of trades.  If it does, speak the alert text and exit.
+    # daily number of trades. If it does, speak the alert text and exit.
     ('check_maximum_daily_number_of_trades',
      'Maximum daily number of trades exceeded.'),
     ('calculate_share_size', 'long'), # Calculate the share size.
@@ -645,7 +646,7 @@ The following input map maps mouse buttons and keyboard keys to actions.
 input_map = {
     # The left button is used to click widgets.
     'left': '',
-    # Execute an action to show or hide the 'Watchlists' window.  The middle
+    # Execute an action to show or hide the 'Watchlists' window. The middle
     # button also toggles between prices and price changes in the order books.
     'middle': 'show_hide_watchlists',
     # The right button is used for context menus.
@@ -753,30 +754,37 @@ speak_60_seconds_until_open = ('08:59:00', 'speak_seconds_until_open')
 speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 ```
 
-## Appendix ##
+## Known Issues ##
 
-### Hyper SBI 2 Window Titles ###
-
-| Regular Expression for Window Title                                          | Window          |
-|------------------------------------------------------------------------------|-----------------|
-| `お知らせ`                                                                   | Announcements   |
-| `個別銘柄\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     | Summary         |
-| `登録銘柄`                                                                   | Watchlists      |
-| `保有証券`                                                                   | Holdings        |
-| `注文一覧`                                                                   | Order Status    |
-| `個別チャート\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` | Chart           |
-| `マーケット`                                                                 | Markets         |
-| `ランキング`                                                                 | Rankings        |
-| `銘柄一覧`                                                                   | Stock Lists     |
-| `口座情報`                                                                   | Account         |
-| `ニュース`                                                                   | News            |
-| `取引ポップアップ`                                                           | Trading         |
-| `通知設定`                                                                   | Notifications   |
-| `全板\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         | Full Order Book |
+  * The `toggle_indicator` command in the ‘[Create or Modify
+    Action](#create-or-modify-action)’ section does not operate as expected
+    when used as an argument to the `is_now_after`, `is_now_before`, or
+    `is_recording` commands.
 
 ## License ##
 
 [MIT](LICENSE.md)
+
+## Appendix ##
+
+### Hyper SBI 2 Window Titles ###
+
+| Regular Expression for Window Title                                             | Window          |
+|---------------------------------------------------------------------------------|-----------------|
+| `お知らせ`                                                                      | Announcements   |
+| `個別銘柄\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`     | Summary         |
+| `登録銘柄`                                                                      | Watchlists      |
+| `保有証券`                                                                      | Holdings        |
+| `注文一覧`                                                                      | Order Status    |
+| `個別チャート\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)` | Chart           |
+| `マーケット`                                                                    | Markets         |
+| `ランキング`                                                                    | Rankings        |
+| `銘柄一覧`                                                                      | Stock Lists     |
+| `口座情報`                                                                      | Account         |
+| `ニュース`                                                                      | News            |
+| `取引ポップアップ`                                                              | Trading         |
+| `通知設定`                                                                      | Notifications   |
+| `全板\s.*\(([1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?)\)`         | Full Order Book |
 
 ## Link ##
 
