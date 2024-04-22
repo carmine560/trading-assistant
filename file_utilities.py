@@ -14,8 +14,8 @@ import time
 try:
     import gnupg
     GNUPG_IMPORT_ERROR = None
-except ModuleNotFoundError as import_error:
-    GNUPG_IMPORT_ERROR = import_error
+except ModuleNotFoundError as e:
+    GNUPG_IMPORT_ERROR = e
 
 try:
     import winreg
@@ -25,8 +25,8 @@ try:
     import win32api
     import win32com.client
     WINDOWS_IMPORT_ERROR = None
-except ModuleNotFoundError as import_error:
-    WINDOWS_IMPORT_ERROR = import_error
+except ModuleNotFoundError as e:
+    WINDOWS_IMPORT_ERROR = e
 
 
 # File and Directory Operations #
@@ -642,31 +642,32 @@ def delete_shortcut(base, program_group_base=None, icon_directory=None):
 
 def get_program_group(program_group_base=None):
     """
-    Get the program group for a Windows shortcut.
+    Retrieve the program group for a Windows shortcut.
 
-    This function gets the program group for a Windows shortcut. If no program
-    group base is provided, it uses the title-cased base name of the current
-    script.
+    This function retrieves the program group for a Windows shortcut. If a
+    program group base is provided, it is appended to the default program
+    group path.
 
     Args:
         program_group_base (str, optional): The base name of the program group.
+            If provided, it is appended to the default program group path.
             Defaults to None.
 
+    Raises:
+        RuntimeError: If there is an error importing the required Windows
+            libraries.
+
     Returns:
-        str: The program group, or False if there is an error importing the
-            required Windows libraries.
+        str: The program group.
     """
     if WINDOWS_IMPORT_ERROR:
-        print(WINDOWS_IMPORT_ERROR)
-        return False
+        raise RuntimeError(WINDOWS_IMPORT_ERROR)
 
     shell = win32com.client.Dispatch('WScript.Shell')
-    if not program_group_base:  # TODO: remove
-        base = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-        program_group_base = re.sub(r'[\W_]+', ' ', base).strip().title()
+    program_group = shell.SpecialFolders('Programs')
+    if program_group_base:
+        program_group = os.path.join(program_group, program_group_base)
 
-    program_group = os.path.join(shell.SpecialFolders('Programs'),
-                                 program_group_base)
     return program_group
 
 

@@ -16,8 +16,8 @@ try:
     import pyautogui
     import win32api
     GUI_IMPORT_ERROR = None
-except ModuleNotFoundError as import_error:
-    GUI_IMPORT_ERROR = import_error
+except ModuleNotFoundError as e:
+    GUI_IMPORT_ERROR = e
 
 import file_utilities
 
