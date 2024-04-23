@@ -1,7 +1,6 @@
 """Module for file operations, CLI, shortcuts, and text processing."""
 
 from datetime import datetime
-import ast
 import io
 import os
 import re
@@ -35,19 +34,20 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
     """
     Archive and encrypt a directory using GPG.
 
-    This function archives the source directory into a tarball, then encrypts
-    the tarball using GnuPG. The encrypted tarball is saved in the specified
-    output directory. If a GPG fingerprint is not provided, the function uses
-    the first available key in the GPG keyring.
+    This function archives the source directory into a tarball, then
+    encrypts the tarball using GnuPG. The encrypted tarball is saved in
+    the specified output directory. If a GPG fingerprint is not
+    provided, the function uses the first available key in the GPG
+    keyring.
 
     Args:
         source (str): Path to the source directory to be archived and
             encrypted.
-        output_directory (str): Path to the directory where the encrypted
-            tarball will be saved.
+        output_directory (str): Path to the directory where the
+            encrypted tarball will be saved.
         fingerprint (str, optional): The GPG key fingerprint to use for
-            encryption. If not provided, the first available key in the GPG
-            keyring is used. Defaults to ''.
+            encryption. If not provided, the first available key in the
+            GPG keyring is used. Defaults to ''.
 
     Returns:
         None
@@ -75,22 +75,23 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
     """
     Backup a file to a specified directory, with optional encryption.
 
-    This function creates a backup of a specified file. If an encrypted version
-    of the file exists, it backs up the encrypted file. The backups are stored
-    in a specified directory, and the number of backups to keep can be
-    specified. If the source file has not changed since the last backup, a new
-    backup is not created.
+    This function creates a backup of a specified file. If an
+    encrypted version of the file exists, it backs up the encrypted
+    file. The backups are stored in a specified directory, and the
+    number of backups to keep can be specified. If the source file has
+    not changed since the last backup, a new backup is not created.
 
     Args:
         source (str): Path to the source file to be backed up.
-        backup_directory (str, optional): Path to the directory where the
-            backups will be stored. If not provided, a 'backups' directory is
-            created in the same directory as the source file.
-        number_of_backups (int, optional): The number of backups to keep. If
-            -1, all backups are kept. Defaults to -1.
-        should_compare (bool, optional): If True, the source file is compared
-            to the most recent backup, and a new backup is only created if the
-            files are different. Defaults to True.
+        backup_directory (str, optional): Path to the directory where
+            the backups will be stored. If not provided, a 'backups'
+            directory is created in the same directory as the source
+            file.
+        number_of_backups (int, optional): The number of backups to
+            keep. If -1, all backups are kept. Defaults to -1.
+        should_compare (bool, optional): If True, the source file is
+            compared to the most recent backup, and a new backup is
+            only created if the files are different. Defaults to True.
 
     Returns:
         None
@@ -165,9 +166,10 @@ def check_directory(directory):
     """
     Check if a directory exists, and create it if it doesn't.
 
-    This function checks if a specified directory exists. If the directory does
-    not exist, the function attempts to create it. If an OSError occurs during
-    directory creation, the error is printed and the program exits.
+    This function checks if a specified directory exists. If the
+    directory does not exist, the function attempts to create it. If
+    an OSError occurs during directory creation, the error is printed
+    and the program exits.
 
     Args:
         directory (str): The path to the directory to check or create.
@@ -187,15 +189,16 @@ def decrypt_extract_file(source, output_directory):
     """
     Decrypt a file and extract its contents to a specified directory.
 
-    This function decrypts a given source file using GnuPG, then extracts the
-    contents of the decrypted file into a specified output directory. If the
-    root directory or a backup file already exists, the function handles them
-    accordingly.
+    This function decrypts a given source file using GnuPG, then
+    extracts the contents of the decrypted file into a specified output
+    directory. If the root directory or a backup file already exists,
+    the function handles them accordingly.
 
     Args:
-        source (str): Path to the source file to be decrypted and extracted.
-        output_directory (str): Path to the directory where the contents will
-            be extracted.
+        source (str): Path to the source file to be decrypted and
+            extracted.
+        output_directory (str): Path to the directory where the contents
+            will be extracted.
 
     Returns:
         None
@@ -243,34 +246,35 @@ def decrypt_extract_file(source, output_directory):
                 sys.exit(1)
 
 
-def is_writing(target_path):
+def is_writing(path):
     """
-    Determine if a file at the target path is currently being written to.
+    Determine if a file at the path is currently being written to.
 
-    This function checks if a file exists at the target path and if its
-    modification time is less than 1 second ago, which suggests that the file
-    might still be open for writing.
+    This function checks if a file exists at the path and if its
+    modification time is less than 1 second ago, which suggests that the
+    file might still be open for writing.
 
     Args:
-        target_path (str): The path to the target file.
+        path (str): The path to the file.
 
     Returns:
         bool: True if the file is being written to, False otherwise.
     """
-    return bool(os.path.exists(target_path)
-                and time.time() - os.path.getmtime(target_path) < 1)
+    return bool(os.path.exists(path)
+                and time.time() - os.path.getmtime(path) < 1)
 
 
 def move_to_trash(path, option=None):
     """
     Move a specified file or directory to the trash.
 
-    This function uses the 'trash-put' command to move a specified file or
-    directory to the trash. An additional option can be provided to modify the
-    behavior of the 'trash-put' command.
+    This function uses the 'trash-put' command to move a specified file
+    or directory to the trash. An additional option can be provided to
+    modify the behavior of the 'trash-put' command.
 
     Args:
-        path (str): The path to the file or directory to be moved to the trash.
+        path (str): The path to the file or directory to be moved to the
+            trash.
         option (str, optional): An additional option for the 'trash-put'
             command. Defaults to None.
 
@@ -290,16 +294,16 @@ def select_executable(executables):
     """
     Find the first available executable from a list of executables.
 
-    This function iterates over a list of executable names, and returns the
-    path of the first executable that is found in the system's PATH. If none of
-    the executables are found, it returns False.
+    This function iterates over a list of executable names, and returns
+    the path of the first executable that is found in the system's PATH.
+    If none of the executables are found, it returns False.
 
     Args:
         executables (list): A list of executable names to search for.
 
     Returns:
-        str or bool: The path of the first found executable, or False if none
-            are found.
+        str or bool: The path of the first found executable, or False if
+            none are found.
     """
     for executable in executables:
         path = shutil.which(executable)
@@ -313,21 +317,21 @@ def select_executable(executables):
 def create_bash_completion(script_base, options, values, interpreters,
                            completion):
     """
-    Generate a bash completion script for a given set of options and values.
+    Generate a bash completion script for options and values.
 
-    This function creates a bash completion script for a given base script,
-    options, and values. The generated script is written to a specified file.
-    The completion script allows for tab completion of options and values in
-    the bash shell.
+    This function creates a bash completion script for a given base
+    script, options, and values. The generated script is written to a
+    specified file. The completion script allows for tab completion of
+    options and values in the bash shell.
 
     Args:
-        script_base (str): The base name of the script for which to generate
-            completion.
+        script_base (str): The base name of the script for which to
+            generate completion.
         options (list): A list of option strings for completion.
         values (list): A list of value strings for completion.
         interpreters (list): A list of interpreter names for completion.
-        completion (str): The path to the file where the completion script
-            will be written.
+        completion (str): The path to the file where the completion
+            script will be written.
 
     Returns:
         None
@@ -380,21 +384,21 @@ complete -F _{script_base} {' '.join(interpreters)}
 def create_powershell_completion(script_base, options, values, interpreters,
                                  completion):
     """
-    Generate a PowerShell completion script for a set of options and values.
+    Generate a PowerShell completion script for options and values.
 
-    This function creates a PowerShell completion script for a given base
-    script, options, and values. The generated script is written to a specified
-    file. The completion script allows for tab completion of options and values
-    in the PowerShell.
+    This function creates a PowerShell completion script for a given
+    base script, options, and values. The generated script is written to
+    a specified file. The completion script allows for tab completion of
+    options and values in the PowerShell.
 
     Args:
-        script_base (str): The base name of the script for which to generate
-            completion.
+        script_base (str): The base name of the script for which to
+            generate completion.
         options (list): A list of option strings for completion.
         values (list): A list of value strings for completion.
         interpreters (list): A list of interpreter names for completion.
-        completion (str): The path to the file where the completion script
-            will be written.
+        completion (str): The path to the file where the completion
+            script will be written.
 
     Returns:
         None
@@ -444,19 +448,21 @@ def create_icon(base, icon_directory=None):
     """
     Generate an icon from the acronym of a base name.
 
-    This function creates an icon based on the acronym of the base name. The
-    icon is saved in the specified directory or in the same directory as the
-    script if no directory is specified. The icon is saved in multiple sizes.
+    This function creates an icon based on the acronym of the base name.
+    The icon is saved in the specified directory or in the same
+    directory as the script if no directory is specified. The icon is
+    saved in multiple sizes.
 
     Args:
         base (str): The base name for the icon.
-        icon_directory (str, optional): The directory where the icon will be
-            saved. If not provided, the icon is saved in the same directory as
-            the script. Defaults to None.
+        icon_directory (str, optional): The directory where the icon
+            will be saved. If not provided, the icon is saved in the
+            same directory as the script. Defaults to None.
 
     Raises:
         RuntimeError: If there is a Windows import error.
-        ValueError: If the acronym could not be created from the base name.
+        ValueError: If the acronym could not be created from the base
+            name.
 
     Returns:
         str: The path to the created icon.
@@ -465,20 +471,21 @@ def create_icon(base, icon_directory=None):
         """
         Calculate the scaled font size for the icon text.
 
-        This function calculates the font size that will allow the text to fit
-        within the desired dimensions. It uses a temporary font size to
-        calculate the scaling factor, then returns a font object with the
-        scaled size.
+        This function calculates the font size that will allow the text
+        to fit within the desired dimensions. It uses a temporary font
+        size to calculate the scaling factor, then returns a font object
+        with the scaled size.
 
         Args:
             text (str): The text to be displayed on the icon.
             font_path (str): The path to the font file.
             desired_dimension (int): The desired dimension for the text.
-            variation_name (str, optional): The name of the font variation to
-                use. Defaults to an empty string.
+            variation_name (str, optional): The name of the font
+                variation to use. Defaults to an empty string.
 
         Returns:
-            ImageFont.FreeTypeFont: A font object with the scaled font size.
+            ImageFont.FreeTypeFont: A font object with the scaled font
+                size.
         """
         temp_font_size = 100
         temp_font = ImageFont.truetype(font_path, temp_font_size)
@@ -555,18 +562,19 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
     """
     Create a Windows shortcut for a given program.
 
-    This function creates a Windows shortcut for a program, with the option to
-    specify a program group, an icon, and a hotkey.
+    This function creates a Windows shortcut for a program, with the
+    option to specify a program group, an icon, and a hotkey.
 
     Args:
         base (str): The base name of the program.
         target_path (str): The path to the program executable.
         arguments (str): The command-line arguments for the program.
-        program_group_base (str, optional): The base name of the program group.
-            Defaults to None.
+        program_group_base (str, optional): The base name of the program
+            group. Defaults to None.
         icon_directory (str, optional): The directory of the icon file.
             Defaults to None.
-        hotkey (str, optional): The hotkey for the shortcut. Defaults to None.
+        hotkey (str, optional): The hotkey for the shortcut. Defaults to
+            None.
 
     Returns:
         None
@@ -597,14 +605,14 @@ def delete_shortcut(base, program_group_base=None, icon_directory=None):
     """
     Delete a Windows shortcut and its associated icon.
 
-    This function deletes a Windows shortcut for a program and its associated
-    icon, if they exist. If the program group becomes empty after the deletion,
-    it also removes the program group.
+    This function deletes a Windows shortcut for a program and its
+    associated icon, if they exist. If the program group becomes empty
+    after the deletion, it also removes the program group.
 
     Args:
         base (str): The base name of the program.
-        program_group_base (str, optional): The base name of the program group.
-            Defaults to None.
+        program_group_base (str, optional): The base name of the program
+            group. Defaults to None.
         icon_directory (str, optional): The directory of the icon file.
             Defaults to None.
 
@@ -644,18 +652,18 @@ def get_program_group(program_group_base=None):
     """
     Retrieve the program group for a Windows shortcut.
 
-    This function retrieves the program group for a Windows shortcut. If a
-    program group base is provided, it is appended to the default program
-    group path.
+    This function retrieves the program group for a Windows shortcut. If
+    a program group base is provided, it is appended to the default
+    program group path.
 
     Args:
-        program_group_base (str, optional): The base name of the program group.
-            If provided, it is appended to the default program group path.
-            Defaults to None.
+        program_group_base (str, optional): The base name of the program
+            group. If provided, it is appended to the default program
+            group path. Defaults to None.
 
     Raises:
-        RuntimeError: If there is an error importing the required Windows
-            libraries.
+        RuntimeError: If there is an error importing the required
+            Windows libraries.
 
     Returns:
         str: The program group.
@@ -673,51 +681,21 @@ def get_program_group(program_group_base=None):
 
 # Text and Description Operations #
 
-def extract_commands(source, command='command'):
-    """
-    Extract specific commands from the given source code.
-
-    This function parses the source code and extracts the values of the
-    specified command from all 'if' conditions where the command is compared
-    with a constant value.
-
-    Args:
-        source (str): The source code to parse.
-        command (str, optional): The command to look for. Defaults to
-            'command'.
-
-    Returns:
-        list: A list of command values extracted from the source code.
-    """
-    commands = []
-    tree = ast.parse(source)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.If):
-            test = node.test
-            if isinstance(test, ast.Compare):
-                left = test.left
-                if isinstance(left, ast.Name) and left.id == command:
-                    comparator = test.comparators[0]
-                    if isinstance(comparator, ast.Constant):
-                        commands.append(comparator.value)
-    return commands
-
-
 def get_file_description(executable):
     """
     Retrieve the file description of a given executable.
 
-    This function uses the Windows API to retrieve the file description of a
-    given executable. If there is an error importing the required Windows
-    libraries or an error occurs while retrieving the file description, it
-    prints the error and returns None.
+    This function uses the Windows API to retrieve the file description
+    of a given executable. If there is an error importing the required
+    Windows libraries or an error occurs while retrieving the file
+    description, it prints the error and returns None.
 
     Args:
         executable (str): The path to the executable file.
 
     Returns:
-        str: The file description of the executable, or None if there is an
-            error.
+        str: The file description of the executable, or None if there is
+            an error.
     """
     if WINDOWS_IMPORT_ERROR:
         print(WINDOWS_IMPORT_ERROR)
@@ -741,18 +719,18 @@ def title_except_acronyms(string, acronyms):
     """
     Convert a string to title case, excluding specified acronyms.
 
-    This function converts all words in a string to title case, except for the
-    words specified in the 'acronyms' list. The words in the 'acronyms' list
-    are left as they are.
+    This function converts all words in a string to title case, except
+    for the words specified in the 'acronyms' list. The words in the
+    'acronyms' list are left as they are.
 
     Args:
         string (str): The string to convert to title case.
-        acronyms (list): A list of acronyms that should not be converted to
-            title case.
+        acronyms (list): A list of acronyms that should not be converted
+            to title case.
 
     Returns:
-        str: The converted string, with all words in title case except for the
-            specified acronyms.
+        str: The converted string, with all words in title case except
+            for the specified acronyms.
     """
     words = string.split()
     for i, _ in enumerate(words):
@@ -765,18 +743,19 @@ def write_chapter(video, current_title, previous_title=None, offset=None):
     """
     Write a new chapter to the metadata of a video file.
 
-    This function writes a new chapter to the metadata of a video file using
-    FFmpeg's metadata format. If the metadata file does not exist, it creates
-    one and writes the first two chapters. If the metadata file already exists,
-    it updates the end time of the last chapter and appends a new chapter.
+    This function writes a new chapter to the metadata of a video file
+    using FFmpeg's metadata format. If the metadata file does not exist,
+    it creates one and writes the first two chapters. If the metadata
+    file already exists, it updates the end time of the last chapter and
+    appends a new chapter.
 
     Args:
         video (str): The path to the video file.
         current_title (str): The title of the new chapter.
-        previous_title (str, optional): The title of the first chapter when
-            creating a new metadata file. Defaults to None.
-        offset (float, optional): The offset in seconds to apply to the start
-            time of the new chapter. Defaults to None.
+        previous_title (str, optional): The title of the first chapter
+            when creating a new metadata file. Defaults to None.
+        offset (float, optional): The offset in seconds to apply to the
+            start time of the new chapter. Defaults to None.
 
     Returns:
         None

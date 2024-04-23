@@ -64,7 +64,7 @@ class Trade(initializer.Initializer):
         self.startup_script_section = f'{self.process} Startup Script'
 
         self.instruction_items = {
-            'all_keys': file_utilities.extract_commands(
+            'all_keys': initializer.extract_commands(
                 inspect.getsource(execute_action)),
             'no_value_keys': {'back_to', 'copy_symbols_from_market_data',
                               'get_cash_balance', 'toggle_indicator',

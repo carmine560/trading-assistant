@@ -10,12 +10,13 @@ class SpeechManager:
     """
     Manage the speech capabilities and text of a speech system.
 
-    This class manages the speech capabilities and text of a speech system. It
-    provides methods to get and set whether the system can speak and what text
-    it should speak.
+    This class manages the speech capabilities and text of a speech
+    system. It provides methods to get and set whether the system can
+    speak and what text it should speak.
 
     Attributes:
-        _can_speak (bool): A flag indicating whether the system can speak.
+        _can_speak (bool): A flag indicating whether the system can
+            speak.
         _speech_text (str): The text that the system should speak.
     """
 
@@ -23,8 +24,8 @@ class SpeechManager:
         """
         Initialize a new SpeechManager instance.
 
-        Initializes the speech capability to True and the speech text to an
-        empty string.
+        Initializes the speech capability to True and the speech text to
+        an empty string.
         """
         self._can_speak = True
         self._speech_text = ''
@@ -67,16 +68,16 @@ class SpeechManager:
 
 
 def start_speaking_process(speech_manager):
-    # TODO: backticks
     """
     Start a new process for speaking.
 
     This function creates and starts a new process that calls the
-    `start_speaking` function with the provided speech manager as an argument.
+    start_speaking function with the provided speech manager as an
+    argument.
 
     Args:
-        speech_manager (SpeechManager): The speech manager to be used in the
-            `start_speaking` function.
+        speech_manager (SpeechManager): The speech manager to be used in
+            the start_speaking function.
 
     Returns:
         Process: The started speaking process.
@@ -90,15 +91,16 @@ def start_speaking(speech_manager):
     """
     Initiate the speech process based on the speech manager's state.
 
-    This function initializes a speech engine, sets its voice property, and
-    continuously checks if the speech manager is allowed to speak. If it is,
-    the function fetches the text from the speech manager, resets the speech
-    text in the manager, and makes the speech engine say the text. The function
-    runs until the speech manager is no longer allowed to speak.
+    This function initializes a speech engine, sets its voice property,
+    and continuously checks if the speech manager is allowed to speak.
+    If it is, the function fetches the text from the speech manager,
+    resets the speech text in the manager, and makes the speech engine
+    say the text. The function runs until the speech manager is no
+    longer allowed to speak.
 
     Args:
-        speech_manager (SpeechManager): The speech manager controlling the
-            speech process.
+        speech_manager (SpeechManager): The speech manager controlling
+            the speech process.
 
     Returns:
         None
@@ -121,14 +123,16 @@ def stop_speaking_process(base_manager, speech_manager, speaking_process):
     """
     Stop the speaking process and shutdown the base manager.
 
-    This function checks if there is any text left in the speech manager. If
-    there is, it waits for a short period of time to allow the speaking process
-    to finish. It then sets the speech manager to stop speaking, joins the
-    speaking process, and shuts down the base manager.
+    This function checks if there is any text left in the speech
+    manager. If there is, it waits for a short period of time to allow
+    the speaking process to finish. It then sets the speech manager to
+    stop speaking, joins the speaking process, and shuts down the base
+    manager.
 
     Args:
         base_manager (Manager): The base manager to shutdown.
-        speech_manager (SpeechManager): The speech manager to stop speaking.
+        speech_manager (SpeechManager): The speech manager to stop
+            speaking.
         speaking_process (Process): The speaking process to join.
 
     Returns:

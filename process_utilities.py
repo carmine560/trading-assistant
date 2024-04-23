@@ -9,8 +9,8 @@ def is_running(process):
     """
     Determine if a process is currently running.
 
-    This function checks if a specified process is currently running on the
-    system by using the 'tasklist' command and searching its output.
+    This function checks if a specified process is currently running on
+    the system by using the 'tasklist' command and searching its output.
 
     Args:
         process (str): The name of the process to check.
@@ -30,20 +30,23 @@ def wait_listeners(stop_listeners_event, process, mouse_listener,
     """
     Wait for listeners until the stop event is set or process ends.
 
-    This function continuously checks if a stop event is set or if a process
-    is running. If the process is not running and the function is not set to
-    be persistent, it stops the listeners and breaks the loop.
+    This function continuously checks if a stop event is set or if a
+    process is running. If the process is not running and the function
+    is not set to be persistent, it stops the listeners and breaks the
+    loop.
 
     Args:
-        stop_listeners_event (Event): An event to signal stopping listeners.
+        stop_listeners_event (Event): An event to signal stopping
+            listeners.
         process (str): The name of the process to check.
         mouse_listener (Listener): The mouse listener to stop.
         keyboard_listener (Listener): The keyboard listener to stop.
         base_manager (Manager): The base manager to stop.
         speech_manager (Manager): The speech manager to stop.
         speaking_process (Process): The speaking process to stop.
-        is_persistent (bool, optional): Whether to keep listeners running even
-            if the process is not running. Defaults to False.
+        is_persistent (bool, optional): Whether to keep listeners
+            running even if the process is not running. Defaults to
+            False.
 
     Returns:
         None
@@ -62,10 +65,11 @@ def stop_listeners(mouse_listener, keyboard_listener, base_manager,
     """
     Stop all listeners and shutdown the managers.
 
-    This function stops the mouse and keyboard listeners if they exist. It also
-    checks if the base manager, speech manager, and speaking process exist. If
-    they do, it waits for any ongoing speech to finish, prevents further
-    speaking, joins the speaking process, and shuts down the base manager.
+    This function stops the mouse and keyboard listeners if they exist.
+    It also checks if the base manager, speech manager, and speaking
+    process exist. If they do, it waits for any ongoing speech to
+    finish, prevents further speaking, joins the speaking process, and
+    shuts down the base manager.
 
     Args:
         mouse_listener (Listener): The mouse listener to stop.
