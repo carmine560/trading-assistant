@@ -102,8 +102,8 @@ def read_config(config, config_path):
     file.
 
     Args:
-        config (ConfigParser): The ConfigParser object to load the
-            configuration into.
+        config (ConfigParser): The configuration parser object to load
+            the configuration into.
         config_path (str): The path to the configuration file (without
             the .gpg extension).
 
@@ -132,7 +132,7 @@ def write_config(config, config_path):
     configuration is written to the file as is.
 
     Args:
-        config (ConfigParser): The configuration to write.
+        config (ConfigParser): The configuration parser object to write.
         config_path (str): The path to the configuration file.
 
     Returns:
@@ -171,7 +171,8 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
     to the default configuration.
 
     Args:
-        default_config (ConfigParser): The default configuration.
+        default_config (ConfigParser): The default configuration parser
+            object.
         config_path (str): Path to the user's configuration file.
         excluded_sections (tuple, optional): Sections to be excluded
             from checking.
@@ -290,8 +291,8 @@ def list_section(config, section):
     returns False.
 
     Args:
-        config (ConfigParser): The configuration to retrieve options
-            from.
+        config (ConfigParser): The configuration parser object to
+            retrieve options from.
         section (str): The section to retrieve options from.
 
     Returns:

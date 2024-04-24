@@ -70,7 +70,8 @@ def click_widget(gui_state, image, x, y, width, height):
     performs a right-click; otherwise, it performs a left-click.
 
     Args:
-        gui_state (GuiState): The state of the GUI.
+        gui_state (GuiState): An instance of the GuiState class that
+            manages the state of the GUI.
         image (str): The path to the image file to locate on the screen.
         x (int): The x-coordinate of the top left corner of the search
             region.
