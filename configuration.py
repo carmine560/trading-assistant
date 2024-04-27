@@ -10,7 +10,12 @@ import time
 from prompt_toolkit import ANSI
 from prompt_toolkit import prompt as pt_prompt
 from prompt_toolkit.completion import Completer, Completion
-import gnupg
+
+try:
+    import gnupg                # TODO
+    GNUPG_IMPORT_ERROR = None
+except ModuleNotFoundError as e:
+    GNUPG_IMPORT_ERROR = e
 
 try:
     import pyautogui
@@ -106,9 +111,6 @@ def read_config(config, config_path):
             the configuration into.
         config_path (str): The path to the configuration file (without
             the .gpg extension).
-
-    Returns:
-        None
     """
     encrypted_config_path = config_path + '.gpg'
     if os.path.exists(encrypted_config_path):
@@ -134,9 +136,6 @@ def write_config(config, config_path):
     Args:
         config (ConfigParser): The configuration parser object to write.
         config_path (str): The path to the configuration file.
-
-    Returns:
-        None
     """
     encrypted_config_path = config_path + '.gpg'
     if os.path.exists(encrypted_config_path):
@@ -180,9 +179,6 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
             user options are ignored.
         backup_parameters (dict, optional): Parameters for backing up
             the file. Defaults to None.
-
-    Returns:
-        None
     """
     def truncate_string(string):
         """
@@ -211,7 +207,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
     sections = []
     for section in default_config.sections():
         if (section not in excluded_sections
-                and default_config.options(section)):
+            and default_config.options(section)):
             sections.append(section)
 
     user_config = configparser.ConfigParser()
@@ -221,9 +217,12 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
         section = sections[section_index]
         answer = ''
 
+        if not user_config.has_section(section):
+            user_config.add_section(section)
+
         option_index = 0
         option_indices = []
-        options = list(default_config[section])
+        options = default_config.options(section)
         for option in user_config[section]:
             if (section not in user_option_ignored_sections
                     and option not in default_config[section]):
@@ -246,15 +245,18 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
                 else:
                     tidied_default_value = (
                         f'{ANSI_WARNING}(not exist){ANSI_RESET}')
+
                 tidied_user_value = (
                     f'{ANSI_CURRENT}{truncate_string(user_value)}{ANSI_RESET}'
                     if user_value else f'{ANSI_WARNING}(empty){ANSI_RESET}')
+
                 print(f'{ANSI_IDENTIFIER}{option}{ANSI_RESET}: '
                       f'{tidied_default_value} → {tidied_user_value}')
 
                 answers = ['default', 'back', 'quit']
                 if not section_indices and not option_indices:
                     answers.remove('back')
+
                 answer = tidy_answer(answers)
 
                 if answer == 'default':

@@ -47,9 +47,6 @@ def wait_listeners(stop_listeners_event, process, mouse_listener,
         is_persistent (bool, optional): Whether to keep listeners
             running even if the process is not running. Defaults to
             False.
-
-    Returns:
-        None
     """
     while not stop_listeners_event.is_set():
         if is_running(process) or is_persistent:
@@ -78,9 +75,6 @@ def stop_listeners(mouse_listener, keyboard_listener, base_manager,
         speech_manager (Manager): The speech manager to prevent further
             speaking.
         speaking_process (Process): The speaking process to join.
-
-    Returns:
-        None
     """
     if mouse_listener:
         mouse_listener.stop()

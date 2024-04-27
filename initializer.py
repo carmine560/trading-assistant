@@ -48,13 +48,8 @@ class Initializer:
 
         self.script_file = os.path.basename(script_path)
         self.script_base = os.path.splitext(self.script_file)[0]
-        self.config_directory = os.path.join(
-            os.path.expandvars('%LOCALAPPDATA%'),
-            os.path.basename(os.path.dirname(script_path)))
-        self.config_path = os.path.join(self.config_directory,
-                                        self.script_base + '.ini')
-
-        file_utilities.check_directory(self.config_directory)
+        self.config_path = file_utilities.get_config_path(script_path)
+        self.config_directory = os.path.dirname(self.config_path)
 
         self.actions_section = f'{self.process} Actions'
 

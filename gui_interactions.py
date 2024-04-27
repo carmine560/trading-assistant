@@ -79,9 +79,6 @@ def click_widget(gui_state, image, x, y, width, height):
             region.
         width (int): The width of the search region.
         height (int): The height of the search region.
-
-    Returns:
-        None
     """
     location = None
     x = int(x)
@@ -116,9 +113,6 @@ def enumerate_windows(callback, extra):
         callback (function): The callback function to apply to each
             window.
         extra (any): Extra data to pass to the callback function.
-
-    Returns:
-        None
     """
     try:
         win32gui.EnumWindows(callback, extra)
@@ -219,9 +213,6 @@ def wait_for_window(title_regex):
     Args:
         title_regex (str): The regular expression to match against the
             window title.
-
-    Returns:
-        None
     """
     def check_for_window(hwnd, extra):
         """

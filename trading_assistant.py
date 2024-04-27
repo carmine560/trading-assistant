@@ -54,7 +54,7 @@ class Trade(initializer.Initializer):
 
     def __init__(self, vendor, process):
         """
-        Initialize the Trade with configuration details.
+        Initialize the Trade with the vendor and process.
 
         Args:
             vendor (str): The vendor for the trade.
@@ -1268,9 +1268,6 @@ def start_listeners(trade, config, gui_state, base_manager, speech_manager,
             trade.
         is_persistent (bool): A flag indicating whether the listeners
             are persistent. Defaults to False.
-
-    Returns:
-        None
     """
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed:
@@ -1336,6 +1333,7 @@ def execute_action(trade, config, gui_state, action):
         bool: True if the action was recognized and executed, False
             otherwise.
     """
+    # TODO: move to file_utilities
     def get_latest_screencast():
         """
         Fetch the most recent screencast from the configured directory.
@@ -1344,7 +1342,7 @@ def execute_action(trade, config, gui_state, action):
         screencast directory and regex specified in the configuration.
 
         Returns:
-            str: The path of the latest screencast file.
+            str: The path to the latest screencast file.
         """
         screencast_directory = config['General']['screencast_directory']
         screencast_regex = config['General']['screencast_regex']

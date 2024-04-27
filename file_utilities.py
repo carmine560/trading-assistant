@@ -48,9 +48,6 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
         fingerprint (str, optional): The GPG key fingerprint to use for
             encryption. If not provided, the first available key in the
             GPG keyring is used. Defaults to ''.
-
-    Returns:
-        None
     """
     if GNUPG_IMPORT_ERROR:
         print(GNUPG_IMPORT_ERROR)
@@ -92,9 +89,6 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
         should_compare (bool, optional): If True, the source file is
             compared to the most recent backup, and a new backup is
             only created if the files are different. Defaults to True.
-
-    Returns:
-        None
     """
     encrypted_source = source + '.gpg'
     if os.path.exists(encrypted_source):
@@ -124,7 +118,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
             backups = sorted(
                 [f for f in os.listdir(backup_directory)
                  if re.fullmatch(
-                    fr'{source_base}-\d{{8}}T\d{{6}}{source_suffix}', f)])
+                         fr'{source_base}-\d{{8}}T\d{{6}}{source_suffix}', f)])
 
             if not os.path.exists(backup):
                 should_copy = True
@@ -173,9 +167,6 @@ def check_directory(directory):
 
     Args:
         directory (str): The path to the directory to check or create.
-
-    Returns:
-        None
     """
     if not os.path.isdir(directory):
         try:
@@ -199,9 +190,6 @@ def decrypt_extract_file(source, output_directory):
             extracted.
         output_directory (str): Path to the directory where the contents
             will be extracted.
-
-    Returns:
-        None
     """
     if GNUPG_IMPORT_ERROR:
         print(GNUPG_IMPORT_ERROR)
@@ -246,6 +234,39 @@ def decrypt_extract_file(source, output_directory):
                 sys.exit(1)
 
 
+def get_config_path(script_path, can_create_directory=True):
+    """
+    Get the path to the configuration file.
+
+    Args:
+        script_path (str): The path to the script.
+        can_create_directory (bool, optional): If True, create the
+            directory if it doesn't exist. Defaults to True.
+
+    Returns:
+        str: The path to the configuration file.
+    """
+    script_directory = os.path.basename(os.path.dirname(os.path.abspath(
+        script_path)))
+    config_file = os.path.splitext(os.path.basename(script_path))[0] + '.ini'
+
+    if os.name == 'nt':
+        config_path = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
+                                   script_directory, config_file)
+    else:
+        if 'XDG_CONFIG_HOME' in os.environ:
+            config_path = os.path.join(os.path.expandvars('$XDG_CONFIG_HOME'),
+                                       script_directory, config_file)
+
+        config_path = os.path.join(os.path.expanduser('~/.config'),
+                                   script_directory, config_file)
+
+    if can_create_directory:
+        check_directory(os.path.dirname(config_path))
+
+    return config_path
+
+
 def is_writing(path):
     """
     Determine if a file at the path is currently being written to.
@@ -277,9 +298,6 @@ def move_to_trash(path, option=None):
             trash.
         option (str, optional): An additional option for the 'trash-put'
             command. Defaults to None.
-
-    Returns:
-        None
     """
     command = ['trash-put', path]
     if option:
@@ -295,14 +313,14 @@ def select_executable(executables):
     Find the first available executable from a list of executables.
 
     This function iterates over a list of executable names, and returns
-    the path of the first executable that is found in the system's PATH.
+    the path to the first executable that is found in the system's PATH.
     If none of the executables are found, it returns False.
 
     Args:
         executables (list): A list of executable names to search for.
 
     Returns:
-        str or bool: The path of the first found executable, or False if
+        str or bool: The path to the first found executable, or False if
             none are found.
     """
     for executable in executables:
@@ -332,9 +350,6 @@ def create_bash_completion(script_base, options, values, interpreters,
         interpreters (list): A list of interpreter names for completion.
         completion (str): The path to the file where the completion
             script will be written.
-
-    Returns:
-        None
     """
     variable_str = '    values="'
     line = ''
@@ -399,9 +414,6 @@ def create_powershell_completion(script_base, options, values, interpreters,
         interpreters (list): A list of interpreter names for completion.
         completion (str): The path to the file where the completion
             script will be written.
-
-    Returns:
-        None
     """
     interpreters_regex = fr"({'|'.join(interpreters)})(\.exe)?"
     interpreters_array = f"@({', '.join(map(repr, interpreters))})"
@@ -459,11 +471,6 @@ def create_icon(base, icon_directory=None):
             will be saved. If not provided, the icon is saved in the
             same directory as the script. Defaults to None.
 
-    Raises:
-        RuntimeError: If there is a Windows import error.
-        ValueError: If the acronym could not be created from the base
-            name.
-
     Returns:
         str: The path to the created icon.
     """
@@ -484,8 +491,7 @@ def create_icon(base, icon_directory=None):
                 variation to use. Defaults to an empty string.
 
         Returns:
-            ImageFont.FreeTypeFont: A font object with the scaled font
-                size.
+            FreeTypeFont: A font object with the scaled font size.
         """
         temp_font_size = 100
         temp_font = ImageFont.truetype(font_path, temp_font_size)
@@ -575,9 +581,6 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
             Defaults to None.
         hotkey (str, optional): The hotkey for the shortcut. Defaults to
             None.
-
-    Returns:
-        None
     """
     if WINDOWS_IMPORT_ERROR:
         print(WINDOWS_IMPORT_ERROR)
@@ -615,9 +618,6 @@ def delete_shortcut(base, program_group_base=None, icon_directory=None):
             group. Defaults to None.
         icon_directory (str, optional): The directory of the icon file.
             Defaults to None.
-
-    Returns:
-        None
     """
     if icon_directory:
         icon = os.path.join(icon_directory, base + '.ico')
@@ -756,9 +756,6 @@ def write_chapter(video, current_title, previous_title=None, offset=None):
             when creating a new metadata file. Defaults to None.
         offset (float, optional): The offset in seconds to apply to the
             start time of the new chapter. Defaults to None.
-
-    Returns:
-        None
     """
     if is_writing(video):
         ffmpeg_metadata = os.path.splitext(video)[0] + '.txt'

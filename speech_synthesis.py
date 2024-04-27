@@ -101,9 +101,6 @@ def start_speaking(speech_manager):
     Args:
         speech_manager (SpeechManager): The speech manager controlling
             the speech process.
-
-    Returns:
-        None
     """
     speech_engine = pyttsx3.init()
     voices = speech_engine.getProperty('voices')
@@ -134,9 +131,6 @@ def stop_speaking_process(base_manager, speech_manager, speaking_process):
         speech_manager (SpeechManager): The speech manager to stop
             speaking.
         speaking_process (Process): The speaking process to join.
-
-    Returns:
-        None
     """
     if speech_manager.get_speech_text():
         time.sleep(0.01)
