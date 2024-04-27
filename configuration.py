@@ -12,7 +12,7 @@ from prompt_toolkit import prompt as pt_prompt
 from prompt_toolkit.completion import Completer, Completion
 
 try:
-    import gnupg                # TODO
+    import gnupg
     GNUPG_IMPORT_ERROR = None
 except ModuleNotFoundError as e:
     GNUPG_IMPORT_ERROR = e
@@ -111,9 +111,16 @@ def read_config(config, config_path):
             the configuration into.
         config_path (str): The path to the configuration file (without
             the .gpg extension).
+
+    Raises:
+        RuntimeError: If there is an error importing the 'gnupg' module
+            (used for decryption).
     """
     encrypted_config_path = config_path + '.gpg'
     if os.path.exists(encrypted_config_path):
+        if GNUPG_IMPORT_ERROR:
+            raise RuntimeError(GNUPG_IMPORT_ERROR)
+
         with open(encrypted_config_path, 'rb') as f:
             encrypted_config = f.read()
 
@@ -136,9 +143,16 @@ def write_config(config, config_path):
     Args:
         config (ConfigParser): The configuration parser object to write.
         config_path (str): The path to the configuration file.
+
+    Raises:
+        RuntimeError: If there is an error importing the 'gnupg' module
+            (used for encryption).
     """
     encrypted_config_path = config_path + '.gpg'
     if os.path.exists(encrypted_config_path):
+        if GNUPG_IMPORT_ERROR:
+            raise RuntimeError(GNUPG_IMPORT_ERROR)
+
         config_string = StringIO()
         config.write(config_string)
         gpg = gnupg.GPG()
@@ -225,7 +239,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
         options = default_config.options(section)
         for option in user_config[section]:
             if (section not in user_option_ignored_sections
-                    and option not in default_config[section]):
+                and option not in default_config[section]):
                 options.append(option)
 
         while option_index < len(options):
