@@ -849,7 +849,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         config = configparser.ConfigParser(
             interpolation=configparser.ExtendedInterpolation())
     else:
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(interpolation=None)
 
     if not trade.executable and trade.process == 'HYPERSBI2':
         location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
@@ -889,7 +889,7 @@ def configure(trade, can_interpolate=True, can_override=True):
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'date_header': '日付',
-        'date_format': '%%Y/%%m/%%d'}
+        'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
         'opening_time': '09:00:00',
         'closing_time': '15:30:00',
@@ -1002,7 +1002,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             variables_section['current_number_of_trades'] = '0'
 
         if trade.process == 'HYPERSBI2':
-            theme_config = configparser.ConfigParser()
+            theme_config = configparser.ConfigParser(interpolation=None)
             theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
                                      trade.vendor, trade.process,
                                      'theme.ini')
@@ -1178,22 +1178,22 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
             modified_time = pd.Timestamp(0, tz='UTC', unit='s')
             break
 
+    df = pd.read_csv(market_holidays, header=None)
     # Assume the web page is updated at 'update_time'.
     latest = pd.Timestamp(update_time, tz=time_zone)
     if pd.Timestamp.now(tz='UTC') < latest:
         latest -= pd.Timedelta(days=1)
 
-    df = pd.read_csv(market_holidays, header=None)
-    date_format = re.sub('%%', '%', config['Market Holidays']['date_format'])
-
-    while (df[0].str.contains(latest.strftime(date_format)).any()
+    while (df[0].str.contains(latest.strftime(
+            config['Market Holidays']['date_format'])).any()
            or latest.weekday() == 5 or latest.weekday() == 6):
         latest -= pd.Timedelta(days=1)
 
     if modified_time < latest:
         if volatile_time:
             now = pd.Timestamp.now(tz=time_zone)
-            if (df[0].str.contains(now.strftime(date_format)).any()
+            if (df[0].str.contains(now.strftime(
+                    config['Market Holidays']['date_format'])).any()
                     or now.weekday() == 5 or now.weekday() == 6):
                 return latest
             if (not pd.Timestamp(volatile_time, tz=time_zone) <= now

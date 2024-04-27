@@ -224,7 +224,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
             and default_config.options(section)):
             sections.append(section)
 
-    user_config = configparser.ConfigParser()
+    user_config = configparser.ConfigParser(interpolation=None)
     read_config(user_config, config_path)
 
     while section_index < len(sections):
