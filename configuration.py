@@ -40,52 +40,15 @@ if sys.platform == 'win32':
 
 
 class CustomWordCompleter(Completer):
-    """
-    Provide custom word completion by extending the Completer class.
-
-    This class extends the Completer class and overrides the
-    get_completions method to provide custom word completion based on a
-    provided list of words.
-
-    Attributes:
-        words (list): A list of words for auto-completion.
-        ignore_case (bool): A flag to determine if the completion should
-            be case-insensitive.
-
-    Methods:
-        get_completions(document, complete_event): Generates completions
-            for the current word before the cursor.
-    """
+    """Provide custom word completion by extending the Completer class."""
 
     def __init__(self, words, ignore_case=False):
-        """
-        Initialize with words for auto-completion.
-
-        Args:
-            words (list): Words for auto-completion.
-            ignore_case (bool, optional): If True, completion is
-                case-insensitive. Defaults to False.
-        """
+        """Initialize with words for auto-completion."""
         self.words = words
         self.ignore_case = ignore_case
 
     def get_completions(self, document, complete_event):
-        """
-        Yield completions for the current word before the cursor.
-
-        This method is called by the prompt toolkit to provide
-        completions based on the current word before the cursor in the
-        document. It yields Completion instances for each matching word
-        in the words list.
-
-        Args:
-            document (Document): The current document instance.
-            complete_event (CompleteEvent): The completion event
-                instance.
-
-        Yields:
-            Completion: The completion instance for each matching word.
-        """
+        """Yield completions for the current word before the cursor."""
         word_before_cursor = document.current_line_before_cursor.lstrip()
         for word in self.words:
             if self.ignore_case:
@@ -97,25 +60,7 @@ class CustomWordCompleter(Completer):
 
 
 def read_config(config, config_path):
-    """
-    Read and load configuration from a file, decrypt if encrypted.
-
-    This function checks if an encrypted version of the configuration
-    file exists (.gpg extension). If it does, the function decrypts the
-    file and reads it into the provided ConfigParser object. If the
-    encrypted file does not exist, it reads the plain text configuration
-    file.
-
-    Args:
-        config (ConfigParser): The configuration parser object to load
-            the configuration into.
-        config_path (str): The path to the configuration file (without
-            the .gpg extension).
-
-    Raises:
-        RuntimeError: If there is an error importing the 'gnupg' module
-            (used for decryption).
-    """
+    """Read and load configuration from a file, decrypt if encrypted."""
     encrypted_config_path = config_path + '.gpg'
     if os.path.exists(encrypted_config_path):
         if GNUPG_IMPORT_ERROR:
@@ -132,22 +77,7 @@ def read_config(config, config_path):
 
 
 def write_config(config, config_path):
-    """
-    Write config to file or encrypt and write if encrypted file exists.
-
-    This function writes the given configuration to a file. If an
-    encrypted version of the file exists, the configuration is encrypted
-    using GPG and written to the encrypted file. If not, the
-    configuration is written to the file as is.
-
-    Args:
-        config (ConfigParser): The configuration parser object to write.
-        config_path (str): The path to the configuration file.
-
-    Raises:
-        RuntimeError: If there is an error importing the 'gnupg' module
-            (used for encryption).
-    """
+    """Write config to file or encrypt and write if encrypted file exists."""
     encrypted_config_path = config_path + '.gpg'
     if os.path.exists(encrypted_config_path):
         if GNUPG_IMPORT_ERROR:
@@ -175,39 +105,9 @@ def write_config(config, config_path):
 def check_config_changes(default_config, config_path, excluded_sections=(),
                          user_option_ignored_sections=(),
                          backup_parameters=None):
-    """
-    Compare default and user configurations.
-
-    This function iterates over the sections and options in the default
-    configuration, compares them with the user's configuration, and
-    prints any differences. It also provides options to revert changes
-    to the default configuration.
-
-    Args:
-        default_config (ConfigParser): The default configuration parser
-            object.
-        config_path (str): Path to the user's configuration file.
-        excluded_sections (tuple, optional): Sections to be excluded
-            from checking.
-        user_option_ignored_sections (tuple, optional): Sections where
-            user options are ignored.
-        backup_parameters (dict, optional): Parameters for backing up
-            the file. Defaults to None.
-    """
+    """Compare default and user configurations."""
     def truncate_string(string):
-        """
-        Truncate a string to a maximum length.
-
-        This function truncates a string to a maximum length of 256
-        characters. If the string exceeds this limit, it appends '...'
-        to the end.
-
-        Args:
-            string (str): The string to be truncated.
-
-        Returns:
-            str: The truncated string.
-        """
+        """Truncate a string to a maximum length."""
         max_length = 256
         if len(string) > max_length:
             string = string[:max_length] + '...'
@@ -298,23 +198,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
 
 
 def list_section(config, section):
-    """
-    Retrieve all options from a specified section in a configuration.
-
-    This function checks if the given section exists in the
-    configuration. If it does, it returns a list of all options in that
-    section. If the section does not exist, it prints a message and
-    returns False.
-
-    Args:
-        config (ConfigParser): The configuration parser object to
-            retrieve options from.
-        section (str): The section to retrieve options from.
-
-    Returns:
-        list or bool: A list of options if the section exists, False
-            otherwise.
-    """
+    """Retrieve all options from a specified section in a configuration."""
     options = []
     if config.has_section(section):
         for option in config[section]:
@@ -328,35 +212,7 @@ def list_section(config, section):
 def modify_section(config, section, config_path, backup_parameters=None,
                    can_back=False, can_insert_delete=False, prompts=None,
                    items=None, all_values=None):
-    """
-    Modify a section of a configuration based on user input.
-
-    This function checks if the section exists in the configuration. If
-    it does, the function provides options to the user to insert,
-    modify, or delete the value. The modification is based on the
-    key-value pairs provided in the prompts and all_values dictionaries.
-
-    Args:
-        config (ConfigParser): The configuration parser object.
-        section (str): The section in the configuration file.
-        config_path (str): The path to the configuration file.
-        backup_parameters (dict, optional): Parameters for backing up
-            the file. Defaults to None.
-        can_back (bool, optional): Whether the user can go back.
-            Defaults to False.
-        can_insert_delete (bool, optional): Whether the user can insert
-            or delete an option. Defaults to False.
-        prompts (dict[str, str], optional): A dictionary containing
-            prompt messages for the user. Defaults to None.
-        items (dict[str, Any], optional): A dictionary containing items
-            used for modification. Defaults to None.
-        all_values (list[str], optional): A list of all allowed values.
-            Defaults to None.
-
-    Returns:
-        bool: True if the section exists and is modified, False
-            otherwise.
-    """
+    """Modify a section of a configuration based on user input."""
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
 
@@ -421,41 +277,7 @@ def modify_section(config, section, config_path, backup_parameters=None,
 def modify_option(config, section, option, config_path, backup_parameters=None,
                   can_back=False, can_insert_delete=False, initial_value=None,
                   prompts=None, items=None, all_values=None, limits=()):
-    """
-    Modify an option in a section of a configuration file.
-
-    This function checks if the option exists in the section of the
-    configuration file. If it does, the function provides options to the
-    user to modify, toggle, empty, or default the value. The
-    modification is based on the key-value pairs provided in the prompts
-    and all_values dictionaries.
-
-    Args:
-        config (ConfigParser): The configuration parser object.
-        section (str): The section in the configuration file.
-        option (str): The option to be modified.
-        config_path (str): The path to the configuration file.
-        backup_parameters (dict, optional): Parameters for backing up
-            the file. Defaults to None.
-        can_back (bool, optional): Whether the user can go back.
-            Defaults to False.
-        can_insert_delete (bool, optional): Whether the user can insert
-            or delete an option. Defaults to False.
-        initial_value (str, optional): The initial value of the option.
-            Defaults to None.
-        prompts (dict[str, str], optional): A dictionary containing
-            prompt messages for the user. Defaults to None.
-        items (dict[str, Any], optional): A dictionary containing items
-            used for modification. Defaults to None.
-        all_values (list[str], optional): A list of all allowed values.
-            Defaults to None.
-        limits (tuple[int or float, int or float], optional): A tuple
-            containing the minimum and maximum allowed values. Defaults
-            to an empty tuple.
-
-    Returns:
-        bool: True if the option was modified, False otherwise.
-    """
+    """Modify an option in a section of a configuration file."""
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
     if initial_value:
@@ -529,25 +351,7 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
 
 def delete_option(config, section, option, config_path,
                   backup_parameters=None):
-    """
-    Delete an option from a section in a configuration file.
-
-    This function checks if the option exists in the section of the
-    configuration file. If it does, the function removes the option and
-    writes the updated configuration back to the file. If the option
-    does not exist, the function prints a message and returns False.
-
-    Args:
-        config (ConfigParser): The configuration parser object.
-        section (str): The section in the configuration file.
-        option (str): The option to be deleted.
-        config_path (str): The path to the configuration file.
-        backup_parameters (dict, optional): Parameters for backing up
-            the file. Defaults to None.
-
-    Returns:
-        bool: True if the option was deleted, False otherwise.
-    """
+    """Delete an option from a section in a configuration file."""
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
 
@@ -561,26 +365,7 @@ def delete_option(config, section, option, config_path,
 
 
 def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
-    """
-    Iterate over a dictionary and modify its values based on user input.
-
-    This function iterates over a dictionary. For each key-value pair,
-    it provides options to the user to modify, empty, or back the value.
-    The modification is based on the key-value pairs provided in the
-    prompts and all_values dictionaries.
-
-    Args:
-        dictionary (dict): The dictionary to be modified.
-        level (int, optional): The current level of indentation for
-            printing. Defaults to 0.
-        prompts (dict[str, str], optional): A dictionary containing
-            prompt messages for the user. Defaults to None.
-        all_values (list[str], optional): A list of all allowed values.
-            Defaults to None.
-
-    Returns:
-        dict: The modified dictionary.
-    """
+    """Iterate over a dictionary and modify its values based on user input."""
     index = 0
     keys = list(dictionary.keys())
     value_prompt = prompts.get('value', 'value')
@@ -613,26 +398,7 @@ def modify_dictionary(dictionary, level=0, prompts=None, all_values=None):
 
 
 def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
-    """
-    Modify a tuple based on user prompts and provided values.
-
-    This function iterates over a tuple. For each element, it provides
-    options to the user to insert, modify, or delete the element. The
-    modification is based on the key-value pairs provided in the prompts
-    and all_values dictionaries.
-
-    Args:
-        tuple_entry (tuple): The tuple to be modified.
-        level (int, optional): The current level of indentation for
-            printing. Defaults to 0.
-        prompts (dict[str, str], optional): A dictionary containing
-            prompt messages for the user. Defaults to None.
-        all_values (list[str], optional): A list of all allowed values.
-            Defaults to None.
-
-    Returns:
-        tuple: The modified tuple.
-    """
+    """Modify a tuple based on user prompts and provided values."""
     tuple_entry = list(tuple_entry)
     values_prompt = prompts.get('values', ())
 
@@ -691,26 +457,7 @@ def modify_tuple(tuple_entry, level=0, prompts=None, all_values=None):
 
 
 def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
-    """
-    Modify a list of tuples based on user prompts and provided items.
-
-    This function iterates over a list of tuples. For each tuple, it
-    provides options to the user to insert, modify, or delete the tuple.
-    The modification is based on the key-value pairs provided in the
-    prompts and items dictionaries.
-
-    Args:
-        tuple_list (list[tuple]): The list of tuples to be modified.
-        level (int, optional): The current level of indentation for
-            printing. Defaults to 0.
-        prompts (dict[str, str], optional): A dictionary containing
-            prompt messages for the user. Defaults to None.
-        items (dict[str, Any], optional): A dictionary containing items
-            used for modification. Defaults to None.
-
-    Returns:
-        list[tuple]: The modified list of tuples.
-    """
+    """Modify a list of tuples based on user prompts and provided items."""
     if not isinstance(tuple_list, list):
         tuple_list = []
     if items is None:
@@ -819,24 +566,7 @@ def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
 
 
 def get_strict_boolean(config, section, option):
-    """
-    Retrieve a strict boolean value from a configuration section.
-
-    This function retrieves the value of the specified option from the
-    given configuration section. If the value is not a strict boolean
-    (True or False), it raises a ValueError.
-
-    Args:
-        config (ConfigParser): The configuration parser object.
-        section (str): The name of the section in the configuration.
-        option (str): The name of the option to retrieve.
-
-    Returns:
-        bool: The boolean value of the option.
-
-    Raises:
-        ValueError: If the value of the option is not a strict boolean.
-    """
+    """Retrieve a strict boolean value from a configuration section."""
     value = config.get(section, option)
     if value.lower() not in {'true', 'false'}:
         raise ValueError(f'Invalid boolean value for {option} in {section}.')
@@ -844,22 +574,7 @@ def get_strict_boolean(config, section, option):
 
 
 def evaluate_value(value):
-    """
-    Evaluate the given value using Python's abstract syntax trees.
-
-    This function attempts to evaluate the given value using Python's
-    ast.literal_eval function. If the evaluation fails due to a
-    SyntaxError or ValueError, the function returns None. For other
-    exceptions such as TypeError, MemoryError, or RecursionError, the
-    function prints the exception and exits the program.
-
-    Args:
-        value (str): The value to be evaluated.
-
-    Returns:
-        Any: The evaluated value, or None if the evaluation fails due to
-            a SyntaxError or ValueError.
-    """
+    """Evaluate the given value using Python's abstract syntax trees."""
     evaluated_value = None
     try:
         evaluated_value = ast.literal_eval(value)
@@ -872,24 +587,7 @@ def evaluate_value(value):
 
 
 def tidy_answer(answers, level=0):
-    """
-    Tidy up the answer based on user input and initialism.
-
-    This function generates an initialism from the provided answers,
-    prompts the user for input, and returns the corresponding answer
-    from the list. If the user's input does not match the initial
-    character of any answer, an empty string is returned.
-
-    Args:
-        answers (list[str]): The list of possible answers.
-        level (int, optional): The current level of indentation for
-            printing. Defaults to 0.
-
-    Returns:
-        str: The corresponding answer from the list based on the user's
-            input, or an empty string if the input does not match the
-            initial character of any answer.
-    """
+    """Tidy up the answer based on user input and initialism."""
     initialism = ''
 
     previous_initialism = ''
@@ -923,29 +621,7 @@ def tidy_answer(answers, level=0):
 
 
 def modify_value(prompt, level=0, value='', all_values=None, limits=()):
-    """
-    Modify a value based on user input and specified limits.
-
-    This function prompts the user for input, checks if the input is
-    within the specified limits, and modifies the value accordingly. If
-    the input is not within the allowed values, the function recursively
-    calls itself until a valid input is provided.
-
-    Args:
-        prompt (str): The prompt message for the user.
-        level (int, optional): The current level of indentation for
-            printing. Defaults to 0.
-        value (str, optional): The initial value. Defaults to an empty
-            string.
-        all_values (list[str], optional): A list of all allowed values.
-            Defaults to None.
-        limits (tuple[int or float, int or float], optional): A tuple
-            containing the minimum and maximum allowed values. Defaults
-            to an empty tuple.
-
-    Returns:
-        str: The modified value.
-    """
+    """Modify a value based on user input and specified limits."""
     value = prompt_for_input(prompt, level=level, value=value,
                              all_values=all_values)
     minimum_value, maximum_value = limits or (None, None)
@@ -979,26 +655,7 @@ def modify_value(prompt, level=0, value='', all_values=None, limits=()):
 
 
 def configure_position(level=0, value=''):
-    """
-    Configure the position based on user input or mouse click.
-
-    This function prompts the user for input to set the coordinates. If
-    the user inputs 'c', the function waits for a mouse click and sets
-    the coordinates to the mouse position. If the user inputs two
-    comma-separated numbers, the function sets the coordinates to these
-    numbers. If the input is invalid, the function recursively calls
-    itself until valid coordinates are set.
-
-    Args:
-        level (int, optional): The indentation level for printed
-            messages. Defaults to 0.
-        value (str, optional): The initial value for the coordinates.
-            Defaults to an empty string.
-
-    Returns:
-        str: The configured coordinates as a string in the format 'x,
-            y'.
-    """
+    """Configure the position based on user input or mouse click."""
     if GUI_IMPORT_ERROR:
         print(GUI_IMPORT_ERROR)
         return False
@@ -1033,25 +690,7 @@ def configure_position(level=0, value=''):
 
 
 def prompt_for_input(prompt, level=0, value='', all_values=None):
-    """
-    Prompt the user for input and return the entered value.
-
-    This function displays a prompt to the user and waits for their
-    input. If a list of all possible values is provided, it uses a
-    custom word completer to assist the user in entering their response.
-
-    Args:
-        prompt (str): The prompt message for the user.
-        level (int, optional): The current level of indentation for
-            printing. Defaults to 0.
-        value (str, optional): The initial value. Defaults to an empty
-            string.
-        all_values (list[str], optional): A list of all allowed values.
-            Defaults to None.
-
-    Returns:
-        str: The user's input value.
-    """
+    """Prompt the user for input and return the entered value."""
     if value:
         prompt_prefix = (f'{INDENT * level}{prompt} '
                          f'{ANSI_CURRENT}{value}{ANSI_RESET}: ')

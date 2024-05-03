@@ -7,36 +7,10 @@ import file_utilities
 
 
 class Initializer:
-    """
-    Initialize the script execution environment.
-
-    This class initializes the script execution environment based on the
-    provided vendor, process, and script path. It checks if the process
-    exists, determines the script file and configuration directory, and
-    ensures the configuration directory exists.
-
-    Attributes:
-        vendor (str): The vendor name.
-        process (str): The process name or path.
-        script_path (str): The path to the script.
-        executable (str): The absolute path to the process if it exists.
-        script_file (str): The base name of the script path.
-        script_base (str): The base name of the script file without
-            extension.
-        config_directory (str): The configuration directory path.
-        config_path (str): The configuration file path.
-        actions_section (str): The actions section name.
-    """
+    """Initialize the script execution environment."""
 
     def __init__(self, vendor, process, script_path):
-        """
-        Construct an Initializer instance.
-
-        Args:
-            vendor (str): The vendor name.
-            process (str): The process name or path.
-            script_path (str): The path to the script.
-        """
+        """Construct an Initializer instance."""
         self.vendor = vendor
         if os.path.exists(process):
             self.executable = os.path.abspath(process)
@@ -55,21 +29,7 @@ class Initializer:
 
 
 def extract_commands(source, command='command'):
-    """
-    Extract specific commands from the given source code.
-
-    This function parses the source code and extracts the values of the
-    specified command from all 'if' conditions where the command is
-    compared with a constant value.
-
-    Args:
-        source (str): The source code to parse.
-        command (str, optional): The command to look for. Defaults to
-            'command'.
-
-    Returns:
-        list: A list of command values extracted from the source code.
-    """
+    """Extract specific commands from the given source code."""
     commands = []
     tree = ast.parse(source)
     for node in ast.walk(tree):

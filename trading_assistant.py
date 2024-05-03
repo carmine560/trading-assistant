@@ -40,26 +40,10 @@ SECURITIES_CODE_REGEX = '[1-9]' + SANS_INITIAL_SECURITIES_CODE_REGEX
 
 
 class Trade(initializer.Initializer):
-    """
-    Handle trading operations for a specific vendor and process.
-
-    This class extends the Initializer class and provides methods for
-    handling trading operations, including initializing attributes,
-    getting symbols, and handling mouse clicks and key presses.
-
-    Args:
-        vendor (str): The vendor for the trade.
-        process (str): The process for the trade.
-    """
+    """Handle trading operations for a specific vendor and process."""
 
     def __init__(self, vendor, process):
-        """
-        Initialize the Trade with the vendor and process.
-
-        Args:
-            vendor (str): The vendor for the trade.
-            process (str): The process for the trade.
-        """
+        """Initialize the Trade with the vendor and process."""
         super().__init__(vendor, process, __file__)
         self.market_directory = os.path.join(self.config_directory, 'market')
         self.market_holidays = os.path.join(self.market_directory,
@@ -133,17 +117,7 @@ class Trade(initializer.Initializer):
         self.share_size = 0
 
     def get_symbol(self, hwnd, title_regex):
-        """
-        Get the symbol from a window title matching a regular expression.
-
-        Args:
-            hwnd (int): The handle of the window.
-            title_regex (str): The regular expression to match the
-                title.
-
-        Returns:
-            bool: False if a match is found, True otherwise.
-        """
+        """Get the symbol from a window title matching a regular expression."""
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
             self.symbol = matched.group(1)
@@ -151,17 +125,7 @@ class Trade(initializer.Initializer):
         return True
 
     def on_click(self, _1, _2, button, pressed, config, gui_state):
-        """
-        Handle mouse click events.
-
-        Args:
-            _1, _2: Unused parameters.
-            button (str): The button that was clicked.
-            pressed (bool): Whether the button was pressed.
-            config (ConfigParser): The configuration parser object.
-            gui_state (GuiState): An instance of the GuiState class that
-                manages the state of the GUI.
-        """
+        """Handle mouse click events."""
         if gui_state.is_interactive_window():
             if not pressed:
                 action = configuration.evaluate_value(
@@ -171,15 +135,7 @@ class Trade(initializer.Initializer):
                                                 action)
 
     def on_press(self, key, config, gui_state):
-        """
-        Handle key press events.
-
-        Args:
-            key (str): The key that was pressed.
-            config (ConfigParser): The configuration parser object.
-            gui_state (GuiState): An instance of the GuiState class that
-                manages the state of the GUI.
-        """
+        """Handle key press events."""
         if gui_state.is_interactive_window():
             if self.keyboard_listener_state == 0:
                 if key in self.function_keys:
@@ -199,29 +155,10 @@ class Trade(initializer.Initializer):
 
 
 class IndicatorThread(threading.Thread):
-    """
-    Handle a thread for displaying trading indicators.
-
-    This class is a subclass of threading.Thread. It manages a thread
-    that displays trading indicators on the screen.
-
-    Attributes:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-        root (Tk): The root Tkinter object for the GUI.
-        stop_event (Event): A threading.Event object used to signal the
-            thread to stop.
-    """
+    """Handle a thread for displaying trading indicators."""
 
     def __init__(self, trade, config):
-        """
-        Construct a new 'IndicatorThread' object.
-
-        Args:
-            trade (Trade): An instance of a Trade class representing
-                trades.
-            config (ConfigParser): The configuration parser object.
-        """
+        """Construct a new 'IndicatorThread' object."""
         super().__init__()
         self.trade = trade
         self.config = config
@@ -229,13 +166,7 @@ class IndicatorThread(threading.Thread):
         self.stop_event = threading.Event()
 
     def run(self):
-        """
-        Run the thread, creating and placing widgets on the screen.
-
-        This method overrides the run method of threading.Thread. It
-        creates and places widgets on the screen according to the
-        configuration settings.
-        """
+        """Run the thread, creating and placing widgets on the screen."""
         def place_widget(widget, position):
             work_left, work_top, work_right, work_bottom = GetMonitorInfo(
                 MonitorFromPoint((0, 0))).get('Work')
@@ -340,20 +271,7 @@ class IndicatorThread(threading.Thread):
         self.root.destroy()
 
     def check_for_modifications(self, widget, string, section, key, limits):
-        """
-        Check for modifications in the widget and update if necessary.
-
-        Args:
-            widget (Widget): The widget to check for modifications.
-            string (StringVar): The string variable associated with the
-                widget.
-            section (str): The section in the configuration where the
-                widget's value is stored.
-            key (str): The key in the section where the widget's value
-                is stored.
-            limits (tuple): A tuple containing the minimum and maximum
-                allowed values for the widget.
-        """
+        """Check for modifications in the widget and update if necessary."""
         self.on_text_modified(None, widget, string, section, key, limits)
         self.root.after(
             1000,
@@ -361,22 +279,7 @@ class IndicatorThread(threading.Thread):
                                                  limits))
 
     def on_text_modified(self, _, widget, string, section, key, limits):
-        """
-        Handle text modification in the widget.
-
-        Args:
-            _: A dummy argument to handle the event parameter passed by
-                the Tkinter event handler. Not used.
-            widget (Widget): The widget where the text was modified.
-            string (StringVar): The string variable associated with the
-                widget.
-            section (str): The section in the configuration where the
-                widget's value is stored.
-            key (str): The key in the section where the widget's value
-                is stored.
-            limits (tuple): A tuple containing the minimum and maximum
-                allowed values for the widget.
-        """
+        """Handle text modification in the widget."""
         minimum_value, maximum_value = limits
         modified_text = widget.get() or '0.0'
         modified_text = max(minimum_value, min(maximum_value,
@@ -386,16 +289,7 @@ class IndicatorThread(threading.Thread):
         configuration.write_config(self.config, self.trade.config_path)
 
     def is_valid_float(self, user_input):
-        """
-        Check if the user input is a valid float.
-
-        Args:
-            user_input: The user input to check.
-
-        Returns:
-            bool: True if the user input is a valid float, False
-                otherwise.
-        """
+        """Check if the user input is a valid float."""
         if user_input == '':
             return True
         try:
@@ -409,38 +303,15 @@ class IndicatorThread(threading.Thread):
         self.stop_event.set()
 
     def is_stopped(self):
-        """
-        Check if the thread has been signaled to stop.
-
-        Returns:
-            bool: True if the stop_event is set, False otherwise.
-        """
+        """Check if the thread has been signaled to stop."""
         return self.stop_event.is_set()
 
 
 class IndicatorTooltip:
-    """
-    Manage a tooltip for a specific widget.
-
-    This class creates a tooltip that appears when the mouse hovers over
-    the specified widget. The tooltip disappears when the mouse leaves
-    the widget.
-
-    Attributes:
-        widget (Widget): The widget for which the tooltip is created.
-        text (str): The text displayed in the tooltip.
-        tooltip (Tooltip): The tooltip that is displayed.
-    """
+    """Manage a tooltip for a specific widget."""
 
     def __init__(self, widget, text):
-        """
-        Construct a new 'IndicatorTooltip' object.
-
-        Args:
-            widget (Widget): The widget for which the tooltip is
-                created.
-            text (str): The text to be displayed in the tooltip.
-        """
+        """Construct a new 'IndicatorTooltip' object."""
         self.widget = widget
         self.text = text
         self.tooltip = None
@@ -448,17 +319,7 @@ class IndicatorTooltip:
         self.widget.bind('<Leave>', self.hide_tooltip)
 
     def show_tooltip(self, _):
-        """
-        Show the tooltip when the mouse hovers over the widget.
-
-        This method is bound to the '<Enter>' event of the widget. It
-        creates a new tooltip and places it near the widget. The tooltip
-        is a Tkinter Toplevel widget with the provided text.
-
-        Args:
-            _: A dummy argument to handle the event parameter passed by
-                the Tkinter event handler. Not used.
-        """
+        """Show the tooltip when the mouse hovers over the widget."""
         x, y, _, _ = self.widget.bbox('insert')
         x += self.widget.winfo_rootx() + 20
         y += self.widget.winfo_rooty() + 20
@@ -473,58 +334,23 @@ class IndicatorTooltip:
                  font=('Bahnschrift', -12), text=self.text).pack()
 
     def hide_tooltip(self, _):
-        """
-        Hide the tooltip when the mouse leaves the widget.
-
-        This method is bound to the '<Leave>' event of the widget. It
-        destroys the tooltip if it exists.
-
-        Args:
-            _: A dummy argument to handle the event parameter passed by
-                the Tkinter event handler. Not used.
-        """
+        """Hide the tooltip when the mouse leaves the widget."""
         if hasattr(self, 'tooltip'):
             self.tooltip.destroy()
 
 
 class MessageThread(threading.Thread):
-    """
-    Handle a thread for displaying a message in a Tkinter window.
-
-    This class is a subclass of threading.Thread. It manages a thread
-    that displays a message in a Tkinter window. The message, trade
-    details, and configuration are passed as parameters during the
-    initialization of an instance.
-
-    Attributes:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-        text (str): The text to be displayed in the message.
-    """
+    """Handle a thread for displaying a message in a Tkinter window."""
 
     def __init__(self, trade, config, text):
-        """
-        Construct a new 'MessageThread' object.
-
-        Args:
-            trade (Trade): An instance of a Trade class representing
-                trades.
-            config (ConfigParser): The configuration parser object.
-            text (str): The text to be displayed in the message.
-        """
+        """Construct a new 'MessageThread' object."""
         super().__init__()
         self.trade = trade
         self.config = config
         self.text = text
 
     def run(self):
-        """
-        Run the thread, creating and displaying a message window.
-
-        This method overrides the run method of threading.Thread. It
-        creates a Tkinter window and displays a message in it according
-        to the configuration settings.
-        """
+        """Run the thread, creating and displaying a message window."""
         process_section = self.config[self.trade.process]
         widgets_section = self.config[self.trade.widgets_section]
 
@@ -553,18 +379,7 @@ class MessageThread(threading.Thread):
 
 
 def main():
-    """
-    Execute the main program based on command-line arguments.
-
-    This function parses command-line arguments and executes the
-    appropriate actions for configuring a trading system. It supports
-    various options including setting the brokerage and process, saving
-    customer margin ratios and previous market data, executing an
-    action, starting mouse and keyboard listeners, starting the
-    scheduler, and configuring various settings. It also supports
-    creating and deleting startup scripts and actions, checking
-    configuration changes, and exiting the program.
-    """
+    """Execute the main program based on command-line arguments."""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     parser.add_argument(
@@ -825,26 +640,7 @@ def main():
 
 
 def configure(trade, can_interpolate=True, can_override=True):
-    """
-    Set up the configuration for a trade.
-
-    This function sets up the configuration for a trade based on the
-    provided parameters. It checks if the trade executable exists and
-    sets it up if not. It also sets up the configuration for the trade
-    process and updates the configuration if necessary.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        can_interpolate (bool): A flag indicating whether the
-            configuration parser should interpolate the values. Defaults
-            to True.
-        can_override (bool): A flag indicating whether the configuration
-            can be overridden. Defaults to True.
-
-    Returns:
-        ConfigParser: The configuration parser object with the set up
-            configuration.
-    """
+    """Set up the configuration for a trade."""
     if can_interpolate:
         config = configparser.ConfigParser(
             interpolation=configparser.ExtendedInterpolation())
@@ -933,7 +729,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'clock_label_position': 'nw',
         'clock_label_font_size': '12',
         'status_bar_frame_position': 'sw',
-        'status_bar_frame_font_size': '24',
+        'status_bar_frame_font_size': '17',
         'message_font_size': '14'}
     config[trade.startup_script_section] = {
         'pre_start_options': '',
@@ -1015,17 +811,7 @@ def configure(trade, can_interpolate=True, can_override=True):
 
 
 def save_customer_margin_ratios(trade, config):
-    """
-    Save customer margin ratios for a given trade.
-
-    This function retrieves customer margin ratios from a specified URL,
-    processes the data, and saves it to a CSV file. The URL and other
-    parameters are specified in the configuration for the trade.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-    """
+    """Save customer margin ratios for a given trade."""
     section = config[trade.customer_margin_ratios_section]
 
     if get_latest(config, trade.market_holidays, section['update_time'],
@@ -1062,21 +848,7 @@ def save_customer_margin_ratios(trade, config):
 
 
 def save_market_data(trade, config, clipboard=False):
-    """
-    Save market data for a given trade.
-
-    This function retrieves market data from a specified URL, processes
-    the data, and saves it to a CSV file or copies it to the clipboard.
-    The URL and other parameters are specified in the configuration for
-    the trade.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-        clipboard (bool): A boolean indicating whether to copy the data
-            to the clipboard instead of saving it to a file. Defaults to
-            False.
-    """
+    """Save market data for a given trade."""
     section = config['Market Data']
 
     if clipboard:
@@ -1128,27 +900,7 @@ def save_market_data(trade, config, clipboard=False):
 
 def get_latest(config, market_holidays, update_time, time_zone, *paths,
                volatile_time=None):
-    """
-    Check if the latest market data needs to be fetched.
-
-    This function checks if the latest market data needs to be fetched
-    based on the modification times of the market holidays and other
-    specified paths. It also considers the update time of the web page
-    and the current time.
-
-    Args:
-        config (ConfigParser): The configuration parser object.
-        market_holidays (str): The path to the market holidays file.
-        update_time (str): The update time of the web page.
-        time_zone (str): The time zone to consider for the update time.
-        *paths (str): Paths to files to check for modification times.
-        volatile_time (str): The volatile time to consider. Defaults to
-            None.
-
-    Returns:
-        bool: True if the latest data needs to be fetched, False
-            otherwise.
-    """
+    """Check if the latest market data needs to be fetched."""
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
     if os.path.exists(market_holidays):
         modified_time = pd.Timestamp(os.path.getmtime(market_holidays),
@@ -1205,21 +957,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
 
 
 def start_scheduler(trade, config, gui_state, process):
-    """
-    Start a scheduler for executing actions at specified times.
-
-    This function creates a scheduler that executes specified actions at
-    certain times based on the configuration for a trade. The actions
-    are executed if the process is running. If the process is not
-    running, all scheduled actions are cancelled.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-        gui_state (GuiState): An instance of the GuiState class that
-            manages the state of the GUI.
-        process (str): The name of the process to check.
-    """
+    """Start a scheduler for executing actions at specified times."""
     scheduler = sched.scheduler(time.time, time.sleep)
     schedules = []
 
@@ -1247,28 +985,7 @@ def start_scheduler(trade, config, gui_state, process):
 
 def start_listeners(trade, config, gui_state, base_manager, speech_manager,
                     is_persistent=False):
-    """
-    Initiate listeners for mouse and keyboard events.
-
-    This function initiates listeners for mouse and keyboard events. It
-    also initiates a speaking process and a thread to wait for the
-    listeners to stop. The listeners and the speaking process are
-    associated with a trade.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-        gui_state (GuiState): An instance of the GuiState class that
-            manages the state of the GUI.
-        base_manager (BaseManager): An instance of the BaseManager class
-            from Python's multiprocessing module. It's used to start a
-            manager server process for the trade.
-        speech_manager (SpeechManager): An instance of the SpeechManager
-            class, used for handling speech synthesis tasks in the
-            trade.
-        is_persistent (bool): A flag indicating whether the listeners
-            are persistent. Defaults to False.
-    """
+    """Initiate listeners for mouse and keyboard events."""
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed:
         trade.on_click(x, y, button, pressed, config, gui_state))
@@ -1291,21 +1008,7 @@ def start_listeners(trade, config, gui_state, base_manager, speech_manager,
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
-    """
-    Start a new thread to execute a specified action.
-
-    This function creates a new thread that executes a specified action
-    based on the configuration for a trade. The action is executed in
-    the context of the trade and the current state of the GUI.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-        gui_state (GuiState): An instance of the GuiState class that
-            manages the state of the GUI.
-        action (list[tuple]): The action to be executed in the new
-            thread.
-    """
+    """Start a new thread to execute a specified action."""
     execute_action_thread = threading.Thread(
         target=execute_action,
         args=(trade, config, gui_state, config[trade.actions_section][action]))
@@ -1315,35 +1018,10 @@ def start_execute_action_thread(trade, config, gui_state, action):
 
 
 def execute_action(trade, config, gui_state, action):
-    """
-    Carry out a specified action for a trade.
-
-    This function executes a specified action based on the configuration
-    for a trade. The action is executed in the context of the trade and
-    the current state of the GUI.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-        gui_state (GuiState): An instance of the GuiState class that
-            manages the state of the GUI.
-        action (list[tuple]): The action to be executed.
-
-    Returns:
-        bool: True if the action was recognized and executed, False
-            otherwise.
-    """
+    """Carry out a specified action for a trade."""
     # TODO: move to file_utilities
     def get_latest_screencast():
-        """
-        Fetch the most recent screencast from the configured directory.
-
-        This function retrieves the latest screencast based on the
-        screencast directory and regex specified in the configuration.
-
-        Returns:
-            str: The path to the latest screencast file.
-        """
+        """Fetch the most recent screencast from the configured directory."""
         screencast_directory = config['General']['screencast_directory']
         screencast_regex = config['General']['screencast_regex']
         files = [f for f in os.listdir(screencast_directory)
@@ -1351,34 +1029,12 @@ def execute_action(trade, config, gui_state, action):
         return os.path.join(screencast_directory, files[-1])
 
     def get_target_time(time_string):
-        """
-        Compute the target time from a given time string.
-
-        This function calculates the target time based on the provided
-        time string.
-
-        Args:
-            time_string (str): The time string to compute the target
-                time.
-
-        Returns:
-            float: The computed target time.
-        """
+        """Compute the target time from a given time string."""
         return time.mktime(time.strptime(
             time.strftime('%Y-%m-%d ') + time_string, '%Y-%m-%d %H:%M:%S'))
 
     def recursively_execute_action():
-        """
-        Recursively execute an action if it is a list or a string.
-
-        This function executes an action recursively if the additional
-        argument is a list or a string. If the additional argument is
-        neither a list nor a string, it prints an error message.
-
-        Returns:
-            bool: True if the action was recognized and executed, False
-                otherwise.
-        """
+        """Recursively execute an action if it is a list or a string."""
         if isinstance(additional_argument, list):
             return execute_action(trade, config, gui_state,
                                   additional_argument)
@@ -1569,18 +1225,7 @@ def execute_action(trade, config, gui_state, action):
 
 
 def create_startup_script(trade, config):
-    """
-    Create a startup script for a trade.
-
-    This function creates a startup script for a trade based on the
-    given configuration. The script includes commands for starting a
-    process, running options, and handling pre-start and post-start
-    options.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-    """
+    """Create a startup script for a trade."""
     def generate_script_lines(trade, options):
         """Generate lines of script for given options."""
         return [f'    python.exe {trade.script_file} {option.strip()}\n'
@@ -1631,24 +1276,7 @@ def create_startup_script(trade, config):
 
 
 def calculate_share_size(trade, config, position):
-    """
-    Determine the share size for a given trade.
-
-    This function calculates the share size for a trade based on the
-    cash balance, customer margin ratio, and price limit. It also
-    considers the position (long or short) and adjusts the share size
-    accordingly.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-        position (str): The position for the trade ('long' or 'short').
-
-    Returns:
-        tuple: A tuple containing a boolean indicating whether the share
-            size was successfully calculated and a message in case of
-            failure.
-    """
+    """Determine the share size for a given trade."""
     if trade.symbol and trade.cash_balance:
         customer_margin_ratio = float(config[
             trade.customer_margin_ratios_section]['customer_margin_ratio'])
@@ -1684,21 +1312,7 @@ def calculate_share_size(trade, config, position):
 
 
 def get_price_limit(trade, config):
-    """
-    Calculate the price limit for a trade.
-
-    This function calculates the price limit for a trade based on the
-    closing price and a set of predefined price ranges. If the closing
-    price is not available, it attempts to recognize the price limit
-    from a text region.
-
-    Args:
-        trade (Trade): An instance of a Trade class representing trades.
-        config (ConfigParser): The configuration parser object.
-
-    Returns:
-        float: The calculated price limit for the trade.
-    """
+    """Calculate the price limit for a trade."""
     closing_price = 0.0
     try:
         with open(f'{trade.closing_prices}{trade.symbol[0]}.csv',

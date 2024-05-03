@@ -31,24 +31,7 @@ except ModuleNotFoundError as e:
 # File and Directory Operations #
 
 def archive_encrypt_directory(source, output_directory, fingerprint=''):
-    """
-    Archive and encrypt a directory using GPG.
-
-    This function archives the source directory into a tarball, then
-    encrypts the tarball using GnuPG. The encrypted tarball is saved in
-    the specified output directory. If a GPG fingerprint is not
-    provided, the function uses the first available key in the GPG
-    keyring.
-
-    Args:
-        source (str): Path to the source directory to be archived and
-            encrypted.
-        output_directory (str): Path to the directory where the
-            encrypted tarball will be saved.
-        fingerprint (str, optional): The GPG key fingerprint to use for
-            encryption. If not provided, the first available key in the
-            GPG keyring is used. Defaults to ''.
-    """
+    """Archive and encrypt a directory using GPG."""
     if GNUPG_IMPORT_ERROR:
         print(GNUPG_IMPORT_ERROR)
         return
@@ -69,27 +52,7 @@ def archive_encrypt_directory(source, output_directory, fingerprint=''):
 
 def backup_file(source, backup_directory=None, number_of_backups=-1,
                 should_compare=True):
-    """
-    Backup a file to a specified directory, with optional encryption.
-
-    This function creates a backup of a specified file. If an
-    encrypted version of the file exists, it backs up the encrypted
-    file. The backups are stored in a specified directory, and the
-    number of backups to keep can be specified. If the source file has
-    not changed since the last backup, a new backup is not created.
-
-    Args:
-        source (str): Path to the source file to be backed up.
-        backup_directory (str, optional): Path to the directory where
-            the backups will be stored. If not provided, a 'backups'
-            directory is created in the same directory as the source
-            file.
-        number_of_backups (int, optional): The number of backups to
-            keep. If -1, all backups are kept. Defaults to -1.
-        should_compare (bool, optional): If True, the source file is
-            compared to the most recent backup, and a new backup is
-            only created if the files are different. Defaults to True.
-    """
+    """Backup a file to a specified directory, with optional encryption."""
     encrypted_source = source + '.gpg'
     if os.path.exists(encrypted_source):
         source = encrypted_source
@@ -157,17 +120,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
 
 
 def check_directory(directory):
-    """
-    Check if a directory exists, and create it if it doesn't.
-
-    This function checks if a specified directory exists. If the
-    directory does not exist, the function attempts to create it. If
-    an OSError occurs during directory creation, the error is printed
-    and the program exits.
-
-    Args:
-        directory (str): The path to the directory to check or create.
-    """
+    """Check if a directory exists, and create it if it doesn't."""
     if not os.path.isdir(directory):
         try:
             os.makedirs(directory)
@@ -176,21 +129,20 @@ def check_directory(directory):
             sys.exit(1)
 
 
+def compare_directory_list(directory, file_regex, files):
+    """Compare the directory and the list and print missing ones."""
+    for f in os.listdir(directory):
+        if re.fullmatch(file_regex, f) and f not in files.values:
+            print(os.path.join(directory, f), 'file is not in the list.')
+
+    for f in files:
+        path = os.path.join(directory, f)
+        if not os.path.exists(path):
+            print(path, 'file does not exist in the directory.')
+
+
 def decrypt_extract_file(source, output_directory):
-    """
-    Decrypt a file and extract its contents to a specified directory.
-
-    This function decrypts a given source file using GnuPG, then
-    extracts the contents of the decrypted file into a specified output
-    directory. If the root directory or a backup file already exists,
-    the function handles them accordingly.
-
-    Args:
-        source (str): Path to the source file to be decrypted and
-            extracted.
-        output_directory (str): Path to the directory where the contents
-            will be extracted.
-    """
+    """Decrypt a file and extract its contents to a specified directory."""
     if GNUPG_IMPORT_ERROR:
         print(GNUPG_IMPORT_ERROR)
         return
@@ -235,17 +187,7 @@ def decrypt_extract_file(source, output_directory):
 
 
 def get_config_path(script_path, can_create_directory=True):
-    """
-    Get the path to the configuration file.
-
-    Args:
-        script_path (str): The path to the script.
-        can_create_directory (bool, optional): If True, create the
-            directory if it doesn't exist. Defaults to True.
-
-    Returns:
-        str: The path to the configuration file.
-    """
+    """Get the path to the configuration file."""
     script_directory = os.path.basename(os.path.dirname(os.path.abspath(
         script_path)))
     config_file = os.path.splitext(os.path.basename(script_path))[0] + '.ini'
@@ -268,37 +210,13 @@ def get_config_path(script_path, can_create_directory=True):
 
 
 def is_writing(path):
-    """
-    Determine if a file at the path is currently being written to.
-
-    This function checks if a file exists at the path and if its
-    modification time is less than 1 second ago, which suggests that the
-    file might still be open for writing.
-
-    Args:
-        path (str): The path to the file.
-
-    Returns:
-        bool: True if the file is being written to, False otherwise.
-    """
+    """Determine if a file at the path is currently being written to."""
     return bool(os.path.exists(path)
                 and time.time() - os.path.getmtime(path) < 1)
 
 
 def move_to_trash(path, option=None):
-    """
-    Move a specified file or directory to the trash.
-
-    This function uses the 'trash-put' command to move a specified file
-    or directory to the trash. An additional option can be provided to
-    modify the behavior of the 'trash-put' command.
-
-    Args:
-        path (str): The path to the file or directory to be moved to the
-            trash.
-        option (str, optional): An additional option for the 'trash-put'
-            command. Defaults to None.
-    """
+    """Move a specified file or directory to the trash."""
     command = ['trash-put', path]
     if option:
         command.insert(1, option)
@@ -309,20 +227,7 @@ def move_to_trash(path, option=None):
 
 
 def select_executable(executables):
-    """
-    Find the first available executable from a list of executables.
-
-    This function iterates over a list of executable names, and returns
-    the path to the first executable that is found in the system's PATH.
-    If none of the executables are found, it returns False.
-
-    Args:
-        executables (list): A list of executable names to search for.
-
-    Returns:
-        str or bool: The path to the first found executable, or False if
-            none are found.
-    """
+    """Find the first available executable from a list of executables."""
     for executable in executables:
         path = shutil.which(executable)
         if path:
@@ -334,23 +239,7 @@ def select_executable(executables):
 
 def create_bash_completion(script_base, options, values, interpreters,
                            completion):
-    """
-    Generate a bash completion script for options and values.
-
-    This function creates a bash completion script for a given base
-    script, options, and values. The generated script is written to a
-    specified file. The completion script allows for tab completion of
-    options and values in the bash shell.
-
-    Args:
-        script_base (str): The base name of the script for which to
-            generate completion.
-        options (list): A list of option strings for completion.
-        values (list): A list of value strings for completion.
-        interpreters (list): A list of interpreter names for completion.
-        completion (str): The path to the file where the completion
-            script will be written.
-    """
+    """Generate a bash completion script for options and values."""
     variable_str = '    values="'
     line = ''
     lines = []
@@ -398,23 +287,7 @@ complete -F _{script_base} {' '.join(interpreters)}
 
 def create_powershell_completion(script_base, options, values, interpreters,
                                  completion):
-    """
-    Generate a PowerShell completion script for options and values.
-
-    This function creates a PowerShell completion script for a given
-    base script, options, and values. The generated script is written to
-    a specified file. The completion script allows for tab completion of
-    options and values in the PowerShell.
-
-    Args:
-        script_base (str): The base name of the script for which to
-            generate completion.
-        options (list): A list of option strings for completion.
-        values (list): A list of value strings for completion.
-        interpreters (list): A list of interpreter names for completion.
-        completion (str): The path to the file where the completion
-            script will be written.
-    """
+    """Generate a PowerShell completion script for options and values."""
     interpreters_regex = fr"({'|'.join(interpreters)})(\.exe)?"
     interpreters_array = f"@({', '.join(map(repr, interpreters))})"
     options_str = '|'.join(options)
@@ -457,42 +330,9 @@ Register-ArgumentCompleter -Native -CommandName {interpreters_array} `
 # Shortcut and Icon Operations #
 
 def create_icon(base, icon_directory=None):
-    """
-    Generate an icon from the acronym of a base name.
-
-    This function creates an icon based on the acronym of the base name.
-    The icon is saved in the specified directory or in the same
-    directory as the script if no directory is specified. The icon is
-    saved in multiple sizes.
-
-    Args:
-        base (str): The base name for the icon.
-        icon_directory (str, optional): The directory where the icon
-            will be saved. If not provided, the icon is saved in the
-            same directory as the script. Defaults to None.
-
-    Returns:
-        str: The path to the created icon.
-    """
+    """Generate an icon from the acronym of a base name."""
     def get_scaled_font(text, font_path, desired_dimension, variation_name=''):
-        """
-        Calculate the scaled font size for the icon text.
-
-        This function calculates the font size that will allow the text
-        to fit within the desired dimensions. It uses a temporary font
-        size to calculate the scaling factor, then returns a font object
-        with the scaled size.
-
-        Args:
-            text (str): The text to be displayed on the icon.
-            font_path (str): The path to the font file.
-            desired_dimension (int): The desired dimension for the text.
-            variation_name (str, optional): The name of the font
-                variation to use. Defaults to an empty string.
-
-        Returns:
-            FreeTypeFont: A font object with the scaled font size.
-        """
+        """Calculate the scaled font size for the icon text."""
         temp_font_size = 100
         temp_font = ImageFont.truetype(font_path, temp_font_size)
         if variation_name:
@@ -501,10 +341,10 @@ def create_icon(base, icon_directory=None):
         left, top, right, bottom = ImageDraw.Draw(
             Image.new('RGB', (1, 1))).multiline_textbbox((0, 0), text,
                                                          font=temp_font)
-        scaling_factor = min(desired_dimension / (right - left),
-                             desired_dimension / (bottom - top))
+        scale_factor = min(desired_dimension / (right - left),
+                           desired_dimension / (bottom - top))
         actual_font = ImageFont.truetype(font_path,
-                                         int(temp_font_size * scaling_factor))
+                                         int(temp_font_size * scale_factor))
         if variation_name:
             actual_font.set_variation_by_name(variation_name)
         return actual_font
@@ -565,23 +405,7 @@ def create_icon(base, icon_directory=None):
 
 def create_shortcut(base, target_path, arguments, program_group_base=None,
                     icon_directory=None, hotkey=None):
-    """
-    Create a Windows shortcut for a given program.
-
-    This function creates a Windows shortcut for a program, with the
-    option to specify a program group, an icon, and a hotkey.
-
-    Args:
-        base (str): The base name of the program.
-        target_path (str): The path to the program executable.
-        arguments (str): The command-line arguments for the program.
-        program_group_base (str, optional): The base name of the program
-            group. Defaults to None.
-        icon_directory (str, optional): The directory of the icon file.
-            Defaults to None.
-        hotkey (str, optional): The hotkey for the shortcut. Defaults to
-            None.
-    """
+    """Create a Windows shortcut for a given program."""
     if WINDOWS_IMPORT_ERROR:
         print(WINDOWS_IMPORT_ERROR)
         return
@@ -605,20 +429,7 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
 
 
 def delete_shortcut(base, program_group_base=None, icon_directory=None):
-    """
-    Delete a Windows shortcut and its associated icon.
-
-    This function deletes a Windows shortcut for a program and its
-    associated icon, if they exist. If the program group becomes empty
-    after the deletion, it also removes the program group.
-
-    Args:
-        base (str): The base name of the program.
-        program_group_base (str, optional): The base name of the program
-            group. Defaults to None.
-        icon_directory (str, optional): The directory of the icon file.
-            Defaults to None.
-    """
+    """Delete a Windows shortcut and its associated icon."""
     if icon_directory:
         icon = os.path.join(icon_directory, base + '.ico')
     else:
@@ -649,25 +460,7 @@ def delete_shortcut(base, program_group_base=None, icon_directory=None):
 
 
 def get_program_group(program_group_base=None):
-    """
-    Retrieve the program group for a Windows shortcut.
-
-    This function retrieves the program group for a Windows shortcut. If
-    a program group base is provided, it is appended to the default
-    program group path.
-
-    Args:
-        program_group_base (str, optional): The base name of the program
-            group. If provided, it is appended to the default program
-            group path. Defaults to None.
-
-    Raises:
-        RuntimeError: If there is an error importing the required
-            Windows libraries.
-
-    Returns:
-        str: The program group.
-    """
+    """Retrieve the program group for a Windows shortcut."""
     if WINDOWS_IMPORT_ERROR:
         raise RuntimeError(WINDOWS_IMPORT_ERROR)
 
@@ -682,21 +475,7 @@ def get_program_group(program_group_base=None):
 # Text and Description Operations #
 
 def get_file_description(executable):
-    """
-    Retrieve the file description of a given executable.
-
-    This function uses the Windows API to retrieve the file description
-    of a given executable. If there is an error importing the required
-    Windows libraries or an error occurs while retrieving the file
-    description, it prints the error and returns None.
-
-    Args:
-        executable (str): The path to the executable file.
-
-    Returns:
-        str: The file description of the executable, or None if there is
-            an error.
-    """
+    """Retrieve the file description of a given executable."""
     if WINDOWS_IMPORT_ERROR:
         print(WINDOWS_IMPORT_ERROR)
         return None
@@ -716,22 +495,7 @@ def get_file_description(executable):
 
 
 def title_except_acronyms(string, acronyms):
-    """
-    Convert a string to title case, excluding specified acronyms.
-
-    This function converts all words in a string to title case, except
-    for the words specified in the 'acronyms' list. The words in the
-    'acronyms' list are left as they are.
-
-    Args:
-        string (str): The string to convert to title case.
-        acronyms (list): A list of acronyms that should not be converted
-            to title case.
-
-    Returns:
-        str: The converted string, with all words in title case except
-            for the specified acronyms.
-    """
+    """Convert a string to title case, excluding specified acronyms."""
     words = string.split()
     for i, _ in enumerate(words):
         if words[i] not in acronyms:
@@ -740,23 +504,7 @@ def title_except_acronyms(string, acronyms):
 
 
 def write_chapter(video, current_title, previous_title=None, offset=None):
-    """
-    Write a new chapter to the metadata of a video file.
-
-    This function writes a new chapter to the metadata of a video file
-    using FFmpeg's metadata format. If the metadata file does not exist,
-    it creates one and writes the first two chapters. If the metadata
-    file already exists, it updates the end time of the last chapter and
-    appends a new chapter.
-
-    Args:
-        video (str): The path to the video file.
-        current_title (str): The title of the new chapter.
-        previous_title (str, optional): The title of the first chapter
-            when creating a new metadata file. Defaults to None.
-        offset (float, optional): The offset in seconds to apply to the
-            start time of the new chapter. Defaults to None.
-    """
+    """Write a new chapter to the metadata of a video file."""
     if is_writing(video):
         ffmpeg_metadata = os.path.splitext(video)[0] + '.txt'
         try:
