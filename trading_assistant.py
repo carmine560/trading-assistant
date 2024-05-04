@@ -690,7 +690,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'opening_time': '09:00:00',
         'closing_time': '15:30:00',
         'delay': '20',
-        'time_zone': 'Asia/Tokyo',
+        'timezone': 'Asia/Tokyo',
         'url': 'https://kabutan.jp/warning/?mode=2_9&market=1',
         'number_of_pages': '2',
         'symbol_header': 'コード',
@@ -698,7 +698,7 @@ def configure(trade, can_interpolate=True, can_override=True):
     config[trade.customer_margin_ratios_section] = {
         'customer_margin_ratio': '0.31',
         'update_time': '20:00:00',
-        'time_zone': '${Market Data:time_zone}',
+        'timezone': '${Market Data:timezone}',
         'url':
         ('https://search.sbisec.co.jp/v2/popwin/attention/stock/'
          'margin_M29.html'),
@@ -815,7 +815,7 @@ def save_customer_margin_ratios(trade, config):
     section = config[trade.customer_margin_ratios_section]
 
     if get_latest(config, trade.market_holidays, section['update_time'],
-                  section['time_zone'], trade.customer_margin_ratios):
+                  section['timezone'], trade.customer_margin_ratios):
         try:
             response = requests.get(section['url'], timeout=5)
             encoding = chardet.detect(response.content)['encoding']
@@ -860,13 +860,13 @@ def save_market_data(trade, config, clipboard=False):
             paths.append(trade.closing_prices + str(i) + '.csv')
 
         opening_time = (
-            pd.Timestamp(section['opening_time'], tz=section['time_zone'])
+            pd.Timestamp(section['opening_time'], tz=section['timezone'])
             + pd.Timedelta(minutes=delay)).strftime('%H:%M:%S')
         closing_time = (
-            pd.Timestamp(section['closing_time'], tz=section['time_zone'])
+            pd.Timestamp(section['closing_time'], tz=section['timezone'])
             + pd.Timedelta(minutes=delay)).strftime('%H:%M:%S')
         latest = get_latest(config, trade.market_holidays, closing_time,
-                            section['time_zone'], *paths,
+                            section['timezone'], *paths,
                             volatile_time=opening_time)
 
     if latest:
@@ -898,7 +898,7 @@ def save_market_data(trade, config, clipboard=False):
                           index=False)
 
 
-def get_latest(config, market_holidays, update_time, time_zone, *paths,
+def get_latest(config, market_holidays, update_time, timezone, *paths,
                volatile_time=None):
     """Check if the latest market data needs to be fetched."""
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
@@ -932,7 +932,7 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
 
     df = pd.read_csv(market_holidays, header=None)
     # Assume the web page is updated at 'update_time'.
-    latest = pd.Timestamp(update_time, tz=time_zone)
+    latest = pd.Timestamp(update_time, tz=timezone)
     if pd.Timestamp.now(tz='UTC') < latest:
         latest -= pd.Timedelta(days=1)
 
@@ -943,13 +943,13 @@ def get_latest(config, market_holidays, update_time, time_zone, *paths,
 
     if modified_time < latest:
         if volatile_time:
-            now = pd.Timestamp.now(tz=time_zone)
+            now = pd.Timestamp.now(tz=timezone)
             if (df[0].str.contains(now.strftime(
                     config['Market Holidays']['date_format'])).any()
                     or now.weekday() == 5 or now.weekday() == 6):
                 return latest
-            if (not pd.Timestamp(volatile_time, tz=time_zone) <= now
-                    <= pd.Timestamp(update_time, tz=time_zone)):
+            if (not pd.Timestamp(volatile_time, tz=timezone) <= now
+                    <= pd.Timestamp(update_time, tz=timezone)):
                 return latest
         else:
             return latest
