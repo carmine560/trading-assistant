@@ -352,8 +352,7 @@ def create_icon(base, icon_directory=None):
     if WINDOWS_IMPORT_ERROR:
         raise RuntimeError(WINDOWS_IMPORT_ERROR)
 
-    acronym = ''.join(word[0].upper()
-                      for word in re.split(r'[\W_]+', base) if word)
+    acronym = create_acronym(base)
     if not acronym:
         raise ValueError(
             'The acronym could not be created from the base name.')
@@ -473,6 +472,15 @@ def get_program_group(program_group_base=None):
 
 
 # Text and Description Operations #
+
+def create_acronym(phrase):
+    """Generate an acronym from the given phrase."""
+    acronym = ''
+    if isinstance(phrase, str):
+        acronym = ''.join(word[0].upper()
+                          for word in re.split(r'[\W_]+', phrase) if word)
+    return acronym
+
 
 def get_file_description(executable):
     """Retrieve the file description of a given executable."""
