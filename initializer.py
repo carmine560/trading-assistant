@@ -26,6 +26,7 @@ class Initializer:
         self.config_directory = os.path.dirname(self.config_path)
 
         self.actions_section = f'{self.process} Actions'
+        self.variables_section = f'{self.process} Variables'
 
 
 def extract_commands(source, command='command'):

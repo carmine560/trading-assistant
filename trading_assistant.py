@@ -146,7 +146,7 @@ class Trade(initializer.Initializer):
                                                     action)
             elif self.keyboard_listener_state == 1:
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
-                        or key == self.key_to_check):
+                    or key == self.key_to_check):
                     self.should_continue = True
                     self.keyboard_listener_state = 0
                 elif key == keyboard.Key.esc:
@@ -255,8 +255,8 @@ class IndicatorThread(threading.Thread):
 
         while not self.stop_event.is_set():
             clock_label.config(text=time.strftime('%H:%M:%S'))
-            current_number_of_trades = self.config['Variables'][
-                'current_number_of_trades']
+            current_number_of_trades = self.config[
+                self.trade.variables_section]['current_number_of_trades']
             if maximum_daily_number_of_trades:
                 current_number_of_trades_label.config(
                     text=(f"{current_number_of_trades}"
@@ -403,8 +403,8 @@ def main():
         help='start the scheduler')
     group.add_argument(
         '-SS', action='store_true',
-        help=('configure the startup script, create a shortcut to it, '
-              'and exit'))
+        help='configure the startup script, create a shortcut to it,'
+        ' and exit')
     group.add_argument(
         '-A', metavar='ACTION', nargs=1,
         help='configure an action, create a shortcut to it, and exit')
@@ -431,8 +431,8 @@ def main():
         help='configure the maximum daily number of trades and exit')
     group.add_argument(
         '-D', metavar='SCRIPT_BASE|ACTION', nargs=1,
-        help=('delete the startup script or an action, '
-              'delete the shortcut to it, and exit'))
+        help='delete the startup script or an action,'
+        ' delete the shortcut to it, and exit')
     group.add_argument(
         '-C', action='store_true',
         help='check configuration changes and exit')
@@ -558,7 +558,7 @@ def main():
                                    can_override=False)
         configuration.check_config_changes(
             default_config, trade.config_path,
-            excluded_sections=('Variables',),
+            excluded_sections=(trade.variables_section,),
             user_option_ignored_sections=(trade.actions_section,),
             backup_parameters=backup_parameters)
         return
@@ -611,7 +611,7 @@ def main():
                 base_manager, trade.speech_manager, trade.speaking_process)
     if args.D:
         if (args.D[0] == trade.script_base
-                and os.path.exists(trade.startup_script)):
+            and os.path.exists(trade.startup_script)):
             try:
                 os.remove(trade.startup_script)
             except OSError as e:
@@ -737,13 +737,13 @@ def configure(trade, can_interpolate=True, can_override=True):
         'running_options': ''}
     config[trade.actions_section] = {}
     config[trade.schedules_section] = {}
-    config['Variables'] = {
+    config[trade.variables_section] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
         'initial_cash_balance': '0',
         'current_number_of_trades': '0'}
 
     process_section = config[trade.process]
-    variables_section = config['Variables']
+    variables_section = config[trade.variables_section]
 
     if trade.process == 'HYPERSBI2':
         process_section['interactive_windows'] = str((
@@ -804,7 +804,7 @@ def configure(trade, can_interpolate=True, can_override=True):
                                      'theme.ini')
             theme_config.read(theme_ini)
             if (theme_config.has_option('General', 'theme')
-                    and theme_config['General']['theme'] == 'Light'):
+                and theme_config['General']['theme'] == 'Light'):
                 process_section['is_dark_theme'] = 'False'
 
     return config
@@ -946,10 +946,10 @@ def get_latest(config, market_holidays, update_time, timezone, *paths,
             now = pd.Timestamp.now(tz=timezone)
             if (df[0].str.contains(now.strftime(
                     config['Market Holidays']['date_format'])).any()
-                    or now.weekday() == 5 or now.weekday() == 6):
+                or now.weekday() == 5 or now.weekday() == 6):
                 return latest
             if (not pd.Timestamp(volatile_time, tz=timezone) <= now
-                    <= pd.Timestamp(update_time, tz=timezone)):
+                <= pd.Timestamp(update_time, tz=timezone)):
                 return latest
         else:
             return latest
@@ -1072,9 +1072,9 @@ def execute_action(trade, config, gui_state, action):
                     'customer_margin_ratio'])
                 * float(config[trade.process]['daily_loss_limit_ratio']))
             initial_cash_balance = int(
-                config['Variables']['initial_cash_balance'])
+                config[trade.variables_section]['initial_cash_balance'])
             if initial_cash_balance == 0:
-                config['Variables']['initial_cash_balance'] = str(
+                config[trade.variables_section]['initial_cash_balance'] = str(
                     trade.cash_balance)
                 configuration.write_config(config, trade.config_path)
             else:
@@ -1085,7 +1085,8 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'check_maximum_daily_number_of_trades':
             if (0
                 < int(config[trade.process]['maximum_daily_number_of_trades'])
-                    <= int(config['Variables']['current_number_of_trades'])):
+                <= int(config[trade.variables_section][
+                    'current_number_of_trades'])):
                 trade.speech_manager.set_speech_text(argument)
                 return False
         elif command == 'click':
@@ -1104,14 +1105,13 @@ def execute_action(trade, config, gui_state, action):
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(' '.join(
                 text_recognition.recognize_text(
-                    config[trade.process], *
-                    map(int, argument.split(',')), None,
-                    text_type='securities_code_column')))
+                    config[trade.process], *map(int, argument.split(',')),
+                    None, text_type='securities_code_column')))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
-            current_number_of_trades = int(
-                config['Variables']['current_number_of_trades']) + 1
-            config['Variables']['current_number_of_trades'] = str(
+            current_number_of_trades = int(config[trade.variables_section][
+                'current_number_of_trades']) + 1
+            config[trade.variables_section]['current_number_of_trades'] = str(
                 current_number_of_trades)
             configuration.write_config(config, trade.config_path)
 
@@ -1214,7 +1214,7 @@ def execute_action(trade, config, gui_state, action):
                     return False
         elif command == 'is_recording':
             if (file_utilities.is_writing(get_latest_screencast())
-                    == (argument.lower() == 'true')):
+                == (argument.lower() == 'true')):
                 if not recursively_execute_action():
                     return False
 

@@ -26,7 +26,7 @@ consisting of a sequence of commands, this script can:
 
 `trading_assistant.py` has been tested in [Python
 3.11.9](https://www.python.org/downloads/release/python-3119/) for Windows with
-Hyper SBI 2 on Windows 10 and uses the following packages:
+Hyper SBI 2 on Windows 10 and requires the following packages:
 
   * [`chardet`](https://github.com/chardet/chardet),
     [`lxml`](https://lxml.de/index.html),
@@ -568,7 +568,7 @@ watch_active_stocks = [
     ('back_to',)]
 ```
 
-#### Center Open for 1-Minute Chart ####
+#### Center Open for 1-minute Chart ####
 
 The following `center_open_1_minute_chart` action centers the open in the
 1-minute chart of the ‘Chart’ window.
