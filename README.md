@@ -633,7 +633,7 @@ open_close_long_position = [
     ('press_key', 'tab, 5'),         # Focus on the 'Sell Order' button.
     ('count_trades', '-10.0'),       # Count the number of trades for the day.
     # Speak the number above and notify you of the readiness of the sell order.
-    ('speak_config', 'Variables', 'number_of_trades'),
+    ('speak_config', 'HYPERSBI2 Variables', 'current_number_of_trades'),
     ('back_to',)]
 ```
 
