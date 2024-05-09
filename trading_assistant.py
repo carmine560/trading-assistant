@@ -380,64 +380,7 @@ class MessageThread(threading.Thread):
 
 def main():
     """Execute the main program based on command-line arguments."""
-    parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group()
-    parser.add_argument(
-        '-P', default=('SBI Securities', 'HYPERSBI2'),
-        metavar=('BROKERAGE', 'PROCESS|PATH_TO_EXECUTABLE'), nargs=2,
-        help='set the brokerage and the process [defaults: %(default)s]')
-    parser.add_argument(
-        '-r', action='store_true',
-        help='save the customer margin ratios')
-    parser.add_argument(
-        '-d', action='store_true',
-        help='save the previous market data')
-    parser.add_argument(
-        '-a', metavar='ACTION', nargs=1,
-        help='execute an action')
-    parser.add_argument(
-        '-l', action='store_true',
-        help='start the mouse and keyboard listeners')
-    parser.add_argument(
-        '-s', action='store_true',
-        help='start the scheduler')
-    group.add_argument(
-        '-SS', action='store_true',
-        help='configure the startup script, create a shortcut to it,'
-        ' and exit')
-    group.add_argument(
-        '-A', metavar='ACTION', nargs=1,
-        help='configure an action, create a shortcut to it, and exit')
-    group.add_argument(
-        '-L', action='store_true',
-        help='configure the input map for buttons and keys and exit')
-    group.add_argument(
-        '-S', action='store_true',
-        help='configure schedules and exit')
-    group.add_argument(
-        '-CB', action='store_true',
-        help='configure the cash balance region and exit')
-    group.add_argument(
-        '-U', action='store_true',
-        help='configure the utilization ratio of the cash balance and exit')
-    group.add_argument(
-        '-PL', action='store_true',
-        help='configure the price limit region and exit')
-    group.add_argument(
-        '-DLL', action='store_true',
-        help='configure the daily loss limit ratio and exit')
-    group.add_argument(
-        '-MDN', action='store_true',
-        help='configure the maximum daily number of trades and exit')
-    group.add_argument(
-        '-D', metavar='SCRIPT_BASE|ACTION', nargs=1,
-        help='delete the startup script or an action,'
-        ' delete the shortcut to it, and exit')
-    group.add_argument(
-        '-C', action='store_true',
-        help='check configuration changes and exit')
-    args = parser.parse_args(None if sys.argv[1:] else ['-h'])
-
+    args = get_arguments()
     trade = Trade(*args.P)
     backup_parameters = {'number_of_backups': 8}
 
@@ -637,6 +580,72 @@ def main():
             ('py.exe', 'python.exe'),
             os.path.join(trade.resource_directory, 'completion.sh'))
         return
+
+
+def get_arguments():
+    """Parse and return command-line arguments."""
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+
+    parser.add_argument(
+        '-P', nargs=2, default=('SBI Securities', 'HYPERSBI2'),
+        help='set the brokerage and the process [defaults: %(default)s]',
+        metavar=('BROKERAGE', 'PROCESS|PATH_TO_EXECUTABLE'))
+    parser.add_argument(
+        '-r', action='store_true',
+        help='save the customer margin ratios')
+    parser.add_argument(
+        '-d', action='store_true',
+        help='save the previous market data')
+    parser.add_argument(
+        '-a', nargs=1,
+        help='execute an action',
+        metavar='ACTION')
+    parser.add_argument(
+        '-l', action='store_true',
+        help='start the mouse and keyboard listeners')
+    parser.add_argument(
+        '-s', action='store_true',
+        help='start the scheduler')
+    group.add_argument(
+        '-SS', action='store_true',
+        help='configure the startup script, create a shortcut to it,'
+        ' and exit')
+    group.add_argument(
+        '-A', nargs=1,
+        help='configure an action, create a shortcut to it, and exit',
+        metavar='ACTION')
+    group.add_argument(
+        '-L', action='store_true',
+        help='configure the input map for buttons and keys and exit')
+    group.add_argument(
+        '-S', action='store_true',
+        help='configure schedules and exit')
+    group.add_argument(
+        '-CB', action='store_true',
+        help='configure the cash balance region and exit')
+    group.add_argument(
+        '-U', action='store_true',
+        help='configure the utilization ratio of the cash balance and exit')
+    group.add_argument(
+        '-PL', action='store_true',
+        help='configure the price limit region and exit')
+    group.add_argument(
+        '-DLL', action='store_true',
+        help='configure the daily loss limit ratio and exit')
+    group.add_argument(
+        '-MDN', action='store_true',
+        help='configure the maximum daily number of trades and exit')
+    group.add_argument(
+        '-D', nargs=1,
+        help='delete the startup script or an action,'
+        ' delete the shortcut to it, and exit',
+        metavar='SCRIPT_BASE|ACTION')
+    group.add_argument(
+        '-C', action='store_true',
+        help='check configuration changes and exit')
+
+    return parser.parse_args(None if sys.argv[1:] else ['-h'])
 
 
 def configure(trade, can_interpolate=True, can_override=True):

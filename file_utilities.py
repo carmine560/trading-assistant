@@ -5,6 +5,7 @@ import io
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -236,6 +237,24 @@ def select_executable(executables):
 
 
 # CLI Operations #
+
+def create_bash_wrapper(script_path, output_directory, venv='.venv'):
+    """Create a Bash wrapper for a Python script in a specified directory."""
+    wrapper_path = os.path.join(
+        output_directory,
+        f'{os.path.splitext(os.path.basename(script_path))[0]}.sh')
+    wrapper_string = f'''#!/bin/bash
+
+. {os.path.dirname(script_path)}/{venv}/bin/activate &&
+    {script_path} "$@"
+'''
+
+    with open(wrapper_path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(wrapper_string)
+
+    os.chmod(wrapper_path, os.stat(wrapper_path).st_mode | stat.S_IXUSR
+             | stat.S_IXGRP | stat.S_IXOTH)
+
 
 def create_bash_completion(script_base, options, values, interpreters,
                            completion):
