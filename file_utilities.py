@@ -81,8 +81,8 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                 + source_suffix)
             backups = sorted(
                 [f for f in os.listdir(backup_directory)
-                 if re.fullmatch(
-                         fr'{source_base}-\d{{8}}T\d{{6}}{source_suffix}', f)])
+                 if re.fullmatch(fr'{source_base}'
+                                 fr'-\d{{8}}T\d{{6}}{source_suffix}', f)])
 
             if not os.path.exists(backup):
                 should_copy = True
@@ -236,24 +236,48 @@ def select_executable(executables):
     return False
 
 
+def windows_to_wsl_path(path: str) -> str:
+    """Convert a Windows path to a WSL path."""
+    return subprocess.run(['wsl', 'wslpath', repr(path)],
+                          capture_output=True, text=True).stdout.rstrip()
+
+
 # CLI Operations #
 
-def create_bash_wrapper(script_path, output_directory, venv='.venv'):
-    """Create a Bash wrapper for a Python script in a specified directory."""
+def create_bash_wrapper(script_path, output_directory):
+    """Create a WSL Bash wrapper for a Python script."""
+    activate_path = interpreter = ''
+    for venv in ('.env', '.venv', 'env', 'venv'):
+        venv_path = os.path.join(os.path.dirname(script_path), venv)
+        if os.path.isdir(venv_path):
+            for d, i in {'Scripts': 'python.exe ', 'bin': ''}.items():
+                if os.path.isdir(os.path.join(venv_path, d)):
+                    activate_path = os.path.join(venv_path, d, 'activate')
+                    interpreter = i
+
+    if not os.path.exists(activate_path):
+        print('The activate script does not exists.')
+        sys.exit(1)
+
+    if sys.platform == 'win32':
+        script_path = windows_to_wsl_path(script_path)
+        activate_path = windows_to_wsl_path(activate_path)
+
     wrapper_path = os.path.join(
         output_directory,
         f'{os.path.splitext(os.path.basename(script_path))[0]}.sh')
     wrapper_string = f'''#!/bin/bash
 
-. {os.path.dirname(script_path)}/{venv}/bin/activate &&
-    {script_path} "$@"
+. {activate_path} &&
+    {interpreter}{script_path} "$@"
 '''
 
     with open(wrapper_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(wrapper_string)
 
-    os.chmod(wrapper_path, os.stat(wrapper_path).st_mode | stat.S_IXUSR
-             | stat.S_IXGRP | stat.S_IXOTH)
+    if sys.platform == 'linux':
+        os.chmod(wrapper_path, os.stat(wrapper_path).st_mode | stat.S_IXUSR
+                 | stat.S_IXGRP | stat.S_IXOTH)
 
 
 def create_bash_completion(script_base, options, values, interpreters,

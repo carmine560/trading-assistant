@@ -391,6 +391,8 @@ python trading_assistant.py -a action
   * `-D SCRIPT_BASE|ACTION`: delete the startup script or an action, delete the
     shortcut to it, and exit
   * `-C`: check configuration changes and exit
+  <!-- * `-B [DIRECTORY]`: generate a Bash script for running
+  trading_grapher.py in WSL with an optional output directory -->
 
 ## Examples ##
 
