@@ -379,6 +379,8 @@ python trading_assistant.py -a action
   * `-s`: start the scheduler
   * `-l`: start the mouse and keyboard listeners
   * `-a ACTION`: execute an action
+  * `-B [DIRECTORY]`: generate a WSL Bash script for running
+    `trading_assistant.py` with an optional output directory
   * `-SS`: configure the startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit
   * `-L`: configure the input map for buttons and keys and exit
@@ -391,8 +393,6 @@ python trading_assistant.py -a action
   * `-D SCRIPT_BASE|ACTION`: delete the startup script or an action, delete the
     shortcut to it, and exit
   * `-C`: check configuration changes and exit
-  <!-- * `-B [DIRECTORY]`: generate a Bash script for running
-  trading_grapher.py in WSL with an optional output directory -->
 
 ## Examples ##
 

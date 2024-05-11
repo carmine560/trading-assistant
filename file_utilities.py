@@ -1,4 +1,4 @@
-"""Module for file operations, CLI, shortcuts, and text processing."""
+"""Operate paths, files, CLI, shortcuts, and text."""
 
 from datetime import datetime
 import io
@@ -27,6 +27,25 @@ try:
     WINDOWS_IMPORT_ERROR = None
 except ModuleNotFoundError as e:
     WINDOWS_IMPORT_ERROR = e
+
+
+# Path Operations #
+
+def is_wsl_windows_path(path):
+    """Check if the given path is a WSL path in the Windows filesystem."""
+    return path.startswith('/mnt/') and len(path) > 6 and path[6] == '/'
+
+
+def windows_to_wsl_path(path):
+    """Convert a Windows path to a WSL path."""
+    return subprocess.run(['wsl', 'wslpath', repr(path)],
+                          capture_output=True, text=True).stdout.rstrip()
+
+
+def wsl_to_windows_path(path):
+    """Convert a WSL path to a Windows path."""
+    return subprocess.run(['wsl', 'wslpath', '-m', path],
+                          capture_output=True, text=True).stdout.rstrip()
 
 
 # File and Directory Operations #
@@ -236,12 +255,6 @@ def select_executable(executables):
     return False
 
 
-def windows_to_wsl_path(path: str) -> str:
-    """Convert a Windows path to a WSL path."""
-    return subprocess.run(['wsl', 'wslpath', repr(path)],
-                          capture_output=True, text=True).stdout.rstrip()
-
-
 # CLI Operations #
 
 def create_bash_wrapper(script_path, output_directory):
@@ -260,11 +273,11 @@ def create_bash_wrapper(script_path, output_directory):
         sys.exit(1)
 
     if sys.platform == 'win32':
-        script_path = windows_to_wsl_path(script_path)
+        script_path = wsl_to_windows_path(windows_to_wsl_path(script_path))
         activate_path = windows_to_wsl_path(activate_path)
 
     wrapper_path = os.path.join(
-        output_directory,
+        os.path.abspath(output_directory),
         f'{os.path.splitext(os.path.basename(script_path))[0]}.sh')
     wrapper_string = f'''#!/bin/bash
 
@@ -275,7 +288,7 @@ def create_bash_wrapper(script_path, output_directory):
     with open(wrapper_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(wrapper_string)
 
-    if sys.platform == 'linux':
+    if sys.platform == 'linux' and not is_wsl_windows_path(wrapper_path):
         os.chmod(wrapper_path, os.stat(wrapper_path).st_mode | stat.S_IXUSR
                  | stat.S_IXGRP | stat.S_IXOTH)
 

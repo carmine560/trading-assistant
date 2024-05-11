@@ -384,6 +384,9 @@ def main():
     trade = Trade(*args.P)
     backup_parameters = {'number_of_backups': 8}
 
+    if args.B:
+        file_utilities.create_bash_wrapper(__file__, args.B)
+        return
     if any((args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
             args.DLL, args.MDN)):
         config = configure(trade, can_interpolate=False)
@@ -607,6 +610,12 @@ def get_arguments():
     parser.add_argument(
         '-s', action='store_true',
         help='start the scheduler')
+    group.add_argument(
+        '-B', nargs='?', const='.',
+        help='generate a WSL Bash script'
+        f' for running {os.path.basename(__file__)}'
+        ' with an optional output directory',
+        metavar='DIRECTORY')
     group.add_argument(
         '-SS', action='store_true',
         help='configure the startup script, create a shortcut to it,'
