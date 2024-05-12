@@ -326,14 +326,15 @@ def create_bash_completion(script_base, options, values, interpreters,
                                  for option in options)
     completion_str = fr'''_{script_base}()
 {{
-    local script current previous options values
-    script=${{COMP_WORDS[1]}}
+    local current previous options values
     current=${{COMP_WORDS[COMP_CWORD]}}
     previous=${{COMP_WORDS[COMP_CWORD-1]}}
     options="{' '.join(options)}"
 {variable_str}{values_str}"
 
-    if [[ $script =~ {script_base}\.py ]]; then
+    if [[ ${{COMP_WORDS[0]}} =~ py(thon)?\.exe &&
+              ${{COMP_WORDS[1]}} =~ {script_base}\.py$ ]] ||
+           [[ ${{COMP_WORDS[0]}} =~ {script_base}\.sh$ ]]; then
         if [[ $current == -* ]]; then
             COMPREPLY=($(compgen -W "$options" -- $current))
             return 0
@@ -347,7 +348,7 @@ def create_bash_completion(script_base, options, values, interpreters,
         return 0
     fi
 }}
-complete -F _{script_base} {' '.join(interpreters)}
+complete -F _{script_base} {' '.join(interpreters)} {script_base}.sh
 '''
 
     with open(completion, 'w', encoding='utf-8', newline='\n') as f:
