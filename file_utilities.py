@@ -276,7 +276,7 @@ def create_bash_wrapper(script_path, output_directory):
     for venv in ('.env', '.venv', 'env', 'venv'):
         venv_path = os.path.join(os.path.dirname(script_path), venv)
         if os.path.isdir(venv_path):
-            for d, i in {'Scripts': 'python.exe ', 'bin': ''}.items():
+            for d, i in {'Scripts': 'python.exe', 'bin': ''}.items():
                 if os.path.isdir(os.path.join(venv_path, d)):
                     activate_path = os.path.join(venv_path, d, 'activate')
                     interpreter = i
@@ -295,7 +295,7 @@ def create_bash_wrapper(script_path, output_directory):
     wrapper_string = f'''#!/bin/bash
 
 . {activate_path} &&
-    {interpreter}{script_path} "$@"
+    {interpreter}{' ' if interpreter else ''}{script_path} "$@"
 '''
 
     with open(wrapper_path, 'w', encoding='utf-8', newline='\n') as f:
@@ -304,6 +304,30 @@ def create_bash_wrapper(script_path, output_directory):
     if sys.platform == 'linux' and not is_wsl_windows_path(wrapper_path):
         os.chmod(wrapper_path, os.stat(wrapper_path).st_mode | stat.S_IXUSR
                  | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def create_powershell_wrapper(script_path, output_directory):
+    """Create a PowerShell wrapper for a Python script."""
+    activate_path = interpreter = ''
+    for venv in ('.env', '.venv', 'env', 'venv'):
+        venv_path = os.path.join(os.path.dirname(script_path), venv)
+        if os.path.isdir(venv_path):
+            activate_path = os.path.join(venv_path, 'Scripts', 'Activate.ps1')
+            interpreter = 'python.exe'
+
+    if not os.path.exists(activate_path):
+        print(f'{activate_path} does not exists.')
+        sys.exit(1)
+
+    wrapper_path = os.path.join(
+        os.path.realpath(output_directory),
+        f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1')
+    wrapper_string = f'''. {activate_path} &&
+{interpreter} {script_path} $args
+'''
+
+    with open(wrapper_path, 'w', encoding='utf-8') as f:
+        f.write(wrapper_string)
 
 
 def create_bash_completion(script_base, options, values, interpreters,
