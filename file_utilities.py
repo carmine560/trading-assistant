@@ -1,8 +1,10 @@
 """Operate paths, files, CLI, shortcuts, and text."""
 
 from datetime import datetime
+import configparser
 import io
 import os
+import platform
 import re
 import shutil
 import stat
@@ -33,17 +35,28 @@ except ModuleNotFoundError as e:
 
 def is_wsl_windows_path(path):
     """Check if the given path is a WSL path in the Windows filesystem."""
-    return path.startswith('/mnt/') and len(path) > 6 and path[6] == '/'
+    if 'microsoft' not in platform.uname().release.lower():
+        return False
+
+    config = configparser.ConfigParser(interpolation=None)
+    config.read('/etc/wsl.conf')
+    root = (config['automount']['root']
+            if config.has_option('automount', 'root') else '/mnt/')
+    return os.path.ismount(f'{root}{path[len(root)]}')
 
 
 def windows_to_wsl_path(path):
     """Convert a Windows path to a WSL path."""
+    if not shutil.which('wsl'):
+        return path
     return subprocess.run(['wsl', 'wslpath', repr(path)],
                           capture_output=True, text=True).stdout.rstrip()
 
 
 def wsl_to_windows_path(path):
     """Convert a WSL path to a Windows path."""
+    if not shutil.which('wsl'):
+        return path
     return subprocess.run(['wsl', 'wslpath', '-m', path],
                           capture_output=True, text=True).stdout.rstrip()
 
@@ -269,7 +282,7 @@ def create_bash_wrapper(script_path, output_directory):
                     interpreter = i
 
     if not os.path.exists(activate_path):
-        print('The activate script does not exists.')
+        print(f'{activate_path} does not exists.')
         sys.exit(1)
 
     if sys.platform == 'win32':
@@ -277,7 +290,7 @@ def create_bash_wrapper(script_path, output_directory):
         activate_path = windows_to_wsl_path(activate_path)
 
     wrapper_path = os.path.join(
-        os.path.abspath(output_directory),
+        os.path.realpath(output_directory),
         f'{os.path.splitext(os.path.basename(script_path))[0]}.sh')
     wrapper_string = f'''#!/bin/bash
 
