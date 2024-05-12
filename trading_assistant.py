@@ -615,16 +615,12 @@ def get_arguments():
         help='start the scheduler')
     group.add_argument(
         '-B', nargs='?', const='.',
-        help='generate a WSL Bash script'
-        f' for operating {os.path.basename(__file__)}'
-        ' with an optional output directory',
-        metavar='DIRECTORY')
+        help='generate a WSL Bash script to activate and run this script',
+        metavar='OUTPUT_DIRECTORY')
     group.add_argument(
         '-PS', nargs='?', const='.',
-        help='generate a PowerShell script'
-        f' for operating {os.path.basename(__file__)}'
-        ' with an optional output directory',
-        metavar='DIRECTORY')
+        help='generate a PowerShell 7 script to activate and run this script',
+        metavar='OUTPUT_DIRECTORY')
     group.add_argument(
         '-SS', action='store_true',
         help='configure the startup script, create a shortcut to it,'
