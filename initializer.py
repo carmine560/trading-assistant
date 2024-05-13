@@ -12,7 +12,7 @@ class Initializer:
     def __init__(self, vendor, process, script_path):
         """Construct an Initializer instance."""
         self.vendor = vendor
-        if os.path.exists(process):
+        if os.path.isfile(process):
             self.executable = os.path.abspath(process)
             self.process = os.path.splitext(
                 os.path.basename(self.executable))[0]

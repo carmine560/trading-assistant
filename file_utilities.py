@@ -324,6 +324,7 @@ def create_powershell_wrapper(script_path, output_directory):
         f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1')
     wrapper_string = f'''. {activate_path} &&
 {interpreter} {script_path} $args
+deactivate
 '''
 
     with open(wrapper_path, 'w', encoding='utf-8') as f:
@@ -333,28 +334,27 @@ def create_powershell_wrapper(script_path, output_directory):
 def create_bash_completion(script_base, options, values, interpreters,
                            completion):
     """Generate a bash completion script for options and values."""
-    variable_str = '    values="'
+    variable_string = '    values="'
     line = ''
     lines = []
     for value in values:
-        if len(variable_str) + len(line) + len(value) + 4 > 79:
+        if len(variable_string) + len(line) + len(value) + 4 > 79:
             lines.append(line.rstrip(' '))
             line = ''
 
         line += f"'{value}' "
 
     lines.append(line.rstrip(' '))
-    values_str = f"\n{' ' * len(variable_str)}".join(lines)
+    values_string = f"\n{' ' * len(variable_string)}".join(lines)
 
-    expression_str = ' || '.join(f'$previous == {option}'
-                                 for option in options)
-    completion_str = fr'''_{script_base}()
-{{
+    expression_string = ' || '.join(f'$previous == {option}'
+                                    for option in options)
+    completion_string = fr'''_{script_base}() {{
     local current previous options values
     current=${{COMP_WORDS[COMP_CWORD]}}
     previous=${{COMP_WORDS[COMP_CWORD-1]}}
     options="{' '.join(options)}"
-{variable_str}{values_str}"
+{variable_string}{values_string}"
 
     if [[ ${{COMP_WORDS[0]}} =~ py(thon)?\.exe &&
               ${{COMP_WORDS[1]}} =~ {script_base}\.py$ ]] ||
@@ -363,7 +363,7 @@ def create_bash_completion(script_base, options, values, interpreters,
             COMPREPLY=($(compgen -W "$options" -- $current))
             return 0
         fi
-        if [[ {expression_str} ]]; then
+        if [[ {expression_string} ]]; then
             COMPREPLY=($(compgen -W "$values" -- $current))
             return 0
         fi
@@ -376,36 +376,32 @@ complete -F _{script_base} {' '.join(interpreters)} {script_base}.sh
 '''
 
     with open(completion, 'w', encoding='utf-8', newline='\n') as f:
-        f.write(completion_str)
+        f.write(completion_string)
 
 
 def create_powershell_completion(script_base, options, values, interpreters,
                                  completion):
     """Generate a PowerShell completion script for options and values."""
-    interpreters_regex = fr"({'|'.join(interpreters)})(\.exe)?"
-    interpreters_array = f"@({', '.join(map(repr, interpreters))})"
-    options_str = '|'.join(options)
-
-    variable_str = '        $options = @('
+    variable_string = '        $options = @('
     line = ''
     lines = []
     for value in values:
-        if len(variable_str) + len(line) + len(value) + 5 > 79:
+        if len(variable_string) + len(line) + len(value) + 5 > 79:
             lines.append(line.rstrip(' '))
             line = ''
 
         line += f"'{value}', "
 
     lines.append(line.rstrip(', '))
-    values_str = f"\n{' ' * len(variable_str)}".join(lines)
+    values_string = f"\n{' ' * len(variable_string)}".join(lines)
 
-    completion_str = fr'''$scriptblock = {{
+    completion_string = fr'''$scriptblock = {{
     param($wordToComplete, $commandAst, $cursorPosition)
     $commandLine = $commandAst.ToString()
-    $regex = `
-      '{interpreters_regex}\s+.*{script_base}\.py(\s+.*)?\s+({options_str})'
+    $regex = '(({'|'.join(interpreters)})(\.exe)?\s+.*{script_base}\.py'`
+      + '|{script_base}\.ps1)(\s+.*)?\s+({'|'.join(options)})'
     if ($commandLine -cmatch $regex) {{
-{variable_str}{values_str})
+{variable_string}{values_string})
         $options | Where-Object {{ $_ -like "$wordToComplete*" }} |
           ForEach-Object {{
               [System.Management.Automation.CompletionResult]::new(
@@ -413,12 +409,13 @@ def create_powershell_completion(script_base, options, values, interpreters,
           }}
     }}
 }}
-Register-ArgumentCompleter -Native -CommandName {interpreters_array} `
-  -ScriptBlock $scriptblock
+Register-ArgumentCompleter `
+  -CommandName @({', '.join(map(repr, interpreters))}, '{script_base}.ps1') `
+  -ScriptBlock $scriptblock -Native
 '''
 
     with open(completion, 'w', encoding='utf-8') as f:
-        f.write(completion_str)
+        f.write(completion_string)
 
 
 # Shortcut and Icon Operations #

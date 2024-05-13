@@ -345,10 +345,10 @@ also specify a key fingerprint as the value of the `fingerprint` option in the
 
 The `-A` and `-D` options generate completion scripts for action arguments.
 They are located at `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.ps1`
-for PowerShell and `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.sh`
+for PowerShell 7 and `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.sh`
 for Bash.
 
-To enable action argument completion in PowerShell, source the script in your
+To enable action argument completion in PowerShell 7, source the script in your
 current shell:
 
 ``` powershell

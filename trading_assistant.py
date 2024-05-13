@@ -54,6 +54,7 @@ class Trade(initializer.Initializer):
                                                self.process)
         self.customer_margin_ratios = os.path.join(
             self.resource_directory, 'customer_margin_ratios.csv')
+        # TODO: rename
         self.startup_script = os.path.join(self.resource_directory,
                                            self.script_base + '.ps1')
 
