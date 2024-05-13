@@ -54,7 +54,6 @@ class Trade(initializer.Initializer):
                                                self.process)
         self.customer_margin_ratios = os.path.join(
             self.resource_directory, 'customer_margin_ratios.csv')
-        # TODO: rename
         self.startup_script = os.path.join(self.resource_directory,
                                            self.script_base + '.ps1')
 
@@ -1255,9 +1254,8 @@ def create_startup_script(trade, config):
         return [f'    python.exe {trade.script_file} {option.strip()}\n'
                 for option in options if option]
 
-    activate = None
-    if os.path.exists(r'.venv\Scripts\Activate.ps1'):
-        activate = r'.venv\Scripts\Activate.ps1'
+    p = os.path.join(os.path.dirname(__file__), r'.venv\Scripts\Activate.ps1')
+    activate = p if os.path.exists(p) else None
 
     start_process = (
         '    Start-Process '
