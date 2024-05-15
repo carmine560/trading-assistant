@@ -31,7 +31,7 @@ except ModuleNotFoundError as e:
     WINDOWS_IMPORT_ERROR = e
 
 
-# Path Operations #
+# WSL Path Operations #
 
 def is_wsl_windows_path(path):
     """Check if the given path is a WSL path in the Windows filesystem."""
@@ -262,29 +262,30 @@ def move_to_trash(path, option=None):
 def select_executable(executables):
     """Find the first available executable from a list of executables."""
     for executable in executables:
-        path = shutil.which(executable)
-        if path:
-            return path
-    return False
+        executable_path = shutil.which(executable)
+        if executable_path:
+            return executable_path
+    return None
+
+
+def select_venv(directory, activate='activate'):
+    """Find the first venv and its activation script from a list of venvs."""
+    for venv in ('.env', '.venv', 'env', 'venv'):
+        venv_path = os.path.join(directory, venv)
+        if os.path.isdir(venv_path):
+            for d, interpreter in {'Scripts': 'python.exe',
+                                   'bin': 'python'}.items():
+                activate_path = os.path.join(venv_path, d, activate)
+                if os.path.isfile(activate_path):
+                    return (activate_path, interpreter)
+    return (None, None)
 
 
 # CLI Operations #
 
 def create_bash_wrapper(script_path, output_directory):
     """Create a WSL Bash wrapper for a Python script."""
-    activate_path = interpreter = ''
-    for venv in ('.env', '.venv', 'env', 'venv'):
-        venv_path = os.path.join(os.path.dirname(script_path), venv)
-        if os.path.isdir(venv_path):
-            for d, i in {'Scripts': 'python.exe', 'bin': ''}.items():
-                if os.path.isdir(os.path.join(venv_path, d)):
-                    activate_path = os.path.join(venv_path, d, 'activate')
-                    interpreter = i
-
-    if not os.path.exists(activate_path):
-        print(f'{activate_path} does not exists.')
-        sys.exit(1)
-
+    activate_path, interpreter = select_venv(os.path.dirname(script_path))
     if sys.platform == 'win32':
         script_path = wsl_to_windows_path(windows_to_wsl_path(script_path))
         activate_path = windows_to_wsl_path(activate_path)
@@ -295,7 +296,7 @@ def create_bash_wrapper(script_path, output_directory):
     wrapper_string = f'''#!/bin/bash
 
 . {activate_path} &&
-    {interpreter}{' ' if interpreter else ''}{script_path} "$@"
+    {interpreter} {script_path} "$@"
 '''
 
     with open(wrapper_path, 'w', encoding='utf-8', newline='\n') as f:
@@ -308,17 +309,8 @@ def create_bash_wrapper(script_path, output_directory):
 
 def create_powershell_wrapper(script_path, output_directory):
     """Create a PowerShell wrapper for a Python script."""
-    activate_path = interpreter = ''
-    for venv in ('.env', '.venv', 'env', 'venv'):
-        venv_path = os.path.join(os.path.dirname(script_path), venv)
-        if os.path.isdir(venv_path):
-            activate_path = os.path.join(venv_path, 'Scripts', 'Activate.ps1')
-            interpreter = 'python.exe'
-
-    if not os.path.exists(activate_path):
-        print(f'{activate_path} does not exists.')
-        sys.exit(1)
-
+    activate_path, interpreter = select_venv(os.path.dirname(script_path),
+                                             activate='Activate.ps1')
     wrapper_path = os.path.join(
         os.path.realpath(output_directory),
         f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1')
@@ -494,7 +486,8 @@ def create_icon(base, icon_directory=None):
 
 
 def create_shortcut(base, target_path, arguments, program_group_base=None,
-                    icon_directory=None, hotkey=None):
+                    working_directory=None, hotkey=None, window_style=7,
+                    icon_location=None):
     """Create a Windows shortcut for a given program."""
     if WINDOWS_IMPORT_ERROR:
         print(WINDOWS_IMPORT_ERROR)
@@ -506,36 +499,27 @@ def create_shortcut(base, target_path, arguments, program_group_base=None,
     title = re.sub(r'[\W_]+', ' ', base).strip().title()
     shortcut = shell.CreateShortCut(os.path.join(program_group,
                                                  title + '.lnk'))
-    shortcut.WindowStyle = 7
-    shortcut.IconLocation = create_icon(base,
-                                        icon_directory=icon_directory)
+
     shortcut.TargetPath = target_path
     shortcut.Arguments = arguments
-    shortcut.WorkingDirectory = os.path.dirname(os.path.abspath(sys.argv[0]))
+    if working_directory:
+        shortcut.WorkingDirectory = working_directory
     if hotkey:
-        shortcut.Hotkey = 'CTRL+ALT+' + hotkey
+        shortcut.Hotkey = hotkey
+
+    shortcut.WindowStyle = window_style
+    if icon_location:
+        shortcut.IconLocation = icon_location
 
     shortcut.save()
 
 
-def delete_shortcut(base, program_group_base=None, icon_directory=None):
+def delete_shortcut(base, program_group_base=None, icon_location=None):
     """Delete a Windows shortcut and its associated icon."""
-    if icon_directory:
-        icon = os.path.join(icon_directory, base + '.ico')
-    else:
-        icon = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                            base + '.ico')
-    if os.path.exists(icon):
-        try:
-            os.remove(icon)
-        except OSError as e:
-            print(e)
-            sys.exit(1)
-
     program_group = get_program_group(program_group_base)
     title = re.sub(r'[\W_]+', ' ', base).strip().title()
     shortcut = os.path.join(program_group, title + '.lnk')
-    if os.path.exists(shortcut):
+    if os.path.isfile(shortcut):
         try:
             os.remove(shortcut)
         except OSError as e:
@@ -544,6 +528,16 @@ def delete_shortcut(base, program_group_base=None, icon_directory=None):
     if os.path.isdir(program_group) and not os.listdir(program_group):
         try:
             os.rmdir(program_group)
+        except OSError as e:
+            print(e)
+            sys.exit(1)
+
+    if not icon_location:
+        icon_location = os.path.join(
+            os.path.dirname(os.path.abspath(sys.argv[0])), base + '.ico')
+    if os.path.isfile(icon_location):
+        try:
+            os.remove(icon_location)
         except OSError as e:
             print(e)
             sys.exit(1)

@@ -372,8 +372,8 @@ python trading_assistant.py -a action
 
 ### Options ###
 
-  * `-P BROKERAGE PROCESS|PATH_TO_EXECUTABLE`: set the brokerage and the
-    process [defaults: `SBI Securities` and `HYPERSBI2`]
+  * `-P BROKERAGE PROCESS|EXECUTABLE_PATH`: set the brokerage and the process
+    [defaults: `SBI Securities` and `HYPERSBI2`]
   * `-r`: save the customer margin ratios
   * `-d`: save the previous market data
   * `-s`: start the scheduler
@@ -710,7 +710,7 @@ start_manual_recording = [
             ('speak_text', 'Not recording.')])])]
 create_pre_trading_chapter = [
     # Write a chapter section for FFmpeg metadata.
-    ('write_chapter', 'Pre-Trading', 'Pre-Market')]
+    ('write_chapter', 'Pre-trading', 'Pre-market')]
 stop_manual_recording = [
     # Stop a recording if one is currently in progress.
     ('is_recording', 'True', [

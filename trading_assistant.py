@@ -54,6 +54,7 @@ class Trade(initializer.Initializer):
                                                self.process)
         self.customer_margin_ratios = os.path.join(
             self.resource_directory, 'customer_margin_ratios.csv')
+        # TODO: rename
         self.startup_script = os.path.join(self.resource_directory,
                                            self.script_base + '.ps1')
 
@@ -407,7 +408,8 @@ def main():
                     trade.script_base, powershell,
                     '-WindowStyle Hidden -File "' + trade.startup_script + '"',
                     program_group_base=config[trade.process]['title'],
-                    icon_directory=trade.resource_directory)
+                    icon_location=file_utilities.create_icon(
+                        args.A[0], icon_directory=trade.resource_directory))
             return
         if args.A:
             if configuration.modify_option(
@@ -421,30 +423,31 @@ def main():
                     items=trade.instruction_items):
                 powershell = file_utilities.select_executable(
                     ['pwsh.exe', 'powershell.exe'])
-                activate = None
-                if os.path.exists(r'.venv\Scripts\Activate.ps1'):
-                    activate = r'.venv\Scripts\Activate.ps1'
+                activate_path, interpreter = file_utilities.select_venv(
+                    os.path.dirname(__file__), activate='Activate.ps1')
 
                 # To pin the shortcut to the Taskbar, specify an executable
                 # file as the 'target_path' argument.
-                if powershell and activate:
+                if powershell and activate_path:
                     target_path = powershell
                     arguments = (
-                        f'-Command ". {activate}; '
-                        f'python.exe {trade.script_file} -a {args.A[0]}"')
+                        f'-Command ". {activate_path}; '
+                        f'{interpreter} {__file__} -a {args.A[0]}"')
                 else:
                     target_path = 'py.exe'
-                    arguments = f'{trade.script_file} -a {args.A[0]}'
+                    arguments = f'{__file__} -a {args.A[0]}'
 
                 file_utilities.create_shortcut(
                     args.A[0], target_path, arguments,
                     program_group_base=config[trade.process]['title'],
-                    icon_directory=trade.resource_directory)
+                    icon_location=file_utilities.create_icon(
+                        args.A[0], icon_directory=trade.resource_directory))
             else:
                 file_utilities.delete_shortcut(
                     args.A[0],
                     program_group_base=config[trade.process]['title'],
-                    icon_directory=trade.resource_directory)
+                    icon_location=os.path.join(trade.resource_directory,
+                                               args.A[0] + '.ico'))
 
             trade.instruction_items['preset_additional_values'] = (
                 configuration.list_section(config, trade.actions_section))
@@ -574,7 +577,8 @@ def main():
 
         file_utilities.delete_shortcut(
             args.D[0], program_group_base=config[trade.process]['title'],
-            icon_directory=trade.resource_directory)
+            icon_location=os.path.join(trade.resource_directory,
+                                       args.D[0] + '.ico'))
         file_utilities.create_powershell_completion(
             trade.script_base, ('-a', '-A', '-D'),
             trade.instruction_items.get('preset_additional_values'),
@@ -596,7 +600,7 @@ def get_arguments():
     parser.add_argument(
         '-P', nargs=2, default=('SBI Securities', 'HYPERSBI2'),
         help='set the brokerage and the process [defaults: %(default)s]',
-        metavar=('BROKERAGE', 'PROCESS|PATH_TO_EXECUTABLE'))
+        metavar=('BROKERAGE', 'PROCESS|EXECUTABLE_PATH'))
     parser.add_argument(
         '-r', action='store_true',
         help='save the customer margin ratios')
@@ -1249,13 +1253,17 @@ def execute_action(trade, config, gui_state, action):
 
 def create_startup_script(trade, config):
     """Create a startup script for a trade."""
-    def generate_script_lines(trade, options):
+    def generate_script_lines(interpreter, script_path, options):
         """Generate lines of script for given options."""
-        return [f'    python.exe {trade.script_file} {option.strip()}\n'
+        return [f'    {interpreter} `\n'
+                f'      {script_path} `\n'
+                f'      {option.strip()}\n'
                 for option in options if option]
 
-    p = os.path.join(os.path.dirname(__file__), r'.venv\Scripts\Activate.ps1')
-    activate = p if os.path.exists(p) else None
+    activate_path, interpreter = file_utilities.select_venv(
+        os.path.dirname(__file__), activate='Activate.ps1')
+    if not interpreter:
+        interpreter = 'python.exe'
 
     start_process = (
         '    Start-Process '
@@ -1270,9 +1278,8 @@ def create_startup_script(trade, config):
         config[trade.startup_script_section]['running_options'].split(','))
 
     lines = []
-    lines.append(f'Set-Location -Path "{os.path.dirname(__file__)}"\n')
-    if activate:
-        lines.append(f'. {activate}\n')
+    if activate_path:
+        lines.append(f'. {activate_path}\n')
 
     lines.append(f'if (Get-Process "{trade.process}" '
                  '-ErrorAction SilentlyContinue) {\n')
@@ -1283,14 +1290,17 @@ def create_startup_script(trade, config):
     lines.append('    }\n')
     lines.append('    Start-Sleep -Seconds 1.0\n')
     lines.append(start_process)
-    lines.extend(generate_script_lines(trade, running_options))
+    lines.extend(generate_script_lines(interpreter, __file__,
+                                       running_options))
     lines.append('}\n')
     lines.append('else {\n')
-    lines.extend(generate_script_lines(trade, pre_start_options))
+    lines.extend(generate_script_lines(interpreter, __file__,
+                                       pre_start_options))
     lines.append(start_process)
-    lines.extend(generate_script_lines(trade, post_start_options))
+    lines.extend(generate_script_lines(interpreter, __file__,
+                                       post_start_options))
     lines.append('}\n')
-    if activate:
+    if activate_path:
         lines.append('deactivate\n')
 
     with open(trade.startup_script, 'w', encoding='utf-8') as f:
