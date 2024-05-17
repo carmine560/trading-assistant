@@ -87,11 +87,11 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                 should_compare=True):
     """Backup a file to a specified directory, with optional encryption."""
     encrypted_source = source + '.gpg'
-    if os.path.exists(encrypted_source):
+    if os.path.isfile(encrypted_source):
         source = encrypted_source
         should_compare = False
 
-    if os.path.exists(source):
+    if os.path.isfile(source):
         if not backup_directory:
             backup_directory = os.path.join(os.path.dirname(source), 'backups')
 
@@ -116,7 +116,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                  if re.fullmatch(fr'{source_base}'
                                  fr'-\d{{8}}T\d{{6}}{source_suffix}', f)])
 
-            if not os.path.exists(backup):
+            if not os.path.isfile(backup):
                 should_copy = True
                 if should_compare and backups:
                     with open(source, 'rb') as f:
@@ -170,7 +170,7 @@ def compare_directory_list(directory, file_regex, files):
 
     for f in files:
         path = os.path.join(directory, f)
-        if not os.path.exists(path):
+        if not os.path.isfile(path):
             print(path, 'file does not exist in the directory.')
 
 
@@ -244,7 +244,7 @@ def get_config_path(script_path, can_create_directory=True):
 
 def is_writing(path):
     """Determine if a file at the path is currently being written to."""
-    return bool(os.path.exists(path)
+    return bool(os.path.isfile(path)
                 and time.time() - os.path.getmtime(path) < 1)
 
 
@@ -282,6 +282,25 @@ def select_venv(directory, activate='activate'):
 
 
 # CLI Operations #
+
+def add_wrapper_options(group):
+    """Add wrapper generation options to the argparse group."""
+    if sys.platform == 'win32':
+        group.add_argument(
+            '-B', nargs='?', const='.',
+            help='generate a WSL Bash script to launch this script and exit',
+            metavar='OUTPUT_DIRECTORY')
+        group.add_argument(
+            '-PS', nargs='?', const='.',
+            help='generate a PowerShell 7 script to launch this script'
+            ' and exit',
+            metavar='OUTPUT_DIRECTORY')
+    elif sys.platform == 'linux':
+        group.add_argument(
+            '-B', nargs='?', const='.',
+            help='generate a Bash script to launch this script and exit',
+            metavar='OUTPUT_DIRECTORY')
+
 
 def create_bash_wrapper(script_path, output_directory):
     """Create a WSL Bash wrapper for a Python script."""
@@ -612,7 +631,7 @@ def write_chapter(video, current_title, previous_title=None, offset=None):
         default_duration = 60000
         end = start + default_duration
 
-        if os.path.exists(ffmpeg_metadata):
+        if os.path.isfile(ffmpeg_metadata):
             with open(ffmpeg_metadata, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             for i in reversed(range(len(lines))):

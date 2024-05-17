@@ -385,6 +385,7 @@ def main():
     trade = Trade(*args.P)
     backup_parameters = {'number_of_backups': 8}
 
+    # TODO: simplify
     if args.B:
         file_utilities.create_bash_wrapper(__file__, args.B)
         return
@@ -563,7 +564,7 @@ def main():
                 base_manager, trade.speech_manager, trade.speaking_process)
     if args.D:
         if (args.D[0] == trade.script_base
-            and os.path.exists(trade.startup_script)):
+            and os.path.isfile(trade.startup_script)):
             try:
                 os.remove(trade.startup_script)
             except OSError as e:
@@ -617,14 +618,9 @@ def get_arguments():
     parser.add_argument(
         '-s', action='store_true',
         help='start the scheduler')
-    group.add_argument(
-        '-B', nargs='?', const='.',
-        help='generate a WSL Bash script to activate and run this script',
-        metavar='OUTPUT_DIRECTORY')
-    group.add_argument(
-        '-PS', nargs='?', const='.',
-        help='generate a PowerShell 7 script to activate and run this script',
-        metavar='OUTPUT_DIRECTORY')
+
+    file_utilities.add_wrapper_options(group)
+
     group.add_argument(
         '-SS', action='store_true',
         help='configure the startup script, create a shortcut to it,'
@@ -929,7 +925,7 @@ def get_latest(config, market_holidays, update_time, timezone, *paths,
                volatile_time=None):
     """Check if the latest market data needs to be fetched."""
     modified_time = pd.Timestamp(0, tz='UTC', unit='s')
-    if os.path.exists(market_holidays):
+    if os.path.isfile(market_holidays):
         modified_time = pd.Timestamp(os.path.getmtime(market_holidays),
                                      tz='UTC', unit='s')
 
@@ -949,7 +945,7 @@ def get_latest(config, market_holidays, update_time, timezone, *paths,
 
     modified_time = pd.Timestamp.now(tz='UTC')
     for i, _ in enumerate(paths):
-        if os.path.exists(paths[i]):
+        if os.path.isfile(paths[i]):
             modified_time = min(pd.Timestamp(os.path.getmtime(paths[i]),
                                              tz='UTC', unit='s'),
                                 modified_time)

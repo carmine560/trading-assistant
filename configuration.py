@@ -62,7 +62,7 @@ class CustomWordCompleter(Completer):
 def read_config(config, config_path):
     """Read and load configuration from a file, decrypt if encrypted."""
     encrypted_config_path = config_path + '.gpg'
-    if os.path.exists(encrypted_config_path):
+    if os.path.isfile(encrypted_config_path):
         if GNUPG_IMPORT_ERROR:
             raise RuntimeError(GNUPG_IMPORT_ERROR)
 
@@ -79,7 +79,7 @@ def read_config(config, config_path):
 def write_config(config, config_path):
     """Write config to file or encrypt and write if encrypted file exists."""
     encrypted_config_path = config_path + '.gpg'
-    if os.path.exists(encrypted_config_path):
+    if os.path.isfile(encrypted_config_path):
         if GNUPG_IMPORT_ERROR:
             raise RuntimeError(GNUPG_IMPORT_ERROR)
 
