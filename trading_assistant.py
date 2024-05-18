@@ -681,26 +681,36 @@ def configure_exit(args, trade):
     trade.instruction_items['preset_additional_values'] = (
         configuration.list_section(config, trade.actions_section))
 
-    if any((args.L, args.CB, args.U, args.PL, args.DLL, args.MDN)):
-        modify_option_parameters = {
-            'L': ('input_map', {'value': 'action'},
-                  trade.instruction_items.get('preset_additional_values'),
-                  None),
-            'CB': ('cash_balance_region',
-                   {'value': 'x, y, width, height, index'}, None, None),
-            'U': ('utilization_ratio', None, None, (0.0, 1.0)),
-            'PL': ('price_limit_region',
-                   {'value': 'x, y, width, height, index'}, None, None),
-            'DLL': ('daily_loss_limit_ratio', None, None, (-1.0, 0.0)),
-            'MDN': ('maximum_daily_number_of_trades', None, None,
-                    (0, sys.maxsize))}
-        for argument, (option, prompts, all_values, limits) in (
-                modify_option_parameters.items()):
+    if any((args.L, args.S, args.CB, args.U, args.PL, args.DLL, args.MDN)):
+        for argument, (
+                section, option, can_back, can_insert_delete, prompts,
+                all_values, limits
+        ) in {
+            'L': (trade.process, 'input_map', False, False,
+                  {'value': 'action'},
+                  trade.instruction_items.get('preset_additional_values'), ()),
+            'S': (trade.schedules_section, None, True, True,
+                  {'key': 'schedule', 'values': ('trigger', 'action'),
+                   'end_of_list': 'end of schedules'},
+                  (trade.instruction_items.get('preset_values'),
+                   trade.instruction_items.get('preset_additional_values')),
+                  ()),
+            'CB': (trade.process, 'cash_balance_region', False, False,
+                   {'value': 'x, y, width, height, index'}, None, ()),
+            'U': (trade.process, 'utilization_ratio', False, False, None, None,
+                  (0.0, 1.0)),
+            'PL': (trade.process, 'price_limit_region', False, False,
+                   {'value': 'x, y, width, height, index'}, None, ()),
+            'DLL': (trade.process, 'daily_loss_limit_ratio', False, False,
+                    None, None, (-1.0, 0.0)),
+            'MDN': (trade.process, 'maximum_daily_number_of_trades', False,
+                    False, None, None, (0, sys.maxsize))}.items():
             if getattr(args, argument):
-                configuration.modify_option(
-                    config, trade.process, option, trade.config_path,
-                    backup_parameters=backup_parameters, prompts=prompts,
-                    all_values=all_values, limits=limits)
+                configuration.modify_section(
+                    config, section, trade.config_path,
+                    backup_parameters=backup_parameters, can_back=can_back,
+                    can_insert_delete=can_insert_delete, option=option,
+                    prompts=prompts, all_values=all_values, limits=limits)
                 break
 
         sys.exit()
@@ -753,17 +763,6 @@ def configure_exit(args, trade):
                                            args.A[0] + '.ico'))
 
         create_completion(trade, config)
-        sys.exit()
-    if args.S:
-        configuration.modify_section(
-            config, trade.schedules_section, trade.config_path,
-            backup_parameters=backup_parameters, can_back=True,
-            can_insert_delete=True,
-            prompts={'key': 'schedule', 'values': ('trigger', 'action'),
-                     'end_of_list': 'end of schedules'},
-            all_values=(
-                trade.instruction_items.get('preset_values'),
-                trade.instruction_items.get('preset_additional_values')))
         sys.exit()
     if args.D:
         if (args.D[0] == trade.script_base
