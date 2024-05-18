@@ -383,141 +383,11 @@ def main():
     """Execute the main program based on command-line arguments."""
     args = get_arguments()
     trade = Trade(*args.P)
-    backup_parameters = {'number_of_backups': 8}
 
-    # TODO: simplify
-    if args.B:
-        file_utilities.create_bash_wrapper(__file__, args.B)
-        return
-    if args.PS:
-        file_utilities.create_powershell_wrapper(__file__, args.PS)
-        return
-    if any((args.SS, args.A, args.L, args.S, args.CB, args.U, args.PL,
-            args.DLL, args.MDN)):
-        config = configure(trade, can_interpolate=False)
-        trade.instruction_items['preset_additional_values'] = (
-            configuration.list_section(config, trade.actions_section))
+    file_utilities.create_launchers_exit(args, __file__)
+    configure_exit(args, trade)
 
-        if args.SS and configuration.modify_section(
-                config, trade.startup_script_section, trade.config_path,
-                backup_parameters=backup_parameters):
-            create_startup_script(trade, config)
-            powershell = file_utilities.select_executable(
-                ['pwsh.exe', 'powershell.exe'])
-            if powershell:
-                file_utilities.create_shortcut(
-                    trade.script_base, powershell,
-                    '-WindowStyle Hidden -File "' + trade.startup_script + '"',
-                    program_group_base=config[trade.process]['title'],
-                    icon_location=file_utilities.create_icon(
-                        args.A[0], icon_directory=trade.resource_directory))
-            return
-        if args.A:
-            if configuration.modify_option(
-                    config, trade.actions_section, args.A[0],
-                    trade.config_path, backup_parameters=backup_parameters,
-                    can_insert_delete=True, initial_value='[()]',
-                    prompts={'key': 'command', 'value': 'argument',
-                             'additional_value': 'additional argument',
-                             'preset_additional_value': 'action',
-                             'end_of_list': 'end of commands'},
-                    items=trade.instruction_items):
-                powershell = file_utilities.select_executable(
-                    ['pwsh.exe', 'powershell.exe'])
-                activate_path, interpreter = file_utilities.select_venv(
-                    os.path.dirname(__file__), activate='Activate.ps1')
-
-                # To pin the shortcut to the Taskbar, specify an executable
-                # file as the 'target_path' argument.
-                if powershell and activate_path:
-                    target_path = powershell
-                    arguments = (
-                        f'-Command ". {activate_path}; '
-                        f'{interpreter} {__file__} -a {args.A[0]}"')
-                else:
-                    target_path = 'py.exe'
-                    arguments = f'{__file__} -a {args.A[0]}'
-
-                file_utilities.create_shortcut(
-                    args.A[0], target_path, arguments,
-                    program_group_base=config[trade.process]['title'],
-                    icon_location=file_utilities.create_icon(
-                        args.A[0], icon_directory=trade.resource_directory))
-            else:
-                file_utilities.delete_shortcut(
-                    args.A[0],
-                    program_group_base=config[trade.process]['title'],
-                    icon_location=os.path.join(trade.resource_directory,
-                                               args.A[0] + '.ico'))
-
-            trade.instruction_items['preset_additional_values'] = (
-                configuration.list_section(config, trade.actions_section))
-            file_utilities.create_powershell_completion(
-                trade.script_base, ('-a', '-A', '-D'),
-                trade.instruction_items.get('preset_additional_values'),
-                ('py', 'python'),
-                os.path.join(trade.resource_directory, 'completion.ps1'))
-            file_utilities.create_bash_completion(
-                trade.script_base, ('-a', '-A', '-D'),
-                trade.instruction_items.get('preset_additional_values'),
-                ('py.exe', 'python.exe'),
-                os.path.join(trade.resource_directory, 'completion.sh'))
-            return
-        if args.L and configuration.modify_option(
-                config, trade.process, 'input_map', trade.config_path,
-                backup_parameters=backup_parameters,
-                prompts={'value': 'action'},
-                all_values=trade.instruction_items.get(
-                    'preset_additional_values')):
-            return
-        if args.S and configuration.modify_section(
-                config, trade.schedules_section, trade.config_path,
-                backup_parameters=backup_parameters, can_back=True,
-                can_insert_delete=True,
-                prompts={'key': 'schedule', 'values': ('trigger', 'action'),
-                         'end_of_list': 'end of schedules'},
-                all_values=(
-                    trade.instruction_items.get('preset_values'),
-                    trade.instruction_items.get('preset_additional_values'))):
-            return
-        if args.CB and configuration.modify_option(
-                config, trade.process, 'cash_balance_region',
-                trade.config_path, backup_parameters=backup_parameters,
-                prompts={'value': 'x, y, width, height, index'}):
-            return
-        if args.U and configuration.modify_option(
-                config, trade.process, 'utilization_ratio', trade.config_path,
-                backup_parameters=backup_parameters, limits=(0.0, 1.0)):
-            return
-        if args.PL and configuration.modify_option(
-                config, trade.process, 'price_limit_region', trade.config_path,
-                backup_parameters=backup_parameters,
-                prompts={'value': 'x, y, width, height, index'}):
-            return
-        if args.DLL and configuration.modify_option(
-                config, trade.process, 'daily_loss_limit_ratio',
-                trade.config_path, backup_parameters=backup_parameters,
-                limits=(-1.0, 0.0)):
-            return
-        if args.MDN and configuration.modify_option(
-                config, trade.process, 'maximum_daily_number_of_trades',
-                trade.config_path, backup_parameters=backup_parameters,
-                limits=(0, sys.maxsize)):
-            return
-
-        sys.exit(1)
-    elif args.C:
-        default_config = configure(trade, can_interpolate=False,
-                                   can_override=False)
-        configuration.check_config_changes(
-            default_config, trade.config_path,
-            excluded_sections=(trade.variables_section,),
-            user_option_ignored_sections=(trade.actions_section,),
-            backup_parameters=backup_parameters)
-        return
-    else:
-        config = configure(trade)
-
+    config = configure(trade)
     gui_state = gui_interactions.GuiState(
         configuration.evaluate_value(
             config[trade.process]['interactive_windows']))
@@ -562,35 +432,6 @@ def main():
         if not (args.a or args.l):
             speech_synthesis.stop_speaking_process(
                 base_manager, trade.speech_manager, trade.speaking_process)
-    if args.D:
-        if (args.D[0] == trade.script_base
-            and os.path.isfile(trade.startup_script)):
-            try:
-                os.remove(trade.startup_script)
-            except OSError as e:
-                print(e)
-        else:
-            configuration.delete_option(config, trade.actions_section,
-                                        args.D[0], trade.config_path,
-                                        backup_parameters=backup_parameters)
-            trade.instruction_items['preset_additional_values'] = (
-                configuration.list_section(config, trade.actions_section))
-
-        file_utilities.delete_shortcut(
-            args.D[0], program_group_base=config[trade.process]['title'],
-            icon_location=os.path.join(trade.resource_directory,
-                                       args.D[0] + '.ico'))
-        file_utilities.create_powershell_completion(
-            trade.script_base, ('-a', '-A', '-D'),
-            trade.instruction_items.get('preset_additional_values'),
-            ('py', 'python'),
-            os.path.join(trade.resource_directory, 'completion.ps1'))
-        file_utilities.create_bash_completion(
-            trade.script_base, ('-a', '-A', '-D'),
-            trade.instruction_items.get('preset_additional_values'),
-            ('py.exe', 'python.exe'),
-            os.path.join(trade.resource_directory, 'completion.sh'))
-        return
 
 
 def get_arguments():
@@ -619,7 +460,7 @@ def get_arguments():
         '-s', action='store_true',
         help='start the scheduler')
 
-    file_utilities.add_wrapper_options(group)
+    file_utilities.add_launcher_options(group)
 
     group.add_argument(
         '-SS', action='store_true',
@@ -791,7 +632,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             'running_options': '-l'}
         config[trade.actions_section] = {
             'create_pre_trading_chapter': [
-                ('write_chapter', 'Pre-Trading', 'Pre-Market')],
+                ('write_chapter', 'Pre-trading', 'Pre-market')],
             'show_hide_watchlists': [
                 ('show_hide_window', '登録銘柄')],
             'speak_cpu_utilization': [
@@ -831,6 +672,142 @@ def configure(trade, can_interpolate=True, can_override=True):
                 process_section['is_dark_theme'] = 'False'
 
     return config
+
+
+def configure_exit(args, trade):
+    """Configure parameters based on command-line arguments and exit."""
+    config = configure(trade, can_interpolate=False)
+    backup_parameters = {'number_of_backups': 8}
+    trade.instruction_items['preset_additional_values'] = (
+        configuration.list_section(config, trade.actions_section))
+
+    if any((args.L, args.CB, args.U, args.PL, args.DLL, args.MDN)):
+        modify_option_parameters = {
+            'L': ('input_map', {'value': 'action'},
+                  trade.instruction_items.get('preset_additional_values'),
+                  None),
+            'CB': ('cash_balance_region',
+                   {'value': 'x, y, width, height, index'}, None, None),
+            'U': ('utilization_ratio', None, None, (0.0, 1.0)),
+            'PL': ('price_limit_region',
+                   {'value': 'x, y, width, height, index'}, None, None),
+            'DLL': ('daily_loss_limit_ratio', None, None, (-1.0, 0.0)),
+            'MDN': ('maximum_daily_number_of_trades', None, None,
+                    (0, sys.maxsize))}
+        for argument, (option, prompts, all_values, limits) in (
+                modify_option_parameters.items()):
+            if getattr(args, argument):
+                configuration.modify_option(
+                    config, trade.process, option, trade.config_path,
+                    backup_parameters=backup_parameters, prompts=prompts,
+                    all_values=all_values, limits=limits)
+                break
+
+        sys.exit()
+    if args.SS and configuration.modify_section(
+            config, trade.startup_script_section, trade.config_path,
+            backup_parameters=backup_parameters):
+        create_startup_script(trade, config)
+        powershell = file_utilities.select_executable(
+            ['pwsh.exe', 'powershell.exe'])
+        if powershell:
+            file_utilities.create_shortcut(
+                trade.script_base, powershell,
+                f'-WindowStyle Hidden -File "{trade.startup_script}"',
+                program_group_base=config[trade.process]['title'],
+                icon_location=file_utilities.create_icon(
+                    trade.script_base,
+                    icon_directory=trade.resource_directory))
+
+        sys.exit()
+    if args.A:
+        if configuration.modify_option(
+                config, trade.actions_section, args.A[0],
+                trade.config_path, backup_parameters=backup_parameters,
+                can_insert_delete=True, initial_value='[()]',
+                prompts={'key': 'command', 'value': 'argument',
+                         'additional_value': 'additional argument',
+                         'preset_additional_value': 'action',
+                         'end_of_list': 'end of commands'},
+                items=trade.instruction_items):
+            powershell = file_utilities.select_executable(
+                ['pwsh.exe', 'powershell.exe'])
+            activate_path, interpreter = file_utilities.select_venv(
+                os.path.dirname(__file__), activate='Activate.ps1')
+
+            # To pin the shortcut to the Taskbar, specify an executable
+            # file as the 'target_path' argument.
+            file_utilities.create_shortcut(
+                args.A[0],
+                powershell if powershell else 'py.exe',
+                f'-Command ". {activate_path};'
+                f' {interpreter} {__file__} -a {args.A[0]}"' if activate_path
+                else f'{__file__} -a {args.A[0]}',
+                program_group_base=config[trade.process]['title'],
+                icon_location=file_utilities.create_icon(
+                    args.A[0], icon_directory=trade.resource_directory))
+        else:
+            file_utilities.delete_shortcut(
+                args.A[0], program_group_base=config[trade.process]['title'],
+                icon_location=os.path.join(trade.resource_directory,
+                                           args.A[0] + '.ico'))
+
+        create_completion(trade, config)
+        sys.exit()
+    if args.S:
+        configuration.modify_section(
+            config, trade.schedules_section, trade.config_path,
+            backup_parameters=backup_parameters, can_back=True,
+            can_insert_delete=True,
+            prompts={'key': 'schedule', 'values': ('trigger', 'action'),
+                     'end_of_list': 'end of schedules'},
+            all_values=(
+                trade.instruction_items.get('preset_values'),
+                trade.instruction_items.get('preset_additional_values')))
+        sys.exit()
+    if args.D:
+        if (args.D[0] == trade.script_base
+            and os.path.isfile(trade.startup_script)):
+            try:
+                os.remove(trade.startup_script)
+            except OSError as e:
+                print(e)
+        else:
+            configuration.delete_option(
+                config, trade.actions_section, args.D[0], trade.config_path,
+                backup_parameters=backup_parameters)
+            create_completion(trade, config)
+
+        file_utilities.delete_shortcut(
+            args.D[0], program_group_base=config[trade.process]['title'],
+            icon_location=os.path.join(trade.resource_directory,
+                                       args.D[0] + '.ico'))
+        sys.exit()
+    if args.C:
+        configuration.check_config_changes(
+            configure(trade, can_interpolate=False, can_override=False),
+            trade.config_path, excluded_sections=(trade.variables_section,),
+            user_option_ignored_sections=(trade.actions_section,),
+            backup_parameters=backup_parameters)
+        sys.exit()
+
+
+def create_completion(trade, config):
+    """Generate completion scripts for options and values."""
+    options = ('-a', '-A', '-D')
+    trade.instruction_items['preset_additional_values'] = (
+        configuration.list_section(config, trade.actions_section))
+
+    file_utilities.create_powershell_completion(
+        trade.script_base, options,
+        trade.instruction_items.get('preset_additional_values'),
+        ('py', 'python'),
+        os.path.join(trade.resource_directory, 'completion.ps1'))
+    file_utilities.create_bash_completion(
+        trade.script_base, options,
+        trade.instruction_items.get('preset_additional_values'),
+        ('py.exe', 'python.exe'),
+        os.path.join(trade.resource_directory, 'completion.sh'))
 
 
 def save_customer_margin_ratios(trade, config):
@@ -1035,23 +1012,14 @@ def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread = threading.Thread(
         target=execute_action,
         args=(trade, config, gui_state, config[trade.actions_section][action]))
-    # TODO: Python 3.12.0: RuntimeError: can't create new thread at interpreter
-    # shutdown
+    # TODO: Python 3.12.0: RuntimeError: can't create new thread at
+    # interpreter shutdown
     execute_action_thread.start()
 
 
 def execute_action(trade, config, gui_state, action):
     """Carry out a specified action for a trade."""
-    # TODO: move to file_utilities
-    def get_latest_screencast():
-        """Fetch the most recent screencast from the configured directory."""
-        screencast_directory = config['General']['screencast_directory']
-        screencast_regex = config['General']['screencast_regex']
-        files = [f for f in os.listdir(screencast_directory)
-                 if re.fullmatch(screencast_regex, f)]
-        return os.path.join(screencast_directory, files[-1])
-
-    def get_target_time(time_string):
+    def get_target_time(time_string): # TODO: move to file_utilities
         """Compute the target time from a given time string."""
         return time.mktime(time.strptime(
             time.strftime('%Y-%m-%d ') + time_string, '%Y-%m-%d %H:%M:%S'))
@@ -1139,11 +1107,13 @@ def execute_action(trade, config, gui_state, action):
             configuration.write_config(config, trade.config_path)
 
             file_utilities.write_chapter(
-                get_latest_screencast(),
+                file_utilities.get_latest_file(
+                    config['General']['screencast_directory'],
+                    config['General']['screencast_regex']),
                 (f"Trade {current_number_of_trades}"
                  f"{f' for {trade.symbol}' if trade.symbol else ''}"
                  f" at {time.strftime('%Y-%m-%d %H:%M:%S')}"),
-                previous_title='Pre-Trading', offset=argument)
+                previous_title='Pre-trading', offset=argument)
         elif command == 'drag_to':
             pyautogui.dragTo(*map(int, argument.split(',')))
         elif command == 'get_cash_balance':
@@ -1219,8 +1189,11 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(argument)
         elif command == 'write_chapter':
-            file_utilities.write_chapter(get_latest_screencast(), argument,
-                                         previous_title=additional_argument)
+            file_utilities.write_chapter(
+                file_utilities.get_latest_file(
+                    config['General']['screencast_directory'],
+                    config['General']['screencast_regex']),
+                argument, previous_title=additional_argument)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
         elif command == 'write_string':
@@ -1236,7 +1209,10 @@ def execute_action(trade, config, gui_state, action):
                 if not recursively_execute_action():
                     return False
         elif command == 'is_recording':
-            if (file_utilities.is_writing(get_latest_screencast())
+            if (file_utilities.is_writing(
+                    file_utilities.get_latest_file(
+                        config['General']['screencast_directory'],
+                        config['General']['screencast_regex']))
                 == (argument.lower() == 'true')):
                 if not recursively_execute_action():
                     return False

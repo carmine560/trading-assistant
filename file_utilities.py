@@ -242,6 +242,14 @@ def get_config_path(script_path, can_create_directory=True):
     return config_path
 
 
+def get_latest_file(directory, regex):
+    """Fetch the most recent file from the directory."""
+    return max([p for p in [os.path.join(directory, f) for f
+                            in os.listdir(directory) if re.fullmatch(regex, f)]
+                if os.path.isfile(p)],
+               key=os.path.getctime)
+
+
 def is_writing(path):
     """Determine if a file at the path is currently being written to."""
     return bool(os.path.isfile(path)
@@ -283,63 +291,70 @@ def select_venv(directory, activate='activate'):
 
 # CLI Operations #
 
-def add_wrapper_options(group):
-    """Add wrapper generation options to the argparse group."""
+def add_launcher_options(group):
+    """Add launcher generation options to the argparse group."""
+    group.add_argument(
+        '-B', nargs='?', const='.',
+        help='generate'
+        f" a {'WSL' if sys.platform == 'win32' else ''} Bash script"
+        ' to launch this script and exit',
+        metavar='OUTPUT_DIRECTORY')
     if sys.platform == 'win32':
-        group.add_argument(
-            '-B', nargs='?', const='.',
-            help='generate a WSL Bash script to launch this script and exit',
-            metavar='OUTPUT_DIRECTORY')
         group.add_argument(
             '-PS', nargs='?', const='.',
             help='generate a PowerShell 7 script to launch this script'
             ' and exit',
             metavar='OUTPUT_DIRECTORY')
-    elif sys.platform == 'linux':
-        group.add_argument(
-            '-B', nargs='?', const='.',
-            help='generate a Bash script to launch this script and exit',
-            metavar='OUTPUT_DIRECTORY')
 
 
-def create_bash_wrapper(script_path, output_directory):
-    """Create a WSL Bash wrapper for a Python script."""
+def create_launchers_exit(args, script_path):
+    """Create launchers based on command-line arguments and exit."""
+    if args.B:
+        create_bash_launcher(script_path, args.B)
+        sys.exit()
+    if sys.platform == 'win32' and args.PS:
+        create_powershell_launcher(script_path, args.PS)
+        sys.exit()
+
+
+def create_bash_launcher(script_path, output_directory):
+    """Create a Bash launcher for a Python script."""
     activate_path, interpreter = select_venv(os.path.dirname(script_path))
     if sys.platform == 'win32':
         script_path = wsl_to_windows_path(windows_to_wsl_path(script_path))
         activate_path = windows_to_wsl_path(activate_path)
 
-    wrapper_path = os.path.join(
+    launcher_path = os.path.join(
         os.path.realpath(output_directory),
         f'{os.path.splitext(os.path.basename(script_path))[0]}.sh')
-    wrapper_string = f'''#!/bin/bash
+    launcher_string = f'''#!/bin/bash
 
 . {activate_path} &&
     {interpreter} {script_path} "$@"
 '''
 
-    with open(wrapper_path, 'w', encoding='utf-8', newline='\n') as f:
-        f.write(wrapper_string)
+    with open(launcher_path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(launcher_string)
 
-    if sys.platform == 'linux' and not is_wsl_windows_path(wrapper_path):
-        os.chmod(wrapper_path, os.stat(wrapper_path).st_mode | stat.S_IXUSR
+    if sys.platform == 'linux' and not is_wsl_windows_path(launcher_path):
+        os.chmod(launcher_path, os.stat(launcher_path).st_mode | stat.S_IXUSR
                  | stat.S_IXGRP | stat.S_IXOTH)
 
 
-def create_powershell_wrapper(script_path, output_directory):
-    """Create a PowerShell wrapper for a Python script."""
+def create_powershell_launcher(script_path, output_directory):
+    """Create a PowerShell launcher for a Python script."""
     activate_path, interpreter = select_venv(os.path.dirname(script_path),
                                              activate='Activate.ps1')
-    wrapper_path = os.path.join(
+    launcher_path = os.path.join(
         os.path.realpath(output_directory),
         f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1')
-    wrapper_string = f'''. {activate_path} &&
+    launcher_string = f'''. {activate_path} &&
 {interpreter} {script_path} $args
 deactivate
 '''
 
-    with open(wrapper_path, 'w', encoding='utf-8') as f:
-        f.write(wrapper_string)
+    with open(launcher_path, 'w', encoding='utf-8') as f:
+        f.write(launcher_string)
 
 
 def create_bash_completion(script_base, options, values, interpreters,

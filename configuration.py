@@ -306,7 +306,8 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
                 config[section][option] = str(modify_dictionary(
                     evaluated_value, level=1, prompts=prompts,
                     all_values=all_values))
-            elif isinstance(evaluated_value, tuple):
+            elif (isinstance(evaluated_value, tuple)
+                  and all(isinstance(i, str) for i in evaluated_value)):
                 config[section][option] = str(modify_tuple(
                     evaluated_value, level=1, prompts=prompts,
                     all_values=all_values))
@@ -326,7 +327,8 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
             else:
                 config[section][option] = modify_value(
                     prompts.get('value', 'value'),
-                    value=config[section][option], limits=limits)
+                    value=config[section][option], all_values=all_values,
+                    limits=limits)
         elif answer == 'toggle':
             config[section][option] = str(not boolean_value)
         elif answer == 'empty':
@@ -646,10 +648,11 @@ def modify_value(prompt, level=0, value='', all_values=None, limits=()):
 
         value = str(numeric_value)
 
-    if all_values and value not in all_values and all_values != ('None',):
-        value = modify_value(prompt, level=level,
-                             value=f'{ANSI_RESET}{ANSI_ERROR}{value}',
-                             all_values=all_values)
+    # TODO: fix all_values
+    # if all_values and value not in all_values and all_values != ('None',):
+    #     value = modify_value(prompt, level=level,
+    #                          value=f'{ANSI_RESET}{ANSI_ERROR}{value}',
+    #                          all_values=all_values)
 
     return value
 
