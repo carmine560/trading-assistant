@@ -683,32 +683,30 @@ def configure_exit(args, trade):
 
     if any((args.L, args.S, args.CB, args.U, args.PL, args.DLL, args.MDN)):
         for argument, (
-                section, option, can_back, can_insert_delete, prompts,
-                all_values, limits
+                section, option, can_insert_delete, prompts, all_values, limits
         ) in {
-            'L': (trade.process, 'input_map', False, False,
-                  {'value': 'action'},
+            'L': (trade.process, 'input_map', False, {'value': 'action'},
                   trade.instruction_items.get('preset_additional_values'), ()),
-            'S': (trade.schedules_section, None, True, True,
+            'S': (trade.schedules_section, None, True,
                   {'key': 'schedule', 'values': ('trigger', 'action'),
                    'end_of_list': 'end of schedules'},
                   (trade.instruction_items.get('preset_values'),
                    trade.instruction_items.get('preset_additional_values')),
                   ()),
-            'CB': (trade.process, 'cash_balance_region', False, False,
+            'CB': (trade.process, 'cash_balance_region', False,
                    {'value': 'x, y, width, height, index'}, None, ()),
-            'U': (trade.process, 'utilization_ratio', False, False, None, None,
+            'U': (trade.process, 'utilization_ratio', False, None, None,
                   (0.0, 1.0)),
-            'PL': (trade.process, 'price_limit_region', False, False,
+            'PL': (trade.process, 'price_limit_region', False,
                    {'value': 'x, y, width, height, index'}, None, ()),
-            'DLL': (trade.process, 'daily_loss_limit_ratio', False, False,
-                    None, None, (-1.0, 0.0)),
+            'DLL': (trade.process, 'daily_loss_limit_ratio', False, None, None,
+                    (-1.0, 0.0)),
             'MDN': (trade.process, 'maximum_daily_number_of_trades', False,
-                    False, None, None, (0, sys.maxsize))}.items():
+                    None, None, (0, sys.maxsize))}.items():
             if getattr(args, argument):
                 configuration.modify_section(
                     config, section, trade.config_path,
-                    backup_parameters=backup_parameters, can_back=can_back,
+                    backup_parameters=backup_parameters,
                     can_insert_delete=can_insert_delete, option=option,
                     prompts=prompts, all_values=all_values, limits=limits)
                 break

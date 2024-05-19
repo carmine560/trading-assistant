@@ -210,7 +210,7 @@ def list_section(config, section):
 
 
 def modify_section(config, section, config_path, backup_parameters=None,
-                   option=None, can_back=False, can_insert_delete=False,
+                   option=None, can_back=True, can_insert_delete=False,
                    prompts=None, items=None, all_values=None, limits=()):
     """Modify a section of a configuration based on user input."""
     if backup_parameters:
