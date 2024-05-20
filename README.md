@@ -71,7 +71,7 @@ Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.h
 page and the previous market data from the [*Most Active Stocks
 Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page beforehand. The
 following option creates the
-`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ps1` startup
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\hypersbi2_assistant.ps1` startup
 script that processes the above and starts Hyper SBI 2. This script forcibly
 stops and restarts Hyper SBI 2 if it is already running, potentially discarding
 unsaved status.
