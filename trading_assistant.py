@@ -54,9 +54,9 @@ class Trade(initializer.Initializer):
                                                self.process)
         self.customer_margin_ratios = os.path.join(
             self.resource_directory, 'customer_margin_ratios.csv')
-        # TODO: rename
+        self.startup_script_base = f'{self.process.lower()}_assistant'
         self.startup_script = os.path.join(self.resource_directory,
-                                           self.script_base + '.ps1')
+                                           f'{self.startup_script_base}.ps1')
 
         for directory in [self.market_directory, self.resource_directory]:
             file_utilities.check_directory(directory)
@@ -720,11 +720,11 @@ def configure_exit(args, trade):
             ['pwsh.exe', 'powershell.exe'])
         if powershell:
             file_utilities.create_shortcut(
-                trade.script_base, powershell,
+                trade.startup_script_base, powershell,
                 f'-WindowStyle Hidden -File "{trade.startup_script}"',
                 program_group_base=config[trade.process]['title'],
                 icon_location=file_utilities.create_icon(
-                    trade.script_base,
+                    trade.startup_script_base,
                     icon_directory=trade.resource_directory))
 
         sys.exit()
@@ -763,22 +763,24 @@ def configure_exit(args, trade):
         create_completion(trade, config)
         sys.exit()
     if args.D:
-        if (args.D[0] == trade.script_base
-            and os.path.isfile(trade.startup_script)):
-            try:
-                os.remove(trade.startup_script)
-            except OSError as e:
-                print(e)
+        base = args.D[0]
+        if base == trade.script_base:
+            base = trade.startup_script_base
+            if os.path.isfile(trade.startup_script):
+                try:
+                    os.remove(trade.startup_script)
+                except OSError as e:
+                    print(e)
         else:
             configuration.delete_option(
-                config, trade.actions_section, args.D[0], trade.config_path,
+                config, trade.actions_section, base, trade.config_path,
                 backup_parameters=backup_parameters)
             create_completion(trade, config)
 
         file_utilities.delete_shortcut(
-            args.D[0], program_group_base=config[trade.process]['title'],
+            base, program_group_base=config[trade.process]['title'],
             icon_location=os.path.join(trade.resource_directory,
-                                       args.D[0] + '.ico'))
+                                       f'{base}.ico'))
         sys.exit()
     if args.C:
         configuration.check_config_changes(
