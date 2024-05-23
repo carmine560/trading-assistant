@@ -290,9 +290,9 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
               f'{ANSI_CURRENT}{config[section][option]}{ANSI_RESET}')
         try:
             boolean_value = get_strict_boolean(config, section, option)
-            answers = ['modify', 'toggle', 'empty', 'default', 'quit']
+            answers = ['modify', 'toggle', 'default', 'quit']
         except ValueError:
-            answers = ['modify', 'empty', 'default', 'quit']
+            answers = ['modify', 'default', 'quit']
         if can_back:
             answers.insert(answers.index('quit'), 'back')
         if can_insert_delete:
@@ -331,7 +331,7 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
                     limits=limits)
         elif answer == 'toggle':
             config[section][option] = str(not boolean_value)
-        elif answer == 'empty':
+        elif answer == 'empty': # TODO remove empty
             config[section][option] = ''
         elif answer in {'default', 'delete'}:
             delete_option(config, section, option, config_path)

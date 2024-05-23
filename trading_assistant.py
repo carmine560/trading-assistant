@@ -34,6 +34,7 @@ import process_utilities
 import speech_synthesis
 import text_recognition
 
+EPSILON = 1e-4
 SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r'[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?')
 SECURITIES_CODE_REGEX = '[1-9]' + SANS_INITIAL_SECURITIES_CODE_REGEX
@@ -245,10 +246,10 @@ class IndicatorThread(threading.Thread):
             '<<Modified>>',
             lambda event: self.on_text_modified(
                 event, utilization_ratio_entry, utilization_ratio_string,
-                process_section, 'utilization_ratio', (0.0, 1.0)))
+                process_section, 'utilization_ratio', (EPSILON, 1.0)))
         self.check_for_modifications(
             utilization_ratio_entry, utilization_ratio_string, process_section,
-            'utilization_ratio', (0.0, 1.0))
+            'utilization_ratio', (EPSILON, 1.0))
 
         command = self.root.register(self.is_valid_float)
         utilization_ratio_entry.config(validate='key',
@@ -696,11 +697,11 @@ def configure_exit(args, trade):
             'CB': (trade.process, 'cash_balance_region', False,
                    {'value': 'x, y, width, height, index'}, None, ()),
             'U': (trade.process, 'utilization_ratio', False, None, None,
-                  (0.0, 1.0)),
+                  (EPSILON, 1.0)),
             'PL': (trade.process, 'price_limit_region', False,
                    {'value': 'x, y, width, height, index'}, None, ()),
             'DLL': (trade.process, 'daily_loss_limit_ratio', False, None, None,
-                    (-1.0, 0.0)),
+                    (-1.0, -EPSILON)),
             'MDN': (trade.process, 'maximum_daily_number_of_trades', False,
                     None, None, (0, sys.maxsize))}.items():
             if getattr(args, argument):
