@@ -1,4 +1,4 @@
-"""Module for recognizing and returning text from screen areas."""
+"""Recognize and return text from screen areas."""
 
 from PIL import Image
 from PIL import ImageGrab

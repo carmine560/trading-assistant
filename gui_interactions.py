@@ -1,4 +1,4 @@
-"""Module for managing GUI state and interactions."""
+"""Manage GUI state and handle interactions."""
 
 import re
 import time
@@ -10,7 +10,7 @@ import win32gui
 
 
 class GuiState:
-    """Manage the state of the Graphical User Interface (GUI)."""
+    """Manage the state of the Graphical User Interface."""
 
     def __init__(self, interactive_windows):
         """Initialize a new GuiState instance."""

@@ -1,4 +1,4 @@
-"""Module for managing and controlling speech processes."""
+"""Manage and control speech processes."""
 
 from multiprocessing import Process
 import time

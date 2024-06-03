@@ -1,4 +1,4 @@
-"""Assists with discretionary day trading of stocks on margin."""
+"""Assist with discretionary day trading of stocks on margin."""
 
 from datetime import date
 from multiprocessing.managers import BaseManager
@@ -33,6 +33,7 @@ import initializer
 import process_utilities
 import speech_synthesis
 import text_recognition
+import web_utilities
 
 RATIO_EPSILON = 1e-4
 SANS_INITIAL_SECURITIES_CODE_REGEX = (
@@ -139,13 +140,14 @@ class Trade(initializer.Initializer):
     def on_press(self, key, config, gui_state):
         """Handle key press events."""
         if gui_state.is_interactive_window():
-            if self.keyboard_listener_state == 0: # TODO: fix short short
+            if self.keyboard_listener_state == 0:
                 if key in self.function_keys:
                     action = configuration.evaluate_value(
                         config[self.process]['input_map']).get(key.name)
                     if action:
                         start_execute_action_thread(self, config, gui_state,
                                                     action)
+                        time.sleep(0.2) # TODO: fix auto-repeat
             elif self.keyboard_listener_state == 1:
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
                     or key == self.key_to_check):
@@ -160,7 +162,7 @@ class IndicatorThread(threading.Thread):
     """Handle a thread for displaying trading indicators."""
 
     def __init__(self, trade, config):
-        """Construct a new 'IndicatorThread' object."""
+        """Construct a new IndicatorThread object."""
         super().__init__()
         self.trade = trade
         self.config = config
@@ -313,7 +315,7 @@ class IndicatorTooltip:
     """Manage a tooltip for a specific widget."""
 
     def __init__(self, widget, text):
-        """Construct a new 'IndicatorTooltip' object."""
+        """Construct a new IndicatorTooltip object."""
         self.widget = widget
         self.text = text
         self.tooltip = None
@@ -345,7 +347,7 @@ class MessageThread(threading.Thread):
     """Handle a thread for displaying a message in a Tkinter window."""
 
     def __init__(self, trade, config, text):
-        """Construct a new 'MessageThread' object."""
+        """Construct a new MessageThread object."""
         super().__init__()
         self.trade = trade
         self.config = config
@@ -906,13 +908,7 @@ def get_latest(config, market_holidays, update_time, timezone, *paths,
         modified_time = pd.Timestamp(os.path.getmtime(market_holidays),
                                      tz='UTC', unit='s')
 
-    head = requests.head(config['Market Holidays']['url'], timeout=5)
-    try:
-        head.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        print(e)
-        sys.exit(1)
-
+    head = web_utilities.make_head_request(config['Market Holidays']['url'])
     if modified_time < pd.Timestamp(head.headers['last-modified']):
         dfs = pd.read_html(config['Market Holidays']['url'],
                            match=config['Market Holidays']['date_header'])

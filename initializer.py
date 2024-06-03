@@ -1,4 +1,4 @@
-"""Module for initializing script execution environment."""
+"""Initialize the script execution environment."""
 
 import ast
 import os

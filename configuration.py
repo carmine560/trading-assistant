@@ -1,4 +1,4 @@
-"""Module for configuration management and auto-completion."""
+"""Manage configurations and perform auto-completion."""
 
 from io import StringIO
 import ast
