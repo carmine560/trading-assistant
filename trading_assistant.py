@@ -514,34 +514,6 @@ def configure(trade, can_interpolate=True, can_override=True):
     else:
         config = configparser.ConfigParser(interpolation=None)
 
-    if not trade.executable and trade.process == 'HYPERSBI2':
-        location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
-                                    trade.vendor, trade.process,
-                                    'location.dat')
-        try:
-            with open(location_dat, encoding='utf-8') as f:
-                trade.executable = os.path.normpath(
-                    os.path.join(f.read(), trade.process + '.exe'))
-        except OSError as e:
-            print(e)
-            trade.executable = os.path.join(
-                # TODO: check if ${ProgramFiles(x86)} or $ProgramFiles
-                os.path.expandvars('$ProgramFiles'), trade.vendor,
-                trade.process, trade.process + '.exe')
-            if not os.path.isfile(trade.executable):
-                print(trade.executable, 'file does not exist.')
-                sys.exit(1)
-
-    file_description = file_utilities.get_file_description(trade.executable)
-    if file_description:
-        if trade.process == 'HYPERSBI2':
-            title = file_utilities.title_except_acronyms(
-                file_description, ['SBI']) + ' Assistant'
-        else:
-            title = file_description + ' Assistant'
-    else:
-        title = re.sub(r'[\W_]+', ' ', trade.script_base).strip().title()
-
     config['General'] = {
         'screencast_directory':
         os.path.join(os.path.expanduser('~'), 'Videos', trade.process.title()),
@@ -563,41 +535,36 @@ def configure(trade, can_interpolate=True, can_override=True):
         'symbol_header': 'コード',
         'price_header': '株価'}
     config[trade.customer_margin_ratios_section] = {
-        'customer_margin_ratio': '0.31',
-        'update_time': '20:00:00',
-        'timezone': '${Market Data:timezone}',
-        'url':
-        ('https://search.sbisec.co.jp/v2/popwin/attention/stock/'
-         'margin_M29.html'),
-        'symbol_header': 'コード',
-        'regulation_header': '規制内容',
-        'headers': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
-        'customer_margin_ratio_string': '委託保証金率',
-        'suspended': '新規建停止'}
+        'customer_margin_ratio': '',
+        'update_time': '',
+        'timezone': '',
+        'url': '',
+        'symbol_header': '',
+        'regulation_header': '',
+        'headers': (),
+        'customer_margin_ratio_string': '',
+        'suspended': ''}
     config[trade.process] = {
-        'start_time': '${Market Data:opening_time}',
-        'end_time': '${Market Data:closing_time}',
-        'executable': trade.executable,
-        'title': title,
+        'start_time': '',
+        'end_time': '',
+        'executable': '',
+        'title': '',
         'interactive_windows': (),
-        'input_map': {
-            'left': '', 'middle': '', 'right': '', 'x1': '', 'x2': '',
-            'f1': '', 'f2': '', 'f3': '', 'f4': '', 'f5': '', 'f6': '',
-            'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '', 'f12': ''},
-        'cash_balance_region': '0, 0, 0, 0, 0',
-        'utilization_ratio': '1.0',
-        'price_limit_region': '0, 0, 0, 0, 0',
-        'daily_loss_limit_ratio': '-0.01',
-        'maximum_daily_number_of_trades': '0',
-        'image_magnification': '2',
-        'binarization_threshold': '128',
-        'is_dark_theme': 'True'}
+        'input_map': {},
+        'cash_balance_region': '',
+        'utilization_ratio': '',
+        'price_limit_region': '',
+        'daily_loss_limit_ratio': '',
+        'maximum_daily_number_of_trades': '',
+        'image_magnification': '',
+        'binarization_threshold': '',
+        'is_dark_theme': ''}
     config[trade.widgets_section] = {
-        'clock_label_position': 'nw',
-        'clock_label_font_size': '12',
-        'status_bar_frame_position': 'sw',
-        'status_bar_frame_font_size': '17',
-        'message_font_size': '14'}
+        'clock_label_position': '',
+        'clock_label_font_size': '',
+        'status_bar_frame_position': '',
+        'status_bar_frame_font_size': '',
+        'message_font_size': ''}
     config[trade.startup_script_section] = {
         'pre_start_options': '',
         'post_start_options': '',
@@ -609,26 +576,79 @@ def configure(trade, can_interpolate=True, can_override=True):
         'initial_cash_balance': '0',
         'current_number_of_trades': '0'}
 
-    process_section = config[trade.process]
-    variables_section = config[trade.variables_section]
+    if trade.vendor == 'SBI Securities':
+        config[trade.customer_margin_ratios_section] = {
+            'customer_margin_ratio': '0.31',
+            'update_time': '20:00:00',
+            'timezone': '${Market Data:timezone}',
+            'url':
+            ('https://search.sbisec.co.jp/v2/popwin/attention/stock/'
+             'margin_M29.html'),
+            'symbol_header': 'コード',
+            'regulation_header': '規制内容',
+            'headers': ('銘柄', 'コード', '建玉', '信用取引区分', '規制内容'),
+            'customer_margin_ratio_string': '委託保証金率',
+            'suspended': '新規建停止'}
 
     if trade.process == 'HYPERSBI2':
-        process_section['interactive_windows'] = str((
-            file_description, 'お知らせ',
-            fr'個別銘柄\s.*\(({SECURITIES_CODE_REGEX})\)', '登録銘柄',
-            '保有証券', '注文一覧',
-            fr'個別チャート\s.*\(({SECURITIES_CODE_REGEX})\)',
-            'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
-            '取引ポップアップ', '通知設定',
-            fr'全板\s.*\(({SECURITIES_CODE_REGEX})\)', r'${title}\s.*'))
-        process_section['input_map'] = str({
-            'left': '', 'middle': 'show_hide_watchlists', 'right': '',
-            'x1': '', 'x2': '', 'f1': '', 'f2': '', 'f3': '', 'f4': '',
-            'f5': 'show_hide_watchlists', 'f6': '', 'f7': '', 'f8': '',
-            'f9': '', 'f10': 'speak_cpu_utilization', 'f11': '',
-            'f12': 'toggle_indicator'})
-        # Directly assigning a new dictionary to 'config[trade.SECTION]'
-        # updates the original dictionary.
+        if not trade.executable:
+            location_dat = os.path.join(os.path.expandvars('%LOCALAPPDATA%'),
+                                        trade.vendor, trade.process,
+                                        'location.dat')
+            try:
+                with open(location_dat, encoding='utf-8') as f:
+                    trade.executable = os.path.normpath(
+                        os.path.join(f.read(), trade.process + '.exe'))
+            except OSError as e:
+                print(e)
+                trade.executable = os.path.join(
+                    # TODO: check if ${ProgramFiles(x86)} or $ProgramFiles
+                    os.path.expandvars('$ProgramFiles'), trade.vendor,
+                    trade.process, trade.process + '.exe')
+                if not os.path.isfile(trade.executable):
+                    print(trade.executable, 'file does not exist.')
+                    sys.exit(1)
+
+        file_description = file_utilities.get_file_description(
+            trade.executable)
+        title = (
+            file_utilities.title_except_acronyms(file_description, ['SBI'])
+            + ' Assistant' if file_description
+            else re.sub(r'[\W_]+', ' ', trade.script_base).strip().title())
+
+        config[trade.process] = {
+            'start_time': '${Market Data:opening_time}',
+            'end_time': '${Market Data:closing_time}',
+            'executable': trade.executable,
+            'title': title,
+            'interactive_windows': (
+                file_description, 'お知らせ',
+                fr'個別銘柄\s.*\(({SECURITIES_CODE_REGEX})\)', '登録銘柄',
+                '保有証券', '注文一覧',
+                fr'個別チャート\s.*\(({SECURITIES_CODE_REGEX})\)',
+                'マーケット', 'ランキング', '銘柄一覧', '口座情報', 'ニュース',
+                '取引ポップアップ', '通知設定',
+                fr'全板\s.*\(({SECURITIES_CODE_REGEX})\)', r'${title}\s.*'),
+            'input_map': {
+                'left': '', 'middle': 'show_hide_watchlists', 'right': '',
+                'x1': '', 'x2': '', 'f1': '', 'f2': '', 'f3': '', 'f4': '',
+                'f5': 'show_hide_watchlists', 'f6': '', 'f7': '', 'f8': '',
+                'f9': '', 'f10': 'speak_cpu_utilization', 'f11': '',
+                'f12': 'toggle_indicator'},
+            'cash_balance_region': '0, 0, 0, 0, 0',
+            'utilization_ratio': '1.0',
+            'price_limit_region': '0, 0, 0, 0, 0',
+            'daily_loss_limit_ratio': '-0.01',
+            'maximum_daily_number_of_trades': '0',
+            'image_magnification': '2',
+            'binarization_threshold': '128',
+            'is_dark_theme': 'True'}
+        config[trade.widgets_section] = {
+            'clock_label_position': 'nw',
+            'clock_label_font_size': '12',
+            'status_bar_frame_position': 'sw',
+            'status_bar_frame_font_size': '17',
+            'message_font_size': '14'}
         config[trade.startup_script_section] = {
             'pre_start_options': '',
             'post_start_options': '-rdl',
@@ -657,22 +677,21 @@ def configure(trade, can_interpolate=True, can_override=True):
     if can_override:
         configuration.read_config(config, trade.config_path)
 
-        previous_date = date.fromisoformat(variables_section['current_date'])
-        current_date = date.today()
-        if previous_date != current_date:
-            variables_section['current_date'] = str(date.today())
-            variables_section['initial_cash_balance'] = '0'
-            variables_section['current_number_of_trades'] = '0'
+    current_date = date.today()
+    if (date.fromisoformat(
+            config[trade.variables_section]['current_date']) != current_date):
+        config[trade.variables_section]['current_date'] = str(current_date)
+        config[trade.variables_section]['initial_cash_balance'] = '0'
+        config[trade.variables_section]['current_number_of_trades'] = '0'
 
-        if trade.process == 'HYPERSBI2':
-            theme_config = configparser.ConfigParser(interpolation=None)
-            theme_ini = os.path.join(os.path.expandvars('%APPDATA%'),
-                                     trade.vendor, trade.process,
-                                     'theme.ini')
-            theme_config.read(theme_ini)
-            if (theme_config.has_option('General', 'theme')
-                and theme_config['General']['theme'] == 'Light'):
-                process_section['is_dark_theme'] = 'False'
+    if trade.process == 'HYPERSBI2':
+        theme_config = configparser.ConfigParser(interpolation=None)
+        theme_config.read(os.path.join(os.path.expandvars('%APPDATA%'),
+                                       trade.vendor, trade.process,
+                                       'theme.ini'))
+        if (theme_config.has_option('General', 'theme')
+            and theme_config['General']['theme'] == 'Light'):
+            config[trade.process]['is_dark_theme'] = 'False'
 
     return config
 

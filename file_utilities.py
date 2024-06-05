@@ -601,16 +601,6 @@ def create_acronym(phrase):
     return acronym
 
 
-def dictionary_to_tuple(dictionary): # TODO: move to data_converters
-    """Convert a dictionary to a tuple of key-value pairs."""
-    if isinstance(dictionary, dict):
-        items = []
-        for key, value in sorted(dictionary.items()):
-            items.append((key, dictionary_to_tuple(value)))
-        return tuple(items)
-    return dictionary
-
-
 def get_file_description(executable):
     """Retrieve the file description of a given executable."""
     if WINDOWS_IMPORT_ERROR:
