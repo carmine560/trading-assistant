@@ -296,7 +296,7 @@ def add_launcher_options(group):
     group.add_argument(
         '-B', nargs='?', const='.',
         help='generate'
-        f" a {'WSL' if sys.platform == 'win32' else ''} Bash script"
+        f" a {'WSL Bash' if sys.platform == 'win32' else 'Bash'} script"
         ' to launch this script and exit',
         metavar='OUTPUT_DIRECTORY')
     if sys.platform == 'win32':

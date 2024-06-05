@@ -27,6 +27,7 @@ import requests
 import win32gui
 
 import configuration
+import data_converters
 import file_utilities
 import gui_interactions
 import initializer
@@ -1038,11 +1039,6 @@ def start_execute_action_thread(trade, config, gui_state, action):
 
 def execute_action(trade, config, gui_state, action):
     """Carry out a specified action for a trade."""
-    def get_target_time(time_string): # TODO: move to file_utilities
-        """Compute the target time from a given time string."""
-        return time.mktime(time.strptime(
-            time.strftime('%Y-%m-%d ') + time_string, '%Y-%m-%d %H:%M:%S'))
-
     def recursively_execute_action():
         """Recursively execute an action if it is a list or a string."""
         if isinstance(additional_argument, list):
@@ -1171,9 +1167,9 @@ def execute_action(trade, config, gui_state, action):
             trade.speech_manager.set_speech_text(
                 f'{round(psutil.cpu_percent(interval=float(argument)))}%.')
         elif command == 'speak_seconds_until_time':
-            trade.speech_manager.set_speech_text(
-                f'{math.ceil(get_target_time(argument) - time.time())} '
-                'seconds.')
+            time_delta = math.ceil(
+                data_converters.get_target_time(argument) - time.time())
+            trade.speech_manager.set_speech_text(f'{time_delta} seconds.')
         elif command == 'speak_show_text':
             trade.speech_manager.set_speech_text(argument)
             MessageThread(trade, config, argument).start()
@@ -1220,11 +1216,11 @@ def execute_action(trade, config, gui_state, action):
 
         # Control Flow Commands
         elif command == 'is_now_after':
-            if get_target_time(argument) < time.time():
+            if data_converters.get_target_time(argument) < time.time():
                 if not recursively_execute_action():
                     return False
         elif command == 'is_now_before':
-            if time.time() < get_target_time(argument):
+            if time.time() < data_converters.get_target_time(argument):
                 if not recursively_execute_action():
                     return False
         elif command == 'is_recording':
