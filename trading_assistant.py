@@ -601,12 +601,16 @@ def configure(trade, can_interpolate=True, can_override=True):
                         os.path.join(f.read(), trade.process + '.exe'))
             except OSError as e:
                 print(e)
-                trade.executable = os.path.join(
-                    # TODO: check if ${ProgramFiles(x86)} or $ProgramFiles
-                    os.path.expandvars('$ProgramFiles'), trade.vendor,
-                    trade.process, trade.process + '.exe')
-                if not os.path.isfile(trade.executable):
-                    print(trade.executable, 'file does not exist.')
+                for program_files in ('%ProgramFiles%', '%ProgramFiles(x86)%'):
+                    executable = os.path.join(
+                        os.path.expandvars(program_files), trade.vendor,
+                        trade.process, trade.process + '.exe')
+                    if os.path.isfile(executable):
+                        trade.executable = executable
+                        break
+                if not trade.executable:
+                    print(f'The executable file for {trade.process}'
+                          ' does not exist.')
                     sys.exit(1)
 
         file_description = file_utilities.get_file_description(
