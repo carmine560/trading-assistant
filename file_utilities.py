@@ -30,6 +30,8 @@ try:
 except ModuleNotFoundError as e:
     WINDOWS_IMPORT_ERROR = e
 
+import data_utilities
+
 
 # WSL Path Operations #
 
@@ -469,7 +471,7 @@ def create_icon(base, icon_directory=None):
     if WINDOWS_IMPORT_ERROR:
         raise RuntimeError(WINDOWS_IMPORT_ERROR)
 
-    acronym = create_acronym(base)
+    acronym = data_utilities.create_acronym(base)
     if not acronym:
         raise ValueError(
             'The acronym could not be created from the base name.')
@@ -590,16 +592,7 @@ def get_program_group(program_group_base=None):
     return program_group
 
 
-# Text and Description Operations #
-
-def create_acronym(phrase):
-    """Generate an acronym from the given phrase."""
-    acronym = ''
-    if isinstance(phrase, str):
-        acronym = ''.join(word[0].upper()
-                          for word in re.split(r'[\W_]+', phrase) if word)
-    return acronym
-
+# File Description and Metadata Operations #
 
 def get_file_description(executable):
     """Retrieve the file description of a given executable."""
@@ -619,15 +612,6 @@ def get_file_description(executable):
         file_description = None
 
     return file_description
-
-
-def title_except_acronyms(string, acronyms):
-    """Convert a string to title case, excluding specified acronyms."""
-    words = string.split()
-    for i, _ in enumerate(words):
-        if words[i] not in acronyms:
-            words[i] = words[i].title()
-    return ' '.join(words)
 
 
 def write_chapter(video, current_title, previous_title=None, offset=None):

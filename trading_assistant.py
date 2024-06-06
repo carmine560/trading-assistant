@@ -27,7 +27,7 @@ import requests
 import win32gui
 
 import configuration
-import data_converters
+import data_utilities
 import file_utilities
 import gui_interactions
 import initializer
@@ -617,7 +617,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         file_description = file_utilities.get_file_description(
             trade.executable)
         title = (
-            file_utilities.title_except_acronyms(file_description, ['SBI'])
+            data_utilities.title_except_acronyms(file_description, ['SBI'])
             + ' Assistant' if file_description
             else re.sub(r'[\W_]+', ' ', trade.script_base).strip().title())
 
@@ -1168,7 +1168,7 @@ def execute_action(trade, config, gui_state, action):
                 f'{round(psutil.cpu_percent(interval=float(argument)))}%.')
         elif command == 'speak_seconds_until_time':
             time_delta = math.ceil(
-                data_converters.get_target_time(argument) - time.time())
+                data_utilities.get_target_time(argument) - time.time())
             trade.speech_manager.set_speech_text(f'{time_delta} seconds.')
         elif command == 'speak_show_text':
             trade.speech_manager.set_speech_text(argument)
@@ -1216,11 +1216,11 @@ def execute_action(trade, config, gui_state, action):
 
         # Control Flow Commands
         elif command == 'is_now_after':
-            if data_converters.get_target_time(argument) < time.time():
+            if data_utilities.get_target_time(argument) < time.time():
                 if not recursively_execute_action():
                     return False
         elif command == 'is_now_before':
-            if time.time() < data_converters.get_target_time(argument):
+            if time.time() < data_utilities.get_target_time(argument):
                 if not recursively_execute_action():
                     return False
         elif command == 'is_recording':
