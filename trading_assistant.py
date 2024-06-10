@@ -1032,26 +1032,11 @@ def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread = threading.Thread(
         target=execute_action,
         args=(trade, config, gui_state, config[trade.actions_section][action]))
-    # TODO: Python 3.12.0: RuntimeError: can't create new thread at
-    # interpreter shutdown
     execute_action_thread.start()
 
 
 def execute_action(trade, config, gui_state, action):
     """Carry out a specified action for a trade."""
-    def recursively_execute_action():
-        """Recursively execute an action if it is a list or a string."""
-        if isinstance(additional_argument, list):
-            return execute_action(trade, config, gui_state,
-                                  additional_argument)
-        if isinstance(additional_argument, str):
-            return execute_action(
-                trade, config, gui_state,
-                config[trade.actions_section][additional_argument])
-
-        print(additional_argument, 'is not a list or a string.')
-        return False
-
     trade.initialize_attributes()
     gui_state.initialize_attributes()
 
@@ -1096,10 +1081,8 @@ def execute_action(trade, config, gui_state, action):
                 trade.speech_manager.set_speech_text(argument)
                 return False
         elif command == 'click':
-            if gui_state.swapped:
-                pyautogui.rightClick(*map(int, argument.split(',')))
-            else:
-                pyautogui.click(*map(int, argument.split(',')))
+            (pyautogui.rightClick if gui_state.swapped else pyautogui.click)(
+                *map(int, argument.split(',')))
         elif command == 'click_widget':
             gui_interactions.click_widget(
                 gui_state, os.path.join(trade.resource_directory, argument),
@@ -1184,10 +1167,8 @@ def execute_action(trade, config, gui_state, action):
                 trade.indicator_thread.start()
         elif command == 'wait_for_key':
             trade.keyboard_listener_state = 1
-            if len(argument) == 1:
-                trade.key_to_check = argument
-            else:
-                trade.key_to_check = keyboard.Key[argument]
+            trade.key_to_check = (argument if len(argument) == 1
+                                  else keyboard.Key[argument])
             while trade.keyboard_listener_state == 1:
                 time.sleep(0.001)
 
@@ -1216,26 +1197,43 @@ def execute_action(trade, config, gui_state, action):
 
         # Control Flow Commands
         elif command == 'is_now_after':
-            if data_utilities.get_target_time(argument) < time.time():
-                if not recursively_execute_action():
-                    return False
+            if (data_utilities.get_target_time(argument) < time.time()
+                and not recursively_execute_action(trade, config, gui_state,
+                                                   additional_argument)):
+                return False
         elif command == 'is_now_before':
-            if time.time() < data_utilities.get_target_time(argument):
-                if not recursively_execute_action():
-                    return False
+            if (time.time() < data_utilities.get_target_time(argument)
+                and not recursively_execute_action(trade, config, gui_state,
+                                                   additional_argument)):
+                return False
         elif command == 'is_recording':
             if (file_utilities.is_writing(
                     file_utilities.get_latest_file(
                         config['General']['screencast_directory'],
                         config['General']['screencast_regex']))
-                == (argument.lower() == 'true')):
-                if not recursively_execute_action():
-                    return False
+                == bool(argument.lower() == 'true')
+                and not recursively_execute_action(trade, config, gui_state,
+                                                   additional_argument)):
+                return False
 
         else:
             print(command, 'is not a recognized command.')
             return False
     return True
+
+
+def recursively_execute_action(trade, config, gui_state, additional_argument):
+    """Recursively execute an action if it is a list or a string."""
+    if isinstance(additional_argument, list):
+        return execute_action(trade, config, gui_state,
+                              additional_argument)
+    if isinstance(additional_argument, str):
+        return execute_action(
+            trade, config, gui_state,
+            config[trade.actions_section][additional_argument])
+
+    print(additional_argument, 'is not a list or a string.')
+    return False
 
 
 def create_startup_script(trade, config):
