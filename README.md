@@ -56,7 +56,7 @@ Install each package as needed. For example:
 ``` powershell
 winget install UB-Mannheim.TesseractOCR
 winget install GnuPG.GnuPG
-py -3.11 -m venv .venv
+python -m venv .venv
 . .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt -U
 ```
