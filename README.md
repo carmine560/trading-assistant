@@ -339,7 +339,7 @@ the configurations. By default, `trading_assistant.py` uses the default key
 pair of GnuPG. However, you can also specify a key fingerprint as the value of
 the `fingerprint` option in the `General` section of your configuration file.
 
-### Action Argument Completion ###
+### Complete Action Argument ###
 
 The `-A` and `-D` options generate completion scripts for action arguments.
 They are located at `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.ps1`
