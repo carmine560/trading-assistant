@@ -333,13 +333,11 @@ python trading_assistant.py -s
 
 ### Encrypt Configuration File ###
 
-The `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini`
-configuration file stores the configurations. If your GnuPG-encrypted
-`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini.gpg`
-configuration file exists, `trading_assistant.py` will read from and write to
-that file. By default, it uses the default key pair of GnuPG. However, you can
-also specify a key fingerprint as the value of the `fingerprint` option in the
-`General` section of your configuration file.
+The GnuPG-encrypted configuration file,
+`%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini.gpg`, stores
+the configurations. By default, `trading_assistant.py` uses the default key
+pair of GnuPG. However, you can also specify a key fingerprint as the value of
+the `fingerprint` option in the `General` section of your configuration file.
 
 ### Action Argument Completion ###
 

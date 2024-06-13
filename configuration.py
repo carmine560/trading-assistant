@@ -59,27 +59,27 @@ class CustomWordCompleter(Completer):
                     yield Completion(word, -len(word_before_cursor))
 
 
-def read_config(config, config_path):
-    """Read and load configuration from a file, decrypt if encrypted."""
-    encrypted_config_path = config_path + '.gpg'
-    if os.path.isfile(encrypted_config_path):
-        if GNUPG_IMPORT_ERROR:
-            raise RuntimeError(GNUPG_IMPORT_ERROR)
+def read_config(config, config_path, is_encrypted=False):
+    """Read config from a file, decrypt if is_encrypted is True."""
+    if is_encrypted:
+        encrypted_config_path = f'{config_path}.gpg'
+        if os.path.isfile(encrypted_config_path):
+            if GNUPG_IMPORT_ERROR:
+                raise RuntimeError(GNUPG_IMPORT_ERROR)
 
-        with open(encrypted_config_path, 'rb') as f:
-            encrypted_config = f.read()
+            with open(encrypted_config_path, 'rb') as f:
+                encrypted_config = f.read()
 
-        gpg = gnupg.GPG()
-        decrypted_config = gpg.decrypt(encrypted_config)
-        config.read_string(decrypted_config.data.decode())
+            gpg = gnupg.GPG()
+            decrypted_config = gpg.decrypt(encrypted_config)
+            config.read_string(decrypted_config.data.decode())
     else:
         config.read(config_path, encoding='utf-8')
 
 
-def write_config(config, config_path):
-    """Write config to file or encrypt and write if encrypted file exists."""
-    encrypted_config_path = config_path + '.gpg'
-    if os.path.isfile(encrypted_config_path):
+def write_config(config, config_path, is_encrypted=False):
+    """Write config to a file, encrypt if is_encrypted is True."""
+    if is_encrypted:
         if GNUPG_IMPORT_ERROR:
             raise RuntimeError(GNUPG_IMPORT_ERROR)
 
@@ -95,7 +95,7 @@ def write_config(config, config_path):
 
         encrypted_config = gpg.encrypt(config_string.getvalue(), fingerprint,
                                        armor=False)
-        with open(encrypted_config_path, 'wb') as f:
+        with open(f'{config_path}.gpg', 'wb') as f:
             f.write(encrypted_config.data)
     else:
         with open(config_path, 'w', encoding='utf-8') as f:
@@ -104,7 +104,7 @@ def write_config(config, config_path):
 
 def check_config_changes(default_config, config_path, excluded_sections=(),
                          user_option_ignored_sections=(),
-                         backup_parameters=None):
+                         backup_parameters=None, is_encrypted=False):
     """Compare default and user configurations."""
     def truncate_string(string):
         """Truncate a string to a maximum length."""
@@ -125,7 +125,7 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
             sections.append(section)
 
     user_config = configparser.ConfigParser(interpolation=None)
-    read_config(user_config, config_path)
+    read_config(user_config, config_path, is_encrypted=is_encrypted)
 
     while section_index < len(sections):
         section = sections[section_index]
@@ -175,7 +175,8 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
 
                 if answer == 'default':
                     user_config.remove_option(section, option)
-                    write_config(user_config, config_path)
+                    write_config(user_config, config_path,
+                                 is_encrypted=is_encrypted)
                 elif answer == 'back':
                     if option_indices:
                         option_index = option_indices.pop()
@@ -211,7 +212,8 @@ def list_section(config, section):
 
 def modify_section(config, section, config_path, backup_parameters=None,
                    option=None, can_back=True, can_insert_delete=False,
-                   prompts=None, items=None, all_values=None, limits=()):
+                   prompts=None, items=None, all_values=None, limits=(),
+                   is_encrypted=False):
     """Modify a section of a configuration based on user input."""
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
@@ -231,7 +233,8 @@ def modify_section(config, section, config_path, backup_parameters=None,
                                        can_back=current_can_back,
                                        can_insert_delete=can_insert_delete,
                                        prompts=prompts, items=items,
-                                       all_values=all_values, limits=limits)
+                                       all_values=all_values, limits=limits,
+                                       is_encrypted=is_encrypted)
 
                 if result == 'back':
                     index -= 1
@@ -251,13 +254,15 @@ def modify_section(config, section, config_path, backup_parameters=None,
                             (), level=1, prompts=prompts,
                             all_values=all_values))
                         if config[section][option] != '()':
-                            write_config(config, config_path)
+                            write_config(config, config_path,
+                                         is_encrypted=is_encrypted)
                             options.append(option)
                             length += 1
                     else:
                         config[section][option] = modify_value('value')
                         if config[section][option]:
-                            write_config(config, config_path)
+                            write_config(config, config_path,
+                                         is_encrypted=is_encrypted)
                             options.append(option)
                             length += 1
                 elif answer == 'back':
@@ -276,7 +281,8 @@ def modify_section(config, section, config_path, backup_parameters=None,
 
 def modify_option(config, section, option, config_path, backup_parameters=None,
                   can_back=False, can_insert_delete=False, initial_value=None,
-                  prompts=None, items=None, all_values=None, limits=()):
+                  prompts=None, items=None, all_values=None, limits=(),
+                  is_encrypted=False):
     """Modify an option in a section of a configuration file."""
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
@@ -322,7 +328,8 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
                 if tuple_list:
                     config[section][option] = str(tuple_list)
                 else:
-                    delete_option(config, section, option, config_path)
+                    delete_option(config, section, option, config_path,
+                                  is_encrypted=is_encrypted)
                     return False
             else:
                 config[section][option] = modify_value(
@@ -334,17 +341,19 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
         elif answer == 'empty': # TODO remove empty
             config[section][option] = ''
         elif answer in {'default', 'delete'}:
-            delete_option(config, section, option, config_path)
+            delete_option(config, section, option, config_path,
+                          is_encrypted=is_encrypted)
             return False
         elif answer == 'back':
             return answer
         elif answer in {'', 'quit'}:
             if config[section][option] == initial_value:
-                delete_option(config, section, option, config_path)
+                delete_option(config, section, option, config_path,
+                              is_encrypted=is_encrypted)
                 return False
             return answer
 
-        write_config(config, config_path)
+        write_config(config, config_path, is_encrypted=is_encrypted)
         return True
 
     print(option, 'option does not exist.')
@@ -352,14 +361,14 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
 
 
 def delete_option(config, section, option, config_path,
-                  backup_parameters=None):
+                  backup_parameters=None, is_encrypted=False):
     """Delete an option from a section in a configuration file."""
     if backup_parameters:
         file_utilities.backup_file(config_path, **backup_parameters)
 
     if config.has_option(section, option):
         config.remove_option(section, option)
-        write_config(config, config_path)
+        write_config(config, config_path, is_encrypted=is_encrypted)
         return True
 
     print(option, 'option does not exist.')

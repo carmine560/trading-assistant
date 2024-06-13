@@ -291,7 +291,8 @@ class IndicatorThread(threading.Thread):
                                                float(modified_text)))
         string.set(modified_text)
         section[key] = string.get()
-        configuration.write_config(self.config, self.trade.config_path)
+        configuration.write_config(self.config, self.trade.config_path,
+                                   is_encrypted=True)
 
     def is_valid_float(self, user_input):
         """Check if the user input is a valid float."""
@@ -680,7 +681,7 @@ def configure(trade, can_interpolate=True, can_override=True):
                 ('toggle_indicator',)]}
 
     if can_override:
-        configuration.read_config(config, trade.config_path)
+        configuration.read_config(config, trade.config_path, is_encrypted=True)
 
     current_date = date.today()
     if (date.fromisoformat(
@@ -735,13 +736,14 @@ def configure_exit(args, trade):
                     config, section, trade.config_path,
                     backup_parameters=backup_parameters,
                     can_insert_delete=can_insert_delete, option=option,
-                    prompts=prompts, all_values=all_values, limits=limits)
+                    prompts=prompts, all_values=all_values, limits=limits,
+                    is_encrypted=True)
                 break
 
         sys.exit()
     if args.SS and configuration.modify_section(
             config, trade.startup_script_section, trade.config_path,
-            backup_parameters=backup_parameters):
+            backup_parameters=backup_parameters, is_encrypted=True):
         create_startup_script(trade, config)
         powershell = file_utilities.select_executable(
             ['pwsh.exe', 'powershell.exe'])
@@ -764,7 +766,7 @@ def configure_exit(args, trade):
                          'additional_value': 'additional argument',
                          'preset_additional_value': 'action',
                          'end_of_list': 'end of commands'},
-                items=trade.instruction_items):
+                items=trade.instruction_items, is_encrypted=True):
             powershell = file_utilities.select_executable(
                 ['pwsh.exe', 'powershell.exe'])
             activate_path, interpreter = file_utilities.select_venv(
@@ -801,7 +803,7 @@ def configure_exit(args, trade):
         else:
             configuration.delete_option(
                 config, trade.actions_section, base, trade.config_path,
-                backup_parameters=backup_parameters)
+                backup_parameters=backup_parameters, is_encrypted=True)
             create_completion(trade, config)
 
         file_utilities.delete_shortcut(
@@ -814,7 +816,7 @@ def configure_exit(args, trade):
             configure(trade, can_interpolate=False, can_override=False),
             trade.config_path, excluded_sections=(trade.variables_section,),
             user_option_ignored_sections=(trade.actions_section,),
-            backup_parameters=backup_parameters)
+            backup_parameters=backup_parameters, is_encrypted=True)
         sys.exit()
 
 
@@ -1067,7 +1069,8 @@ def execute_action(trade, config, gui_state, action):
             if initial_cash_balance == 0:
                 config[trade.variables_section]['initial_cash_balance'] = str(
                     trade.cash_balance)
-                configuration.write_config(config, trade.config_path)
+                configuration.write_config(config, trade.config_path,
+                                           is_encrypted=True)
             else:
                 daily_profit = trade.cash_balance - initial_cash_balance
                 if daily_profit < daily_loss_limit:
@@ -1102,7 +1105,8 @@ def execute_action(trade, config, gui_state, action):
                 'current_number_of_trades']) + 1
             config[trade.variables_section]['current_number_of_trades'] = str(
                 current_number_of_trades)
-            configuration.write_config(config, trade.config_path)
+            configuration.write_config(config, trade.config_path,
+                                       is_encrypted=True)
 
             file_utilities.write_chapter(
                 file_utilities.get_latest_file(
