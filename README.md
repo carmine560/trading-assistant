@@ -756,7 +756,7 @@ speak_60_seconds_until_open = ('08:59:00', 'speak_seconds_until_open')
 speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 ```
 
-## Known Issues ##
+## Known Issue ##
 
   * The `toggle_indicator` command in the ‘[Create or Modify
     Action](#create-or-modify-action)’ section does not operate as expected
