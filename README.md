@@ -31,23 +31,23 @@ Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
   * [`chardet`](https://github.com/chardet/chardet),
     [`lxml`](https://lxml.de/index.html),
     [`pandas`](https://pandas.pydata.org/),
-    [`pyarrow`](https://arrow.apache.org/docs/python/), and
+    [`pyarrow`](https://arrow.apache.org/), and
     [`requests`](https://requests.readthedocs.io/en/latest/) to save the
     customer margin ratios and the previous market data from websites
   * [`pywin32`](https://github.com/mhammond/pywin32) to access Windows APIs
   * [`pytesseract`](https://github.com/madmaze/pytesseract) to invoke
-    [Tesseract](https://tesseract-ocr.github.io/) to recognize prices and
-    securities codes on Hyper SBI 2
-  * [`pyautogui`](https://pyautogui.readthedocs.io/en/latest/index.html) to
-    automate manipulation of Hyper SBI 2
+    [Tesseract](https://github.com/tesseract-ocr/tesseract) to recognize prices
+    and securities codes on Hyper SBI 2
+  * [`pyautogui`](https://github.com/asweigart/pyautogui) to automate
+    manipulation of Hyper SBI 2
   * [`pynput`](https://github.com/moses-palmer/pynput) to monitor the mouse and
     keyboard
   * [`pyttsx3`](https://github.com/nateshmbhat/pyttsx3) to speak information
   * [`psutil`](https://github.com/giampaolo/psutil) to calculate CPU
     utilization
-  * [`prompt_toolkit`](https://python-prompt-toolkit.readthedocs.io/en/master/index.html)
+  * [`prompt_toolkit`](https://github.com/prompt-toolkit/python-prompt-toolkit)
     to complete possible values or a previous value in configuring
-  * [`python-gnupg`](https://docs.red-dove.com/python-gnupg/) to invoke
+  * [`python-gnupg`](https://github.com/vsajip/python-gnupg) to invoke
     [GnuPG](https://gnupg.org/index.html) to encrypt and decrypt the
     configuration file
 
