@@ -466,7 +466,6 @@ def get_arguments():
         help='start the scheduler')
 
     file_utilities.add_launcher_options(group)
-
     group.add_argument(
         '-SS', action='store_true',
         help='configure the startup script, create a shortcut to it,'

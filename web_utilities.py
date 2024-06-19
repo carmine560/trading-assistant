@@ -10,7 +10,7 @@ def make_head_request(url):
     head = requests.head(url, timeout=5)
     try:
         head.raise_for_status()
-    except requests.exceptions.HTTPError as e:
+    except requests.exceptions.RequestException as e:
         print(e)
         sys.exit(1)
     return head
