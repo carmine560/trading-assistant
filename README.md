@@ -503,6 +503,7 @@ watch_tick_count = [
     # clipboard.
     ('copy_symbols_from_column', '331, 152, 63, 661'),
     ('press_hotkeys', 'alt, f4'),    # Close the window.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '41, 115'),            # Select the second watchlist.
     ('click', '1612, 41'),           # Select the 'List' view.
     ('press_key', 'tab, 3'),         # Focus on the stock list pane.
