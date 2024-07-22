@@ -520,7 +520,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         os.path.join(os.path.expanduser('~'), 'Videos', trade.process.title()),
         'screencast_regex':
         (trade.process.title()
-         + r' \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d{2}\.mp4'),
+         + r' \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d+\.mp4'),
         'fingerprint': ''}
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
