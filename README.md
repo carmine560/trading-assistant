@@ -452,13 +452,6 @@ login = [
     ('hide_window', '登録銘柄'),     # Hide the 'Watchlists' window.
     # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('sleep', '1.2'),                # Sleep for 1.2 seconds.
-    # Execute the 'center_open_1_minute_chart' action in the 'Center Open for
-    # 1-minute Chart' section if Hyper SBI 2 restarts during ${Market
-    # Data:opening_time}-${HYPERSBI2:end_time}.
-    ('is_now_after', '${Market Data:opening_time}', [
-        ('is_now_before', '${HYPERSBI2:end_time}',
-         'center_open_1_minute_chart')]),
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Return the mouse pointer to the previous position.
