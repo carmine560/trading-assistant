@@ -510,15 +510,15 @@ watch_tick_count = [
 
     # Optional Commands
     ('press_key', 'tab, 6'),         # Focus on the number of columns field.
-    ('press_key', '6'),              # Enter 6.
+    ('press_key', '4'),              # Enter 4.
     ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
     ('click', '524, 88'),            # Click the time frame drop-down menu.
     ('press_key', 'home'),           # Move to the first item.
-    ('press_key', 'down, 2'),        # Select the '5-minute' time frame.
+    ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '602, 88'),            # Select the '1-day' date range.
+    ('click', '752, 88'),            # Select the '100 candles' chart interval.
     # Return the mouse pointer to the previous position.
     ('back_to',)]
 ```
@@ -559,7 +559,7 @@ watch_active_stocks = [
     ('press_key', 'down, 2'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '602, 88'),            # Select the '1-day' date range.
+    ('click', '602, 88'),            # Select the '1-day' chart interval.
     # Return the mouse pointer to the previous position.
     ('back_to',)]
 ```
