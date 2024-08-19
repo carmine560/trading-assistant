@@ -1,5 +1,7 @@
 """Recognize and return text from screen areas."""
 
+import string
+
 from PIL import Image
 from PIL import ImageGrab
 from PIL import ImageOps
@@ -9,17 +11,22 @@ import pytesseract
 def recognize_text(section, x, y, width, height, index, text_type='integers'):
     """Recognize and return text from a specified screen area."""
     if text_type == 'integers':
-        config = r'-c tessedit_char_whitelist=,0123456789 --psm 7'
+        config = (
+            f'-c tessedit_char_whitelist={string.digits}{string.whitespace},'
+            ' --psm 7')
     elif text_type == 'decimal_numbers':
-        config = r'-c tessedit_char_whitelist=.,0123456789 --psm 7'
+        config = (
+            f'-c tessedit_char_whitelist={string.digits}{string.whitespace},.'
+            ' --psm 7')
     elif text_type == 'securities_code_column':
-        config = ('-c tessedit_char_whitelist=0123456789ACDFGHJKLMNPRSTUWXY '
-                  '--psm 6')
+        config = (
+            f'-c tessedit_char_whitelist={string.digits}ACDFGHJKLMNPRSTUWXY'
+            ' --psm 6')
 
-    split_string = []
+    split_text = []
     image_magnification = int(section['image_magnification'])
     binarization_threshold = int(section['binarization_threshold'])
-    while not split_string:
+    while not split_text:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
             image = image.resize((image_magnification * width,
@@ -30,16 +37,16 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
             if section.getboolean('is_dark_theme'):
                 image = ImageOps.invert(image)
 
-            string = pytesseract.image_to_string(image, config=config)
+            recognized_text = pytesseract.image_to_string(image, config=config)
             if text_type in ('integers', 'decimal_numbers'):
-                split_string = list(map(lambda s: float(s.replace(',', '')),
-                                        string.split(' ')))
+                split_text = list(map(lambda s: float(s.replace(',', '')),
+                                      recognized_text.split(' ')))
             elif text_type == 'securities_code_column':
-                for item in string.splitlines():
-                    split_string.append(item)
+                for item in recognized_text.splitlines():
+                    split_text.append(item)
         except ValueError:
             pass
 
     if index is None:
-        return split_string
-    return split_string[int(index)]
+        return split_text
+    return split_text[int(index)]
