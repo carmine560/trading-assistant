@@ -9,9 +9,9 @@ import pytesseract
 def recognize_text(section, x, y, width, height, index, text_type='integers'):
     """Recognize and return text from a specified screen area."""
     if text_type == 'integers':
-        config = r'-c tessedit_char_whitelist=\ ,0123456789 --psm 7'
+        config = r'-c tessedit_char_whitelist=,0123456789 --psm 7'
     elif text_type == 'decimal_numbers':
-        config = r'-c tessedit_char_whitelist=\ .,0123456789 --psm 7'
+        config = r'-c tessedit_char_whitelist=.,0123456789 --psm 7'
     elif text_type == 'securities_code_column':
         config = ('-c tessedit_char_whitelist=0123456789ACDFGHJKLMNPRSTUWXY '
                   '--psm 6')
