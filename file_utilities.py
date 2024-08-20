@@ -250,10 +250,10 @@ def get_config_path(script_path, can_create_directory=True):
 
 def get_latest_file(directory, regex):
     """Fetch the most recent file from the directory."""
-    return max([p for p in [os.path.join(directory, f) for f
-                            in os.listdir(directory) if re.fullmatch(regex, f)]
-                if os.path.isfile(p)],
-               key=os.path.getctime)
+    files = [p for p in [os.path.join(directory, f) for f
+                         in os.listdir(directory) if re.fullmatch(regex, f)]
+             if os.path.isfile(p)]
+    return False if not files else max(files, key=os.path.getctime)
 
 
 def is_writing(path):

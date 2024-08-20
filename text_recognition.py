@@ -8,6 +8,7 @@ from PIL import ImageOps
 import pytesseract
 
 
+# TODO: replace section
 def recognize_text(section, x, y, width, height, index, text_type='integers'):
     """Recognize and return text from a specified screen area."""
     if text_type == 'integers':
