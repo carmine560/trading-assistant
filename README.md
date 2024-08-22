@@ -16,7 +16,7 @@ consisting of a sequence of commands, this script can:
 
 > **Disclaimer**: `trading_assistant.py` does not analyze or make decisions for
 > you. If you operate under incorrect assumptions, the potential for loss may
-> increase because of the script’s fast and frequent order placement. Use at
+> increase because of the script's fast and frequent order placement. Use at
 > your own risk.
 
 > **Warning**: `trading_assistant.py` is currently under heavy development.
@@ -88,7 +88,7 @@ python trading_assistant.py -SS
 Configure the cash balance and (optional) price limit regions on Hyper SBI 2
 for Tesseract to recognize these prices. `trading_assistant.py` only references
 a price limit if the previous closing price does not exist in the market data
-in the ‘[Create Startup Script](#create-startup-script)’ section. Because a
+in the “[Create Startup Script](#create-startup-script)” section. Because a
 region may contain more than one price, you need to specify the index of the
 price you want to refer to.
 
@@ -172,8 +172,8 @@ clipboard.</td></tr>
 
 <td>Count the number of trades for the day. Additionally, write a chapter
 section for <a href="https://ffmpeg.org/ffmpeg-formats.html#Metadata-1">FFmpeg
-metadata</a> when Nvidia ShadowPlay records a screencast. The ‘CHAPTER_OFFSET’
-parameter specifies the offset in seconds for the chapter’s start time. You
+metadata</a> when Nvidia ShadowPlay records a screencast. The “CHAPTER_OFFSET”
+parameter specifies the offset in seconds for the chapter's start time. You
 must call this command after the execution of an order.</td></tr>
 
 <tr><td><code>('drag_to', 'X, Y')</code></td>
@@ -182,9 +182,9 @@ must call this command after the execution of an order.</td></tr>
 
 <tr><td><code>('get_cash_balance',)</code></td>
 
-<td>Recognize the cash balance in the cash balance region specified in the ‘<a
+<td>Recognize the cash balance in the cash balance region specified in the “<a
 href="#configure-cash-balance-and-price-limit-regions">Configure Cash Balance
-and Price Limit Regions</a>’ section.</td></tr>
+and Price Limit Regions</a>” section.</td></tr>
 
 <tr><td><code>('get_symbol', 'TITLE_REGEX')</code></td>
 
@@ -402,8 +402,8 @@ configuration, you should not use these configurations without understanding
 them.
 
 > **Note**: I tested these examples in the environment with 1080p resolution,
-> the maximized ‘Watchlists’ window, the left-snapped ‘Summary’ window, and the
-> right-snapped ‘Chart’ window. Additionally, my Hyper SBI 2 settings differ
+> the maximized “Watchlists” window, the left-snapped “Summary” window, and the
+> right-snapped “Chart” window. Additionally, my Hyper SBI 2 settings differ
 > from the default settings.
 
 ### Startup Script ###
@@ -426,12 +426,12 @@ running_options = -lsa login
 
 #### Login ####
 
-The following `login` action waits for the ‘Login’ dialog box to appear and
+The following `login` action waits for the “Login” dialog box to appear and
 then clicks its button. Next, it enters your trading password and authenticates
-in the ‘Pre-authentication of Trading Password’ dialog box. If you want to
+in the “Pre-authentication of Trading Password” dialog box. If you want to
 include your password as the value of an option, as demonstrated in this
-example, refer to the ‘[Encrypt Configuration
-File](#encrypt-configuration-file)’ section.
+example, refer to the “[Encrypt Configuration
+File](#encrypt-configuration-file)” section.
 
 ``` ini
 [HYPERSBI2 Actions]
@@ -475,12 +475,12 @@ login = [
 
 #### Replace Watchlist with Hyper SBI 2 Ranking ####
 
-The following `watch_tick_count` action replaces the stocks in the ‘Watchlists’
-window with new ones recognized in the ‘Rankings’ window.
+The following `watch_tick_count` action replaces the stocks in the “Watchlists”
+window with new ones recognized in the “Rankings” window.
 
-> **Note**: Hyper SBI updates the ‘Rankings’ window in real time, but the text
+> **Note**: Hyper SBI updates the “Rankings” window in real time, but the text
 > recognition by Tesseract is not as accurate as the scraped market data in the
-> ‘[Create Startup Script](#create-startup-script)’ section.
+> “[Create Startup Script](#create-startup-script)” section.
 
 ``` ini
 [HYPERSBI2 Actions]
@@ -526,8 +526,8 @@ watch_tick_count = [
 #### Replace Watchlist with Market Data on Website ####
 
 The following `watch_active_stocks` action replaces the stocks in the
-‘Watchlists’ window with new ones scraped from the current market data in the
-‘[Create Startup Script](#create-startup-script)’ section.
+“Watchlists” window with new ones scraped from the current market data in the
+“[Create Startup Script](#create-startup-script)” section.
 
 > **Note**: The free market data provided by Kabutan has a 20-minute delay.
 
@@ -567,7 +567,7 @@ watch_active_stocks = [
 #### Center Open for 1-minute Chart ####
 
 The following `center_open_1_minute_chart` action centers the open in the
-1-minute chart of the ‘Chart’ window.
+1-minute chart of the “Chart” window.
 
 ``` ini
 [HYPERSBI2 Actions]
@@ -752,8 +752,8 @@ speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
 
 ## Known Issue ##
 
-  * The `toggle_indicator` command in the ‘[Create or Modify
-    Action](#create-or-modify-action)’ section does not operate as expected
+  * The `toggle_indicator` command in the “[Create or Modify
+    Action](#create-or-modify-action)” section does not operate as expected
     when used as an argument to the `is_now_after`, `is_now_before`, or
     `is_recording` commands.
 
