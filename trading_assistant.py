@@ -575,29 +575,29 @@ def configure(trade, can_interpolate=True, can_override=True):
         'post_start_options': '',
         'running_options': ''}
     config[trade.actions_section] = {
-        'create_pre_trading_chapter': [
-            ('write_chapter', 'Pre-trading', 'Pre-market')],
-        'speak_cpu_utilization': [
-            ('speak_cpu_utilization', '1')],
-        'speak_seconds_until_close': [
-            ('speak_seconds_until_time', '15:00:00')], # TODO
-        'speak_seconds_until_midday_break': [
-            ('speak_seconds_until_time', '${Market Data:midday_break_time}')],
-        'speak_seconds_until_open': [
-            ('speak_seconds_until_time', '${Market Data:opening_time}')],
-        'speak_seconds_until_reopen': [
-            ('speak_seconds_until_time', '${Market Data:reopening_time}')],
+        'toggle_indicator': [
+            ('toggle_indicator',)],
         'start_manual_recording': [
             ('is_recording', 'False', [
                 ('press_hotkeys', 'alt, f9'),
                 ('sleep', '2'),
                 ('is_recording', 'False', [
                     ('speak_text', 'Not recording.')])])],
+        'create_pre_trading_chapter': [
+            ('write_chapter', 'Pre-trading', 'Pre-market')],
         'stop_manual_recording': [
             ('is_recording', 'True', [
                 ('press_hotkeys', 'alt, f9')])],
-        'toggle_indicator': [
-            ('toggle_indicator',)]}
+        'speak_cpu_utilization': [
+            ('speak_cpu_utilization', '1')],
+        'speak_seconds_until_open': [
+            ('speak_seconds_until_time', '${Market Data:opening_time}')],
+        'speak_seconds_until_midday_break': [
+            ('speak_seconds_until_time', '${Market Data:midday_break_time}')],
+        'speak_seconds_until_reopen': [
+            ('speak_seconds_until_time', '${Market Data:reopening_time}')],
+        'speak_seconds_until_close': [
+            ('speak_seconds_until_time', '15:00:00')]} # TODO: update
     config[trade.schedules_section] = {}
     config[trade.variables_section] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
