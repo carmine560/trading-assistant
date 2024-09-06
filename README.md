@@ -733,21 +733,38 @@ speak_cpu_utilization = [
 speak_cpu_utilization = ('08:50:10', 'speak_cpu_utilization')
 ```
 
-#### Speak Number of Seconds until Open ####
+#### Speak Number of Seconds until Key Market Times ####
 
-The following action and schedules speak the number of seconds until the open.
+The following actions and schedules speak the number of seconds until key
+market times, including the open, midday break, reopen, and close.
 
 ``` ini
 [HYPERSBI2 Actions]
 speak_seconds_until_open = [
     # Speak seconds until the open.
     ('speak_seconds_until_time', '${Market Data:opening_time}')]
+speak_seconds_until_midday_break = [
+    # Speak seconds until the midday break.
+    ('speak_seconds_until_time', '${Market Data:midday_break_time}')]
+speak_seconds_until_reopen = [
+    # Speak seconds until the reopen.
+    ('speak_seconds_until_time', '${Market Data:reopening_time}')]
+speak_seconds_until_close = [
+    # Speak seconds until the close.
+    ('speak_seconds_until_time', '15:00:00')]
 
 [HYPERSBI2 Schedules]
 # Trigger the 'speak_seconds_until_open' action at 08:59:00.
 speak_60_seconds_until_open = ('08:59:00', 'speak_seconds_until_open')
 # Trigger the 'speak_seconds_until_open' action at 08:59:30.
 speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
+# Trigger the 'speak_seconds_until_midday_break' action at 11:29:00.
+speak_60_seconds_until_midday_break = ('11:29:00',
+                                       'speak_seconds_until_midday_break')
+# Trigger the 'speak_seconds_until_reopen' action at 12:29:00.
+speak_60_seconds_until_reopen = ('12:29:00', 'speak_seconds_until_reopen')
+# Trigger the 'speak_seconds_until_close' action at 14:59:00.
+speak_60_seconds_until_close = ('14:59:00', 'speak_seconds_until_close')
 ```
 
 ## Known Issue ##

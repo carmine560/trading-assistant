@@ -87,6 +87,8 @@ class Trade(initializer.Initializer):
             'preset_values_keys': {'is_now_after', 'is_now_before',
                                    'speak_seconds_until_time'},
             'preset_values': ('${Market Data:opening_time}',
+                              '${Market Data:midday_break_time}',
+                              '${Market Data:reopening_time}',
                               '${Market Data:closing_time}',
                               f'${{{self.process}:start_time}}',
                               f'${{{self.process}:end_time}}'),
@@ -528,6 +530,8 @@ def configure(trade, can_interpolate=True, can_override=True):
         'date_format': '%Y/%m/%d'}
     config['Market Data'] = {
         'opening_time': '09:00:00',
+        'midday_break_time': '11:30:00',
+        'reopening_time': '12:30:00',
         'closing_time': '15:30:00',
         'delay': '20',
         'timezone': 'Asia/Tokyo',
