@@ -574,7 +574,30 @@ def configure(trade, can_interpolate=True, can_override=True):
         'pre_start_options': '',
         'post_start_options': '',
         'running_options': ''}
-    config[trade.actions_section] = {}
+    config[trade.actions_section] = {
+        'create_pre_trading_chapter': [
+            ('write_chapter', 'Pre-trading', 'Pre-market')],
+        'speak_cpu_utilization': [
+            ('speak_cpu_utilization', '1')],
+        'speak_seconds_until_close': [
+            ('speak_seconds_until_time', '15:00:00')], # TODO
+        'speak_seconds_until_midday_break': [
+            ('speak_seconds_until_time', '${Market Data:midday_break_time}')],
+        'speak_seconds_until_open': [
+            ('speak_seconds_until_time', '${Market Data:opening_time}')],
+        'speak_seconds_until_reopen': [
+            ('speak_seconds_until_time', '${Market Data:reopening_time}')],
+        'start_manual_recording': [
+            ('is_recording', 'False', [
+                ('press_hotkeys', 'alt, f9'),
+                ('sleep', '2'),
+                ('is_recording', 'False', [
+                    ('speak_text', 'Not recording.')])])],
+        'stop_manual_recording': [
+            ('is_recording', 'True', [
+                ('press_hotkeys', 'alt, f9')])],
+        'toggle_indicator': [
+            ('toggle_indicator',)]}
     config[trade.schedules_section] = {}
     config[trade.variables_section] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
@@ -662,26 +685,8 @@ def configure(trade, can_interpolate=True, can_override=True):
             'pre_start_options': '',
             'post_start_options': '-rdl',
             'running_options': '-l'}
-        config[trade.actions_section] = {
-            'create_pre_trading_chapter': [
-                ('write_chapter', 'Pre-trading', 'Pre-market')],
-            'show_hide_watchlists': [
-                ('show_hide_window', '登録銘柄')],
-            'speak_cpu_utilization': [
-                ('speak_cpu_utilization', '1')],
-            'speak_seconds_until_open': [
-                ('speak_seconds_until_time', '${Market Data:opening_time}')],
-            'start_manual_recording': [
-                ('is_recording', 'False', [
-                    ('press_hotkeys', 'alt, f9'),
-                    ('sleep', '2'),
-                    ('is_recording', 'False', [
-                        ('speak_text', 'Not recording.')])])],
-            'stop_manual_recording': [
-                ('is_recording', 'True', [
-                    ('press_hotkeys', 'alt, f9')])],
-            'toggle_indicator': [
-                ('toggle_indicator',)]}
+        config[trade.actions_section]['show_hide_watchlists'] = str(
+            [('show_hide_window', '登録銘柄')])
 
     if can_override:
         configuration.read_config(config, trade.config_path, is_encrypted=True)
