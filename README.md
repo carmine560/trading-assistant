@@ -763,6 +763,8 @@ speak_60_seconds_until_midday_break = ('11:29:00',
                                        'speak_seconds_until_midday_break')
 # Trigger the 'speak_seconds_until_reopen' action at 12:29:00.
 speak_60_seconds_until_reopen = ('12:29:00', 'speak_seconds_until_reopen')
+# Trigger the 'speak_seconds_until_reopen' action at 12:29:30.
+speak_30_seconds_until_reopen = ('12:29:30', 'speak_seconds_until_reopen')
 # Trigger the 'speak_seconds_until_close' action at 14:59:00.
 speak_60_seconds_until_close = ('14:59:00', 'speak_seconds_until_close')
 ```
