@@ -1010,7 +1010,8 @@ def start_scheduler(trade, config, gui_state, process):
             time.sleep(1)
         else:
             for schedule in schedules:
-                scheduler.cancel(schedule)
+                if schedule in scheduler.queue:
+                    scheduler.cancel(schedule)
 
 
 def start_listeners(trade, config, gui_state, base_manager, speech_manager,
