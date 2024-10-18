@@ -925,12 +925,12 @@ def save_market_data(trade, config, clipboard=False):
             return
 
         df = df[[section['symbol_header'], section['price_header']]]
+        df[section['symbol_header']] = df[section['symbol_header']].astype(str)
         df.sort_values(by=section['symbol_header'], inplace=True)
         for i in range(1, 10):
-            subset = (
-                df.loc[df[section['symbol_header']].astype(str).str.fullmatch(
-                    f'{i}{SANS_INITIAL_SECURITIES_CODE_REGEX}')])
-            subset.to_csv(trade.closing_prices + str(i) + '.csv', header=False,
+            subset = df.loc[df[section['symbol_header']].str.fullmatch(
+                f'{i}{SANS_INITIAL_SECURITIES_CODE_REGEX}')]
+            subset.to_csv(f'{trade.closing_prices}{i}.csv', header=False,
                           index=False)
 
 
