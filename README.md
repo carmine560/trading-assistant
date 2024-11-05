@@ -751,7 +751,7 @@ speak_seconds_until_reopen = [
     ('speak_seconds_until_time', '${Market Data:reopening_time}')]
 speak_seconds_until_close = [
     # Speak seconds until the close.
-    ('speak_seconds_until_time', '15:00:00')]
+    ('speak_seconds_until_time', '${Market Data:closing_time}')]
 
 [HYPERSBI2 Schedules]
 # Trigger the 'speak_seconds_until_open' action at 08:59:00.
