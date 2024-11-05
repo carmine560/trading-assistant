@@ -532,7 +532,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         'opening_time': '09:00:00',
         'midday_break_time': '11:30:00',
         'reopening_time': '12:30:00',
-        'closing_time': '15:30:00',
+        'closing_time': '15:25:00',
         'delay': '20',
         'timezone': 'Asia/Tokyo',
         'url': 'https://kabutan.jp/warning/?mode=2_9&market=1',
