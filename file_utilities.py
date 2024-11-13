@@ -300,7 +300,7 @@ def select_venv(directory, activate='activate'):
 def add_launcher_options(group):
     """Add launcher generation options to the argparse group."""
     group.add_argument(
-        '-B', nargs='?', const='.',
+        '-BS', nargs='?', const='.',
         help='generate'
         f" a {'WSL Bash' if sys.platform == 'win32' else 'Bash'} script"
         ' to launch this script and exit',
@@ -315,8 +315,8 @@ def add_launcher_options(group):
 
 def create_launchers_exit(args, script_path):
     """Create launchers based on command-line arguments and exit."""
-    if args.B:
-        create_bash_launcher(script_path, args.B)
+    if args.BS:
+        create_bash_launcher(script_path, args.BS)
         sys.exit()
     if sys.platform == 'win32' and args.PS:
         create_powershell_launcher(script_path, args.PS)
