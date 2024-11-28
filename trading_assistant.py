@@ -596,7 +596,9 @@ def configure(trade, can_interpolate=True, can_override=True):
         'speak_seconds_until_reopen': [
             ('speak_seconds_until_time', '${Market Data:reopening_time}')],
         'speak_seconds_until_close': [
-            ('speak_seconds_until_time', '${Market Data:closing_time}')]}
+            ('speak_seconds_until_time', '${Market Data:closing_time}')],
+        'speak_seconds_until_end': [
+            ('speak_seconds_until_time', f'${{{trade.process}:end_time}}')]}
     config[trade.schedules_section] = {}
     config[trade.variables_section] = {
         'current_date': date.min.strftime('%Y-%m-%d'),

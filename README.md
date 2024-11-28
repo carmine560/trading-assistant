@@ -19,9 +19,6 @@ consisting of a sequence of commands, this script can:
 > increase because of the script's fast and frequent order placement. Use at
 > your own risk.
 
-> **Warning**: `trading_assistant.py` is currently under heavy development.
-> Changes in functionality may occur at any time.
-
 ## Prerequisites ##
 
 `trading_assistant.py` has been tested in [Python
@@ -752,12 +749,17 @@ speak_seconds_until_reopen = [
 speak_seconds_until_close = [
     # Speak seconds until the close.
     ('speak_seconds_until_time', '${Market Data:closing_time}')]
+speak_seconds_until_end = [
+    # Speak seconds until ${HYPERSBI2:end_time}.
+    ('speak_seconds_until_time', '${HYPERSBI2:end_time}')]
 
 [HYPERSBI2 Schedules]
 # Trigger the 'speak_seconds_until_open' action at 08:59:00.
 speak_60_seconds_until_open = ('08:59:00', 'speak_seconds_until_open')
 # Trigger the 'speak_seconds_until_open' action at 08:59:30.
 speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
+# Trigger the 'speak_seconds_until_end' action at 09:59:00.
+speak_60_seconds_until_end = ('09:59:00', 'speak_seconds_until_end')
 # Trigger the 'speak_seconds_until_midday_break' action at 11:29:00.
 speak_60_seconds_until_midday_break = ('11:29:00',
                                        'speak_seconds_until_midday_break')
