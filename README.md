@@ -120,7 +120,7 @@ command and its arguments. Possible commands include:
 
 <tr><td><code>('back_to',)</code></td>
 
-<td>Return the mouse pointer to the previous position.</td></tr>
+<td>Return the mouse pointer to its previous position.</td></tr>
 
 <tr><td><code>('calculate_share_size', 'long|short')</code></td>
 
@@ -451,7 +451,7 @@ login = [
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    # Return the mouse pointer to the previous position.
+    # Return the mouse pointer to its previous position.
     ('back_to',)
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
     # is before ${HYPERSBI2:end_time}.
@@ -516,7 +516,7 @@ watch_tick_count = [
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '913, 89'),            # Select the '100 candles' chart interval.
-    # Return the mouse pointer to the previous position.
+    # Return the mouse pointer to its previous position.
     ('back_to',)]
 ```
 
@@ -557,26 +557,21 @@ watch_active_stocks = [
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '663, 89'),            # Select the '1-day' chart interval.
-    # Return the mouse pointer to the previous position.
+    # Return the mouse pointer to its previous position.
     ('back_to',)]
 ```
 
-#### Center Open for 1-minute Chart ####
+#### Update Chart ####
 
-The following `center_open_1_minute_chart` action centers the open in the
-1-minute chart of the “Chart” window.
+The following `update_chart` action updates the chart of the “Chart” window.
 
 ``` ini
 [HYPERSBI2 Actions]
-center_open_1_minute_chart = [
+update_chart = [
     # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('click', '1814, 76'),           # Click the 'Show Thumbnail Chart' button.
-    # Move to the current viewport of the thumbnail chart.
-    ('move_to', '1621, 1018'),
-    ('drag_to', '1411, 1018'),       # Center the open in the 1-minute chart.
-    ('click', '1814, 76'),           # Click the 'Show Thumbnail Chart' button.
-    # Return the mouse pointer to the previous position.
+    ('click', '1862, 48'),           # Click the 'Update' button.
+    # Return the mouse pointer to its previous position.
     ('back_to',)]
 ```
 
@@ -611,7 +606,7 @@ open_close_long_position = [
     ('click', '499, 818'),           # Click the 'Market Order' button.
     ('press_key', 'tab, 3'),         # Focus on the 'Buy Order' button.
     ('speak_text', 'Long.'),         # Speak the readiness of the buy order.
-    # Return the mouse pointer to the previous position.
+    # Return the mouse pointer to its previous position.
     ('back_to',),
     ('wait_for_key', 'space'),       # Wait for space input.
     # Wait for the order execution.
