@@ -665,9 +665,8 @@ input_map = {
     # Execute the 'speak_cpu_utilization' action in the 'Speak CPU Utilization'
     # section.
     'f10': 'speak_cpu_utilization',
-    # Execute the 'center_open_1_minute_chart' action in the 'Center Open for
-    # 1-minute Chart' section.
-    'f11': 'center_open_1_minute_chart',
+    # Execute the 'update_chart' action in the 'Update Chart' section.
+    'f11': 'update_chart',
     # Execute the 'toggle_indicator' action below.
     'f12': 'toggle_indicator'}
 
