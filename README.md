@@ -446,13 +446,17 @@ login = [
     ('press_key', 'enter'),          # Press the button.
     # Wait for and locate the 'OK' button in the region, then click it.
     ('click_widget', 'ok.png', '783, 442, 334, 118'),
+    # Return the mouse pointer to its previous position.
+    ('back_to',),
+    # Initialize the chart intervals if the current system time is outside
+    # ${HYPERSBI2:start_time}-${HYPERSBI2:end_time}.
+    ('is_now_before', '${HYPERSBI2:start_time}', 'initialize_chart_intervals'),
+    ('is_now_after', '${HYPERSBI2:end_time}', 'initialize_chart_intervals'),
     ('hide_window', '登録銘柄'),     # Hide the 'Watchlists' window.
     # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    # Return the mouse pointer to its previous position.
-    ('back_to',)
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
     # is before ${HYPERSBI2:end_time}.
     ('is_now_before', '${HYPERSBI2:end_time}', [
@@ -468,6 +472,105 @@ login = [
     # Recording' section does not start recording.
     ('is_now_after', '08:50:00', [
         ('is_now_before', '${HYPERSBI2:end_time}', 'start_manual_recording')])]
+```
+
+#### Initialize Chart Intervals ####
+
+The following `initialize_chart_intervals` action initializes the chart
+intervals for the “Watchlists” window and the “Chart” window.
+
+``` ini
+[HYPERSBI2 Actions]
+initialize_chart_intervals = [
+    # 'Watchlists' Window
+    ('show_window', '登録銘柄'),     # Show the 'Watchlists' window.
+    ('click', '1676, 41'),           # Select the 'Tile' view.
+    ('press_key', 'tab, 12'),        # Focus on the 'Chart' button.
+    ('press_key', 'space'),          # Press the button.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'home'),           # Select the 'Tick' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '663, 89'),            # Select the '1-day' chart interval.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '913, 89'),            # Select the '100 candles' chart interval.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '5-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '913, 89'),            # Select the '100 candles' chart interval.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '10-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '913, 89'),            # Select the '100 candles' chart interval.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '15-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '913, 89'),            # Select the '100 candles' chart interval.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '30-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '913, 89'),            # Select the '100 candles' chart interval.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '1-hour' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '913, 89'),            # Select the '100 candles' chart interval.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the 'Session' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '763, 89'),            # Select the '100 candles' chart interval.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the 'Daily' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '863, 89'),            # Select the '100 candles' chart interval.
+
+    # 'Chart' Window
+    # Show the 'Chart' window.
+    ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'home'),           # Select the 'Tick' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1316, 76'),           # Select the '2-day' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1616, 76'),           # Select the '300 candles' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '3-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1616, 76'),           # Select the '300 candles' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '5-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1616, 76'),           # Select the '300 candles' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '10-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1616, 76'),           # Select the '300 candles' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '15-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1616, 76'),           # Select the '300 candles' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '30-minute' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1616, 76'),           # Select the '300 candles' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the '1-hour' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1566, 76'),           # Select the '300 candles' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the 'Session' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1466, 76'),           # Select the '300 candles' chart interval.
+    ('click', '1121, 76'),           # Open the time frame drop-down menu.
+    ('press_key', 'down, 1'),        # Select the 'Daily' time frame.
+    ('press_key', 'enter'),          # Close the menu.
+    ('click', '1665, 76'),           # Open the chart interval drop-down menu.
+    ('press_key', 'down, 5'),        # Select the '300 candles' chart interval.
+    ('press_key', 'enter'),          # Close the menu.
+    # Return the mouse pointer to its previous position.
+    ('back_to',)]
 ```
 
 #### Replace Watchlist with Hyper SBI 2 Ranking ####
@@ -510,7 +613,7 @@ watch_tick_count = [
     ('press_key', '4'),              # Enter 4.
     ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
-    ('click', '593, 89'),            # Click the time frame drop-down menu.
+    ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'home'),           # Move to the first item.
     ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
@@ -622,6 +725,7 @@ open_close_long_position = [
     ('count_trades', '-10.0'),       # Count the number of trades for the day.
     # Speak the number above and notify you of the readiness of the sell order.
     ('speak_config', 'HYPERSBI2 Variables', 'current_number_of_trades'),
+    # Return the mouse pointer to its previous position.
     ('back_to',)]
 ```
 
