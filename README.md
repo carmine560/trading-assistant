@@ -448,7 +448,8 @@ login = [
     ('click_widget', 'ok.png', '783, 442, 334, 118'),
     # Return the mouse pointer to its previous position.
     ('back_to',),
-    # Initialize the chart intervals if the current system time is outside
+    # Execute the 'initialize_chart_intervals' action in the 'Initialize Chart
+    # Intervals' section if the current system time is outside
     # ${HYPERSBI2:start_time}-${HYPERSBI2:end_time}.
     ('is_now_before', '${HYPERSBI2:start_time}', 'initialize_chart_intervals'),
     ('is_now_after', '${HYPERSBI2:end_time}', 'initialize_chart_intervals'),
@@ -466,10 +467,10 @@ login = [
     # Open the 'News' window if the current system time is before the open.
     ('is_now_before', '${Market Data:opening_time}', [
         ('press_hotkeys', 'ctrl, n')]),
-    # Start a new recording if one is not already in progress at
-    # 08:50:00-${HYPERSBI2:end_time}. This is a fallback if the
-    # 'start_trading_recording' schedule in the 'Start and Stop Manual
-    # Recording' section does not start recording.
+    # Execute the 'start_manual_recording' action in the 'Start and Stop Manual
+    # Recording' section if a recording is not already in progress during
+    # 08:50:00-${HYPERSBI2:end_time}. This serves as a fallback if the
+    # 'start_trading_recording' schedule fails to start the recording.
     ('is_now_after', '08:50:00', [
         ('is_now_before', '${HYPERSBI2:end_time}', 'start_manual_recording')])]
 ```
@@ -738,14 +739,14 @@ The following input map maps mouse buttons and keyboard keys to actions.
 input_map = {
     # The left button is used to click widgets.
     'left': '',
-    # Execute an action to show or hide the 'Watchlists' window. The middle
-    # button also toggles between prices and price changes in the order books.
+    # Execute the 'show_hide_watchlists' action below. The middle button also
+    # toggles between prices and price changes in the order books.
     'middle': 'show_hide_watchlists',
     # The right button is used for context menus.
     'right': '',
     'x1': '',
     'x2': '',
-    # Execute an action to open and close a short position.
+    # Execute the inverse of the action below.
     'f1': 'open_close_short_position',
     # Execute the 'open_close_long_position' action in the 'Open and Close Long
     # Position' section.
@@ -753,10 +754,9 @@ input_map = {
     'f3': '',
     # The F4 key is used to close a window.
     'f4': '',
-    # Execute the 'show_hide_watchlists' action above.
+    # Execute the 'show_hide_watchlists' action below.
     'f5': 'show_hide_watchlists',
-    # Execute an action to watch favorite stocks.
-    'f6': 'watch_favorites',
+    'f6': '',
     # Execute the 'watch_tick_count' action in the 'Replace Watchlist with
     # Hyper SBI 2 Ranking' section.
     'f7': 'watch_tick_count',
@@ -775,6 +775,8 @@ input_map = {
     'f12': 'toggle_indicator'}
 
 [HYPERSBI2 Actions]
+show_hide_watchlists = [
+    ('show_hide_window', '登録銘柄')] # Show or hide the 'Watchlists' window.
 toggle_indicator = [
     ('toggle_indicator',)]           # Toggle the indicator.
 ```
