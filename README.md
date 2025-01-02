@@ -665,20 +665,6 @@ watch_active_stocks = [
     ('back_to',)]
 ```
 
-#### Update Chart ####
-
-The following `update_chart` action updates the chart of the “Chart” window.
-
-``` ini
-[HYPERSBI2 Actions]
-update_chart = [
-    # Show the 'Chart' window.
-    ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('click', '1862, 48'),           # Click the 'Update' button.
-    # Return the mouse pointer to its previous position.
-    ('back_to',)]
-```
-
 #### Open and Close Long Position ####
 
 The following `open_close_long_position` action shows the required windows and
@@ -769,7 +755,7 @@ input_map = {
     # Execute the 'speak_cpu_utilization' action in the 'Speak CPU Utilization'
     # section.
     'f10': 'speak_cpu_utilization',
-    # Execute the 'update_chart' action in the 'Update Chart' section.
+    # Execute the 'update_chart' action below.
     'f11': 'update_chart',
     # Execute the 'toggle_indicator' action below.
     'f12': 'toggle_indicator'}
@@ -777,6 +763,12 @@ input_map = {
 [HYPERSBI2 Actions]
 show_hide_watchlists = [
     ('show_hide_window', '登録銘柄')] # Show or hide the 'Watchlists' window.
+update_chart = [
+    # Show the 'Chart' window.
+    ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    ('click', '1862, 48'),           # Click the 'Update' button.
+    # Return the mouse pointer to its previous position.
+    ('back_to',)]
 toggle_indicator = [
     ('toggle_indicator',)]           # Toggle the indicator.
 ```
