@@ -491,38 +491,47 @@ initialize_chart_intervals = [
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'home'),           # Select the 'Tick' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '663, 89'),            # Select the '1-day' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '913, 89'),            # Select the '100 candles' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '913, 89'),            # Select the '100 candles' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '10-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '913, 89'),            # Select the '100 candles' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '15-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '913, 89'),            # Select the '100 candles' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '30-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '913, 89'),            # Select the '100 candles' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '1-hour' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '913, 89'),            # Select the '100 candles' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the 'Session' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '763, 89'),            # Select the '100 candles' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the 'Daily' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '863, 89'),            # Select the '100 candles' chart interval.
 
     # 'Chart' Window
@@ -531,42 +540,52 @@ initialize_chart_intervals = [
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'home'),           # Select the 'Tick' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1316, 76'),           # Select the '2-day' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1616, 76'),           # Select the '300 candles' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '3-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1616, 76'),           # Select the '300 candles' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1616, 76'),           # Select the '300 candles' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '10-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1616, 76'),           # Select the '300 candles' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '15-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1616, 76'),           # Select the '300 candles' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '30-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1616, 76'),           # Select the '300 candles' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '1-hour' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1566, 76'),           # Select the '300 candles' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the 'Session' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1466, 76'),           # Select the '300 candles' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the 'Daily' time frame.
     ('press_key', 'enter'),          # Close the menu.
+    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1665, 76'),           # Open the chart interval drop-down menu.
     ('press_key', 'down, 5'),        # Select the '300 candles' chart interval.
     ('press_key', 'enter'),          # Close the menu.
@@ -608,18 +627,8 @@ watch_tick_count = [
     ('press_key', 'enter'),          # Confirm the registration.
     ('sleep', '0.6'),                # Sleep for 0.6 seconds.
     ('click', '1676, 41'),           # Select the 'Tile' view.
-
-    # Optional Commands
-    ('press_key', 'tab, 6'),         # Focus on the number of columns field.
-    ('press_key', '4'),              # Enter 4.
-    ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
+    ('press_key', 'tab, 12'),        # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
-    ('click', '593, 89'),            # Open the time frame drop-down menu.
-    ('press_key', 'home'),           # Move to the first item.
-    ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
-    ('press_key', 'enter'),          # Close the menu.
-    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '913, 89'),            # Select the '100 candles' chart interval.
     # Return the mouse pointer to its previous position.
     ('back_to',)]
 ```
@@ -648,19 +657,8 @@ watch_active_stocks = [
     ('press_key', 'enter'),          # Confirm the registration.
     ('sleep', '0.6'),                # Sleep for 0.6 seconds.
     ('click', '1676, 41'),           # Select the 'Tile' view.
-
-    # Optional Commands
-    ('press_key', 'tab, 6'),         # Focus on the number of columns field.
-    ('press_key', '6'),              # Enter 6.
-    ('press_key', 'tab, 6'),         # Focus on the 'Chart' button.
+    ('press_key', 'tab, 12'),        # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
-    ('press_key', 'tab, 6'),         # Focus on the time frame drop-down menu.
-    ('press_hotkeys', 'alt, down'),  # Open the menu.
-    ('press_key', 'home'),           # Move to the first item.
-    ('press_key', 'down, 2'),        # Select the '5-minute' time frame.
-    ('press_key', 'enter'),          # Close the menu.
-    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '663, 89'),            # Select the '1-day' chart interval.
     # Return the mouse pointer to its previous position.
     ('back_to',)]
 ```
