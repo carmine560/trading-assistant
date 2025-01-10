@@ -611,7 +611,7 @@ watch_tick_count = [
     ('click', '38, 39'),             # Select the 'Rankings' tab.
     ('click', '88, 311'),            # Select the 'Tick Count' ranking.
     ('click', '310, 63'),            # Click the 'Prime Market' button.
-    ('sleep', '0.2'),                # Sleep for 0.2 seconds.
+    ('sleep', '0.4'),                # Sleep for 0.4 seconds.
     # Recognize an alphanumeric column in the region, then copy symbols to the
     # clipboard.
     ('copy_symbols_from_column', '331, 152, 63, 661'),
