@@ -486,7 +486,7 @@ initialize_chart_intervals = [
     # 'Watchlists' Window
     ('show_window', '登録銘柄'),     # Show the 'Watchlists' window.
     ('click', '1676, 41'),           # Select the 'Tile' view.
-    ('press_key', 'tab, 12'),        # Focus on the 'Chart' button.
+    ('press_key', 'tab, 11'),        # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'home'),           # Select the 'Tick' time frame.
@@ -627,7 +627,7 @@ watch_tick_count = [
     ('press_key', 'enter'),          # Confirm the registration.
     ('sleep', '0.6'),                # Sleep for 0.6 seconds.
     ('click', '1676, 41'),           # Select the 'Tile' view.
-    ('press_key', 'tab, 12'),        # Focus on the 'Chart' button.
+    ('press_key', 'tab, 11'),        # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
     # Return the mouse pointer to its previous position.
     ('back_to',)]
@@ -657,7 +657,7 @@ watch_active_stocks = [
     ('press_key', 'enter'),          # Confirm the registration.
     ('sleep', '0.6'),                # Sleep for 0.6 seconds.
     ('click', '1676, 41'),           # Select the 'Tile' view.
-    ('press_key', 'tab, 12'),        # Focus on the 'Chart' button.
+    ('press_key', 'tab, 11'),        # Focus on the 'Chart' button.
     ('press_key', 'space'),          # Press the button.
     # Return the mouse pointer to its previous position.
     ('back_to',)]
