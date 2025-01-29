@@ -492,7 +492,7 @@ initialize_chart_intervals = [
     ('press_key', 'home'),           # Select the 'Tick' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '663, 89'),            # Select the '1-day' chart interval.
+    ('click', '913, 89'),            # Select the '600 ticks' chart interval.
     ('click', '593, 89'),            # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
@@ -541,7 +541,7 @@ initialize_chart_intervals = [
     ('press_key', 'home'),           # Select the 'Tick' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1316, 76'),           # Select the '2-day' chart interval.
+    ('click', '1566, 76'),           # Select the '600 ticks' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
