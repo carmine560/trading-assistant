@@ -8,8 +8,9 @@ from PIL import ImageOps
 import pytesseract
 
 
-# TODO: replace section
-def recognize_text(section, x, y, width, height, index, text_type='integers'):
+def recognize_text(x, y, width, height, index,
+                   image_magnification, binarization_threshold, is_dark_theme,
+                   text_type='integers'):
     """Recognize and return text from a specified screen area."""
     if text_type == 'integers':
         config = (
@@ -25,8 +26,6 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
             ' --psm 6')
 
     split_text = []
-    image_magnification = int(section['image_magnification'])
-    binarization_threshold = int(section['binarization_threshold'])
     while not split_text:
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
@@ -35,7 +34,7 @@ def recognize_text(section, x, y, width, height, index, text_type='integers'):
                                  Image.Resampling.LANCZOS)
             image = image.point(lambda p:
                                 255 if p > binarization_threshold else 0)
-            if section.getboolean('is_dark_theme'):
+            if is_dark_theme:
                 image = ImageOps.invert(image)
 
             recognized_text = pytesseract.image_to_string(image, config=config)

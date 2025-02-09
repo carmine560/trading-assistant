@@ -1108,8 +1108,11 @@ def execute_action(trade, config, gui_state, action):
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardText(' '.join(
                 text_recognition.recognize_text(
-                    config[trade.process], *map(int, argument.split(',')),
-                    None, text_type='securities_code_column')))
+                    *map(int, argument.split(',')), None,
+                    int(config[trade.process]['image_magnification']),
+                    int(config[trade.process]['binarization_threshold']),
+                    config[trade.process].getboolean('is_dark_theme'),
+                    text_type='securities_code_column')))
             win32clipboard.CloseClipboard()
         elif command == 'count_trades':
             current_number_of_trades = int(config[trade.variables_section][
@@ -1132,9 +1135,11 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'get_cash_balance':
             trade.cash_balance = int(
                 text_recognition.recognize_text(
-                    config[trade.process],
                     *map(int, config[trade.process]['cash_balance_region']
-                         .split(','))))
+                         .split(',')),
+                    int(config[trade.process]['image_magnification']),
+                    int(config[trade.process]['binarization_threshold']),
+                    config[trade.process].getboolean('is_dark_theme')))
         elif command == 'get_symbol':
             gui_interactions.enumerate_windows(trade.get_symbol, argument)
         elif command == 'hide_window':
@@ -1194,9 +1199,12 @@ def execute_action(trade, config, gui_state, action):
                 trade.speech_manager.set_speech_text('Canceled.')
                 return True
         elif command == 'wait_for_price':
-            text_recognition.recognize_text(config[trade.process],
-                                            *map(int, argument.split(',')),
-                                            text_type='decimal_numbers')
+            text_recognition.recognize_text(
+                *map(int, argument.split(',')),
+                int(config[trade.process]['image_magnification']),
+                int(config[trade.process]['binarization_threshold']),
+                config[trade.process].getboolean('is_dark_theme'),
+                text_type='decimal_numbers')
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(argument)
         elif command == 'write_chapter':
@@ -1375,8 +1383,10 @@ def get_price_limit(trade, config):
                 break
     else:
         price_limit = text_recognition.recognize_text(
-            config[trade.process],
             *map(int, config[trade.process]['price_limit_region'].split(',')),
+            int(config[trade.process]['image_magnification']),
+            int(config[trade.process]['binarization_threshold']),
+            config[trade.process].getboolean('is_dark_theme'),
             text_type='decimal_numbers')
     return price_limit
 
