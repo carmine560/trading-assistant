@@ -158,6 +158,19 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
                 sys.exit(1)
 
 
+def can_overwrite(path):
+    """Determine if the path can be overwritten."""
+    if os.path.isfile(path):
+        answer = input(f'{path} file exists. Overwrite? [Y/n] ')
+        if answer.strip().lower() not in ('y', ''):
+            print('Aborting.')
+            return False
+    elif os.path.isdir(path):
+        print(f'{path} directory exists.')
+        return False
+    return True
+
+
 def check_directory(directory):
     """Check if a directory exists, and create it if it doesn't."""
     if not os.path.isdir(directory):
@@ -300,45 +313,43 @@ def select_venv(directory, activate='activate'):
 def add_launcher_options(group):
     """Add launcher generation options to the argparse group."""
     group.add_argument(
-        '-BS', nargs='?', const='.',
+        '-BS', action='store_true',
         help='generate'
         f" a {'WSL Bash' if sys.platform == 'win32' else 'Bash'} script"
-        ' to launch this script and exit',
-        metavar='OUTPUT_DIRECTORY')
+        ' to launch this script and exit')
     if sys.platform == 'win32':
         group.add_argument(
-            '-PS', nargs='?', const='.',
+            '-PS', action='store_true',
             help='generate a PowerShell 7 script to launch this script'
-            ' and exit',
-            metavar='OUTPUT_DIRECTORY')
+            ' and exit')
 
 
 def create_launchers_exit(args, script_path):
     """Create launchers based on command-line arguments and exit."""
     if args.BS:
-        create_bash_launcher(script_path, args.BS)
+        create_bash_launcher(script_path)
         sys.exit()
     if sys.platform == 'win32' and args.PS:
-        create_powershell_launcher(script_path, args.PS)
+        create_powershell_launcher(script_path)
         sys.exit()
 
 
-def create_bash_launcher(script_path, output_directory):
+def create_bash_launcher(script_path):
     """Create a Bash launcher for a Python script."""
     activate_path, interpreter = select_venv(os.path.dirname(script_path))
     if sys.platform == 'win32':
         script_path = wsl_to_windows_path(windows_to_wsl_path(script_path))
         activate_path = windows_to_wsl_path(activate_path)
 
-    launcher_path = os.path.join(
-        os.path.realpath(output_directory),
-        f'{os.path.splitext(os.path.basename(script_path))[0]}.sh')
+    launcher_path = f'{os.path.splitext(os.path.basename(script_path))[0]}.sh'
     launcher_string = f'''#!/bin/bash
 
-. {activate_path} &&
-    {interpreter} {script_path} "$@"
+. "{activate_path}" &&
+    {interpreter} "{script_path}" "$@"
 '''
 
+    if not can_overwrite(launcher_path):
+        return
     with open(launcher_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(launcher_string)
 
@@ -347,18 +358,18 @@ def create_bash_launcher(script_path, output_directory):
                  | stat.S_IXGRP | stat.S_IXOTH)
 
 
-def create_powershell_launcher(script_path, output_directory):
+def create_powershell_launcher(script_path):
     """Create a PowerShell launcher for a Python script."""
     activate_path, interpreter = select_venv(os.path.dirname(script_path),
                                              activate='Activate.ps1')
-    launcher_path = os.path.join(
-        os.path.realpath(output_directory),
-        f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1')
-    launcher_string = f'''. {activate_path} &&
-{interpreter} {script_path} $args
+    launcher_path = f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1'
+    launcher_string = f'''. "{activate_path}" &&
+{interpreter} "{script_path}" $args
 deactivate
 '''
 
+    if not can_overwrite(launcher_path):
+        return
     with open(launcher_path, 'w', encoding='utf-8') as f:
         f.write(launcher_string)
 
