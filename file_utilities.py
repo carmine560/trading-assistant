@@ -275,8 +275,13 @@ def is_writing(path):
                 and time.time() - os.path.getmtime(path) < 1)
 
 
-def move_to_trash(path, option=None):
+def move_to_trash(path, should_confirm=False, option=None):
     """Move a specified file or directory to the trash."""
+    if should_confirm:
+        answer = input(f'Remove {path}? [y/N] ')
+        if answer.strip().lower() != 'y':
+            return
+
     command = ['trash-put', path]
     if option:
         command.insert(1, option)
@@ -352,7 +357,6 @@ def create_bash_launcher(script_path):
         return
     with open(launcher_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(launcher_string)
-
     if sys.platform == 'linux' and not is_wsl_windows_path(launcher_path):
         os.chmod(launcher_path, os.stat(launcher_path).st_mode | stat.S_IXUSR
                  | stat.S_IXGRP | stat.S_IXOTH)
