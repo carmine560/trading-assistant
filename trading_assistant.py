@@ -150,7 +150,7 @@ class Trade(initializer.Initializer):
                     if action:
                         start_execute_action_thread(self, config, gui_state,
                                                     action)
-                        time.sleep(0.2) # TODO: fix auto-repeat
+                        time.sleep(0.2) # TODO: Fix auto-repeat.
             elif self.keyboard_listener_state == 1:
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
                     or key == self.key_to_check):

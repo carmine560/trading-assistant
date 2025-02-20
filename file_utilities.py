@@ -396,6 +396,7 @@ def create_bash_completion(script_base, options, values, interpreters,
 
     expression_string = ' || '.join(f'$previous == {option}'
                                     for option in options)
+    # TODO: Consider non-options and path completions.
     completion_string = fr'''_{script_base}() {{
     local current previous options values
     current=${{COMP_WORDS[COMP_CWORD]}}

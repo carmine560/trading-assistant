@@ -338,7 +338,7 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
                     limits=limits)
         elif answer == 'toggle':
             config[section][option] = str(not boolean_value)
-        elif answer == 'empty': # TODO remove empty
+        elif answer == 'empty': # TODO: Remove empty.
             config[section][option] = ''
         elif answer in {'default', 'delete'}:
             delete_option(config, section, option, config_path,
