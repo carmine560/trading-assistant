@@ -351,6 +351,7 @@ def create_bash_launcher(script_path):
 
 . "{activate_path}" &&
     {interpreter} "{script_path}" "$@"
+deactivate
 '''
 
     if not can_overwrite(launcher_path):
