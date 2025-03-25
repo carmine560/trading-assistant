@@ -458,6 +458,16 @@ login = [
     ('hide_window', '登録銘柄'),     # Hide the 'Watchlists' window.
     # Show the 'Chart' window.
     ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
+    # Minimally initialize the chart interval if the current system time is
+    # within ${HYPERSBI2:start_time}-${HYPERSBI2:end_time}.
+    ('is_now_after', '${HYPERSBI2:start_time}', [
+        ('is_now_before', '${HYPERSBI2:end_time}', [
+            ('click', '1121, 76'),
+            ('press_key', 'home'),
+            ('press_key', 'enter'),
+            ('sleep', '0.2'),
+            ('click', '1566, 76'),
+            ('back_to',)])]),
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     # Check the 'Skip Confirmation Screen' checkbox if the current system time
@@ -470,7 +480,7 @@ login = [
     ('is_now_before', '${Market Data:opening_time}', [
         ('press_hotkeys', 'ctrl, n')]),
     # Execute the 'start_manual_recording' action in the 'Start and Stop Manual
-    # Recording' section if a recording is not already in progress during
+    # Recording' section if a recording is not already in progress within
     # 08:50:00-${HYPERSBI2:end_time}. This serves as a fallback if the
     # 'start_trading_recording' schedule fails to start the recording.
     ('is_now_after', '08:50:00', [
