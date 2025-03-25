@@ -85,6 +85,7 @@ class Trade(initializer.Initializer):
             'control_flow_keys': {'is_now_after', 'is_now_before',
                                   'is_recording'},
             'preset_values_keys': {'is_now_after', 'is_now_before',
+                                   'speak_seconds_since_time',
                                    'speak_seconds_until_time'},
             'preset_values': ('${Market Data:opening_time}',
                               '${Market Data:midday_break_time}',
@@ -592,6 +593,8 @@ def configure(trade, can_interpolate=True, can_override=True):
             ('speak_cpu_utilization', '1')],
         'speak_seconds_until_open': [
             ('speak_seconds_until_time', '${Market Data:opening_time}')],
+        'speak_seconds_since_open': [
+            ('speak_seconds_since_time', '${Market Data:opening_time}')],
         'speak_seconds_until_midday_break': [
             ('speak_seconds_until_time', '${Market Data:midday_break_time}')],
         'speak_seconds_until_reopen': [
@@ -1169,6 +1172,10 @@ def execute_action(trade, config, gui_state, action):
         elif command == 'speak_cpu_utilization':
             trade.speech_manager.set_speech_text(
                 f'{round(psutil.cpu_percent(interval=float(argument)))}%.')
+        elif command == 'speak_seconds_since_time':
+            time_delta = math.ceil(
+                time.time() - data_utilities.get_target_time(argument))
+            trade.speech_manager.set_speech_text(f'{time_delta} seconds.')
         elif command == 'speak_seconds_until_time':
             time_delta = math.ceil(
                 data_utilities.get_target_time(argument) - time.time())

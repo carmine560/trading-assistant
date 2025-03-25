@@ -223,6 +223,10 @@ and Price Limit Regions</a>” section.</td></tr>
 
 <td>Calculate CPU utilization for the interval and speak it.</td></tr>
 
+<tr><td><code>('speak_seconds_since_time', '%H:%M:%S')</code></td>
+
+<td>Speak seconds since the time.</td></tr>
+
 <tr><td><code>('speak_seconds_until_time', '%H:%M:%S')</code></td>
 
 <td>Speak seconds until the time.</td></tr>
@@ -834,6 +838,9 @@ market times, including the open, midday break, reopen, and close.
 speak_seconds_until_open = [
     # Speak seconds until the open.
     ('speak_seconds_until_time', '${Market Data:opening_time}')]
+speak_seconds_since_open = [
+    # Speak seconds since the open.
+    ('speak_seconds_since_time', '${Market Data:opening_time}')]
 speak_seconds_until_midday_break = [
     # Speak seconds until the midday break.
     ('speak_seconds_until_time', '${Market Data:midday_break_time}')]
@@ -852,6 +859,8 @@ speak_seconds_until_end = [
 speak_60_seconds_until_open = ('08:59:00', 'speak_seconds_until_open')
 # Trigger the 'speak_seconds_until_open' action at 08:59:30.
 speak_30_seconds_until_open = ('08:59:30', 'speak_seconds_until_open')
+# Trigger the 'speak_seconds_since_open' action at 09:01:00.
+speak_60_seconds_since_open = ('09:01:00', 'speak_seconds_since_open')
 # Trigger the 'speak_seconds_until_end' action at 09:59:00.
 speak_60_seconds_until_end = ('09:59:00', 'speak_seconds_until_end')
 # Trigger the 'speak_seconds_until_midday_break' action at 11:29:00.
