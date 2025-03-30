@@ -440,11 +440,10 @@ login = [
     # Wait for the 'Pre-authentication of Trading Password' dialog box.
     ('wait_for_window', '取引パスワードのプレ認証'),
     ('show_window', '取引パスワードのプレ認証'), # Show the dialog box.
-    ('press_key', 'tab, 2'),         # Focus on the trading password field.
     ('write_string', 'TRADING_PASSWORD'), # Enter your trading password.
-    ('press_key', 'tab, 2'),         # Focus on the 'Acknowledgment' checkbox.
+    ('press_key', 'tab, 1'),         # Focus on the 'Acknowledgment' checkbox.
     ('press_key', 'space'),          # Check the checkbox.
-    ('press_key', 'tab, 2'),         # Focus on the 'Authenticate' button.
+    ('press_key', 'tab, 1'),         # Focus on the 'Authenticate' button.
     ('press_key', 'enter'),          # Press the button.
     # Wait for and locate the 'OK' button in the region, then click it.
     ('click_widget', 'ok.png', '783, 442, 334, 118'),
