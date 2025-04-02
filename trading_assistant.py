@@ -431,7 +431,8 @@ def main():
         if not (args.a or args.l):
             trade.speaking_process = (
                 speech_synthesis.start_speaking_process(
-                    trade.speech_manager))
+                    trade.speech_manager,
+                    voice_name=config['General']['voice_name']))
 
         threading.Thread(
             target=start_scheduler,
@@ -519,12 +520,13 @@ def configure(trade, can_interpolate=True, can_override=True):
         config = configparser.ConfigParser(interpolation=None)
 
     config['General'] = {
-        'screencast_directory':
+        'screencast_directory': # TODO: Move to trade.process
         os.path.join(os.path.expanduser('~'), 'Videos', trade.process.title()),
         'screencast_regex':
         (trade.process.title()
          + r' \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d+\.mp4'),
-        'fingerprint': ''}
+        'fingerprint': '',
+        'voice_name': 'Microsoft Zira Desktop'}
     config['Market Holidays'] = {
         'url': 'https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html',
         'date_header': '日付',
@@ -1032,7 +1034,7 @@ def start_listeners(trade, config, gui_state, base_manager, speech_manager,
     trade.keyboard_listener.start()
 
     trade.speaking_process = speech_synthesis.start_speaking_process(
-        speech_manager)
+        speech_manager, voice_name=config['General']['voice_name'])
 
     trade.stop_listeners_event = threading.Event()
     trade.wait_listeners_thread = threading.Thread(

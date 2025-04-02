@@ -31,18 +31,22 @@ class SpeechManager:
         self._speech_text = text
 
 
-def start_speaking_process(speech_manager):
+def start_speaking_process(speech_manager, voice_name=None):
     """Start a new process for speaking."""
-    speaking_process = Process(target=start_speaking, args=(speech_manager,))
+    speaking_process = Process(target=start_speaking,
+                               args=(speech_manager, voice_name))
     speaking_process.start()
     return speaking_process
 
 
-def start_speaking(speech_manager):
+def start_speaking(speech_manager, voice_name):
     """Initiate the speech process based on the speech manager's state."""
     speech_engine = pyttsx3.init()
     voices = speech_engine.getProperty('voices')
-    speech_engine.setProperty('voice', voices[1].id)
+    selected_voice = next((voice.id for voice in voices
+                           if voice_name and voice_name in voice.name),
+                          voices[0].id)
+    speech_engine.setProperty('voice', selected_voice)
 
     while speech_manager.can_speak():
         text = speech_manager.get_speech_text()
