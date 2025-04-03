@@ -687,10 +687,6 @@ open_close_long_position = [
     # Show the 'Summary' window.
     ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
     ('click', '231, 727'),           # Select the 'New Order' tab.
-    # Open the margin trading type drop-down menu.
-    ('click', '254, 750'),
-    ('press_key', 'end'),            # Select 'Day Trading on Margin'.
-    ('press_key', 'enter'),          # Close the menu.
     ('click', '565, 796'),           # Focus on the 'Share Size' text box.
     ('press_hotkeys', 'ctrl, a'),    # Select the existing value.
     # Get the symbol from the 'Summary' window.
