@@ -463,6 +463,7 @@ login = [
         ('is_now_before', '${HYPERSBI2:end_time}', [
             ('click', '1121, 76'),
             ('press_key', 'home'),
+            ('press_key', 'down, 1'),
             ('press_key', 'enter'),
             ('sleep', '0.2'),
             ('click', '1566, 76'),
@@ -557,7 +558,7 @@ initialize_chart_intervals = [
     ('press_key', 'down, 1'),        # Select the '1-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1616, 76'),           # Select the '300-bars' chart interval.
+    ('click', '1566, 76'),           # Select the '100-bars' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '3-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
