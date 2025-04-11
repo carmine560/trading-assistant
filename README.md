@@ -765,24 +765,15 @@ input_map = {
     # Execute the 'speak_cpu_utilization' action in the 'Speak CPU Utilization'
     # section.
     'f10': 'speak_cpu_utilization',
+    'f11': '',
     # Execute the 'toggle_indicator' action below.
-    'f11': 'toggle_indicator',
-    # Execute the 'update_chart' action below.
-    'f12': 'update_chart'}
+    'f12': 'toggle_indicator'}
 
 [HYPERSBI2 Actions]
 show_hide_watchlists = [
     ('show_hide_window', '登録銘柄')] # Show or hide the 'Watchlists' window.
 toggle_indicator = [
     ('toggle_indicator',)]           # Toggle the indicator.
-update_chart = [
-    # Show the 'Chart' window.
-    ('show_window', '個別チャート\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    ('click', '1566, 76'),           # Select the '600-bars' chart interval.
-    # Show the 'Summary' window.
-    ('show_window', '個別銘柄\\s.*\\(([1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?)\\)'),
-    # Return the mouse pointer to its previous position.
-    ('back_to',)]
 ```
 
 ### Schedules ###
