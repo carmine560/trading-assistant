@@ -437,6 +437,10 @@ File](#encrypt-configuration-file)” section.
 login = [
     # Wait for and locate the 'Login' button in the region, then click it.
     ('click_widget', 'login.png', '749, 309, 402, 384'),
+    # Wait for the 'FIDO (Smartphone Authentication)' dialog box.
+    ('wait_for_window', 'FIDO\\(スマホ認証\\)'),
+    ('show_window', 'FIDO\\(スマホ認証\\)'), # Show the dialog box.
+    ('press_key', 'esc'),            # Close the dialog box.
     # Wait for the 'Pre-authentication of Trading Password' dialog box.
     ('wait_for_window', '取引パスワードのプレ認証'),
     ('show_window', '取引パスワードのプレ認証'), # Show the dialog box.
