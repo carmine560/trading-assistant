@@ -567,43 +567,43 @@ initialize_chart_intervals = [
     ('press_key', 'down, 1'),        # Select the '3-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1616, 76'),           # Select the '300-bars' chart interval.
+    ('click', '1566, 76'),           # Select the '100-bars' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '5-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1616, 76'),           # Select the '300-bars' chart interval.
+    ('click', '1566, 76'),           # Select the '100-bars' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '10-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1616, 76'),           # Select the '300-bars' chart interval.
+    ('click', '1566, 76'),           # Select the '100-bars' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '15-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1616, 76'),           # Select the '300-bars' chart interval.
+    ('click', '1566, 76'),           # Select the '100-bars' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '30-minute' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1616, 76'),           # Select the '300-bars' chart interval.
+    ('click', '1566, 76'),           # Select the '100-bars' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the '1-hour' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1566, 76'),           # Select the '300-bars' chart interval.
+    ('click', '1516, 76'),           # Select the '100-bars' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the 'Session' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
-    ('click', '1466, 76'),           # Select the '300-bars' chart interval.
+    ('click', '1416, 76'),           # Select the '100-bars' chart interval.
     ('click', '1121, 76'),           # Open the time frame drop-down menu.
     ('press_key', 'down, 1'),        # Select the 'Daily' time frame.
     ('press_key', 'enter'),          # Close the menu.
     ('sleep', '0.2'),                # Sleep for 0.2 seconds.
     ('click', '1665, 76'),           # Open the chart interval drop-down menu.
-    ('press_key', 'down, 5'),        # Select the '300-bars' chart interval.
+    ('press_key', 'down, 4'),        # Select the '100-bars' chart interval.
     ('press_key', 'enter'),          # Close the menu.
     # Return the mouse pointer to its previous position.
     ('back_to',)]
