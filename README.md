@@ -393,6 +393,8 @@ python trading_assistant.py -a action
     shortcut to it, and exit
   * `-C`: check configuration changes and exit
 
+## [Examples](https://github.com/carmine560/trading-assistant/wiki) ##
+
 ## Known Issue ##
 
   * The `toggle_indicator` command in the “[Create or Modify
