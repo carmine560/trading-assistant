@@ -393,7 +393,7 @@ python trading_assistant.py -a action
     shortcut to it, and exit
   * `-C`: check configuration changes and exit
 
-## [Examples](https://github.com/carmine560/trading-assistant/wiki) ##
+## [Examples](https://github.com/carmine560/trading-assistant/wiki#examples) ##
 
 ## Known Issue ##
 
