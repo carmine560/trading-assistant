@@ -427,10 +427,7 @@ running_options = -lsa login
 
 The following `login` action waits for the “Login” dialog box to appear and
 then clicks its button. Next, it enters your trading password and authenticates
-in the “Pre-authentication of Trading Password” dialog box. If you want to
-include your password as the value of an option, as demonstrated in this
-example, refer to the “[Encrypt Configuration
-File](#encrypt-configuration-file)” section.
+in the “Pre-authentication of Trading Password” dialog box.
 
 ``` ini
 [HYPERSBI2 Actions]
