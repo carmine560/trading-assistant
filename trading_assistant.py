@@ -81,7 +81,7 @@ class Trade(initializer.Initializer):
             'optional_value_keys': {'count_trades'},
             'additional_value_keys': {'click_widget', 'speak_config'},
             'optional_additional_value_keys': {'write_chapter'},
-            'positioning_keys': {'click', 'drag_to', 'move_to'},
+            'positioning_keys': {'click', 'drag_to', 'move_to', 'right_click'},
             'control_flow_keys': {'is_now_after', 'is_now_before',
                                   'is_recording'},
             'preset_values_keys': {'is_now_after', 'is_now_before',
@@ -1160,6 +1160,9 @@ def execute_action(trade, config, gui_state, action):
             pyautogui.press(argument[0], presses=presses)
             if argument[0] == 'tab':
                 gui_state.moved_focus = presses
+        elif command == 'right_click':
+            pyautogui.click(*map(int, argument.split(',')),
+                            button='left' if gui_state.swapped else 'right')
         elif command == 'show_hide_window':
             gui_interactions.enumerate_windows(
                 gui_interactions.show_hide_window, argument)

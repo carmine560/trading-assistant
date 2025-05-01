@@ -148,7 +148,7 @@ value for it indicates unlimited trades.</td></tr>
 
 <tr><td><code>('click', 'X, Y')</code></td>
 
-<td>Click on the coordinates <code>X</code> and <code>Y</code>.</td></tr>
+<td>Click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
 
 <tr><td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
 
@@ -202,6 +202,10 @@ and Price Limit Regions</a>” section.</td></tr>
 <tr><td><code>('press_key', 'KEY[, PRESSES]')</code></td>
 
 <td>Press the key.</td></tr>
+
+<tr><td><code>('right_click', 'X, Y')</code></td>
+
+<td>Right-click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
 
 <tr><td><code>('show_hide_window', 'TITLE_REGEX')</code></td>
 
