@@ -586,8 +586,12 @@ def configure(trade, can_interpolate=True, can_override=True):
                 ('sleep', '2'),
                 ('is_recording', 'False', [
                     ('speak_text', 'Not recording.')])])],
-        'create_pre_trading_chapter': [
-            ('write_chapter', 'Pre-trading', 'Pre-market')],
+        'create_opening_chapter': [
+            ('write_chapter', 'Opening', 'Pre-market')],
+        'create_midday_break_chapter': [
+            ('write_chapter', 'Midday Break')],
+        'create_reopening_chapter': [
+            ('write_chapter', 'Reopening')],
         'stop_manual_recording': [
             ('is_recording', 'True', [
                 ('press_hotkeys', 'alt, f9')])],
@@ -595,8 +599,6 @@ def configure(trade, can_interpolate=True, can_override=True):
             ('speak_cpu_utilization', '1')],
         'speak_seconds_until_open': [
             ('speak_seconds_until_time', '${Market Data:opening_time}')],
-        'speak_seconds_since_open': [
-            ('speak_seconds_since_time', '${Market Data:opening_time}')],
         'speak_seconds_until_midday_break': [
             ('speak_seconds_until_time', '${Market Data:midday_break_time}')],
         'speak_seconds_until_reopen': [
