@@ -177,6 +177,10 @@ must call this command after the execution of an order.</td></tr>
 
 <td>Drag the mouse pointer to the position.</td></tr>
 
+<tr><td><code>('execute_action', ACTION|'ACTION')</code></td>
+
+<td>Execute the action.</td></tr>
+
 <tr><td><code>('get_cash_balance',)</code></td>
 
 <td>Recognize the cash balance in the cash balance region specified in the “<a
