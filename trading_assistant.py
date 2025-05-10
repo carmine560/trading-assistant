@@ -581,11 +581,12 @@ def configure(trade, can_interpolate=True, can_override=True):
         'toggle_indicator': [
             ('toggle_indicator',)],
         'start_manual_recording': [
-            ('is_recording', 'False', [
-                ('press_hotkeys', 'alt, f9'),
-                ('sleep', '2'),
+            ('is_trading_day', 'True', [
                 ('is_recording', 'False', [
-                    ('speak_text', 'Not recording.')])])],
+                    ('press_hotkeys', 'alt, f9'),
+                    ('sleep', '2'),
+                    ('is_recording', 'False', [
+                        ('speak_text', 'Not recording.')])])])],
         'create_opening_chapter': [
             ('write_chapter', 'Opening', 'Pre-market')],
         'create_midday_break_chapter': [
