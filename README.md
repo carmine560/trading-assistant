@@ -294,6 +294,10 @@ that precedes the current chapter.</td></tr>
 
 <td>Execute the action if recording a screencast is the bool value.</td></tr>
 
+<tr><td><code>('is_trading_day', 'BOOL', ACTION|'ACTION')</code></td>
+
+<td>Execute the action if today is a trading day.</td></tr>
+
 </tbody>
 </table>
 

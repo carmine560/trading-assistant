@@ -83,7 +83,7 @@ class Trade(initializer.Initializer):
             'optional_additional_value_keys': {'write_chapter'},
             'positioning_keys': {'click', 'drag_to', 'move_to', 'right_click'},
             'control_flow_keys': {'is_now_after', 'is_now_before',
-                                  'is_recording'},
+                                  'is_recording', 'is_trading_day'},
             'preset_values_keys': {'is_now_after', 'is_now_before',
                                    'speak_seconds_since_time',
                                    'speak_seconds_until_time'},
@@ -969,7 +969,7 @@ def get_latest(config, market_holidays, update_time, timezone, *paths,
             modified_time = pd.Timestamp(0, tz='UTC', unit='s')
             break
 
-    df = pd.read_csv(market_holidays, header=None)
+    df = pd.read_csv(market_holidays, header=None, dtype=str)
     # Assume the web page is updated at 'update_time'.
     latest = pd.Timestamp(update_time, tz=timezone)
     if pd.Timestamp.now(tz='UTC') < latest:
@@ -977,7 +977,7 @@ def get_latest(config, market_holidays, update_time, timezone, *paths,
 
     while (df[0].str.contains(latest.strftime(
             config['Market Holidays']['date_format'])).any()
-           or latest.weekday() == 5 or latest.weekday() == 6):
+           or latest.weekday() >= 5):
         latest -= pd.Timedelta(days=1)
 
     if modified_time < latest:
@@ -985,7 +985,7 @@ def get_latest(config, market_holidays, update_time, timezone, *paths,
             now = pd.Timestamp.now(tz=timezone)
             if (df[0].str.contains(now.strftime(
                     config['Market Holidays']['date_format'])).any()
-                or now.weekday() == 5 or now.weekday() == 6):
+                or now.weekday() >= 5):
                 return latest
             if (not pd.Timestamp(volatile_time, tz=timezone) <= now
                 <= pd.Timestamp(update_time, tz=timezone)):
@@ -1254,11 +1254,26 @@ def execute_action(trade, config, gui_state, action):
                 and not recursively_execute_action(trade, config, gui_state,
                                                    additional_argument)):
                 return False
+        elif command == 'is_trading_day':
+            if (is_trading_day(
+                    pd.Timestamp.now(tz=config['Market Data']['timezone']),
+                    trade.market_holidays,
+                    config['Market Holidays']['date_format'])
+                == bool(argument.lower() == 'true')
+                and not recursively_execute_action(trade, config, gui_state,
+                                                   additional_argument)):
+                return False
 
         else:
             print(command, 'is not a recognized command.')
             return False
     return True
+
+
+def is_trading_day(date, market_holidays, date_format):
+    """Check if the given date is a trading day."""
+    holidays = set(pd.read_csv(market_holidays, header=None, dtype=str)[0])
+    return date.weekday() < 5 and date.strftime(date_format) not in holidays
 
 
 def recursively_execute_action(trade, config, gui_state, additional_argument):
