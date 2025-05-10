@@ -1273,8 +1273,8 @@ def execute_action(trade, config, gui_state, action):
 
 def is_trading_day(date, market_holidays, date_format):
     """Check if the given date is a trading day."""
-    holidays = set(pd.read_csv(market_holidays, header=None, dtype=str)[0])
-    return date.weekday() < 5 and date.strftime(date_format) not in holidays
+    return (date.weekday() < 5 and date.strftime(date_format) not in
+            set(pd.read_csv(market_holidays, header=None, dtype=str)[0]))
 
 
 def recursively_execute_action(trade, config, gui_state, additional_argument):
