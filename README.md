@@ -411,13 +411,6 @@ Visit the
 “[Examples](https://github.com/carmine560/trading-assistant/wiki#examples)”
 section in the wiki for practical demonstrations of `trading_assistant.py`.
 
-## Known Issue ##
-
-  * The `toggle_indicator` command in the “[Create or Modify
-    Action](#create-or-modify-action)” section does not operate as expected
-    when used as an argument to the `is_now_after`, `is_now_before`, or
-    `is_recording` commands.
-
 ## License ##
 
 [MIT](LICENSE.md)
