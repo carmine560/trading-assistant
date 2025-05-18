@@ -1,4 +1,4 @@
-# trading-assistant #
+# trading-assistant
 
 <!-- Python script that assists with discretionary day trading of stocks on
 margin using Hyper SBI 2 -->
@@ -19,7 +19,7 @@ consisting of a sequence of commands, this script can:
 > increase because of the script's fast and frequent order placement. Use at
 > your own risk.
 
-## Prerequisites ##
+## Prerequisites
 
 `trading_assistant.py` has been tested in [Python for
 Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
@@ -58,9 +58,9 @@ python -m venv .venv
 python -m pip install -r requirements.txt -U
 ```
 
-## Usage ##
+## Usage
 
-### Create Startup Script ###
+### Create Startup Script
 
 To calculate the maximum number of shares, save the customer margin ratios from
 the [*Stocks Subject to Margin
@@ -80,7 +80,7 @@ unsaved status.
 python trading_assistant.py -SS
 ```
 
-### Configure Cash Balance and Price Limit Regions ###
+### Configure Cash Balance and Price Limit Regions
 
 Configure the cash balance and (optional) price limit regions on Hyper SBI 2
 for Tesseract to recognize these prices. `trading_assistant.py` only references
@@ -94,7 +94,7 @@ python trading_assistant.py -CB
 python trading_assistant.py -PL
 ```
 
-### Create or Modify Action ###
+### Create or Modify Action
 
 Create or modify an action for processing by `trading_assistant.py`.
 
@@ -301,7 +301,7 @@ that precedes the current chapter.</td></tr>
 </tbody>
 </table>
 
-### Execute Action ###
+### Execute Action
 
 Execute a created or modified action.
 
@@ -309,7 +309,7 @@ Execute a created or modified action.
 python trading_assistant.py -a ACTION
 ```
 
-### Trigger Actions Using Mouse and Keyboard ###
+### Trigger Actions Using Mouse and Keyboard
 
 You can also trigger actions using the mouse and keyboard by configuring the
 input map for mapping buttons and keys to them.
@@ -324,7 +324,7 @@ Then, start the mouse and keyboard listeners while Hyper SBI 2 is running.
 python trading_assistant.py -l
 ```
 
-### Schedule Actions ###
+### Schedule Actions
 
 You can also schedule actions using the `-S` option and the following time
 format:
@@ -344,7 +344,7 @@ Then, start the scheduler while Hyper SBI 2 is running.
 python trading_assistant.py -s
 ```
 
-### Encrypt Configuration File ###
+### Encrypt Configuration File
 
 The GnuPG-encrypted configuration file,
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\trading_assistant.ini.gpg`, stores
@@ -352,7 +352,7 @@ the configurations. By default, `trading_assistant.py` uses the default key
 pair of GnuPG. However, you can also specify a key fingerprint as the value of
 the `fingerprint` option in the `General` section in your configuration file.
 
-### Complete Action Argument ###
+### Complete Action Argument
 
 The `-A` and `-D` options generate completion scripts for action arguments.
 They are located at `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\completion.ps1`
@@ -381,7 +381,7 @@ python trading_assistant.py -a a⇥
 python trading_assistant.py -a action
 ```
 
-### Options ###
+### Options
 
   * `-P BROKERAGE PROCESS|EXECUTABLE_PATH`: set the brokerage and the process
     [defaults: `SBI Securities` and `HYPERSBI2`]
@@ -405,19 +405,24 @@ python trading_assistant.py -a action
     shortcut to it, and exit
   * `-C`: check configuration changes and exit
 
-## Examples ##
+## Examples
 
 Visit the
 “[Examples](https://github.com/carmine560/trading-assistant/wiki#examples)”
 section in the wiki for practical demonstrations of `trading_assistant.py`.
 
-## License ##
+## To Do
+
+Visit the “[To Do](https://github.com/carmine560/trading-assistant/wiki#to-do)”
+section in the wiki.
+
+## License
 
 [MIT](LICENSE.md)
 
-## Appendix ##
+## Appendix
 
-### Hyper SBI 2 Window Titles ###
+### Hyper SBI 2 Window Titles
 
 | Regular Expression for Window Title                          | Window          |
 |--------------------------------------------------------------|-----------------|
@@ -436,7 +441,7 @@ section in the wiki for practical demonstrations of `trading_assistant.py`.
 | `通知設定`                                                   | Notifications   |
 | `全板\s.*\((${Market Data:securities_code_regex})\)`         | Full Order Book |
 
-## Link ##
+## Link
 
   * [*Python Scripting to Assist with Day Trading on Margin Using Hyper SBI
     2*](https://carmine560.blogspot.com/2023/11/python-scripting-to-assist-with-day.html):
