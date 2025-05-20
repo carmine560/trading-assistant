@@ -95,7 +95,9 @@ def show_window(hwnd, title_regex):
             win32gui.ShowWindow(hwnd, 9)
 
         win32gui.SetForegroundWindow(hwnd)
-        return False
+        # Allow the OS to process the window focus and redraw.
+        time.sleep(0.01)
+        # return False            # TODO: Add max_count
     return True
 
 
