@@ -99,6 +99,13 @@ class Trade(initializer.Initializer):
 
         self.mouse_listener = None
         self.keyboard_listener = None
+        self.modifier_keys = {
+            keyboard.Key.alt, keyboard.Key.alt_gr, keyboard.Key.alt_l,
+            keyboard.Key.alt_r, keyboard.Key.cmd, keyboard.Key.cmd_l,
+            keyboard.Key.cmd_r, keyboard.Key.ctrl, keyboard.Key.ctrl_l,
+            keyboard.Key.ctrl_r, keyboard.Key.shift, keyboard.Key.shift_l,
+            keyboard.Key.shift_r}
+        self.pressed_modifiers = set()
         self.keyboard_listener_state = 0
         self.function_keys = (
             keyboard.Key.f1, keyboard.Key.f2, keyboard.Key.f3, keyboard.Key.f4,
@@ -144,8 +151,12 @@ class Trade(initializer.Initializer):
     def on_press(self, key, config, gui_state):
         """Handle key press events."""
         if gui_state.is_interactive_window():
+            # Add context for whether modifiers are pressed.
+            if key in self.modifier_keys:
+                self.pressed_modifiers.add(key)
+                return
             if self.keyboard_listener_state == 0:
-                if key in self.function_keys:
+                if key in self.function_keys and not self.pressed_modifiers:
                     action = configuration.evaluate_value(
                         config[self.process]['input_map']).get(key.name)
                     if action:
@@ -160,6 +171,11 @@ class Trade(initializer.Initializer):
                 elif key == keyboard.Key.esc:
                     self.should_continue = False
                     self.keyboard_listener_state = 0
+
+    def on_release(self, key, gui_state):
+        """Handle key release events to update modifiers."""
+        if gui_state.is_interactive_window():
+            self.pressed_modifiers.discard(key)
 
 
 class IndicatorThread(threading.Thread):
@@ -1035,7 +1051,8 @@ def start_listeners(trade, config, gui_state, base_manager, speech_manager,
     trade.mouse_listener.start()
 
     trade.keyboard_listener = keyboard.Listener(
-        on_press=lambda key: trade.on_press(key, config, gui_state))
+        on_press=lambda key: trade.on_press(key, config, gui_state),
+        on_release=lambda key: trade.on_release(key, gui_state))
     trade.keyboard_listener.start()
 
     trade.speaking_process = speech_synthesis.start_speaking_process(
