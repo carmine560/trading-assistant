@@ -253,12 +253,13 @@ and Price Limit Regions</a>” section.</td></tr>
 
 <tr><td><code>('wait_for_key', 'KEY')</code></td>
 
-<td>Wait for the keyboard input.</td></tr>
+<td>Wait for the keyboard input. Pressing the <code>Esc</code> key cancels the
+action.</td></tr>
 
 <tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX')</code></td>
 
 <td>Wait until <code>trading_assistant.py</code> recognizes a decimal number in
-the region.</td></tr>
+the region. Pressing the <code>Esc</code> key cancels the action.</td></tr>
 
 <tr><td><code>('wait_for_window', 'TITLE_REGEX')</code></td>
 
