@@ -8,9 +8,9 @@ from PIL import ImageOps
 import pytesseract
 
 
-def recognize_text(x, y, width, height, index,
-                   image_magnification, binarization_threshold, is_dark_theme,
-                   text_type='integers'):
+def recognize_text(x, y, width, height, index, image_magnification,
+                   binarization_threshold, is_dark_theme, text_type='integers',
+                   should_continue_reference=None):
     """Recognize and return text from a specified screen area."""
     if text_type == 'integers':
         config = (
@@ -27,6 +27,9 @@ def recognize_text(x, y, width, height, index,
 
     split_text = []
     while not split_text:
+        if (should_continue_reference is not None
+            and not should_continue_reference()):
+            return None
         try:
             image = ImageGrab.grab(bbox=(x, y, x + width, y + height))
             image = image.resize((image_magnification * width,

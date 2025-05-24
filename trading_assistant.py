@@ -1218,12 +1218,20 @@ def execute_action(trade, config, gui_state, action):
                 trade.speech_manager.set_speech_text('Canceled.')
                 return True
         elif command == 'wait_for_price':
+            trade.keyboard_listener_state = 1
+            trade.key_to_check = None
+            trade.should_continue = True
             text_recognition.recognize_text(
                 *map(int, argument.split(',')),
                 int(config[trade.process]['image_magnification']),
                 int(config[trade.process]['binarization_threshold']),
                 config[trade.process].getboolean('is_dark_theme'),
-                text_type='decimal_numbers')
+                text_type='decimal_numbers',
+                should_continue_reference=lambda: trade.should_continue)
+            trade.keyboard_listener_state = 0
+            if not trade.should_continue:
+                trade.speech_manager.set_speech_text('Canceled.')
+                return True
         elif command == 'wait_for_window':
             gui_interactions.wait_for_window(argument)
         elif command == 'write_chapter':
