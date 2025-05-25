@@ -174,8 +174,7 @@ class Trade(initializer.Initializer):
 
     def on_release(self, key, gui_state):
         """Handle key release events to update modifiers."""
-        if gui_state.is_interactive_window():
-            self.pressed_modifiers.discard(key)
+        self.pressed_modifiers.discard(key)
 
 
 class IndicatorThread(threading.Thread):
