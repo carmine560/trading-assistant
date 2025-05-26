@@ -419,7 +419,7 @@ section in the wiki.
 
 ## License
 
-[MIT](LICENSE.md)
+The [MIT License](LICENSE.md)
 
 ## Appendix
 
