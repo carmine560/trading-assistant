@@ -1074,10 +1074,11 @@ def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread.start()
 
 
-def execute_action(trade, config, gui_state, action):
+def execute_action(trade, config, gui_state, action, should_initialize=True):
     """Carry out a specified action for a trade."""
-    trade.initialize_attributes()
-    gui_state.initialize_attributes()
+    if should_initialize:
+        trade.initialize_attributes()
+        gui_state.initialize_attributes()
 
     if isinstance(action, str):
         action = configuration.evaluate_value(action)
@@ -1306,12 +1307,13 @@ def is_trading_day(date, market_holidays, date_format):
 def recursively_execute_action(trade, config, gui_state, additional_argument):
     """Recursively execute an action if it is a list or a string."""
     if isinstance(additional_argument, list):
-        return execute_action(trade, config, gui_state,
-                              additional_argument)
+        return execute_action(trade, config, gui_state, additional_argument,
+                              should_initialize=False)
     if isinstance(additional_argument, str):
         return execute_action(
             trade, config, gui_state,
-            config[trade.actions_section][additional_argument])
+            config[trade.actions_section][additional_argument],
+            should_initialize=False)
 
     print(additional_argument, 'is not a list or a string.')
     return False
