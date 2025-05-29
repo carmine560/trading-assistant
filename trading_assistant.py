@@ -613,17 +613,26 @@ def configure(trade, can_interpolate=True, can_override=True):
             ('is_recording', 'True', [
                 ('press_hotkeys', 'alt, f9')])],
         'speak_cpu_utilization': [
-            ('speak_cpu_utilization', '1')],
+            ('is_trading_day', 'True', [
+                ('speak_cpu_utilization', '1')])],
         'speak_seconds_until_open': [
-            ('speak_seconds_until_time', '${Market Data:opening_time}')],
+            ('is_trading_day', 'True', [
+                ('speak_seconds_until_time', '${Market Data:opening_time}')])],
         'speak_seconds_until_midday_break': [
-            ('speak_seconds_until_time', '${Market Data:midday_break_time}')],
+            ('is_trading_day', 'True', [
+                ('speak_seconds_until_time',
+                 '${Market Data:midday_break_time}')])],
         'speak_seconds_until_reopen': [
-            ('speak_seconds_until_time', '${Market Data:reopening_time}')],
+            ('is_trading_day', 'True', [
+                ('speak_seconds_until_time',
+                 '${Market Data:reopening_time}')])],
         'speak_seconds_until_close': [
-            ('speak_seconds_until_time', '${Market Data:closing_time}')],
+            ('is_trading_day', 'True', [
+                ('speak_seconds_until_time', '${Market Data:closing_time}')])],
         'speak_seconds_until_end': [
-            ('speak_seconds_until_time', f'${{{trade.process}:end_time}}')]}
+            ('is_trading_day', 'True', [
+                ('speak_seconds_until_time',
+                 f'${{{trade.process}:end_time}}')])]}
     config[trade.schedules_section] = {}
     config[trade.variables_section] = {
         'current_date': date.min.strftime('%Y-%m-%d'),
