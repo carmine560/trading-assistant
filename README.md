@@ -138,8 +138,7 @@ loss limit is: $$\frac{cash\ balance \times utilization\ ratio \times daily\
 loss\ limit\ ratio}{customer\ margin\ ratio}.$$ <strong>Note</strong>: Trading
 fees, not considered here, may cause further cash balance reduction.</td></tr>
 
-<tr><td><code>('check_maximum_daily_number_of_trades',
-'ALERT_TEXT')</code></td>
+<tr><td><code>('check_maximum_daily_number_of_trades', 'ALERT_TEXT')</code></td>
 
 <td>Check if the current number of trades for the day exceeds the maximum daily
 number of trades. If it does, speak the alert text and exit. You must call the
@@ -257,8 +256,7 @@ and Price Limit Regions</a>” section.</td></tr>
 <td>Wait for a key press. Pressing the <code>Esc</code> key cancels the current
 action and executes the specified action, if provided.</td></tr>
 
-<tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX'[,
-ACTION|'ACTION'])</code></td>
+<tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX'[, ACTION|'ACTION'])</code></td>
 
 <td>Wait until <code>trading_assistant.py</code> recognizes a decimal number in
 the region. Pressing the <code>Esc</code> key cancels the current action and
@@ -268,8 +266,7 @@ executes the specified action, if provided.</td></tr>
 
 <td>Wait for a window.</td></tr>
 
-<tr><td><code>('write_chapter', 'CURRENT_TITLE'[,
-'PREVIOUS_TITLE'])</code></td>
+<tr><td><code>('write_chapter', 'CURRENT_TITLE'[, 'PREVIOUS_TITLE'])</code></td>
 
 <td>Write a chapter section for FFmpeg metadata. When creating a new metadata
 file, the <code>PREVIOUS_TITLE</code> parameter gives the title to the chapter
