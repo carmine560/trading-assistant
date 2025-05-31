@@ -503,9 +503,12 @@ def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
 
             key = modify_value(prompts.get('key', 'key'), level=level,
                                value=key, all_values=items.get('all_keys'))
-            preset_values = (
-                items.get('preset_values')
-                if key in items.get('preset_values_keys', set()) else None)
+            if key in items.get('preset_value_keys', set()):
+                preset_values = items.get('preset_values')
+            elif key in items.get('boolean_value_keys', set()):
+                preset_values = {'True', 'False'}
+            else:
+                preset_values = None
             if key in items.get('no_value_keys', set()):
                 tuple_entry = (key,)
             elif key in items.get('optional_value_keys', set()):
@@ -530,29 +533,22 @@ def modify_tuple_list(tuple_list, level=0, prompts=None, items=None):
             elif key in items.get('positioning_keys', set()):
                 value = configure_position(level=level, value=value)
                 tuple_entry = (key, value)
+            elif key in items.get('nested_keys', set()):
+                value = modify_nested_value(value, level, prompts, items)
+                tuple_entry = (key, value)
+            elif key in items.get('optional_additional_nested_keys', set()):
+                value = modify_value(value_prompt, level=level, value=value)
+                additional_value = modify_nested_value(
+                    additional_value, level, prompts, items,
+                    answers=['build', 'call', 'none'])
+                tuple_entry = (
+                    (key, value) if additional_value in {'', None}
+                    else (key, value, additional_value))
             elif key in items.get('control_flow_keys', set()):
                 value = modify_value(value_prompt, level=level, value=value,
                                      all_values=preset_values)
-                nested_answer = tidy_answer(['build', 'call'], level=level)
-                if nested_answer == 'build':
-                    if isinstance(additional_value, str):
-                        additional_value = None
-
-                    level += 1
-                    additional_value = modify_tuple_list(
-                        additional_value, level=level, prompts=prompts,
-                        items=items)
-                    level -= 1
-                elif nested_answer == 'call':
-                    if isinstance(additional_value, list):
-                        additional_value = None
-
-                    additional_value = modify_value(
-                        prompts.get('preset_additional_value',
-                                    'preset additional value'),
-                        level=level, value=additional_value,
-                        all_values=items.get('preset_additional_values'))
-
+                additional_value = modify_nested_value(additional_value, level,
+                                                       prompts, items)
                 tuple_entry = (key, value, additional_value)
             else:
                 value = modify_value(value_prompt, level=level, value=value,
@@ -715,4 +711,29 @@ def prompt_for_input(prompt, level=0, value='', all_values=None):
                  or value)
     else:
         value = input(prompt_prefix).strip()
+    return value
+
+
+def modify_nested_value(value, level, prompts, items,
+                        answers=['build', 'call']):
+    """Handle a value that can be built as a list or called as a preset."""
+    nested_answer = tidy_answer(answers, level=level)
+    if nested_answer == 'build':
+        if isinstance(value, str):
+            value = None
+
+        level += 1
+        value = modify_tuple_list(value, level=level, prompts=prompts,
+                                  items=items)
+        level -= 1
+    elif nested_answer == 'call':
+        if isinstance(value, list):
+            value = None
+
+        value = modify_value(
+            prompts.get('preset_additional_value', 'preset additional value'),
+            level=level, value=value,
+            all_values=items.get('preset_additional_values'))
+    elif nested_answer == 'none':
+        value = None
     return value

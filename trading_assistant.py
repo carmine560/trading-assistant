@@ -82,17 +82,21 @@ class Trade(initializer.Initializer):
             'additional_value_keys': {'click_widget', 'speak_config'},
             'optional_additional_value_keys': {'write_chapter'},
             'positioning_keys': {'click', 'drag_to', 'move_to', 'right_click'},
+            'nested_keys': {'execute_action'},
+            'optional_additional_nested_keys': {'wait_for_key',
+                                                'wait_for_price'},
             'control_flow_keys': {'is_now_after', 'is_now_before',
                                   'is_recording', 'is_trading_day'},
-            'preset_values_keys': {'is_now_after', 'is_now_before',
-                                   'speak_seconds_since_time',
-                                   'speak_seconds_until_time'},
+            'preset_value_keys': {'is_now_after', 'is_now_before',
+                                  'speak_seconds_since_time',
+                                  'speak_seconds_until_time'},
             'preset_values': ('${Market Data:opening_time}',
                               '${Market Data:midday_break_time}',
                               '${Market Data:reopening_time}',
                               '${Market Data:closing_time}',
                               f'${{{self.process}:start_time}}',
                               f'${{{self.process}:end_time}}'),
+            'boolean_value_keys': {'is_recording', 'is_trading_day'},
             'preset_additional_values': None}
 
         self.schedules_section = f'{self.process} Schedules'
@@ -1236,10 +1240,10 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                                   else keyboard.Key[argument])
             while trade.keyboard_listener_state == 1:
                 time.sleep(0.001)
-
             if not trade.should_continue:
-                for _ in range(gui_state.moved_focus):
-                    pyautogui.hotkey('shift', 'tab')
+                if additional_argument:
+                    recursively_execute_action(trade, config, gui_state,
+                                               additional_argument)
 
                 trade.speech_manager.set_speech_text('Canceled.')
                 return True
@@ -1256,6 +1260,10 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 should_continue_reference=lambda: trade.should_continue)
             trade.keyboard_listener_state = 0
             if not trade.should_continue:
+                if additional_argument:
+                    recursively_execute_action(trade, config, gui_state,
+                                               additional_argument)
+
                 trade.speech_manager.set_speech_text('Canceled.')
                 return True
         elif command == 'wait_for_window':
