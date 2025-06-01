@@ -703,10 +703,10 @@ def configure(trade, can_interpolate=True, can_override=True):
                 r'${title}\s.*'),
             'input_map': {
                 'left': '', 'middle': 'show_hide_watchlists', 'right': '',
-                'x1': '', 'x2': '', 'f1': '', 'f2': '', 'f3': '', 'f4': '',
-                'f5': 'show_hide_watchlists', 'f6': '', 'f7': '', 'f8': '',
-                'f9': '', 'f10': 'speak_cpu_utilization', 'f11': '',
-                'f12': 'toggle_indicator'},
+                'x1': '', 'x2': '', 'f1': '', 'f2': '', 'f3': '',
+                'f4': 'toggle_indicator', 'f5': 'show_hide_watchlists',
+                'f6': '', 'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '',
+                'f12': ''},
             'cash_balance_region': '0, 0, 0, 0, 0',
             'utilization_ratio': '1.0',
             'price_limit_region': '0, 0, 0, 0, 0',
@@ -727,6 +727,13 @@ def configure(trade, can_interpolate=True, can_override=True):
             'running_options': '-l'}
         config[trade.actions_section]['show_hide_watchlists'] = str(
             [('show_hide_window', '登録銘柄')])
+        config[trade.actions_section]['prepare_order_entry'] = str(
+            [('get_symbol',
+              r'個別銘柄\s.*\((${Market Data:securities_code_regex})\)'),
+             ('get_cash_balance',),
+             ('check_daily_loss_limit', 'Daily loss limit hit.'),
+             ('check_maximum_daily_number_of_trades',
+              'Maximum daily number of trades exceeded.')])
 
     if can_override:
         configuration.read_config(config, trade.config_path, is_encrypted=True)
