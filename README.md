@@ -420,7 +420,9 @@ section in the wiki.
 
 ## License
 
-The [MIT License](LICENSE.md)
+This project is licensed under the [MIT License](LICENSE.md). The `.gitignore`
+file is sourced from [`gitignore`](https://github.com/github/gitignore), which
+is licensed under CC0-1.0.
 
 ## Appendix
 
