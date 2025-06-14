@@ -577,6 +577,8 @@ def configure(trade, can_interpolate=True, can_override=True):
         'end_time': '',
         'executable': '',
         'title': '',
+        'trading_password': '',
+        'authentication_code': '',
         'interactive_windows': (),
         'input_map': {},
         'cash_balance_region': '',
@@ -692,6 +694,8 @@ def configure(trade, can_interpolate=True, can_override=True):
             'end_time': '${Market Data:closing_time}',
             'executable': trade.executable,
             'title': title,
+            'trading_password': '',
+            'authentication_code': '',
             'interactive_windows': (
                 file_description, 'お知らせ',
                 r'個別銘柄\s.*\((${Market Data:securities_code_regex})\)',
