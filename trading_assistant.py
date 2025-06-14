@@ -1180,7 +1180,9 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
         elif command == 'drag_to':
             pyautogui.dragTo(*map(int, argument.split(',')))
         elif command == 'execute_action':
-            recursively_execute_action(trade, config, gui_state, argument)
+            if not recursively_execute_action(trade, config, gui_state,
+                                              argument):
+                return False
         elif command == 'get_cash_balance':
             trade.cash_balance = int(
                 text_recognition.recognize_text(
