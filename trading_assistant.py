@@ -539,11 +539,6 @@ def configure(trade, can_interpolate=True, can_override=True):
         config = configparser.ConfigParser(interpolation=None)
 
     config['General'] = {
-        'screencast_directory': # TODO: Move to trade.process
-        os.path.join(os.path.expanduser('~'), 'Videos', trade.process.title()),
-        'screencast_regex':
-        (trade.process.title()
-         + r' \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d+\.mp4'),
         'fingerprint': '',
         'voice_name': 'Microsoft Zira Desktop'}
     config['Market Holidays'] = {
@@ -588,7 +583,9 @@ def configure(trade, can_interpolate=True, can_override=True):
         'maximum_daily_number_of_trades': '',
         'image_magnification': '',
         'binarization_threshold': '',
-        'is_dark_theme': ''}
+        'is_dark_theme': '',
+        'screencast_directory': '',
+        'screencast_regex': ''}
     config[trade.widgets_section] = {
         'clock_label_position': '',
         'clock_label_font_size': '',
@@ -718,7 +715,13 @@ def configure(trade, can_interpolate=True, can_override=True):
             'maximum_daily_number_of_trades': '0',
             'image_magnification': '2',
             'binarization_threshold': '128',
-            'is_dark_theme': 'True'}
+            'is_dark_theme': 'True',
+            'screencast_directory':
+            os.path.join(os.path.expanduser('~'), 'Videos',
+                         trade.process.title()),
+            'screencast_regex':
+            (trade.process.title()
+             + r' \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d+\.mp4')}
         config[trade.widgets_section] = {
             'clock_label_position': 'nw',
             'clock_label_font_size': '12',
@@ -1175,8 +1178,8 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
 
             file_utilities.write_chapter(
                 file_utilities.get_latest_file(
-                    config['General']['screencast_directory'],
-                    config['General']['screencast_regex']),
+                    config[trade.process]['screencast_directory'],
+                    config[trade.process]['screencast_regex']),
                 (f"Trade {current_number_of_trades}"
                  f"{f' for {trade.symbol}' if trade.symbol else ''}"
                  f" at {time.strftime('%Y-%m-%d %H:%M:%S')}"),
@@ -1284,8 +1287,8 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
         elif command == 'write_chapter':
             file_utilities.write_chapter(
                 file_utilities.get_latest_file(
-                    config['General']['screencast_directory'],
-                    config['General']['screencast_regex']),
+                    config[trade.process]['screencast_directory'],
+                    config[trade.process]['screencast_regex']),
                 argument, previous_title=additional_argument)
         elif command == 'write_share_size':
             pyautogui.write(str(trade.share_size))
@@ -1306,8 +1309,8 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
         elif command == 'is_recording':
             if (file_utilities.is_writing(
                     file_utilities.get_latest_file(
-                        config['General']['screencast_directory'],
-                        config['General']['screencast_regex']))
+                        config[trade.process]['screencast_directory'],
+                        config[trade.process]['screencast_regex']))
                 == bool(argument.lower() == 'true')
                 and not recursively_execute_action(trade, config, gui_state,
                                                    additional_argument)):
