@@ -349,9 +349,13 @@ def create_bash_launcher(script_path):
     launcher_path = f'{os.path.splitext(os.path.basename(script_path))[0]}.sh'
     launcher_string = f'''#!/bin/bash
 
+set -e
+
 . "{activate_path}" &&
     {interpreter} "{script_path}" "$@"
 deactivate
+
+set +e
 '''
 
     if not can_overwrite(launcher_path):
