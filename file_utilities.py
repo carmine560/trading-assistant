@@ -166,7 +166,7 @@ def can_overwrite(path):
             print('Aborting.')
             return False
     elif os.path.isdir(path):
-        print(f'{path} directory exists.')
+        print(f'The {path} directory exists.')
         return False
     return True
 
@@ -185,12 +185,12 @@ def compare_directory_list(directory, file_regex, files):
     """Compare the directory and the list and print missing ones."""
     for f in os.listdir(directory):
         if re.fullmatch(file_regex, f) and f not in files.values:
-            print(os.path.join(directory, f), 'file is not in the list.')
+            print(f'The {os.path.join(directory, f)} file is not in the list.')
 
     for f in files:
         path = os.path.join(directory, f)
         if not os.path.isfile(path):
-            print(path, 'file does not exist in the directory.')
+            print(f'The {path} file does not exist in the directory.')
 
 
 def decrypt_extract_file(source, output_directory):
@@ -216,12 +216,12 @@ def decrypt_extract_file(source, output_directory):
                     print(e)
                     sys.exit(1)
             elif os.path.isfile(backup):
-                print(backup, 'file exists.')
+                print(f'The {backup} file exists.')
                 sys.exit(1)
 
             os.rename(root, backup)
         elif os.path.isfile(root):
-            print(root, 'file exists.')
+            print(f'The {root} file exists.')
             sys.exit(1)
 
         try:

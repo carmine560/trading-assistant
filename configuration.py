@@ -206,7 +206,7 @@ def list_section(config, section):
             options.append(option)
         return options
 
-    print(section, 'section does not exist.')
+    print(f'The {section} section does not exist.')
     return False
 
 
@@ -275,7 +275,7 @@ def modify_section(config, section, config_path, backup_parameters=None,
 
         return True
 
-    print(section, 'section does not exist.')
+    print(f'The {section} section does not exist.')
     return False
 
 
@@ -356,7 +356,7 @@ def modify_option(config, section, option, config_path, backup_parameters=None,
         write_config(config, config_path, is_encrypted=is_encrypted)
         return True
 
-    print(option, 'option does not exist.')
+    print(f'The {option} option does not exist.')
     return False
 
 
@@ -371,7 +371,7 @@ def delete_option(config, section, option, config_path,
         write_config(config, config_path, is_encrypted=is_encrypted)
         return True
 
-    print(option, 'option does not exist.')
+    print(f'The {option} option does not exist.')
     return False
 
 
