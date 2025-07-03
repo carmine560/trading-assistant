@@ -134,9 +134,9 @@ command.</td></tr>
 alert text and exit. You must call the <code>get_cash_balance</code> command
 below before using this command. The <code>-DLL</code> option configures the
 non-percent, negative daily loss limit ratio (from -1.0 to 0.0), and the daily
-loss limit is: $$\frac{cash\ balance \times utilization\ ratio \times daily\
-loss\ limit\ ratio}{customer\ margin\ ratio}.$$ <strong>Note</strong>: Trading
-fees, not considered here, may cause further cash balance reduction.</td></tr>
+loss limit is: $$cash\ balance \times utilization\ ratio \times daily\ loss\
+limit\ ratio$$. <strong>Note</strong>: Trading fees, not considered here, may
+cause further cash balance reduction.</td></tr>
 
 <tr><td><code>('check_maximum_daily_number_of_trades', 'ALERT_TEXT')</code></td>
 

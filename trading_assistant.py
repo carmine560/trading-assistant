@@ -1124,8 +1124,6 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             daily_loss_limit = (
                 trade.cash_balance
                 * float(config[trade.process]['utilization_ratio'])
-                / float(config[trade.customer_margin_ratios_section][
-                    'customer_margin_ratio'])
                 * float(config[trade.process]['daily_loss_limit_ratio']))
             initial_cash_balance = int(
                 config[trade.variables_section]['initial_cash_balance'])
