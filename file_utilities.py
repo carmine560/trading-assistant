@@ -375,10 +375,15 @@ def create_powershell_launcher(script_path):
     launcher_path = f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1'
     # 'Activate.ps1' modifies the current PowerShell session's environment.
     launcher_string = f'''$ErrorActionPreference = "Stop"
-Set-Location "{project_path}"
-. "{activate_relative_path}"
-{interpreter} "{os.path.basename(script_path)}" $args
-deactivate
+Push-Location
+try {{
+    Set-Location "{project_path}"
+    . "{activate_relative_path}"
+    {interpreter} "{os.path.basename(script_path)}" $args
+    deactivate
+}} finally {{
+    Pop-Location
+}}
 '''
 
     if not can_overwrite(launcher_path):
