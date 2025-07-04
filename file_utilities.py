@@ -161,7 +161,7 @@ def backup_file(source, backup_directory=None, number_of_backups=-1,
 def can_overwrite(path):
     """Determine if the path can be overwritten."""
     if os.path.isfile(path):
-        answer = input(f'{path} file exists. Overwrite? [Y/n] ')
+        answer = input(f'The {path} file exists. Overwrite? [Y/n] ')
         if answer.strip().lower() not in ('y', ''):
             print('Aborting.')
             return False
@@ -341,21 +341,20 @@ def create_launchers_exit(args, script_path):
 
 def create_bash_launcher(script_path):
     """Create a Bash launcher for a Python script."""
-    activate_path, interpreter = select_venv(os.path.dirname(script_path))
+    project_path = os.path.dirname(script_path)
+    activate_path, interpreter = select_venv(project_path)
+    activate_relative_path = os.path.relpath(activate_path, project_path)
     if sys.platform == 'win32':
-        script_path = wsl_to_windows_path(windows_to_wsl_path(script_path))
-        activate_path = windows_to_wsl_path(activate_path)
+        project_path = windows_to_wsl_path(project_path)
+        activate_relative_path = windows_to_wsl_path(activate_relative_path)
 
     launcher_path = f'{os.path.splitext(os.path.basename(script_path))[0]}.sh'
     launcher_string = f'''#!/bin/bash
 
 set -e
-
-. "{activate_path}" &&
-    {interpreter} "{script_path}" "$@"
-deactivate
-
-set +e
+cd "{project_path}"
+. "{activate_relative_path}"
+{interpreter} "{os.path.basename(script_path)}" "$@"
 '''
 
     if not can_overwrite(launcher_path):
@@ -369,11 +368,16 @@ set +e
 
 def create_powershell_launcher(script_path):
     """Create a PowerShell launcher for a Python script."""
-    activate_path, interpreter = select_venv(os.path.dirname(script_path),
+    project_path = os.path.dirname(script_path)
+    activate_path, interpreter = select_venv(project_path,
                                              activate='Activate.ps1')
+    activate_relative_path = os.path.relpath(activate_path, project_path)
     launcher_path = f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1'
-    launcher_string = f'''. "{activate_path}" &&
-{interpreter} "{script_path}" $args
+    # 'Activate.ps1' modifies the current PowerShell session's environment.
+    launcher_string = f'''$ErrorActionPreference = "Stop"
+Set-Location "{project_path}"
+. "{activate_relative_path}"
+{interpreter} "{os.path.basename(script_path)}" $args
 deactivate
 '''
 
