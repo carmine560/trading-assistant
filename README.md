@@ -392,8 +392,10 @@ python trading_assistant.py -a action
   * `-s`: start the scheduler
   * `-l`: start the mouse and keyboard listeners
   * `-a ACTION`: execute an action
-  * `-BS`: generate a WSL Bash script to launch this script and exit
-  * `-PS`: generate a PowerShell 7 script to launch this script and exit
+  * `-BS`: save a WSL Bash script to `%USERPROFILE%\Downloads` to launch this
+    script and exit
+  * `-PS`: save a PowerShell 7 script to `%USERPROFILE%\Downloads` to launch
+    this script and exit
   * `-SS`: configure the startup script, create a shortcut to it, and exit
   * `-S`: configure schedules and exit
   * `-L`: configure the input map for buttons and keys and exit

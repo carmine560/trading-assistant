@@ -319,14 +319,16 @@ def add_launcher_options(group):
     """Add launcher generation options to the argparse group."""
     group.add_argument(
         '-BS', action='store_true',
-        help='generate'
+        help='save'
         f" a {'WSL Bash' if sys.platform == 'win32' else 'Bash'} script"
+        f" to {os.path.join(os.path.expanduser('~'), 'Downloads')}"
         ' to launch this script and exit')
     if sys.platform == 'win32':
         group.add_argument(
             '-PS', action='store_true',
-            help='generate a PowerShell 7 script to launch this script'
-            ' and exit')
+            help='save a PowerShell 7 script'
+            f" to {os.path.join(os.path.expanduser('~'), 'Downloads')}"
+            ' to launch this script and exit')
 
 
 def create_launchers_exit(args, script_path):
@@ -348,7 +350,9 @@ def create_bash_launcher(script_path):
         project_path = windows_to_wsl_path(project_path)
         activate_relative_path = windows_to_wsl_path(activate_relative_path)
 
-    launcher_path = f'{os.path.splitext(os.path.basename(script_path))[0]}.sh'
+    launcher_path = os.path.join(
+        os.path.expanduser('~'), 'Downloads',
+        f'{os.path.splitext(os.path.basename(script_path))[0]}.sh')
     launcher_string = f'''#!/bin/bash
 
 set -e
@@ -372,14 +376,16 @@ def create_powershell_launcher(script_path):
     activate_path, interpreter = select_venv(project_path,
                                              activate='Activate.ps1')
     activate_relative_path = os.path.relpath(activate_path, project_path)
-    launcher_path = f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1'
-    # 'Activate.ps1' modifies the current PowerShell session's environment.
+    launcher_path = os.path.join(
+        os.path.expanduser('~'), 'Downloads',
+        f'{os.path.splitext(os.path.basename(script_path))[0]}.ps1')
     launcher_string = f'''$ErrorActionPreference = "Stop"
 Push-Location
 try {{
     Set-Location "{project_path}"
     . "{activate_relative_path}"
     {interpreter} "{os.path.basename(script_path)}" $args
+    # 'Activate.ps1' modifies the current PowerShell session's environment.
     deactivate
 }} finally {{
     Pop-Location
