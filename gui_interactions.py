@@ -101,7 +101,7 @@ def show_window(hwnd, title_regex):
     return True
 
 
-def wait_for_window(title_regex):
+def wait_for_window(title_regex, should_continue_reference=None):
     """Wait for a window with a title matching a regular expression."""
     def check_for_window(hwnd, extra):
         """Check if a window's title matches a regular expression."""
@@ -112,5 +112,9 @@ def wait_for_window(title_regex):
 
     extra = [title_regex, True]
     while extra[1]:
+        if (should_continue_reference is not None
+            and not should_continue_reference()):
+            return None
+
         enumerate_windows(check_for_window, extra)
         time.sleep(0.001)

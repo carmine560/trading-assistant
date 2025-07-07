@@ -262,9 +262,10 @@ action and executes the specified action, if provided.</td></tr>
 the region. Pressing the <code>Esc</code> key cancels the current action and
 executes the specified action, if provided.</td></tr>
 
-<tr><td><code>('wait_for_window', 'TITLE_REGEX')</code></td>
+<tr><td><code>('wait_for_window', 'TITLE_REGEX'[, ACTION|'ACTION'])</code></td>
 
-<td>Wait for a window.</td></tr>
+<td>Wait for a window. Pressing the <code>Esc</code> key cancels the current
+action and executes the specified action, if provided.</td></tr>
 
 <tr><td><code>('write_chapter', 'CURRENT_TITLE'[, 'PREVIOUS_TITLE'])</code></td>
 

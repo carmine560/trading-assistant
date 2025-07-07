@@ -1252,12 +1252,9 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                                   else keyboard.Key[argument])
             while trade.keyboard_listener_state == 1:
                 time.sleep(0.001)
-            if not trade.should_continue:
-                if additional_argument:
-                    recursively_execute_action(trade, config, gui_state,
-                                               additional_argument)
-
-                trade.speech_manager.set_speech_text('Canceled.')
+            if (not trade.should_continue
+                and handle_cancellation_exit(trade, config, gui_state,
+                                             additional_argument)):
                 return True
         elif command == 'wait_for_price':
             trade.keyboard_listener_state = 1
@@ -1271,15 +1268,22 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 text_type='decimal_numbers',
                 should_continue_reference=lambda: trade.should_continue)
             trade.keyboard_listener_state = 0
-            if not trade.should_continue:
-                if additional_argument:
-                    recursively_execute_action(trade, config, gui_state,
-                                               additional_argument)
-
-                trade.speech_manager.set_speech_text('Canceled.')
+            if (not trade.should_continue
+                and handle_cancellation_exit(trade, config, gui_state,
+                                             additional_argument)):
                 return True
         elif command == 'wait_for_window':
-            gui_interactions.wait_for_window(argument)
+            trade.keyboard_listener_state = 1
+            trade.key_to_check = None
+            trade.should_continue = True
+            gui_interactions.wait_for_window(
+                argument,
+                should_continue_reference=lambda: trade.should_continue)
+            trade.keyboard_listener_state = 0
+            if (not trade.should_continue
+                and handle_cancellation_exit(trade, config, gui_state,
+                                             additional_argument)):
+                return True
         elif command == 'write_chapter':
             file_utilities.write_chapter(
                 file_utilities.get_latest_file(
@@ -1327,12 +1331,6 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
     return True
 
 
-def is_trading_day(date, market_holidays, date_format):
-    """Check if the given date is a trading day."""
-    return (date.weekday() < 5 and date.strftime(date_format) not in
-            set(pd.read_csv(market_holidays, header=None, dtype=str)[0]))
-
-
 def recursively_execute_action(trade, config, gui_state, additional_argument):
     """Recursively execute an action if it is a list or a string."""
     if isinstance(additional_argument, list):
@@ -1346,6 +1344,22 @@ def recursively_execute_action(trade, config, gui_state, additional_argument):
 
     print(additional_argument, 'is not a list or a string.')
     return False
+
+
+def handle_cancellation_exit(trade, config, gui_state, additional_argument):
+    """Perform cancellation actions and signal caller to exit."""
+    if additional_argument:
+        recursively_execute_action(trade, config, gui_state,
+                                   additional_argument)
+
+    trade.speech_manager.set_speech_text('Canceled.')
+    return True
+
+
+def is_trading_day(date, market_holidays, date_format):
+    """Check if the given date is a trading day."""
+    return (date.weekday() < 5 and date.strftime(date_format) not in
+            set(pd.read_csv(market_holidays, header=None, dtype=str)[0]))
 
 
 def create_startup_script(trade, config):
