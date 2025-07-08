@@ -702,10 +702,9 @@ def configure(trade, can_interpolate=True, can_override=True):
                 r'${title}\s.*'),
             'input_map': {
                 'left': '', 'middle': 'show_hide_watchlists', 'right': '',
-                'x1': '', 'x2': '', 'f1': '', 'f2': '', 'f3': '',
-                'f4': 'toggle_indicator', 'f5': 'show_hide_watchlists',
-                'f6': '', 'f7': '', 'f8': '', 'f9': '', 'f10': '', 'f11': '',
-                'f12': ''},
+                'x1': '', 'x2': '', 'f1': '', 'f2': '', 'f3': '', 'f4': '',
+                'f5': 'show_hide_watchlists', 'f6': '', 'f7': '', 'f8': '',
+                'f9': '', 'f10': '', 'f11': '', 'f12': ''},
             'cash_balance_region': '0, 0, 0, 0, 0',
             'utilization_ratio': '1.0',
             'price_limit_region': '0, 0, 0, 0, 0',
