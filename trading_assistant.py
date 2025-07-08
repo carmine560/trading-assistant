@@ -1255,7 +1255,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             if (not trade.should_continue
                 and handle_cancellation_exit(trade, config, gui_state,
                                              additional_argument)):
-                return True
+                return False
         elif command == 'wait_for_price':
             trade.keyboard_listener_state = 1
             trade.key_to_check = None
@@ -1271,7 +1271,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             if (not trade.should_continue
                 and handle_cancellation_exit(trade, config, gui_state,
                                              additional_argument)):
-                return True
+                return False
         elif command == 'wait_for_window':
             trade.keyboard_listener_state = 1
             trade.key_to_check = None
@@ -1283,7 +1283,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             if (not trade.should_continue
                 and handle_cancellation_exit(trade, config, gui_state,
                                              additional_argument)):
-                return True
+                return False
         elif command == 'write_chapter':
             file_utilities.write_chapter(
                 file_utilities.get_latest_file(

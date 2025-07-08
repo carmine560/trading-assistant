@@ -179,7 +179,8 @@ must call this command after the execution of an order.</td></tr>
 
 <tr><td><code>('execute_action', ACTION|'ACTION')</code></td>
 
-<td>Execute the action.</td></tr>
+<td>Execute the action. If the action fails, cancel the current
+action.</td></tr>
 
 <tr><td><code>('get_cash_balance',)</code></td>
 
