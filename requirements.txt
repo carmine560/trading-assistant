@@ -8,6 +8,6 @@ pyautogui
 pynput
 pytesseract
 python-gnupg
-pyttsx3
+pyttsx3==2.98
 pywin32
 requests
