@@ -417,11 +417,6 @@ Visit the
 “[Examples](https://github.com/carmine560/trading-assistant/wiki#examples)”
 section in the wiki for practical demonstrations of `trading_assistant.py`.
 
-## To Do
-
-Visit the “[To Do](https://github.com/carmine560/trading-assistant/wiki#to-do)”
-section in the wiki.
-
 ## License
 
 This project is licensed under the [MIT License](LICENSE.md). The `.gitignore`
