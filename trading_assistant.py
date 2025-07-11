@@ -420,6 +420,7 @@ def main():
             config[trade.process]['interactive_windows']))
 
     if args.a or args.l or args.s:
+        # Use 'BaseManager' to share 'SpeechManager' instance across processes.
         BaseManager.register('SpeechManager', speech_synthesis.SpeechManager)
         base_manager = BaseManager()
         base_manager.start()
@@ -731,13 +732,6 @@ def configure(trade, can_interpolate=True, can_override=True):
             'running_options': '-l'}
         config[trade.actions_section]['show_hide_watchlists'] = str(
             [('show_hide_window', '登録銘柄')])
-        config[trade.actions_section]['prepare_order_entry'] = str(
-            [('get_symbol',
-              r'個別銘柄\s.*\((${Market Data:securities_code_regex})\)'),
-             ('get_cash_balance',),
-             ('check_daily_loss_limit', 'Daily loss limit hit.'),
-             ('check_maximum_daily_number_of_trades',
-              'Maximum daily number of trades exceeded.')])
 
     if can_override:
         configuration.read_config(config, trade.config_path, is_encrypted=True)
