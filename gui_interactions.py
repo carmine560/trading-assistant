@@ -8,6 +8,8 @@ import pywintypes
 import win32api
 import win32gui
 
+_show_window_state = {'count': 0, 'max_count': 1}
+
 
 class GuiState:
     """Manage the state of the Graphical User Interface."""
@@ -90,6 +92,10 @@ def show_hide_window(hwnd, title_regex):
 
 def show_window(hwnd, title_regex):
     """Show a window if its title matches a regular expression."""
+    global _show_window_state
+    if _show_window_state['count'] >= _show_window_state['max_count']:
+        return False
+
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, 9)
@@ -97,7 +103,9 @@ def show_window(hwnd, title_regex):
         win32gui.SetForegroundWindow(hwnd)
         # Allow the OS to process the window focus and redraw.
         time.sleep(0.06)
-        # return False            # TODO: Add max_count
+        _show_window_state['count'] += 1
+        if _show_window_state['count'] >= _show_window_state['max_count']:
+            return False
     return True
 
 

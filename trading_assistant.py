@@ -1209,6 +1209,9 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             gui_interactions.enumerate_windows(
                 gui_interactions.show_hide_window, argument)
         elif command == 'show_window':
+            gui_interactions._show_window_state['count'] = 0
+            gui_interactions._show_window_state['max_count'] = int(
+                additional_argument or 1)
             gui_interactions.enumerate_windows(gui_interactions.show_window,
                                                argument)
         elif command == 'sleep':

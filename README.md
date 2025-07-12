@@ -216,9 +216,10 @@ and Price Limit Regions</a>” section.</td></tr>
 
 <td>Show or hide a window.</td></tr>
 
-<tr><td><code>('show_window', 'TITLE_REGEX')</code></td>
+<tr><td><code>('show_window', 'TITLE_REGEX'[, 'MAX_COUNT'])</code></td>
 
-<td>Show a window.</td></tr>
+<td>Show a window. The <code>MAX_COUNT</code> parameter (default 1) limits the
+number of windows to show.</td></tr>
 
 <tr><td><code>('sleep', 'PERIOD')</code></td>
 
