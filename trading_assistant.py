@@ -116,6 +116,7 @@ class Trade(initializer.Initializer):
             keyboard.Key.f5, keyboard.Key.f6, keyboard.Key.f7, keyboard.Key.f8,
             keyboard.Key.f9, keyboard.Key.f10, keyboard.Key.f11,
             keyboard.Key.f12)
+        self.last_action_time = 0
         self.key_to_check = None
         self.should_continue = False
 
@@ -161,12 +162,16 @@ class Trade(initializer.Initializer):
                 return
             if self.keyboard_listener_state == 0:
                 if key in self.function_keys and not self.pressed_modifiers:
-                    action = configuration.evaluate_value(
-                        config[self.process]['input_map']).get(key.name)
-                    if action:
-                        start_execute_action_thread(self, config, gui_state,
-                                                    action)
-                        time.sleep(0.2) # TODO: Fix auto-repeat.
+                    now = time.time()
+                    # A 0.2-second debounce interval balances responsiveness
+                    # and accidental repeats. (0.15-0.2 seconds is typical)
+                    if now - self.last_action_time > 0.2:
+                        action = configuration.evaluate_value(
+                            config[self.process]['input_map']).get(key.name)
+                        if action:
+                            start_execute_action_thread(self, config,
+                                                        gui_state, action)
+                            self.last_action_time = now
             elif self.keyboard_listener_state == 1:
                 if ((hasattr(key, 'char') and key.char == self.key_to_check)
                     or key == self.key_to_check):
