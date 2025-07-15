@@ -13,7 +13,7 @@ class SpeechManager:
         """Initialize a new SpeechManager instance."""
         self._is_ready = False
         self._can_speak = True
-        self._speech_text = ''
+        self._speech_text = ""
 
     def is_ready(self):
         """Get whether the speech system is initialized and ready."""
@@ -42,8 +42,9 @@ class SpeechManager:
 
 def start_speaking_process(speech_manager, voice_name=None):
     """Start a new process for speaking."""
-    speaking_process = Process(target=start_speaking,
-                               args=(speech_manager, voice_name))
+    speaking_process = Process(
+        target=start_speaking, args=(speech_manager, voice_name)
+    )
     speaking_process.start()
     while not speech_manager.is_ready():
         time.sleep(0.01)
@@ -53,16 +54,21 @@ def start_speaking_process(speech_manager, voice_name=None):
 def start_speaking(speech_manager, voice_name):
     """Initiate the speech process based on the speech manager's state."""
     speech_engine = pyttsx3.init()
-    voices = speech_engine.getProperty('voices')
-    selected_voice = next((voice.id for voice in voices
-                           if voice_name and voice_name in voice.name),
-                          voices[0].id)
-    speech_engine.setProperty('voice', selected_voice)
+    voices = speech_engine.getProperty("voices")
+    selected_voice = next(
+        (
+            voice.id
+            for voice in voices
+            if voice_name and voice_name in voice.name
+        ),
+        voices[0].id,
+    )
+    speech_engine.setProperty("voice", selected_voice)
     speech_manager.set_ready(True)
 
     while speech_manager.can_speak():
         text = speech_manager.get_speech_text()
-        speech_manager.set_speech_text('')
+        speech_manager.set_speech_text("")
         if text:
             speech_engine.say(text)
             speech_engine.runAndWait()

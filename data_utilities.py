@@ -6,6 +6,7 @@ import time
 
 # Data Conversions #
 
+
 def dictionary_to_tuple(dictionary):
     """Convert a dictionary to a tuple of key-value pairs."""
     if isinstance(dictionary, dict):
@@ -18,12 +19,14 @@ def dictionary_to_tuple(dictionary):
 
 # Text Operations #
 
+
 def create_acronym(phrase):
     """Generate an acronym from the given phrase."""
-    acronym = ''
+    acronym = ""
     if isinstance(phrase, str):
-        acronym = ''.join(word[0].upper()
-                          for word in re.split(r'[\W_]+', phrase) if word)
+        acronym = "".join(
+            word[0].upper() for word in re.split(r"[\W_]+", phrase) if word
+        )
     return acronym
 
 
@@ -33,12 +36,16 @@ def title_except_acronyms(string, acronyms):
     for i, _ in enumerate(words):
         if words[i] not in acronyms:
             words[i] = words[i].title()
-    return ' '.join(words)
+    return " ".join(words)
 
 
 # Time Computations #
 
+
 def get_target_time(time_string):
     """Compute the target time from a given time string."""
-    return time.mktime(time.strptime(
-        time.strftime(f'%Y-%m-%d {time_string}'), '%Y-%m-%d %H:%M:%S'))
+    return time.mktime(
+        time.strptime(
+            time.strftime(f"%Y-%m-%d {time_string}"), "%Y-%m-%d %H:%M:%S"
+        )
+    )

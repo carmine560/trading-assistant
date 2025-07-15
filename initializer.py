@@ -14,8 +14,9 @@ class Initializer:
         self.vendor = vendor
         if os.path.isfile(process):
             self.executable = os.path.abspath(process)
-            self.process = os.path.splitext(
-                os.path.basename(self.executable))[0]
+            self.process = os.path.splitext(os.path.basename(self.executable))[
+                0
+            ]
         else:
             self.executable = None
             self.process = process
@@ -25,11 +26,11 @@ class Initializer:
         self.config_path = file_utilities.get_config_path(script_path)
         self.config_directory = os.path.dirname(self.config_path)
 
-        self.actions_section = f'{self.process} Actions'
-        self.variables_section = f'{self.process} Variables'
+        self.actions_section = f"{self.process} Actions"
+        self.variables_section = f"{self.process} Variables"
 
 
-def extract_commands(source, command='command'):
+def extract_commands(source, command="command"):
     """Extract specific commands from the given source code."""
     commands = []
     tree = ast.parse(source)

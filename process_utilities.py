@@ -7,27 +7,45 @@ import time
 
 def is_running(process):
     """Determine if a process is currently running."""
-    image = process + '.exe'
-    output = subprocess.check_output(['tasklist', '/fi',
-                                      'imagename eq ' + image])
+    image = process + ".exe"
+    output = subprocess.check_output(
+        ["tasklist", "/fi", "imagename eq " + image]
+    )
     return bool(re.search(image, str(output)))
 
 
-def wait_listeners(stop_listeners_event, process, mouse_listener,
-                   keyboard_listener, base_manager, speech_manager,
-                   speaking_process, is_persistent=False):
+def wait_listeners(
+    stop_listeners_event,
+    process,
+    mouse_listener,
+    keyboard_listener,
+    base_manager,
+    speech_manager,
+    speaking_process,
+    is_persistent=False,
+):
     """Wait for listeners until the stop event is set or process ends."""
     while not stop_listeners_event.is_set():
         if is_running(process) or is_persistent:
             time.sleep(1)
         else:
-            stop_listeners(mouse_listener, keyboard_listener, base_manager,
-                           speech_manager, speaking_process)
+            stop_listeners(
+                mouse_listener,
+                keyboard_listener,
+                base_manager,
+                speech_manager,
+                speaking_process,
+            )
             break
 
 
-def stop_listeners(mouse_listener, keyboard_listener, base_manager,
-                   speech_manager, speaking_process):
+def stop_listeners(
+    mouse_listener,
+    keyboard_listener,
+    base_manager,
+    speech_manager,
+    speaking_process,
+):
     """Stop all listeners and shutdown the managers."""
     if mouse_listener:
         mouse_listener.stop()

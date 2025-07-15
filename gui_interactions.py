@@ -8,7 +8,7 @@ import pywintypes
 import win32api
 import win32gui
 
-_show_window_state = {'count': 0, 'max_count': 1}
+_show_window_state = {"count": 0, "max_count": 1}
 
 
 class GuiState:
@@ -24,7 +24,8 @@ class GuiState:
     def is_interactive_window(self):
         """Check if the foreground window is an interactive window."""
         foreground_window = win32gui.GetWindowText(
-            win32gui.GetForegroundWindow())
+            win32gui.GetForegroundWindow()
+        )
         for title_regex in self.interactive_windows:
             if re.fullmatch(title_regex, foreground_window):
                 return True
@@ -45,8 +46,9 @@ def click_widget(gui_state, image, x, y, width, height):
     height = int(height)
     while not location:
         try:
-            location = pyautogui.locateOnScreen(image,
-                                                region=(x, y, width, height))
+            location = pyautogui.locateOnScreen(
+                image, region=(x, y, width, height)
+            )
         except pyautogui.ImageNotFoundException:
             pass
 
@@ -93,7 +95,7 @@ def show_hide_window(hwnd, title_regex):
 def show_window(hwnd, title_regex):
     """Show a window if its title matches a regular expression."""
     global _show_window_state
-    if _show_window_state['count'] >= _show_window_state['max_count']:
+    if _show_window_state["count"] >= _show_window_state["max_count"]:
         return False
 
     if re.fullmatch(title_regex, win32gui.GetWindowText(hwnd)):
@@ -103,14 +105,15 @@ def show_window(hwnd, title_regex):
         win32gui.SetForegroundWindow(hwnd)
         # Allow the OS to process the window focus and redraw.
         time.sleep(0.06)
-        _show_window_state['count'] += 1
-        if _show_window_state['count'] >= _show_window_state['max_count']:
+        _show_window_state["count"] += 1
+        if _show_window_state["count"] >= _show_window_state["max_count"]:
             return False
     return True
 
 
 def wait_for_window(title_regex, should_continue_reference=None):
     """Wait for a window with a title matching a regular expression."""
+
     def check_for_window(hwnd, extra):
         """Check if a window's title matches a regular expression."""
         if re.fullmatch(extra[0], win32gui.GetWindowText(hwnd)):
@@ -120,8 +123,10 @@ def wait_for_window(title_regex, should_continue_reference=None):
 
     extra = [title_regex, True]
     while extra[1]:
-        if (should_continue_reference is not None
-            and not should_continue_reference()):
+        if (
+            should_continue_reference is not None
+            and not should_continue_reference()
+        ):
             return None
 
         enumerate_windows(check_for_window, extra)
