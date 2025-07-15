@@ -39,6 +39,12 @@ if sys.platform == 'win32':
     os.system('color')
 
 
+class ConfigError(Exception):
+    """Represent a custom exception for configuration-related issues."""
+
+    pass
+
+
 class CustomWordCompleter(Completer):
     """Provide custom word completion by extending the Completer class."""
 
@@ -196,6 +202,12 @@ def check_config_changes(default_config, config_path, excluded_sections=(),
             section_indices.append(section_index)
 
         section_index += 1
+
+
+def is_section_missing(config, section):
+    """Check if a section is defined."""
+    if section not in config:
+        raise ConfigError(f"The '{section}' section is undefined.")
 
 
 def list_section(config, section):
