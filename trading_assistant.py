@@ -520,69 +520,84 @@ def main():
     file_utilities.create_launchers_exit(args, __file__)
     configure_exit(args, trade)
 
-    config = configure(trade)
-    gui_state = gui_interactions.GuiState(
-        configuration.evaluate_value(
-            config[trade.process]["interactive_windows"]
+    try:
+        config = configure(trade)
+        configuration.is_section_missing(config, trade.process)
+        gui_state = gui_interactions.GuiState(
+            configuration.evaluate_value(
+                config[trade.process]["interactive_windows"]
+            )
         )
-    )
 
-    if args.a or args.l or args.s:
-        # Use 'BaseManager' to share 'SpeechManager' instance across processes.
-        BaseManager.register("SpeechManager", speech_synthesis.SpeechManager)
-        base_manager = BaseManager()
-        base_manager.start()
-        trade.speech_manager = base_manager.SpeechManager()
+        if args.a or args.l or args.s:
+            # Use 'BaseManager' to share 'SpeechManager' instance across
+            # processes.
+            BaseManager.register(
+                "SpeechManager", speech_synthesis.SpeechManager
+            )
+            base_manager = BaseManager()
+            base_manager.start()
+            trade.speech_manager = base_manager.SpeechManager()
+        if args.r:
+            save_customer_margin_ratios(trade, config)
+        if args.d:
+            save_market_data(trade, config)
+        if args.a:
+            is_running = process_utilities.is_running(trade.process)
+            if not (is_running and args.l):
+                start_listeners(
+                    trade,
+                    config,
+                    gui_state,
+                    base_manager,
+                    trade.speech_manager,
+                    is_persistent=True,
+                )
 
-    if args.r:
-        save_customer_margin_ratios(trade, config)
-    if args.d:
-        save_market_data(trade, config)
-    if args.a:
-        is_running = process_utilities.is_running(trade.process)
-        if not (is_running and args.l):
-            start_listeners(
+            execute_action(
                 trade,
                 config,
                 gui_state,
-                base_manager,
-                trade.speech_manager,
-                is_persistent=True,
+                config[trade.actions_section][args.a[0]],
             )
+            if not (is_running and args.l):
+                process_utilities.stop_listeners(
+                    trade.mouse_listener,
+                    trade.keyboard_listener,
+                    base_manager,
+                    trade.speech_manager,
+                    trade.speaking_process,
+                )
+                trade.stop_listeners_event.set()
+                trade.wait_listeners_thread.join()
+        if args.l and process_utilities.is_running(trade.process):
+            start_listeners(
+                trade, config, gui_state, base_manager, trade.speech_manager
+            )
+        if args.s and process_utilities.is_running(trade.process):
+            if not (args.a or args.l):
+                trade.speaking_process = (
+                    speech_synthesis.start_speaking_process(
+                        trade.speech_manager,
+                        voice_name=config["General"]["voice_name"],
+                    )
+                )
 
-        execute_action(
-            trade, config, gui_state, config[trade.actions_section][args.a[0]]
-        )
-        if not (is_running and args.l):
-            process_utilities.stop_listeners(
-                trade.mouse_listener,
-                trade.keyboard_listener,
-                base_manager,
-                trade.speech_manager,
-                trade.speaking_process,
-            )
-            trade.stop_listeners_event.set()
-            trade.wait_listeners_thread.join()
-    if args.l and process_utilities.is_running(trade.process):
-        start_listeners(
-            trade, config, gui_state, base_manager, trade.speech_manager
-        )
-    if args.s and process_utilities.is_running(trade.process):
-        if not (args.a or args.l):
-            trade.speaking_process = speech_synthesis.start_speaking_process(
-                trade.speech_manager,
-                voice_name=config["General"]["voice_name"],
-            )
+            threading.Thread(
+                target=start_scheduler,
+                args=(trade, config, gui_state, trade.process),
+            ).start()
 
-        threading.Thread(
-            target=start_scheduler,
-            args=(trade, config, gui_state, trade.process),
-        ).start()
-
-        if not (args.a or args.l):
-            speech_synthesis.stop_speaking_process(
-                base_manager, trade.speech_manager, trade.speaking_process
-            )
+            if not (args.a or args.l):
+                speech_synthesis.stop_speaking_process(
+                    base_manager, trade.speech_manager, trade.speaking_process
+                )
+    except configuration.ConfigError as e:
+        print(f"Configuration error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected error: {e}")
+        sys.exit(1)
 
 
 def get_arguments():
@@ -703,48 +718,6 @@ def configure(trade, can_interpolate=True, can_override=True):
         "number_of_pages": "2",
         "symbol_header": "コード",
         "price_header": "株価",
-    }
-    config[trade.customer_margin_ratios_section] = {
-        "customer_margin_ratio": "",
-        "update_time": "",
-        "timezone": "",
-        "url": "",
-        "symbol_header": "",
-        "regulation_header": "",
-        "headers": (),
-        "customer_margin_ratio_string": "",
-        "suspended": "",
-    }
-    config[trade.process] = {
-        "start_time": "",
-        "end_time": "",
-        "executable": "",
-        "title": "",
-        "trading_password": "",
-        "interactive_windows": (),
-        "input_map": {},
-        "cash_balance_region": "",
-        "utilization_ratio": "",
-        "price_limit_region": "",
-        "daily_loss_limit_ratio": "",
-        "maximum_daily_number_of_trades": "",
-        "image_magnification": "",
-        "binarization_threshold": "",
-        "is_dark_theme": "",
-        "screencast_directory": "",
-        "screencast_regex": "",
-    }
-    config[trade.widgets_section] = {
-        "clock_label_position": "",
-        "clock_label_font_size": "",
-        "status_bar_frame_position": "",
-        "status_bar_frame_font_size": "",
-        "message_font_size": "",
-    }
-    config[trade.startup_script_section] = {
-        "pre_start_options": "",
-        "post_start_options": "",
-        "running_options": "",
     }
     config[trade.actions_section] = {
         "toggle_indicator": [("toggle_indicator",)],
@@ -1239,6 +1212,10 @@ def create_completion(trade, config):
 
 def save_customer_margin_ratios(trade, config):
     """Save customer margin ratios for a given trade."""
+    configuration.is_section_missing(
+        config, trade.customer_margin_ratios_section
+    )
+
     section = config[trade.customer_margin_ratios_section]
 
     if get_latest(
@@ -1699,9 +1676,13 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             if trade.indicator_thread:
                 trade.indicator_thread.stop()
                 trade.indicator_thread = None
-            else:
+            elif trade.widgets_section in config:
+                # Consider using 'is_section_missing()' and
+                # 'ErrorPropagatingThread'.
                 trade.indicator_thread = IndicatorThread(trade, config)
                 trade.indicator_thread.start()
+            else:
+                print(f"The '{trade.widgets_section}' section is undefined.")
         elif command == "wait_for_key":
             trade.keyboard_listener_state = 1
             trade.key_to_check = (
