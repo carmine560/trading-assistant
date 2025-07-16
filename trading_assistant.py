@@ -1677,7 +1677,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 trade.indicator_thread.stop()
                 trade.indicator_thread = None
             elif trade.widgets_section in config:
-                # Consider using 'is_section_missing()' and
+                # Consider using 'ensure_section_exists()' and
                 # 'ErrorPropagatingThread'.
                 trade.indicator_thread = IndicatorThread(trade, config)
                 trade.indicator_thread.start()
