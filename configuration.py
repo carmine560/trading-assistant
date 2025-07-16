@@ -223,9 +223,9 @@ def check_config_changes(
         section_index += 1
 
 
-def is_section_missing(config, section):
-    """Check if a section is defined."""
-    if section not in config:
+def ensure_section_exists(config, section):
+    """Ensure a section is defined, raise ConfigError if not."""
+    if not config.has_section(section):
         raise ConfigError(f"The '{section}' section is undefined.")
 
 

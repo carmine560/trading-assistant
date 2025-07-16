@@ -522,7 +522,7 @@ def main():
 
     try:
         config = configure(trade)
-        configuration.is_section_missing(config, trade.process)
+        configuration.ensure_section_exists(config, trade.process)
         gui_state = gui_interactions.GuiState(
             configuration.evaluate_value(
                 config[trade.process]["interactive_windows"]
@@ -1212,7 +1212,7 @@ def create_completion(trade, config):
 
 def save_customer_margin_ratios(trade, config):
     """Save customer margin ratios for a given trade."""
-    configuration.is_section_missing(
+    configuration.ensure_section_exists(
         config, trade.customer_margin_ratios_section
     )
 
