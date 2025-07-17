@@ -40,7 +40,7 @@ except ModuleNotFoundError as e:
     DATA_UTILITIES_IMPORT_ERROR = e
 
 
-# WSL Path Operations #
+# WSL Path Operations
 
 
 def is_wsl_windows_path(path):
@@ -76,7 +76,7 @@ def wsl_to_windows_path(path):
     ).stdout.rstrip()
 
 
-# File and Directory Operations #
+# File and Directory Operations
 
 
 def archive_encrypt_directory(source, output_directory, fingerprint=""):
@@ -352,7 +352,7 @@ def select_venv(directory, activate="activate"):
     return (None, None)
 
 
-# CLI Operations #
+# CLI Operations
 
 
 def add_launcher_options(group):
@@ -543,7 +543,7 @@ Register-ArgumentCompleter `
         f.write(completion_string)
 
 
-# Shortcut and Icon Operations #
+# Shortcut and Icon Operations
 
 
 def create_icon(base, icon_directory=None):
@@ -728,7 +728,7 @@ def get_program_group(program_group_base=None):
     return program_group
 
 
-# File Description and Metadata Operations #
+# File Description and Metadata Operations
 
 
 def get_file_description(executable):

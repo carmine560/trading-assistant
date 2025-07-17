@@ -4,7 +4,7 @@ import re
 import time
 
 
-# Data Conversions #
+# Data Conversions
 
 
 def dictionary_to_tuple(dictionary):
@@ -17,7 +17,7 @@ def dictionary_to_tuple(dictionary):
     return dictionary
 
 
-# Text Operations #
+# Text Operations
 
 
 def create_acronym(phrase):
@@ -39,7 +39,7 @@ def title_except_acronyms(string, acronyms):
     return " ".join(words)
 
 
-# Time Computations #
+# Time Computations
 
 
 def get_target_time(time_string):
