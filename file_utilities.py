@@ -362,7 +362,7 @@ def add_launcher_options(group):
         action="store_true",
         help="save"
         f" a {'WSL Bash' if sys.platform == 'win32' else 'Bash'} script"
-        f" to {os.path.join(os.path.expanduser('~'), 'Downloads')}"
+        f" to '{os.path.join(os.path.expanduser('~'), 'Downloads')}'"
         " to launch this script and exit",
     )
     if sys.platform == "win32":
@@ -370,7 +370,7 @@ def add_launcher_options(group):
             "-PS",
             action="store_true",
             help="save a PowerShell 7 script"
-            f" to {os.path.join(os.path.expanduser('~'), 'Downloads')}"
+            f" to '{os.path.join(os.path.expanduser('~'), 'Downloads')}'"
             " to launch this script and exit",
         )
 
