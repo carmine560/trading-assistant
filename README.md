@@ -212,6 +212,10 @@ and Price Limit Regions</a>” section.</td></tr>
 
 <td>Right-click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
 
+<tr><td><code>('show_hide_indicator',)</code></td>
+
+<td>Show or hide the indicator.</td></tr>
+
 <tr><td><code>('show_hide_window', 'TITLE_REGEX')</code></td>
 
 <td>Show or hide a window.</td></tr>
@@ -248,10 +252,6 @@ number of windows to show.</td></tr>
 <tr><td><code>('speak_text', 'TEXT')</code></td>
 
 <td>Speak the text.</td></tr>
-
-<tr><td><code>('toggle_indicator',)</code></td>
-
-<td>Toggle the indicator.</td></tr>
 
 <tr><td><code>('wait_for_key', 'KEY'[, ACTION|'ACTION'])</code></td>
 

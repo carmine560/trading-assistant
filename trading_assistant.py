@@ -87,7 +87,7 @@ class Trade(initializer.Initializer):
                 "back_to",
                 "copy_symbols_from_market_data",
                 "get_cash_balance",
-                "toggle_indicator",
+                "show_hide_indicator",
                 "write_share_size",
             },
             "optional_value_keys": {"count_trades"},
@@ -720,7 +720,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         "price_header": "株価",
     }
     config[trade.actions_section] = {
-        "toggle_indicator": [("toggle_indicator",)],
+        "show_hide_indicator": [("show_hide_indicator",)],
         "start_manual_recording": [
             (
                 "is_trading_day",
@@ -1635,6 +1635,17 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 *map(int, argument.split(",")),
                 button="left" if gui_state.swapped else "right",
             )
+        elif command == "show_hide_indicator":
+            if trade.indicator_thread:
+                trade.indicator_thread.stop()
+                trade.indicator_thread = None
+            elif trade.widgets_section in config:
+                # Consider using 'ensure_section_exists()' and
+                # 'ErrorPropagatingThread'.
+                trade.indicator_thread = IndicatorThread(trade, config)
+                trade.indicator_thread.start()
+            else:
+                print(f"The '{trade.widgets_section}' section is undefined.")
         elif command == "show_hide_window":
             gui_interactions.enumerate_windows(
                 gui_interactions.show_hide_window, argument
@@ -1672,17 +1683,6 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             MessageThread(trade, config, argument).start()
         elif command == "speak_text":
             trade.speech_manager.set_speech_text(argument)
-        elif command == "toggle_indicator":
-            if trade.indicator_thread:
-                trade.indicator_thread.stop()
-                trade.indicator_thread = None
-            elif trade.widgets_section in config:
-                # Consider using 'ensure_section_exists()' and
-                # 'ErrorPropagatingThread'.
-                trade.indicator_thread = IndicatorThread(trade, config)
-                trade.indicator_thread.start()
-            else:
-                print(f"The '{trade.widgets_section}' section is undefined.")
         elif command == "wait_for_key":
             trade.keyboard_listener_state = 1
             trade.key_to_check = (
