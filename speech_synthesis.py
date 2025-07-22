@@ -3,7 +3,7 @@
 from multiprocessing import Process
 import time
 
-import pyttsx3
+import win32com.client
 
 
 class SpeechManager:
@@ -40,10 +40,10 @@ class SpeechManager:
         self._speech_text = text
 
 
-def start_speaking_process(speech_manager, voice_name=None):
+def start_speaking_process(speech_manager, voice_name=None, speech_rate=None):
     """Start a new process for speaking."""
     speaking_process = Process(
-        target=start_speaking, args=(speech_manager, voice_name)
+        target=start_speaking, args=(speech_manager, voice_name, speech_rate)
     )
     speaking_process.start()
     while not speech_manager.is_ready():
@@ -51,27 +51,32 @@ def start_speaking_process(speech_manager, voice_name=None):
     return speaking_process
 
 
-def start_speaking(speech_manager, voice_name):
+def start_speaking(speech_manager, voice_name, speech_rate):
     """Initiate the speech process based on the speech manager's state."""
-    speech_engine = pyttsx3.init()
-    voices = speech_engine.getProperty("voices")
-    selected_voice = next(
-        (
-            voice.id
-            for voice in voices
-            if voice_name and voice_name in voice.name
-        ),
-        voices[0].id,
-    )
-    speech_engine.setProperty("voice", selected_voice)
-    speech_manager.set_ready(True)
+    speech_engine = win32com.client.Dispatch("SAPI.SpVoice")
 
+    voices_collection = speech_engine.GetVoices()
+    selected_sapi_voice_token = None
+    if voice_name:
+        for i in range(voices_collection.Count):
+            voice_token = voices_collection.Item(i)
+            if voice_name.lower() in voice_token.GetDescription().lower():
+                selected_sapi_voice_token = voice_token
+                break
+    if selected_sapi_voice_token:
+        speech_engine.Voice = selected_sapi_voice_token
+    elif voices_collection.Count > 0:
+        speech_engine.Voice = voices_collection.Item(0)
+
+    if speech_rate:
+        speech_engine.Rate = max(-10, min(10, speech_rate))
+
+    speech_manager.set_ready(True)
     while speech_manager.can_speak():
         text = speech_manager.get_speech_text()
         speech_manager.set_speech_text("")
         if text:
-            speech_engine.say(text)
-            speech_engine.runAndWait()
+            speech_engine.Speak(text)
 
         time.sleep(0.01)
 

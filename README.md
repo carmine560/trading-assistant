@@ -39,7 +39,6 @@ Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
     manipulation of Hyper SBI 2
   * [`pynput`](https://github.com/moses-palmer/pynput) to monitor the mouse and
     keyboard
-  * [`pyttsx3`](https://github.com/nateshmbhat/pyttsx3) to speak information
   * [`psutil`](https://github.com/giampaolo/psutil) to calculate CPU
     utilization
   * [`prompt_toolkit`](https://github.com/prompt-toolkit/python-prompt-toolkit)

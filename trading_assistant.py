@@ -580,6 +580,7 @@ def main():
                     speech_synthesis.start_speaking_process(
                         trade.speech_manager,
                         voice_name=config["General"]["voice_name"],
+                        speech_rate=int(config["General"]["speech_rate"]),
                     )
                 )
 
@@ -700,6 +701,7 @@ def configure(trade, can_interpolate=True, can_override=True):
     config["General"] = {
         "fingerprint": "",
         "voice_name": "Microsoft Zira Desktop",
+        "speech_rate": "2",
     }
     config["Market Holidays"] = {
         "url": "https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html",
@@ -1457,7 +1459,9 @@ def start_listeners(
     trade.keyboard_listener.start()
 
     trade.speaking_process = speech_synthesis.start_speaking_process(
-        speech_manager, voice_name=config["General"]["voice_name"]
+        speech_manager,
+        voice_name=config["General"]["voice_name"],
+        speech_rate=int(config["General"]["speech_rate"]),
     )
 
     trade.stop_listeners_event = threading.Event()
