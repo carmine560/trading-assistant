@@ -8,11 +8,10 @@ of stocks on margin using [Hyper SBI
 2](https://go.sbisec.co.jp/lp/lp_hyper_sbi2_211112.html). By defining an action
 consisting of a sequence of commands, this script can:
 
-  * Calculate the maximum number of shares for a market order on margin
-    trading,
-  * Manipulate widgets to prepare your order,
-  * Trigger actions using the mouse and keyboard,
-  * Schedule actions.
+  * Calculate the maximum number of shares for a market order on margin trading
+  * Manipulate widgets to prepare your order
+  * Trigger actions using the mouse and keyboard
+  * Schedule actions
 
 > **Disclaimer**: `trading_assistant.py` does not analyze or make decisions for
 > you. If you operate under incorrect assumptions, the potential for loss may
@@ -296,7 +295,7 @@ that precedes the current chapter.</td></tr>
 
 <tr><td><code>('is_recording', 'BOOL', ACTION|'ACTION')</code></td>
 
-<td>Execute the action if recording a screencast is the bool value.</td></tr>
+<td>Execute the action if a screencast is being recorded.</td></tr>
 
 <tr><td><code>('is_trading_day', 'BOOL', ACTION|'ACTION')</code></td>
 
