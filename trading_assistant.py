@@ -2,6 +2,7 @@
 
 from datetime import date
 from multiprocessing.managers import BaseManager
+from tkinter import TclError
 import argparse
 import configparser
 import csv
@@ -291,6 +292,7 @@ class IndicatorThread(threading.Thread):
         self.root.config(bg="black")
         self.root.overrideredirect(True)
         self.root.title(process_section["title"] + " Indicator")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         clock_label = tk.Label(
             self.root,
@@ -367,26 +369,33 @@ class IndicatorThread(threading.Thread):
         )
 
         while not self.stop_event.is_set():
-            clock_label.config(text=time.strftime("%H:%M:%S"))
-            current_number_of_trades = self.config[
-                self.trade.variables_section
-            ]["current_number_of_trades"]
-            if maximum_daily_number_of_trades:
-                current_number_of_trades_label.config(
-                    text=(
-                        f"{current_number_of_trades}"
-                        f"/{maximum_daily_number_of_trades}"
+            try:
+                clock_label.config(text=time.strftime("%H:%M:%S"))
+                current_number_of_trades = self.config[
+                    self.trade.variables_section
+                ]["current_number_of_trades"]
+                if maximum_daily_number_of_trades:
+                    current_number_of_trades_label.config(
+                        text=(
+                            f"{current_number_of_trades}"
+                            f"/{maximum_daily_number_of_trades}"
+                        )
                     )
-                )
-            else:
-                current_number_of_trades_label.config(
-                    text=current_number_of_trades
-                )
+                else:
+                    current_number_of_trades_label.config(
+                        text=current_number_of_trades
+                    )
 
-            self.root.update()
+                self.root.update()
+            except TclError:
+                break
             time.sleep(0.01)
 
-        self.root.destroy()
+        if self.root:
+            try:
+                self.root.destroy()
+            except TclError:
+                pass
 
     def check_for_modifications(self, widget, string, section, key, limits):
         """Check for modifications in the widget and update if necessary."""
@@ -428,6 +437,11 @@ class IndicatorThread(threading.Thread):
     def is_stopped(self):
         """Check if the thread has been signaled to stop."""
         return self.stop_event.is_set()
+
+    def on_closing(self):
+        """Handle window close event."""
+        self.stop_event.set()
+        self.root.quit()
 
 
 class IndicatorTooltip:
