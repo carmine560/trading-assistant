@@ -4,8 +4,10 @@ from datetime import date
 from multiprocessing.managers import BaseManager
 from tkinter import TclError
 import argparse
+import atexit
 import configparser
 import csv
+import functools
 import inspect
 import math
 import os
@@ -244,46 +246,16 @@ class IndicatorThread(threading.Thread):
         self.config = config
         self.root = None
         self.stop_event = threading.Event()
+        self._utilization_ratio_string = None
 
     def run(self):
         """Run the thread, creating and placing widgets on the screen."""
-
-        def place_widget(widget, position):
-            work_left, work_top, work_right, work_bottom = GetMonitorInfo(
-                MonitorFromPoint((0, 0))
-            ).get("Work")
-            work_center_x = int(0.5 * work_right)
-            work_center_y = int(0.5 * work_bottom)
-            position_map = {
-                "n": (work_center_x, work_top),
-                "ne": (work_right, work_top),
-                "e": (work_right, work_center_y),
-                "se": (work_right, work_bottom),
-                "s": (work_center_x, work_bottom),
-                "sw": (work_left, work_bottom),
-                "w": (work_left, work_center_y),
-                "nw": (work_left, work_top),
-                "center": (work_center_x, work_center_y),
-            }
-            if position in position_map:
-                widget.place(
-                    x=position_map[position][0],
-                    y=position_map[position][1],
-                    anchor=position,
-                )
-            elif "," in position:
-                x, y = map(int, position.split(","))
-                widget.place(x=x, y=y)
-            else:
-                print(f"Invalid position: {position}")
-                widget.place(x=work_left, y=work_top)
-
-        process_section = self.config[self.trade.process]
-        widgets_section = self.config[self.trade.widgets_section]
         maximum_daily_number_of_trades = int(
-            process_section["maximum_daily_number_of_trades"]
+            self.config[self.trade.process]["maximum_daily_number_of_trades"]
         )
 
+        # GUI should run in main thread; use 'queue.Queue' to receive updates
+        # from worker threads.
         self.root = tk.Tk()
         self.root.attributes("-alpha", 0.8)
         self.root.attributes("-fullscreen", True)
@@ -291,24 +263,41 @@ class IndicatorThread(threading.Thread):
         self.root.attributes("-transparentcolor", "black")
         self.root.config(bg="black")
         self.root.overrideredirect(True)
-        self.root.title(process_section["title"] + " Indicator")
+        self.root.title(
+            self.config[self.trade.process]["title"] + " Indicator"
+        )
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         clock_label = tk.Label(
             self.root,
-            font=("Tahoma", -int(widgets_section["clock_label_font_size"])),
+            font=(
+                "Tahoma",
+                -int(
+                    self.config[self.trade.widgets_section][
+                        "clock_label_font_size"
+                    ]
+                ),
+            ),
             bg="gray5",
             fg="tan1",
         )
-        place_widget(clock_label, widgets_section["clock_label_position"])
+        self._place_widget(
+            clock_label,
+            self.config[self.trade.widgets_section]["clock_label_position"],
+        )
         IndicatorTooltip(clock_label, "Current system time")
 
         status_bar_frame_font_size = int(
-            widgets_section["status_bar_frame_font_size"]
+            self.config[self.trade.widgets_section][
+                "status_bar_frame_font_size"
+            ]
         )
         status_bar_frame = tk.Frame(self.root, bg="gray5")
-        place_widget(
-            status_bar_frame, widgets_section["status_bar_frame_position"]
+        self._place_widget(
+            status_bar_frame,
+            self.config[self.trade.widgets_section][
+                "status_bar_frame_position"
+            ],
         )
 
         current_number_of_trades_label = tk.Label(
@@ -327,46 +316,39 @@ class IndicatorThread(threading.Thread):
 
         IndicatorTooltip(current_number_of_trades_label, text)
 
-        utilization_ratio_entry = tk.Entry(
+        self._utilization_ratio_string = tk.StringVar()
+        self._utilization_ratio_string.set(
+            self.config[self.trade.process]["utilization_ratio"]
+        )
+
+        utilization_ratio_spinbox = tk.Spinbox(
             status_bar_frame,
             bd=0,
             bg="gray5",
             fg="tan1",
             font=("Bahnschrift", -status_bar_frame_font_size),
+            from_=RATIO_EPSILON,  # 'from' is a reserved keyword in Python.
+            highlightthickness=0,
+            increment=0.01,
             insertbackground="tan1",
             justify="center",
+            relief="flat",
             selectbackground="tan1",
             selectforeground="gray5",
+            textvariable=self._utilization_ratio_string,
+            to=1.0,
             width=5,
+            wrap=True,
+            # 'validate' and 'validatecommand' are inherited from tk.Entry.
+            validate="key",
+            validatecommand=(self.root.register(self._is_valid_float), "%P"),
         )
-        utilization_ratio_entry.grid(row=0, column=1)
-        IndicatorTooltip(utilization_ratio_entry, "Utilization ratio")
-
-        utilization_ratio_entry.insert(0, process_section["utilization_ratio"])
-        utilization_ratio_string = tk.StringVar()
-        utilization_ratio_entry.bind(
-            "<<Modified>>",
-            lambda event: self.on_text_modified(
-                event,
-                utilization_ratio_entry,
-                utilization_ratio_string,
-                process_section,
-                "utilization_ratio",
-                (RATIO_EPSILON, 1.0),
-            ),
+        utilization_ratio_spinbox.grid(row=0, column=1)
+        self._utilization_ratio_string.trace_add(
+            "write", self._on_utilization_ratio_change
         )
-        self.check_for_modifications(
-            utilization_ratio_entry,
-            utilization_ratio_string,
-            process_section,
-            "utilization_ratio",
-            (RATIO_EPSILON, 1.0),
-        )
-
-        command = self.root.register(self.is_valid_float)
-        utilization_ratio_entry.config(
-            validate="key", validatecommand=(command, "%P")
-        )
+        utilization_ratio_spinbox.bind("<MouseWheel>", self._on_mouse_wheel)
+        IndicatorTooltip(utilization_ratio_spinbox, "Utilization ratio")
 
         while not self.stop_event.is_set():
             try:
@@ -397,30 +379,47 @@ class IndicatorThread(threading.Thread):
             except TclError:
                 pass
 
-    def check_for_modifications(self, widget, string, section, key, limits):
-        """Check for modifications in the widget and update if necessary."""
-        self.on_text_modified(None, widget, string, section, key, limits)
-        self.root.after(
-            1000,
-            lambda: self.check_for_modifications(
-                widget, string, section, key, limits
-            ),
-        )
+    def stop(self):
+        """Set the stop_event to signal the thread to stop."""
+        self.stop_event.set()
 
-    def on_text_modified(self, _, widget, string, section, key, limits):
-        """Handle text modification in the widget."""
-        minimum_value, maximum_value = limits
-        modified_text = widget.get() or "0.0"
-        modified_text = max(
-            minimum_value, min(maximum_value, float(modified_text))
-        )
-        string.set(modified_text)
-        section[key] = string.get()
-        configuration.write_config(
-            self.config, self.trade.config_path, is_encrypted=True
-        )
+    def on_closing(self):
+        """Handle window close event."""
+        self.stop_event.set()
+        self.root.quit()
 
-    def is_valid_float(self, user_input):
+    def _place_widget(self, widget, position):
+        """Place the widget according to the specified position."""
+        work_left, work_top, work_right, work_bottom = GetMonitorInfo(
+            MonitorFromPoint((0, 0))
+        ).get("Work")
+        work_center_x = int(0.5 * work_right)
+        work_center_y = int(0.5 * work_bottom)
+        position_map = {
+            "n": (work_center_x, work_top),
+            "ne": (work_right, work_top),
+            "e": (work_right, work_center_y),
+            "se": (work_right, work_bottom),
+            "s": (work_center_x, work_bottom),
+            "sw": (work_left, work_bottom),
+            "w": (work_left, work_center_y),
+            "nw": (work_left, work_top),
+            "center": (work_center_x, work_center_y),
+        }
+        if position in position_map:
+            widget.place(
+                x=position_map[position][0],
+                y=position_map[position][1],
+                anchor=position,
+            )
+        elif "," in position:
+            x, y = map(int, position.split(","))
+            widget.place(x=x, y=y)
+        else:
+            print(f"Invalid position: {position}")
+            widget.place(x=work_left, y=work_top)
+
+    def _is_valid_float(self, user_input):
         """Check if the user input is a valid float."""
         if user_input == "":
             return True
@@ -430,18 +429,29 @@ class IndicatorThread(threading.Thread):
         except ValueError:
             return False
 
-    def stop(self):
-        """Set the stop_event to signal the thread to stop."""
-        self.stop_event.set()
+    # Accept and ignore all positional arguments.
+    def _on_utilization_ratio_change(self, *_):
+        """Clamp and store the utilization ratio when the input changes."""
+        value = self._utilization_ratio_string.get()
+        try:
+            float_value = float(value)
+            float_value = max(RATIO_EPSILON, min(1.0, float_value))
+            self._utilization_ratio_string.set(f"{float_value:.2f}")
+            self.config[self.trade.process][
+                "utilization_ratio"
+            ] = self._utilization_ratio_string.get()
+        except ValueError:
+            pass
 
-    def is_stopped(self):
-        """Check if the thread has been signaled to stop."""
-        return self.stop_event.is_set()
-
-    def on_closing(self):
-        """Handle window close event."""
-        self.stop_event.set()
-        self.root.quit()
+    def _on_mouse_wheel(self, event):
+        """Adjust the utilization ratio with mouse wheel scroll."""
+        try:
+            delta = 0.05 if event.delta > 0 else -0.05
+            current = float(self._utilization_ratio_string.get())
+            new_value = max(RATIO_EPSILON, min(1.0, current + delta))
+            self._utilization_ratio_string.set(f"{new_value:.2f}")
+        except ValueError:
+            pass
 
 
 class IndicatorTooltip:
@@ -493,23 +503,27 @@ class MessageThread(threading.Thread):
 
     def run(self):
         """Run the thread, creating and displaying a message window."""
-        process_section = self.config[self.trade.process]
-        widgets_section = self.config[self.trade.widgets_section]
-
         root = tk.Tk()
         root.attributes("-alpha", 0.8)
         root.attributes("-toolwindow", True)
         root.attributes("-topmost", True)
         root.bind("<Escape>", lambda event: root.destroy())
         root.resizable(False, False)
-        root.title(process_section["title"] + " Message")
+        root.title(self.config[self.trade.process]["title"] + " Message")
         root.withdraw()
 
         tk.Message(
             root,
             bg="gray5",
             fg="tan1",
-            font=("Bahnschrift", -int(widgets_section["message_font_size"])),
+            font=(
+                "Bahnschrift",
+                -int(
+                    self.config[self.trade.widgets_section][
+                        "message_font_size"
+                    ]
+                ),
+            ),
             text=self.text,
         ).pack()
 
@@ -536,6 +550,18 @@ def main():
 
     try:
         config = configure(trade)
+        # Ensure the config is written on normal interpreter shutdown, since
+        # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not
+        # run if the main thread terminates abruptly.
+        atexit.register(
+            functools.partial(
+                configuration.write_config,
+                config,
+                trade.config_path,
+                is_encrypted=True,
+            )
+        )
+
         configuration.ensure_section_exists(config, trade.process)
         gui_state = gui_interactions.GuiState(
             configuration.evaluate_value(
