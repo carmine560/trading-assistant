@@ -268,24 +268,30 @@ class IndicatorThread(threading.Thread):
         )
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        clock_label = tk.Label(
-            self.root,
-            font=(
-                "Tahoma",
-                -int(
-                    self.config[self.trade.widgets_section][
-                        "clock_label_font_size"
-                    ]
+        is_clock_label_enabled = self.config[
+            self.trade.widgets_section
+        ].getboolean("is_clock_label_enabled")
+        if is_clock_label_enabled:
+            clock_label = tk.Label(
+                self.root,
+                font=(
+                    "Tahoma",
+                    -int(
+                        self.config[self.trade.widgets_section][
+                            "clock_label_font_size"
+                        ]
+                    ),
                 ),
-            ),
-            bg="gray5",
-            fg="tan1",
-        )
-        self._place_widget(
-            clock_label,
-            self.config[self.trade.widgets_section]["clock_label_position"],
-        )
-        IndicatorTooltip(clock_label, "Current system time")
+                bg="gray5",
+                fg="tan1",
+            )
+            self._place_widget(
+                clock_label,
+                self.config[self.trade.widgets_section][
+                    "clock_label_position"
+                ],
+            )
+            IndicatorTooltip(clock_label, "Current system time")
 
         status_bar_frame_font_size = int(
             self.config[self.trade.widgets_section][
@@ -352,7 +358,9 @@ class IndicatorThread(threading.Thread):
 
         while not self.stop_event.is_set():
             try:
-                clock_label.config(text=time.strftime("%H:%M:%S"))
+                if is_clock_label_enabled:
+                    clock_label.config(text=time.strftime("%H:%M:%S"))
+
                 current_number_of_trades = self.config[
                     self.trade.variables_section
                 ]["current_number_of_trades"]
@@ -554,6 +562,8 @@ def main():
         # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not
         # run if the main thread terminates abruptly.
         atexit.register(
+            # Create a callable with pre-filled positional and keyword
+            # arguments.
             functools.partial(
                 configuration.write_config,
                 config,
@@ -969,6 +979,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             ),
         }
         config[trade.widgets_section] = {
+            "is_clock_label_enabled": "True",
             "clock_label_position": "nw",
             "clock_label_font_size": "12",
             "status_bar_frame_position": "sw",
