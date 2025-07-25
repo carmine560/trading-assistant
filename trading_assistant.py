@@ -250,10 +250,6 @@ class IndicatorThread(threading.Thread):
 
     def run(self):
         """Run the thread, creating and placing widgets on the screen."""
-        maximum_daily_number_of_trades = int(
-            self.config[self.trade.process]["maximum_daily_number_of_trades"]
-        )
-
         # GUI should run in main thread; use 'queue.Queue' to receive updates
         # from worker threads.
         self.root = tk.Tk()
@@ -271,6 +267,10 @@ class IndicatorThread(threading.Thread):
         is_clock_label_enabled = self.config[
             self.trade.widgets_section
         ].getboolean("is_clock_label_enabled")
+        maximum_daily_number_of_trades = int(
+            self.config[self.trade.process]["maximum_daily_number_of_trades"]
+        )
+
         if is_clock_label_enabled:
             clock_label = tk.Label(
                 self.root,
@@ -326,7 +326,6 @@ class IndicatorThread(threading.Thread):
         self._utilization_ratio_string.set(
             self.config[self.trade.process]["utilization_ratio"]
         )
-
         utilization_ratio_spinbox = tk.Spinbox(
             status_bar_frame,
             bd=0,
@@ -979,7 +978,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             ),
         }
         config[trade.widgets_section] = {
-            "is_clock_label_enabled": "True",
+            "is_clock_label_enabled": "False",
             "clock_label_position": "nw",
             "clock_label_font_size": "12",
             "status_bar_frame_position": "sw",
