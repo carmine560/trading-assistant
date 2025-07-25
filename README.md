@@ -15,8 +15,8 @@ consisting of a sequence of commands, this script can:
 
 > **Disclaimer**: `trading_assistant.py` does not analyze or make decisions for
 > you. If you operate under incorrect assumptions, the potential for loss may
-> increase because of the script's fast and frequent order placement. Use at
-> your own risk.
+> increase because of the script’s fast and frequent order placement. You
+> assume full responsibility for all trading decisions and outcomes.
 
 ## Prerequisites
 
@@ -168,7 +168,7 @@ clipboard.</td></tr>
 <td>Count the number of trades for the day. Additionally, write a chapter
 section for <a href="https://ffmpeg.org/ffmpeg-formats.html#Metadata-1">FFmpeg
 metadata</a> when Nvidia ShadowPlay records a screencast. The “CHAPTER_OFFSET”
-parameter specifies the offset in seconds for the chapter's start time. You
+parameter specifies the offset in seconds for the chapter’s start time. You
 must call this command after the execution of an order.</td></tr>
 
 <tr><td><code>('drag_to', 'X, Y')</code></td>
