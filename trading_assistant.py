@@ -7,7 +7,6 @@ import argparse
 import atexit
 import configparser
 import csv
-import functools
 import inspect
 import math
 import os
@@ -557,26 +556,13 @@ def main():
 
     try:
         config = configure(trade)
-        # Ensure the config is written on normal interpreter shutdown, since
-        # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not
-        # run if the main thread terminates abruptly.
-        atexit.register(
-            # Create a callable with pre-filled positional and keyword
-            # arguments.
-            functools.partial(
-                configuration.write_config,
-                config,
-                trade.config_path,
-                is_encrypted=True,
-            )
-        )
-
         configuration.ensure_section_exists(config, trade.process)
         gui_state = gui_interactions.GuiState(
             configuration.evaluate_value(
                 config[trade.process]["interactive_windows"]
             )
         )
+        atexit.register(on_exit, trade, config)
 
         if args.a or args.l or args.s:
             # Use 'BaseManager' to share 'SpeechManager' instance across
@@ -616,6 +602,7 @@ def main():
                     base_manager,
                     trade.speech_manager,
                     trade.speaking_process,
+                    None,
                 )
                 trade.stop_listeners_event.set()
                 trade.wait_listeners_thread.join()
@@ -648,6 +635,14 @@ def main():
     except Exception as e:
         print(f"An unexpected error: {e}")
         sys.exit(1)
+
+
+def on_exit(trade, config):
+    """Persist configuration on interpreter shutdown."""
+    # Ensure the config is written on normal interpreter shutdown, since
+    # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not run if
+    # the main thread terminates abruptly.
+    configuration.write_config(config, trade.config_path, is_encrypted=True)
 
 
 def get_arguments():
@@ -1525,6 +1520,7 @@ def start_listeners(
             base_manager,
             speech_manager,
             trade.speaking_process,
+            trade.indicator_thread,
             is_persistent,
         ),
     )

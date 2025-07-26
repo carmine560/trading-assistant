@@ -22,6 +22,7 @@ def wait_listeners(
     base_manager,
     speech_manager,
     speaking_process,
+    indicator_thread,
     is_persistent=False,
 ):
     """Wait for listeners until the stop event is set or process ends."""
@@ -35,6 +36,7 @@ def wait_listeners(
                 base_manager,
                 speech_manager,
                 speaking_process,
+                indicator_thread,
             )
             break
 
@@ -45,6 +47,7 @@ def stop_listeners(
     base_manager,
     speech_manager,
     speaking_process,
+    indicator_thread,
 ):
     """Stop all listeners and shutdown the managers."""
     if mouse_listener:
@@ -58,3 +61,5 @@ def stop_listeners(
         speech_manager.set_can_speak(False)
         speaking_process.join()
         base_manager.shutdown()
+    if indicator_thread:
+        indicator_thread.stop()
