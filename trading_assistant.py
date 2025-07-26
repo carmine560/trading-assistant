@@ -602,7 +602,6 @@ def main():
                     base_manager,
                     trade.speech_manager,
                     trade.speaking_process,
-                    None,
                 )
                 trade.stop_listeners_event.set()
                 trade.wait_listeners_thread.join()
