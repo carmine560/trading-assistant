@@ -1519,9 +1519,11 @@ def start_listeners(
             base_manager,
             speech_manager,
             trade.speaking_process,
-            trade.indicator_thread,
-            is_persistent,
         ),
+        kwargs={
+            "indicator_thread": trade.indicator_thread,
+            "is_persistent": is_persistent,
+        },
     )
     trade.wait_listeners_thread.start()
 
