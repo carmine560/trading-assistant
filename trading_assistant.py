@@ -342,7 +342,6 @@ class IndicatorThread(threading.Thread):
             textvariable=self._utilization_ratio_string,
             to=1.0,
             width=5,
-            wrap=True,
             # 'validate' and 'validatecommand' are inherited from tk.Entry.
             validate="key",
             validatecommand=(self.root.register(self._is_valid_float), "%P"),
@@ -452,7 +451,7 @@ class IndicatorThread(threading.Thread):
     def _on_mouse_wheel(self, event):
         """Adjust the utilization ratio with mouse wheel scroll."""
         try:
-            delta = 0.05 if event.delta > 0 else -0.05
+            delta = 0.1 if event.delta > 0 else -0.1
             current = float(self._utilization_ratio_string.get())
             new_value = max(RATIO_EPSILON, min(1.0, current + delta))
             self._utilization_ratio_string.set(f"{new_value:.2f}")
