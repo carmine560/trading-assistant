@@ -28,15 +28,15 @@ import pyautogui
 import requests
 import win32gui
 
-import configuration
-import data_utilities
-import file_utilities
-import gui_interactions
-import initializer
-import process_utilities
-import speech_synthesis
-import text_recognition
-import web_utilities
+from shared_utilities import configuration
+from shared_utilities import data_utilities
+from shared_utilities import file_utilities
+from shared_utilities import gui_interactions
+from shared_utilities import initializer
+from shared_utilities import process_utilities
+from shared_utilities import speech_synthesis
+from shared_utilities import text_recognition
+from shared_utilities import web_utilities
 
 RATIO_EPSILON = 1e-4
 SANS_INITIAL_SECURITIES_CODE_REGEX = (

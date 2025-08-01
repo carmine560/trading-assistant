@@ -51,6 +51,10 @@ Install each package as needed. For example:
 ``` powershell
 winget install UB-Mannheim.TesseractOCR
 winget install GnuPG.GnuPG
+git clone --recurse-submodules git@github.com:carmine560/trading-assistant.git
+cd trading-assistant
+# Run 'git submodule update --init' if you cloned without
+# '--recurse-submodules'.
 python -m venv .venv
 . .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt -U
