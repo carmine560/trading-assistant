@@ -1682,8 +1682,6 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             argument = tuple(map(str.strip, argument.split(",")))
             presses = int(argument[1]) if len(argument) > 1 else 1
             pyautogui.press(argument[0], presses=presses)
-            if argument[0] == "tab":
-                gui_state.moved_focus = presses
         elif command == "right_click":
             pyautogui.click(
                 *map(int, argument.split(",")),
