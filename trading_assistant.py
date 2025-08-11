@@ -920,7 +920,6 @@ def configure(trade, can_interpolate=True, can_override=True):
             "end_time": "${Market Data:closing_time}",
             "executable": trade.executable,
             "title": title,
-            "trading_password": "",
             "interactive_windows": (
                 file_description,
                 "お知らせ",
