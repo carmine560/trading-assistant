@@ -799,6 +799,13 @@ def configure(trade, can_interpolate=True, can_override=True):
         "speak_cpu_utilization": [
             ("is_trading_day", "True", [("speak_cpu_utilization", "1")])
         ],
+        "speak_seconds_since_open": [
+            (
+                "is_trading_day",
+                "True",
+                [("speak_seconds_since_time", "${Market Data:opening_time}")],
+            )
+        ],
         "speak_seconds_until_open": [
             (
                 "is_trading_day",
