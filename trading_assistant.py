@@ -748,6 +748,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         "fingerprint": "",
         "voice_name": "Microsoft Zira Desktop",
         "speech_rate": "2",
+        "countdown_seconds_before_candle_close": "30, 10",
     }
     config["Market Holidays"] = {
         "url": "https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html",
@@ -1487,7 +1488,11 @@ def start_scheduler(trade, config, gui_state, process):
     while scheduler.queue:
         if process_utilities.is_running(process):
             scheduler.run(False)
-            time.sleep(1)
+            time.sleep(
+                max(0.0, min(scheduler.queue[0].time - time.time(), 1.0))
+                if scheduler.queue
+                else 1.0
+            )
         else:
             for schedule in schedules:
                 if schedule in scheduler.queue:
@@ -1656,7 +1661,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
         elif command == "drag_to":
             pyautogui.dragTo(*map(int, argument.split(",")))
         elif command == "execute_action":
-            if not recursively_execute_action(
+            if not _recursively_execute_action(
                 trade, config, gui_state, argument
             ):
                 return False
@@ -1727,7 +1732,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 f"{round(psutil.cpu_percent(interval=float(argument)))}%."
             )
         elif command == "speak_seconds_since_time":
-            time_delta = math.ceil(
+            time_delta = math.floor(
                 time.time() - data_utilities.get_target_time(argument)
             )
             trade.speech_manager.set_speech_text(f"{time_delta} seconds.")
@@ -1742,14 +1747,22 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
         elif command == "speak_text":
             trade.speech_manager.set_speech_text(argument)
         elif command == "wait_for_key":
-            trade.keyboard_listener_state = 1
-            trade.key_to_check = (
-                argument if len(argument) == 1 else keyboard.Key[argument]
-            )
-            while trade.keyboard_listener_state == 1:
-                time.sleep(0.001)
-            if not trade.should_continue and handle_cancellation_exit(
-                trade, config, gui_state, additional_argument
+            if not _wait_for_key(
+                trade,
+                config,
+                gui_state,
+                argument,
+                additional_argument,
+            ):
+                return False
+        elif command == "wait_for_key_count_down":
+            if not _wait_for_key(
+                trade,
+                config,
+                gui_state,
+                argument,
+                additional_argument,
+                should_count_down=True,
             ):
                 return False
         elif command == "wait_for_price":
@@ -1765,7 +1778,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 should_continue_reference=lambda: trade.should_continue,
             )
             trade.keyboard_listener_state = 0
-            if not trade.should_continue and handle_cancellation_exit(
+            if not trade.should_continue and _handle_cancellation_exit(
                 trade, config, gui_state, additional_argument
             ):
                 return False
@@ -1778,7 +1791,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 should_continue_reference=lambda: trade.should_continue,
             )
             trade.keyboard_listener_state = 0
-            if not trade.should_continue and handle_cancellation_exit(
+            if not trade.should_continue and _handle_cancellation_exit(
                 trade, config, gui_state, additional_argument
             ):
                 return False
@@ -1800,14 +1813,14 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
         elif command == "is_now_after":
             if data_utilities.get_target_time(
                 argument
-            ) < time.time() and not recursively_execute_action(
+            ) < time.time() and not _recursively_execute_action(
                 trade, config, gui_state, additional_argument
             ):
                 return False
         elif command == "is_now_before":
             if time.time() < data_utilities.get_target_time(
                 argument
-            ) and not recursively_execute_action(
+            ) and not _recursively_execute_action(
                 trade, config, gui_state, additional_argument
             ):
                 return False
@@ -1819,18 +1832,18 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 )
             ) == bool(
                 argument.lower() == "true"
-            ) and not recursively_execute_action(
+            ) and not _recursively_execute_action(
                 trade, config, gui_state, additional_argument
             ):
                 return False
         elif command == "is_trading_day":
-            if is_trading_day(
+            if _is_trading_day(
                 pd.Timestamp.now(tz=config["Market Data"]["timezone"]),
                 trade.market_holidays,
                 config["Market Holidays"]["date_format"],
             ) == bool(
                 argument.lower() == "true"
-            ) and not recursively_execute_action(
+            ) and not _recursively_execute_action(
                 trade, config, gui_state, additional_argument
             ):
                 return False
@@ -1841,7 +1854,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
     return True
 
 
-def recursively_execute_action(trade, config, gui_state, additional_argument):
+def _recursively_execute_action(trade, config, gui_state, additional_argument):
     """Recursively execute an action if it is a list or a string."""
     if isinstance(additional_argument, list):
         return execute_action(
@@ -1864,10 +1877,54 @@ def recursively_execute_action(trade, config, gui_state, additional_argument):
     return False
 
 
-def handle_cancellation_exit(trade, config, gui_state, additional_argument):
+def _wait_for_key(
+    trade,
+    config,
+    gui_state,
+    argument,
+    additional_argument,
+    should_count_down=False,
+):
+    """Wait for a key press with optional countdown."""
+    trade.keyboard_listener_state = 1
+    trade.key_to_check = (
+        argument if len(argument) == 1 else keyboard.Key[argument]
+    )
+    countdown_seconds = [
+        int(seconds.strip())
+        for seconds in config["General"][
+            "countdown_seconds_before_candle_close"
+        ].split(",")
+    ]
+    announced_minutes = {seconds: -1 for seconds in countdown_seconds}
+
+    while trade.keyboard_listener_state == 1:
+        if should_count_down:
+            now = pd.Timestamp.now()
+            current_second = now.second
+            current_minute = now.minute
+
+            for seconds in countdown_seconds:
+                if (
+                    current_second == 60 - seconds
+                    and current_minute != announced_minutes[seconds]
+                ):
+                    trade.speech_manager.set_speech_text(f"{seconds} seconds.")
+                    announced_minutes[seconds] = current_minute
+
+        time.sleep(0.01)
+
+    if not trade.should_continue and _handle_cancellation_exit(
+        trade, config, gui_state, additional_argument
+    ):
+        return False
+    return True
+
+
+def _handle_cancellation_exit(trade, config, gui_state, additional_argument):
     """Perform cancellation actions and signal caller to exit."""
     if additional_argument:
-        recursively_execute_action(
+        _recursively_execute_action(
             trade, config, gui_state, additional_argument
         )
 
@@ -1875,7 +1932,7 @@ def handle_cancellation_exit(trade, config, gui_state, additional_argument):
     return True
 
 
-def is_trading_day(date, market_holidays, date_format):
+def _is_trading_day(date, market_holidays, date_format):
     """Check if the given date is a trading day."""
     return date.weekday() < 5 and date.strftime(date_format) not in set(
         pd.read_csv(market_holidays, header=None, dtype=str)[0]

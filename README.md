@@ -260,6 +260,12 @@ number of windows to show.</td></tr>
 <td>Wait for a key press. Pressing the <code>Esc</code> key cancels the current
 action and executes the specified action, if provided.</td></tr>
 
+<tr><td><code>('wait_for_key_count_down', 'KEY'[, ACTION|'ACTION'])</code></td>
+
+<td>Wait for a key press and speak a countdown until the next 1-minute candle
+close. Pressing the <code>Esc</code> key cancels the current action and
+executes the specified action, if provided.</td></tr>
+
 <tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX'[, ACTION|'ACTION'])</code></td>
 
 <td>Wait until <code>trading_assistant.py</code> recognizes a decimal number in
