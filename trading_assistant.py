@@ -613,24 +613,10 @@ def main():
                 trade, config, gui_state, base_manager, trade.speech_manager
             )
         if args.s and process_utilities.is_running(trade.process):
-            if not (args.a or args.l):
-                trade.speaking_process = (
-                    speech_synthesis.start_speaking_process(
-                        trade.speech_manager,
-                        voice_name=config["General"]["voice_name"],
-                        speech_rate=int(config["General"]["speech_rate"]),
-                    )
-                )
-
             threading.Thread(
                 target=start_scheduler,
-                args=(trade, config, gui_state, trade.process),
+                args=(trade, config, gui_state, trade.process, base_manager),
             ).start()
-
-            if not (args.a or args.l):
-                speech_synthesis.stop_speaking_process(
-                    base_manager, trade.speech_manager, trade.speaking_process
-                )
     except configuration.ConfigError as e:
         print(f"Configuration error: {e}")
         sys.exit(1)
@@ -1459,8 +1445,17 @@ def get_latest(
     return False
 
 
-def start_scheduler(trade, config, gui_state, process):
+def start_scheduler(trade, config, gui_state, process, base_manager):
     """Start a scheduler for executing actions at specified times."""
+    should_stop_speaking_process = False
+    if not trade.speaking_process:
+        trade.speaking_process = speech_synthesis.start_speaking_process(
+            trade.speech_manager,
+            voice_name=config["General"]["voice_name"],
+            speech_rate=int(config["General"]["speech_rate"]),
+        )
+        should_stop_speaking_process = True
+
     scheduler = sched.scheduler(time.time, time.sleep)
     schedules = []
 
@@ -1485,18 +1480,24 @@ def start_scheduler(trade, config, gui_state, process):
             )
             schedules.append(schedule)
 
-    while scheduler.queue:
-        if process_utilities.is_running(process):
-            scheduler.run(False)
-            time.sleep(
-                max(0.0, min(scheduler.queue[0].time - time.time(), 1.0))
-                if scheduler.queue
-                else 1.0
+    try:
+        while scheduler.queue:
+            if process_utilities.is_running(process):
+                scheduler.run(False)
+                time.sleep(
+                    max(0.0, min(scheduler.queue[0].time - time.time(), 1.0))
+                    if scheduler.queue
+                    else 1.0
+                )
+            else:
+                for schedule in schedules:
+                    if schedule in scheduler.queue:
+                        scheduler.cancel(schedule)
+    finally:
+        if should_stop_speaking_process:
+            speech_synthesis.stop_speaking_process(
+                base_manager, trade.speech_manager, trade.speaking_process
             )
-        else:
-            for schedule in schedules:
-                if schedule in scheduler.queue:
-                    scheduler.cancel(schedule)
 
 
 def start_listeners(
