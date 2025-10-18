@@ -21,7 +21,7 @@ consisting of a sequence of commands, this script can:
 ## Prerequisites
 
 `trading_assistant.py` has been tested in [Python
-3.13.8](https://www.python.org/downloads/release/python-3138/) for Windows with
+3.13.9](https://www.python.org/downloads/release/python-3139/) for Windows with
 Hyper SBI 2 on Windows 10 and requires the following packages:
 
   * [`chardet`](https://github.com/chardet/chardet),
