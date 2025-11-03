@@ -20,9 +20,9 @@ consisting of a sequence of commands, this script can:
 
 ## Prerequisites
 
-`trading_assistant.py` has been tested in [Python
-3.13.9](https://www.python.org/downloads/release/python-3139/) for Windows with
-Hyper SBI 2 on Windows 10 with ESU and requires the following packages:
+`trading_assistant.py` has been tested in [Python for
+Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
+10 with ESU and requires the following packages:
 
   * [`chardet`](https://github.com/chardet/chardet),
     [`lxml`](https://lxml.de/index.html),
