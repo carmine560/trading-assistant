@@ -921,7 +921,7 @@ def configure(trade, can_interpolate=True, can_override=True):
                 "登録銘柄",
                 "保有証券",
                 "注文一覧",
-                r"個別チャート\s.*\((${Market Data:securities_code_regex})\)",
+                r"個別チャート\s.*\((${Market Data:securities_code_regex})\)：.*",
                 "マーケット",
                 "ランキング",
                 "銘柄一覧",

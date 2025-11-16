@@ -435,22 +435,22 @@ is licensed under the CC0-1.0 license.
 
 ### Hyper SBI 2 Window Titles
 
-| Regular Expression for Window Title                          | Window          |
-|--------------------------------------------------------------|-----------------|
-| `お知らせ`                                                   | Announcements   |
-| `個別銘柄\s.*\((${Market Data:securities_code_regex})\)`     | Summary         |
-| `登録銘柄`                                                   | Watchlists      |
-| `保有証券`                                                   | Holdings        |
-| `注文一覧`                                                   | Order Status    |
-| `個別チャート\s.*\((${Market Data:securities_code_regex})\)` | Chart           |
-| `マーケット`                                                 | Markets         |
-| `ランキング`                                                 | Rankings        |
-| `銘柄一覧`                                                   | Stock Lists     |
-| `口座情報`                                                   | Account         |
-| `ニュース`                                                   | News            |
-| `取引ポップアップ`                                           | Trading         |
-| `通知設定`                                                   | Notifications   |
-| `全板\s.*\((${Market Data:securities_code_regex})\)`         | Full Order Book |
+| Regular Expression for Window Title                              | Window          |
+|------------------------------------------------------------------|-----------------|
+| `お知らせ`                                                       | Announcements   |
+| `個別銘柄\s.*\((${Market Data:securities_code_regex})\)`         | Summary         |
+| `登録銘柄`                                                       | Watchlists      |
+| `保有証券`                                                       | Holdings        |
+| `注文一覧`                                                       | Order Status    |
+| `個別チャート\s.*\((${Market Data:securities_code_regex})\)：.*` | Chart           |
+| `マーケット`                                                     | Markets         |
+| `ランキング`                                                     | Rankings        |
+| `銘柄一覧`                                                       | Stock Lists     |
+| `口座情報`                                                       | Account         |
+| `ニュース`                                                       | News            |
+| `取引ポップアップ`                                               | Trading         |
+| `通知設定`                                                       | Notifications   |
+| `全板\s.*\((${Market Data:securities_code_regex})\)`             | Full Order Book |
 
 ## Link
 
