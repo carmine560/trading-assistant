@@ -33,7 +33,7 @@ Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
   * [`pywin32`](https://github.com/mhammond/pywin32) to access Windows APIs
   * [`pytesseract`](https://github.com/madmaze/pytesseract) to invoke
     [Tesseract](https://github.com/tesseract-ocr/tesseract) to recognize prices
-    and securities codes on Hyper SBI 2
+    and securities codes in Hyper SBI 2
   * [`pyautogui`](https://github.com/asweigart/pyautogui) to automate
     manipulation of Hyper SBI 2
   * [`pynput`](https://github.com/moses-palmer/pynput) to monitor the mouse and
@@ -84,7 +84,7 @@ python trading_assistant.py -SS
 
 ### Configure Cash Balance and Price Limit Regions
 
-Configure the cash balance and (optional) price limit regions on Hyper SBI 2
+Configure the cash balance and (optional) price limit regions in Hyper SBI 2
 for Tesseract to recognize these prices. `trading_assistant.py` only references
 a price limit if the previous closing price does not exist in the market data
 in the “[Create Startup Script](#create-startup-script)” section. Because a
