@@ -442,6 +442,8 @@ class IndicatorThread(threading.Thread):
     def _on_utilization_ratio_change(self, *_):
         """Clamp and store the utilization ratio when the input changes."""
         value = self._utilization_ratio_string.get()
+        if value in ("0", "0.", "0.0"):
+            return
         try:
             float_value = float(value)
             float_value = max(RATIO_EPSILON, min(1.0, float_value))
