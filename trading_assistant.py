@@ -96,7 +96,10 @@ class Trade(initializer.Initializer):
                 "show_hide_indicator",
                 "write_share_size",
             },
-            "optional_value_keys": {"count_trades"},
+            "optional_value_keys": {
+                "count_trades",
+                "speak_minutes_since_hour",
+            },
             "additional_value_keys": {"click_widget", "speak_config"},
             "optional_additional_value_keys": {"write_chapter"},
             "positioning_keys": {"click", "drag_to", "move_to", "right_click"},
@@ -114,6 +117,7 @@ class Trade(initializer.Initializer):
             "preset_value_keys": {
                 "is_now_after",
                 "is_now_before",
+                "speak_minutes_since_hour",
                 "speak_seconds_since_time",
                 "speak_seconds_until_time",
             },
@@ -787,13 +791,6 @@ def configure(trade, can_interpolate=True, can_override=True):
         ],
         "speak_cpu_utilization": [
             ("is_trading_day", "True", [("speak_cpu_utilization", "1")])
-        ],
-        "speak_seconds_since_open": [
-            (
-                "is_trading_day",
-                "True",
-                [("speak_seconds_since_time", "${Market Data:opening_time}")],
-            )
         ],
         "speak_seconds_until_open": [
             (
@@ -1734,6 +1731,28 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             trade.speech_manager.set_speech_text(
                 f"{round(psutil.cpu_percent(interval=float(argument)))}%."
             )
+        elif command == "speak_minutes_since_hour":
+            if argument:
+                target_time = data_utilities.get_target_time(argument)
+            else:
+                now = pd.Timestamp.now()
+                target_time = time.mktime(
+                    time.strptime(
+                        f"{now.strftime('%Y-%m-%d')} {now.hour}:00:00",
+                        "%Y-%m-%d %H:%M:%S",
+                    )
+                )
+            now = time.time()
+            minutes_since = int((now - target_time) // 60)
+            if int(now % 60) >= 30:
+                minutes_since += 1
+            minutes_since %= 60
+            if minutes_since == 1:
+                trade.speech_manager.set_speech_text("1 minute.")
+            else:
+                trade.speech_manager.set_speech_text(
+                    f"{minutes_since} minutes."
+                )
         elif command == "speak_seconds_since_time":
             time_delta = math.floor(
                 time.time() - data_utilities.get_target_time(argument)

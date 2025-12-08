@@ -239,6 +239,11 @@ number of windows to show.</td></tr>
 
 <td>Calculate CPU utilization for the interval and speak it.</td></tr>
 
+<tr><td><code>('speak_minutes_since_hour',[ '%H:%M:%S'])</code></td>
+
+<td>Speak minutes since the current hour, or since the time. Round up when
+$$seconds \geq 30$$.</td></tr>
+
 <tr><td><code>('speak_seconds_since_time', '%H:%M:%S')</code></td>
 
 <td>Speak seconds since the time.</td></tr>
