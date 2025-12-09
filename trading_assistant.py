@@ -1754,15 +1754,15 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                     f"{minutes_since} minutes."
                 )
         elif command == "speak_seconds_since_time":
-            time_delta = math.floor(
+            seconds_since = math.floor(
                 time.time() - data_utilities.get_target_time(argument)
             )
-            trade.speech_manager.set_speech_text(f"{time_delta} seconds.")
+            trade.speech_manager.set_speech_text(f"{seconds_since} seconds.")
         elif command == "speak_seconds_until_time":
-            time_delta = math.ceil(
+            seconds_until = math.ceil(
                 data_utilities.get_target_time(argument) - time.time()
             )
-            trade.speech_manager.set_speech_text(f"{time_delta} seconds.")
+            trade.speech_manager.set_speech_text(f"{seconds_until} seconds.")
         elif command == "speak_show_text":
             trade.speech_manager.set_speech_text(argument)
             MessageThread(trade, config, argument).start()
