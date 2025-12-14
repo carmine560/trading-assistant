@@ -64,16 +64,17 @@ python -m pip install -r requirements.txt -U
 
 ### Create Startup Script
 
-To calculate the maximum number of shares, save the customer margin ratios from
-the [*Stocks Subject to Margin
+If you use the `calculate_share_size` command in the “[Create or Modify
+Action](#create-or-modify-action)” section, save the customer margin ratios
+from the [*Stocks Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
-page and the previous market data from the [*Most Active Stocks
-Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page beforehand. The
-following option creates the
+page using the `-r` option and the previous market data from the [*Most Active
+Stocks Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page using the
+`-d` option beforehand. The following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\hypersbi2_assistant.ps1` startup
-script that processes the above and starts Hyper SBI 2. This script forcibly
-stops and restarts Hyper SBI 2 if it is already running, potentially discarding
-unsaved status.
+script, which can process the above options and start Hyper SBI 2. This script
+forcibly stops and restarts Hyper SBI 2 if it is already running, potentially
+discarding unsaved state.
 
 > **Note**: This option adds virtual environment activation to the startup
 > script if the `.venv\Scripts\Activate.ps1` script exists.
@@ -89,9 +90,8 @@ the “[Create or Modify Action](#create-or-modify-action)” section, configure
 the cash balance and (optional) price limit regions in Hyper SBI 2 so that
 Tesseract can recognize these prices. `trading_assistant.py` references a price
 limit only if the previous closing price does not exist in the market data
-loaded in the “[Create Startup Script](#create-startup-script)” section.
-Because a region may contain multiple prices, you must specify the index of the
-price you want to reference.
+saved using the `-d` option. Because a region may contain multiple prices, you
+must specify the index of the price you want to reference.
 
 ``` powershell
 python trading_assistant.py -CB
