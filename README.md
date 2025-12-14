@@ -84,12 +84,14 @@ python trading_assistant.py -SS
 
 ### Configure Cash Balance and Price Limit Regions
 
-Configure the cash balance and (optional) price limit regions in Hyper SBI 2
-for Tesseract to recognize these prices. `trading_assistant.py` only references
-a price limit if the previous closing price does not exist in the market data
-in the “[Create Startup Script](#create-startup-script)” section. Because a
-region may contain more than one price, you need to specify the index of the
-price you want to refer to.
+If you use the `calculate_share_size` or `check_daily_loss_limit` commands in
+the “[Create or Modify Action](#create-or-modify-action)” section, configure
+the cash balance and (optional) price limit regions in Hyper SBI 2 so that
+Tesseract can recognize these prices. `trading_assistant.py` references a price
+limit only if the previous closing price does not exist in the market data
+loaded in the “[Create Startup Script](#create-startup-script)” section.
+Because a region may contain multiple prices, you must specify the index of the
+price you want to reference.
 
 ``` powershell
 python trading_assistant.py -CB
