@@ -217,9 +217,9 @@ class Trade(initializer.Initializer):
             if self.keyboard_listener_state == 0:
                 if key in self.function_keys and not self.pressed_modifiers:
                     now = time.time()
-                    # A 0.2-second debounce interval balances responsiveness
-                    # and accidental repeats. (0.15-0.2 seconds is typical)
-                    if now - self.last_action_time > 0.2:
+                    # A 0.3-second debounce interval prevents double-triggers
+                    # from both software detection and hardware chattering.
+                    if now - self.last_action_time > 0.3:
                         action = configuration.evaluate_value(
                             config[self.process]["input_map"]
                         ).get(key.name)
