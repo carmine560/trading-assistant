@@ -1,5 +1,6 @@
 """Assist with discretionary day trading of stocks on margin."""
 
+from collections import defaultdict
 from datetime import date
 from multiprocessing.managers import BaseManager
 from tkinter import TclError
@@ -91,8 +92,8 @@ class Trade(initializer.Initializer):
             ),
             "no_value_keys": {
                 "back_to",
-                "copy_symbols_from_market_data",
                 "get_cash_balance",
+                "save_market_data",
                 "show_hide_indicator",
                 "write_share_size",
             },
@@ -125,6 +126,7 @@ class Trade(initializer.Initializer):
                 "${Market Data:opening_time}",
                 "${Market Data:midday_break_time}",
                 "${Market Data:reopening_time}",
+                "${Market Data:last_order_time}",
                 "${Market Data:closing_time}",
                 f"${{{self.process}:start_time}}",
                 f"${{{self.process}:end_time}}",
@@ -584,8 +586,6 @@ def main():
             trade.speech_manager = base_manager.SpeechManager()
         if args.r:
             save_customer_margin_ratios(trade, config)
-        if args.d:
-            save_market_data(trade, config)
         if args.a:
             is_running = process_utilities.is_running(trade.process)
             if not (is_running and args.l):
@@ -653,9 +653,6 @@ def get_arguments():
     )
     parser.add_argument(
         "-r", action="store_true", help="save the customer margin ratios"
-    )
-    parser.add_argument(
-        "-d", action="store_true", help="save the previous market data"
     )
     parser.add_argument(
         "-a", nargs=1, help="execute an action", metavar="ACTION"
@@ -751,14 +748,17 @@ def configure(trade, can_interpolate=True, can_override=True):
         "opening_time": "09:00:00",
         "midday_break_time": "11:30:00",
         "reopening_time": "12:30:00",
-        "closing_time": "15:25:00",
+        "last_order_time": "15:25:00",
+        "closing_time": "15:30:00",
         "timezone": "Asia/Tokyo",
+        # Double backslashes are required because these options are evaluated
+        # as Python literals.
         "securities_code_regex": SECURITIES_CODE_REGEX.replace("\\", "\\\\"),
-        "url": "https://kabutan.jp/warning/?mode=2_9&market=1",
-        "delay": "20",
-        "number_of_pages": "2",
-        "symbol_header": "コード",
-        "price_header": "株価",
+        "rankings": os.path.join(
+            os.path.expanduser("~"),
+            "Downloads",
+            "rankings.csv",
+        ).replace("\\", "\\\\"),
     }
     config[trade.actions_section] = {
         "show_hide_indicator": [("show_hide_indicator",)],
@@ -823,11 +823,16 @@ def configure(trade, can_interpolate=True, can_override=True):
                 ],
             )
         ],
-        "speak_seconds_until_close": [
+        "speak_seconds_until_last_order": [
             (
                 "is_trading_day",
                 "True",
-                [("speak_seconds_until_time", "${Market Data:closing_time}")],
+                [
+                    (
+                        "speak_seconds_until_time",
+                        "${Market Data:last_order_time}",
+                    )
+                ],
             )
         ],
         "speak_seconds_until_end": [
@@ -976,7 +981,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         }
         config[trade.startup_script_section] = {
             "pre_start_options": "",
-            "post_start_options": "-rdl",
+            "post_start_options": "-rl",
             "running_options": "-l",
         }
         config[trade.actions_section]["show_hide_watchlists"] = str(
@@ -1308,70 +1313,50 @@ def save_customer_margin_ratios(trade, config):
             df.to_csv(trade.customer_margin_ratios, header=False, index=False)
 
 
-def save_market_data(trade, config, clipboard=False):
-    """Save market data for a given trade."""
-    section = config["Market Data"]
+def save_market_data(trade, config):
+    """Split the rankings CSV by the first digit of the securities code."""
+    rankings = config["Market Data"]["rankings"].replace("\\\\", "\\")
+    data_by_digit = defaultdict(list)
 
-    if clipboard:
-        latest = True
-    else:
-        paths = []
-        delay = int(section["delay"])
-        for i in range(1, 10):
-            paths.append(trade.closing_prices + str(i) + ".csv")
-
-        opening_time = (
-            pd.Timestamp(section["opening_time"], tz=section["timezone"])
-            + pd.Timedelta(minutes=delay)
-        ).strftime("%H:%M:%S")
-        closing_time = (
-            pd.Timestamp(section["closing_time"], tz=section["timezone"])
-            + pd.Timedelta(minutes=delay)
-        ).strftime("%H:%M:%S")
-        latest = get_latest(
-            config,
-            trade.market_holidays,
-            closing_time,
-            section["timezone"],
-            *paths,
-            volatile_time=opening_time,
-        )
-
-    if latest:
-        number_of_pages = int(section["number_of_pages"])
-        dfs = []
-        for i in range(number_of_pages):
-            try:
-                dfs.extend(
-                    pd.read_html(
-                        f"{section['url']}&page={i + 1}",
-                        match=section["symbol_header"],
-                    )
+    try:
+        with open(rankings, "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                securities_code = row[6]
+                if not re.fullmatch(SECURITIES_CODE_REGEX, securities_code):
+                    continue
+                data_by_digit[securities_code[0]].append(
+                    (securities_code, row[9].replace(",", ""))
                 )
-            except ValueError as e:
-                print(e)
-                sys.exit(1)
-            if i < number_of_pages - 1:
-                time.sleep(1)
+    except OSError as e:
+        print(e)
+        return False
 
-        df = pd.concat(dfs)
-        if clipboard:
-            df = df[[section["symbol_header"]]]
-            df.to_clipboard(index=False, header=False)
-            return
+    for digit in range(1, 10):
+        digit_string = str(digit)
+        try:
+            with open(
+                f"{trade.closing_prices}{digit}.csv",
+                "w",
+                encoding="utf-8",
+            ) as f:
+                writer = csv.writer(f)
+                if digit_string in data_by_digit:
+                    for securities_code, current_price in data_by_digit[
+                        digit_string
+                    ]:
+                        writer.writerow([securities_code, current_price])
+        except OSError as e:
+            print(e)
+            return False
 
-        df = df[[section["symbol_header"], section["price_header"]]]
-        df[section["symbol_header"]] = df[section["symbol_header"]].astype(str)
-        df.sort_values(by=section["symbol_header"], inplace=True)
-        for i in range(1, 10):
-            subset = df.loc[
-                df[section["symbol_header"]].str.fullmatch(
-                    f"{i}{SANS_INITIAL_SECURITIES_CODE_REGEX}"
-                )
-            ]
-            subset.to_csv(
-                f"{trade.closing_prices}{i}.csv", header=False, index=False
-            )
+    if os.path.isfile(rankings):
+        try:
+            os.remove(rankings)
+        except OSError as e:
+            print(e)
+
+    return True
 
 
 def get_latest(
@@ -1613,8 +1598,6 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 os.path.join(trade.resource_directory, argument),
                 *map(int, additional_argument.split(",")),
             )
-        elif command == "copy_symbols_from_market_data":
-            save_market_data(trade, config, clipboard=True)
         elif command == "copy_symbols_from_column":
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
@@ -1698,6 +1681,8 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 *map(int, argument.split(",")),
                 button="left" if gui_state.swapped else "right",
             )
+        elif command == "save_market_data":
+            save_market_data(trade, config)
         elif command == "show_hide_indicator":
             if trade.indicator_thread:
                 trade.indicator_thread.stop()

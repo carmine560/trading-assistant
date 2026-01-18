@@ -68,9 +68,7 @@ If you use the `calculate_share_size` command in the “[Create or Modify
 Action](#create-or-modify-action)” section, save the customer margin ratios
 from the [*Stocks Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
-page using the `-r` option and the previous market data from the [*Most Active
-Stocks Today*](https://kabutan.jp/warning/?mode=2_9&market=1) page using the
-`-d` option beforehand. The following option creates the
+page using the `-r` option beforehand. The following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\hypersbi2_assistant.ps1` startup
 script, which can process the above options and start Hyper SBI 2. This script
 forcibly stops and restarts Hyper SBI 2 if it is already running, potentially
@@ -90,8 +88,10 @@ the “[Create or Modify Action](#create-or-modify-action)” section, configure
 the cash balance and (optional) price limit regions in Hyper SBI 2 so that
 Tesseract can recognize these prices. `trading_assistant.py` references a price
 limit only if the previous closing price does not exist in the market data
-saved using the `-d` option. Because a region may contain multiple prices, you
-must specify the index of the price you want to reference.
+saved using an action such as `save_market_data` (see the “[Save Market
+Data](https://github.com/carmine560/trading-assistant/wiki#save-market-data)”
+section of the wiki). Because a region may contain multiple prices, you must
+specify the index of the price you want to reference.
 
 ``` powershell
 python trading_assistant.py -CB
@@ -160,10 +160,6 @@ value for it indicates unlimited trades.</td></tr>
 <code>IMAGE_FILE</code> must reside in the <code>HYPERSBI2</code> subdirectory
 of the same directory as the configuration file.</td></tr>
 
-<tr><td><code>('copy_symbols_from_market_data',)</code></td>
-
-<td>Copy symbols from the current market data to the clipboard.</td></tr>
-
 <tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
 
 <td>Recognize an alphanumeric column in the region, then copy symbols to the
@@ -215,6 +211,10 @@ and Price Limit Regions</a>” section.</td></tr>
 <tr><td><code>('right_click', 'X, Y')</code></td>
 
 <td>Right-click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
+
+<tr><td><code>('save_market_data',)</code></td>
+
+<td>Split the rankings CSV by the first digit of the securities code.</td></tr>
 
 <tr><td><code>('show_hide_indicator',)</code></td>
 
@@ -405,7 +405,6 @@ python trading_assistant.py -a action
   * `-P BROKERAGE PROCESS|EXECUTABLE_PATH`: set the brokerage and the process
     [defaults: `SBI Securities` and `HYPERSBI2`]
   * `-r`: save the customer margin ratios
-  * `-d`: save the previous market data
   * `-s`: start the scheduler
   * `-l`: start the mouse and keyboard listeners
   * `-a ACTION`: execute an action
@@ -430,7 +429,7 @@ python trading_assistant.py -a action
 
 Visit the
 “[Examples](https://github.com/carmine560/trading-assistant/wiki#examples)”
-section in the wiki for practical demonstrations of `trading_assistant.py`.
+section of the wiki for practical demonstrations of `trading_assistant.py`.
 
 ## License
 
