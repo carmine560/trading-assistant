@@ -1340,8 +1340,10 @@ def save_market_data(trade, config):
                 f"{trade.closing_prices}{digit}.csv",
                 "w",
                 encoding="utf-8",
-                # Required for csv.writer on Windows to avoid extra blank lines
-                # (CRLF handling).
+                # 'csv.writer()' on Windows writes '\r\n' itself; without
+                # 'newline=""', 'open()' would translate '\n' to '\r\n',
+                # producing '\r\r\n' (seen as '^M') and causing extra blank
+                # lines.
                 newline="",
             ) as f:
                 writer = csv.writer(f)
