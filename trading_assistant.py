@@ -53,38 +53,68 @@ SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
 class Trade(initializer.Initializer):
     """Handle trading operations for a specific vendor and process."""
 
+    _MODIFIER_KEYS = {
+        keyboard.Key.alt,
+        keyboard.Key.alt_gr,
+        keyboard.Key.alt_l,
+        keyboard.Key.alt_r,
+        keyboard.Key.cmd,
+        keyboard.Key.cmd_l,
+        keyboard.Key.cmd_r,
+        keyboard.Key.ctrl,
+        keyboard.Key.ctrl_l,
+        keyboard.Key.ctrl_r,
+        keyboard.Key.shift,
+        keyboard.Key.shift_l,
+        keyboard.Key.shift_r,
+    }
+    _FUNCTION_KEYS = (
+        keyboard.Key.f1,
+        keyboard.Key.f2,
+        keyboard.Key.f3,
+        keyboard.Key.f4,
+        keyboard.Key.f5,
+        keyboard.Key.f6,
+        keyboard.Key.f7,
+        keyboard.Key.f8,
+        keyboard.Key.f9,
+        keyboard.Key.f10,
+        keyboard.Key.f11,
+        keyboard.Key.f12,
+    )
+
     def __init__(self, vendor, process):
         """Initialize the Trade with the vendor and process."""
         super().__init__(vendor, process, __file__)
         self.market_directory = os.path.join(self.config_directory, "market")
+        self.resource_directory = os.path.join(
+            self.config_directory, self.process
+        )
+        for directory in [self.market_directory, self.resource_directory]:
+            file_utilities.check_directory(directory)
+
         self.market_holidays = os.path.join(
             self.market_directory, "market_holidays.csv"
         )
         self.closing_prices = os.path.join(
             self.market_directory, "closing_prices_"
         )
-        self.resource_directory = os.path.join(
-            self.config_directory, self.process
+
+        self.customer_margin_ratios_section = (
+            f"{self.vendor} Customer Margin Ratios"
         )
         self.customer_margin_ratios = os.path.join(
             self.resource_directory, "customer_margin_ratios.csv"
         )
+
+        self.startup_script_section = f"{self.process} Startup Script"
         self.startup_script_base = f"{self.process.lower()}_assistant"
         self.startup_script = os.path.join(
             self.resource_directory, f"{self.startup_script_base}.ps1"
         )
 
-        for directory in [self.market_directory, self.resource_directory]:
-            file_utilities.check_directory(directory)
-
-        self.customer_margin_ratios_section = (
-            f"{self.vendor} Customer Margin Ratios"
-        )
-
         self.widgets_section = f"{self.process} Widgets"
         self.indicator_thread = None
-
-        self.startup_script_section = f"{self.process} Startup Script"
 
         self.instruction_items = {
             "all_keys": initializer.extract_commands(
@@ -139,38 +169,9 @@ class Trade(initializer.Initializer):
 
         self.mouse_listener = None
         self.keyboard_listener = None
-        self.modifier_keys = {
-            keyboard.Key.alt,
-            keyboard.Key.alt_gr,
-            keyboard.Key.alt_l,
-            keyboard.Key.alt_r,
-            keyboard.Key.cmd,
-            keyboard.Key.cmd_l,
-            keyboard.Key.cmd_r,
-            keyboard.Key.ctrl,
-            keyboard.Key.ctrl_l,
-            keyboard.Key.ctrl_r,
-            keyboard.Key.shift,
-            keyboard.Key.shift_l,
-            keyboard.Key.shift_r,
-        }
-        self.pressed_modifiers = set()
         self.keyboard_listener_state = 0
-        self.function_keys = (
-            keyboard.Key.f1,
-            keyboard.Key.f2,
-            keyboard.Key.f3,
-            keyboard.Key.f4,
-            keyboard.Key.f5,
-            keyboard.Key.f6,
-            keyboard.Key.f7,
-            keyboard.Key.f8,
-            keyboard.Key.f9,
-            keyboard.Key.f10,
-            keyboard.Key.f11,
-            keyboard.Key.f12,
-        )
-        self.last_action_time = 0
+        self._pressed_modifiers = set()
+        self._last_action_time = 0
         self.key_to_check = None
         self.should_continue = False
 
@@ -213,15 +214,15 @@ class Trade(initializer.Initializer):
         """Handle key press events."""
         if gui_state.is_interactive_window():
             # Add context for whether modifiers are pressed.
-            if key in self.modifier_keys:
-                self.pressed_modifiers.add(key)
+            if key in Trade._MODIFIER_KEYS:
+                self._pressed_modifiers.add(key)
                 return
             if self.keyboard_listener_state == 0:
-                if key in self.function_keys and not self.pressed_modifiers:
+                if key in Trade._FUNCTION_KEYS and not self._pressed_modifiers:
                     now = time.time()
                     # A 0.3-second debounce interval prevents double-triggers
                     # from both software detection and hardware chattering.
-                    if now - self.last_action_time > 0.3:
+                    if now - self._last_action_time > 0.3:
                         action = configuration.evaluate_value(
                             config[self.process]["input_map"]
                         ).get(key.name)
@@ -229,7 +230,7 @@ class Trade(initializer.Initializer):
                             start_execute_action_thread(
                                 self, config, gui_state, action
                             )
-                            self.last_action_time = now
+                            self._last_action_time = now
             elif self.keyboard_listener_state == 1:
                 if (
                     hasattr(key, "char") and key.char == self.key_to_check
@@ -242,7 +243,7 @@ class Trade(initializer.Initializer):
 
     def on_release(self, key, gui_state):
         """Handle key release events to update modifiers."""
-        self.pressed_modifiers.discard(key)
+        self._pressed_modifiers.discard(key)
 
 
 class IndicatorThread(threading.Thread):
@@ -1322,11 +1323,11 @@ def save_market_data(trade, config):
         with open(rankings, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
             for row in reader:
-                securities_code = row[6]
+                securities_code = row[6].strip()
                 if not re.fullmatch(SECURITIES_CODE_REGEX, securities_code):
                     continue
                 data_by_digit[securities_code[0]].append(
-                    (securities_code, row[9].replace(",", ""))
+                    (securities_code, row[9].strip().replace(",", ""))
                 )
     except OSError as e:
         print(e)
@@ -1339,6 +1340,9 @@ def save_market_data(trade, config):
                 f"{trade.closing_prices}{digit}.csv",
                 "w",
                 encoding="utf-8",
+                # Required for csv.writer on Windows to avoid extra blank lines
+                # (CRLF handling).
+                newline="",
             ) as f:
                 writer = csv.writer(f)
                 if digit_string in data_by_digit:
@@ -2069,8 +2073,10 @@ def get_price_limit(trade, config):
         ) as f:
             reader = csv.reader(f)
             for row in reader:
-                if row[0] == trade.symbol:
-                    closing_price = float(row[1])
+                if len(row) < 2:
+                    continue
+                if row[0].strip() == trade.symbol:
+                    closing_price = float(row[1].strip())
                     break
     except OSError as e:
         print(e)
