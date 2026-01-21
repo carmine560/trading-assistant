@@ -116,6 +116,23 @@ class Trade(initializer.Initializer):
         self.widgets_section = f"{self.process} Widgets"
         self.indicator_thread = None
 
+        self.mouse_listener = None
+
+        self.keyboard_listener = None
+        self.keyboard_listener_state = 0
+        self._pressed_modifiers = set()
+        self._last_action_time = 0
+        self.key_to_check = None
+        self.should_continue = False
+
+        self.speech_manager = None
+        self.speaking_process = None
+
+        self.stop_listeners_event = None
+        self.wait_listeners_thread = None
+
+        self.schedules_section = f"{self.process} Schedules"
+
         self.instruction_items = {
             "all_keys": initializer.extract_commands(
                 inspect.getsource(execute_action)
@@ -165,21 +182,7 @@ class Trade(initializer.Initializer):
             "preset_additional_values": None,
         }
 
-        self.schedules_section = f"{self.process} Schedules"
-
-        self.mouse_listener = None
-        self.keyboard_listener = None
-        self.keyboard_listener_state = 0
-        self._pressed_modifiers = set()
-        self._last_action_time = 0
-        self.key_to_check = None
-        self.should_continue = False
-
-        self.speech_manager = None
-        self.speaking_process = None
-
-        self.stop_listeners_event = None
-        self.wait_listeners_thread = None
+        self.geometries_section = f"{self.process} Geometries"
 
         self.symbol = ""
         self.initialize_attributes()
@@ -595,7 +598,6 @@ def main():
                     config,
                     gui_state,
                     base_manager,
-                    trade.speech_manager,
                     is_persistent=True,
                 )
 
@@ -616,9 +618,7 @@ def main():
                 trade.stop_listeners_event.set()
                 trade.wait_listeners_thread.join()
         if args.l and process_utilities.is_running(trade.process):
-            start_listeners(
-                trade, config, gui_state, base_manager, trade.speech_manager
-            )
+            start_listeners(trade, config, gui_state, base_manager)
         if args.s and process_utilities.is_running(trade.process):
             threading.Thread(
                 target=start_scheduler,
@@ -761,6 +761,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             "rankings.csv",
         ).replace("\\", "\\\\"),
     }
+    config[trade.schedules_section] = {}
     config[trade.actions_section] = {
         "show_hide_indicator": [("show_hide_indicator",)],
         "start_manual_recording": [
@@ -849,7 +850,6 @@ def configure(trade, can_interpolate=True, can_override=True):
             )
         ],
     }
-    config[trade.schedules_section] = {}
     config[trade.variables_section] = {
         "current_date": date.min.strftime("%Y-%m-%d"),
         "initial_cash_balance": "0",
@@ -1439,11 +1439,7 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
     """Start a scheduler for executing actions at specified times."""
     should_stop_speaking_process = False
     if not trade.speaking_process:
-        trade.speaking_process = speech_synthesis.start_speaking_process(
-            trade.speech_manager,
-            voice_name=config["General"]["voice_name"],
-            speech_rate=int(config["General"]["speech_rate"]),
-        )
+        trade.speaking_process = _start_speaking_process(trade, config)
         should_stop_speaking_process = True
 
     scheduler = sched.scheduler(time.time, time.sleep)
@@ -1491,7 +1487,11 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
 
 
 def start_listeners(
-    trade, config, gui_state, base_manager, speech_manager, is_persistent=False
+    trade,
+    config,
+    gui_state,
+    base_manager,
+    is_persistent=False,
 ):
     """Initiate listeners for mouse and keyboard events."""
     trade.mouse_listener = mouse.Listener(
@@ -1507,11 +1507,7 @@ def start_listeners(
     )
     trade.keyboard_listener.start()
 
-    trade.speaking_process = speech_synthesis.start_speaking_process(
-        speech_manager,
-        voice_name=config["General"]["voice_name"],
-        speech_rate=int(config["General"]["speech_rate"]),
-    )
+    trade.speaking_process = _start_speaking_process(trade, config)
 
     trade.stop_listeners_event = threading.Event()
     trade.wait_listeners_thread = threading.Thread(
@@ -1522,7 +1518,7 @@ def start_listeners(
             trade.mouse_listener,
             trade.keyboard_listener,
             base_manager,
-            speech_manager,
+            trade.speech_manager,
             trade.speaking_process,
         ),
         kwargs={
@@ -1531,6 +1527,15 @@ def start_listeners(
         },
     )
     trade.wait_listeners_thread.start()
+
+
+def _start_speaking_process(trade, config):
+    """Start a speaking process using the configured voice settings."""
+    return speech_synthesis.start_speaking_process(
+        trade.speech_manager,
+        voice_name=config["General"]["voice_name"],
+        speech_rate=int(config["General"]["speech_rate"]),
+    )
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
