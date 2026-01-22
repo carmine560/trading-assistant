@@ -579,6 +579,10 @@ def main():
         )
         atexit.register(on_exit, trade, config)
 
+        if args.r:
+            save_customer_margin_ratios(trade, config)
+
+        is_running = process_utilities.is_running(trade.process)
         if args.s or args.l or args.a:
             # Use 'BaseManager' to share 'SpeechManager' instance across
             # processes.
@@ -588,10 +592,7 @@ def main():
             base_manager = BaseManager()
             base_manager.start()
             trade.speech_manager = base_manager.SpeechManager()
-        if args.r:
-            save_customer_margin_ratios(trade, config)
         if args.a:
-            is_running = process_utilities.is_running(trade.process)
             if not (is_running and args.l):
                 start_listeners(
                     trade,
@@ -617,9 +618,9 @@ def main():
                 )
                 trade.stop_listeners_event.set()
                 trade.wait_listeners_thread.join()
-        if args.l and process_utilities.is_running(trade.process):
+        if args.l and is_running:
             start_listeners(trade, config, gui_state, base_manager)
-        if args.s and process_utilities.is_running(trade.process):
+        if args.s and is_running:
             threading.Thread(
                 target=start_scheduler,
                 args=(trade, config, gui_state, trade.process, base_manager),
