@@ -579,7 +579,7 @@ def main():
         )
         atexit.register(on_exit, trade, config)
 
-        if args.a or args.l or args.s:
+        if args.s or args.l or args.a:
             # Use 'BaseManager' to share 'SpeechManager' instance across
             # processes.
             BaseManager.register(
@@ -655,15 +655,15 @@ def get_arguments():
     parser.add_argument(
         "-r", action="store_true", help="save the customer margin ratios"
     )
-    parser.add_argument(
-        "-a", nargs=1, help="execute an action", metavar="ACTION"
-    )
+    parser.add_argument("-s", action="store_true", help="start the scheduler")
     parser.add_argument(
         "-l",
         action="store_true",
         help="start the mouse and keyboard listeners",
     )
-    parser.add_argument("-s", action="store_true", help="start the scheduler")
+    parser.add_argument(
+        "-a", nargs=1, help="execute an action", metavar="ACTION"
+    )
 
     file_utilities.add_launcher_options(group)
     group.add_argument(
@@ -673,10 +673,7 @@ def get_arguments():
         " and exit",
     )
     group.add_argument(
-        "-A",
-        nargs=1,
-        help="configure an action, create a shortcut to it, and exit",
-        metavar="ACTION",
+        "-S", action="store_true", help="configure schedules and exit"
     )
     group.add_argument(
         "-L",
@@ -684,7 +681,10 @@ def get_arguments():
         help="configure the input map for buttons and keys and exit",
     )
     group.add_argument(
-        "-S", action="store_true", help="configure schedules and exit"
+        "-A",
+        nargs=1,
+        help="configure an action, create a shortcut to it, and exit",
+        metavar="ACTION",
     )
     group.add_argument(
         "-CB",
@@ -850,6 +850,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             )
         ],
     }
+    config[trade.geometries_section] = {}
     config[trade.variables_section] = {
         "current_date": date.min.strftime("%Y-%m-%d"),
         "initial_cash_balance": "0",
@@ -1028,7 +1029,7 @@ def configure_exit(args, trade):
         configuration.list_section(config, trade.actions_section)
     )
 
-    if any((args.L, args.S, args.CB, args.U, args.PL, args.DLL, args.MDN)):
+    if any((args.S, args.L, args.CB, args.U, args.PL, args.DLL, args.MDN)):
         for argument, (
             section,
             option,
@@ -1124,6 +1125,10 @@ def configure_exit(args, trade):
         backup_parameters=backup_parameters,
         is_encrypted=True,
     ):
+        configuration.write_config(
+            config, trade.config_path, is_encrypted=True
+        )
+        config = configure(trade)
         create_startup_script(trade, config)
         powershell = file_utilities.select_executable(
             ["pwsh.exe", "powershell.exe"]
@@ -1487,11 +1492,7 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
 
 
 def start_listeners(
-    trade,
-    config,
-    gui_state,
-    base_manager,
-    is_persistent=False,
+    trade, config, gui_state, base_manager, is_persistent=False
 ):
     """Initiate listeners for mouse and keyboard events."""
     trade.mouse_listener = mouse.Listener(
