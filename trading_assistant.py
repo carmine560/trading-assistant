@@ -851,7 +851,10 @@ def configure(trade, can_interpolate=True, can_override=True):
             )
         ],
     }
-    config[trade.geometries_section] = {}
+    config[trade.geometries_section] = {
+        "cash_balance_region": "0, 0, 0, 0, 0",
+        "price_limit_region": "0, 0, 0, 0, 0",
+    }
     config[trade.variables_section] = {
         "current_date": date.min.strftime("%Y-%m-%d"),
         "initial_cash_balance": "0",
@@ -958,9 +961,7 @@ def configure(trade, can_interpolate=True, can_override=True):
                 "f11": "",
                 "f12": "",
             },
-            "cash_balance_region": "0, 0, 0, 0, 0",
             "utilization_ratio": "1.0",
-            "price_limit_region": "0, 0, 0, 0, 0",
             "daily_loss_limit_ratio": "-0.01",
             "maximum_daily_number_of_trades": "0",
             "image_magnification": "2",
@@ -1063,7 +1064,7 @@ def configure_exit(args, trade):
                 (),
             ),
             "CB": (
-                trade.process,
+                trade.geometries_section,
                 "cash_balance_region",
                 False,
                 {"value": "x, y, width, height, index"},
@@ -1079,7 +1080,7 @@ def configure_exit(args, trade):
                 (RATIO_EPSILON, 1.0),
             ),
             "PL": (
-                trade.process,
+                trade.geometries_section,
                 "price_limit_region",
                 False,
                 {"value": "x, y, width, height, index"},
@@ -1232,7 +1233,10 @@ def configure_exit(args, trade):
         configuration.check_config_changes(
             configure(trade, can_interpolate=False, can_override=False),
             trade.config_path,
-            excluded_sections=(trade.variables_section,),
+            excluded_sections=(
+                trade.geometries_section,
+                trade.variables_section,
+            ),
             user_option_ignored_sections=(trade.actions_section,),
             backup_parameters=backup_parameters,
             is_encrypted=True,
@@ -1666,9 +1670,9 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 text_recognition.recognize_text(
                     *map(
                         int,
-                        config[trade.process]["cash_balance_region"].split(
-                            ","
-                        ),
+                        config[trade.geometries_section][
+                            "cash_balance_region"
+                        ].split(","),
                     ),
                     int(config[trade.process]["image_magnification"]),
                     int(config[trade.process]["binarization_threshold"]),
@@ -2133,7 +2137,12 @@ def get_price_limit(trade, config):
                 break
     else:
         price_limit = text_recognition.recognize_text(
-            *map(int, config[trade.process]["price_limit_region"].split(",")),
+            *map(
+                int,
+                config[trade.geometries_section]["price_limit_region"].split(
+                    ","
+                ),
+            ),
             int(config[trade.process]["image_magnification"]),
             int(config[trade.process]["binarization_threshold"]),
             config[trade.process].getboolean("is_dark_theme"),
