@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from datetime import date
+from io import StringIO
 from multiprocessing.managers import BaseManager
 from tkinter import TclError
 import argparse
@@ -1285,14 +1286,19 @@ def save_customer_margin_ratios(trade, config):
         try:
             response = requests.get(section["url"], timeout=5)
             encoding = chardet.detect(response.content)["encoding"]
+            # Decode the content using the detected encoding and replace
+            # invalid bytes.
+            html = response.content.decode(encoding, errors="replace")
+            # Wrap the HTML in 'StringIO()' so 'pandas' does not treat it as a
+            # file path.
             dfs = pd.read_html(
-                response.content,
+                StringIO(html),
                 match=section["regulation_header"],
                 flavor="lxml",
                 header=0,
-                encoding=encoding,
             )
-        except requests.exceptions.RequestException as e:
+        # Handle request failures and OS-level parsing errors.
+        except (requests.exceptions.RequestException, OSError) as e:
             print(e)
             sys.exit(1)
 
