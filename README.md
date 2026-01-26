@@ -275,8 +275,8 @@ executes the specified action, if provided.</td></tr>
 
 <tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX'[, ACTION|'ACTION'])</code></td>
 
-<td>Wait until <code>trading_assistant.py</code> recognizes a decimal number in
-the region. Pressing the <code>Esc</code> key cancels the current action and
+<td>Wait until <code>trading_assistant.py</code> recognizes an integer in the
+region. Pressing the <code>Esc</code> key cancels the current action and
 executes the specified action, if provided.</td></tr>
 
 <tr><td><code>('wait_for_window', 'TITLE_REGEX'[, ACTION|'ACTION'])</code></td>
