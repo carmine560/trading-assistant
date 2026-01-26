@@ -93,6 +93,9 @@ Data](https://github.com/carmine560/trading-assistant/wiki#save-market-data)”
 section of the wiki). Because a region may contain multiple prices, you must
 specify the index of the price you want to reference.
 
+> **Note**: Distinguishing between commas and decimal points can be
+> challenging. Use market data and avoid referencing the price limit.
+
 ``` powershell
 python trading_assistant.py -CB
 python trading_assistant.py -PL
