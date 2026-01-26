@@ -1804,7 +1804,6 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
                 int(config[trade.process]["image_magnification"]),
                 int(config[trade.process]["binarization_threshold"]),
                 config[trade.process].getboolean("is_dark_theme"),
-                text_type="decimal_numbers",
                 should_continue_reference=lambda: trade.should_continue,
             )
             trade.keyboard_listener_state = 0
