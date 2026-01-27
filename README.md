@@ -165,8 +165,9 @@ of the same directory as the configuration file.</td></tr>
 
 <tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
 
-<td>Recognize an alphanumeric column in the region, then copy symbols to the
-clipboard.</td></tr>
+<td>Recognize an alphanumeric column in the region, then copy securities codes
+to the clipboard. <strong>Note</strong>: Certain securities codes may fail to
+be recognized.</td></tr>
 
 <tr><td><code>('count_trades',[ 'CHAPTER_OFFSET'])</code></td>
 
@@ -280,7 +281,8 @@ executes the specified action, if provided.</td></tr>
 
 <td>Wait until <code>trading_assistant.py</code> recognizes an integer in the
 region. Pressing the <code>Esc</code> key cancels the current action and
-executes the specified action, if provided.</td></tr>
+executes the specified action, if provided. <strong>Note</strong>: Text
+recognition may fail in rare cases.</td></tr>
 
 <tr><td><code>('wait_for_window', 'TITLE_REGEX'[, ACTION|'ACTION'])</code></td>
 
