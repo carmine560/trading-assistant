@@ -206,7 +206,9 @@ and Price Limit Regions</a>” section.</td></tr>
 
 <tr><td><code>('press_hotkeys', 'KEY[, ...]')</code></td>
 
-<td>Press the hotkeys.</td></tr>
+<td>Press the hotkeys. <strong>Note</strong>: Hotkeys may not be accepted while
+a modal dialog (e.g., the “Urgent Notice” dialog in Hyper SBI 2) is
+open.</td></tr>
 
 <tr><td><code>('press_key', 'KEY[, PRESSES]')</code></td>
 

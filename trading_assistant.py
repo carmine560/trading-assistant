@@ -1297,7 +1297,6 @@ def save_customer_margin_ratios(trade, config):
                 flavor="lxml",
                 header=0,
             )
-        # Handle request failures and OS-level parsing errors.
         except (requests.exceptions.RequestException, OSError) as e:
             print(e)
             sys.exit(1)
