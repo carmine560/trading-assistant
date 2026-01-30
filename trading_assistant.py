@@ -152,6 +152,7 @@ class Trade(initializer.Initializer):
             "additional_value_keys": {"click_widget", "speak_config"},
             "optional_additional_value_keys": {"write_chapter"},
             "positioning_keys": {"click", "drag_to", "move_to", "right_click"},
+            "preset_geometries": None,
             "nested_keys": {"execute_action"},
             "optional_additional_nested_keys": {
                 "wait_for_key",
@@ -1150,6 +1151,14 @@ def configure_exit(args, trade):
 
         sys.exit()
     if args.A:
+        items = (
+            option
+            for option, value in config[trade.geometries_section].items()
+            if _is_xy(value)
+        )
+        trade.instruction_items["preset_geometries"] = [
+            f"${{HYPERSBI2 Geometries:{option}}}" for option in sorted(items)
+        ]
         if configuration.modify_option(
             config,
             trade.actions_section,
@@ -1243,6 +1252,19 @@ def configure_exit(args, trade):
             is_encrypted=True,
         )
         sys.exit()
+
+
+def _is_xy(value):
+    """Return True if the value represents exactly two integers (X, Y)."""
+    parts = [part.strip() for part in value.split(",")]
+    if len(parts) != 2:
+        return False
+    try:
+        int(parts[0])
+        int(parts[1])
+        return True
+    except ValueError:
+        return False
 
 
 def create_completion(trade, config):
