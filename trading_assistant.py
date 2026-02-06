@@ -1311,7 +1311,7 @@ def save_customer_margin_ratios(trade, config):
             # Decode the content using the detected encoding and replace
             # invalid bytes.
             html = response.content.decode(encoding, errors="replace")
-            # Wrap the HTML in 'StringIO()' so 'pandas' does not treat it as a
+            # Wrap the HTML in 'StringIO()' so pandas does not treat it as a
             # file path.
             dfs = pd.read_html(
                 StringIO(html),
@@ -2177,4 +2177,8 @@ def get_price_limit(trade, config):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except configuration.ConfigError as e:
+        print(f"Configuration error: {e}")
+        sys.exit(1)
