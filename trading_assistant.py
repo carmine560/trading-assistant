@@ -571,68 +571,58 @@ def main():
     file_utilities.create_launchers_exit(args, __file__)
     configure_exit(args, trade)
 
-    try:
-        config = configure(trade)
-        configuration.ensure_section_exists(config, trade.process)
-        gui_state = gui_interactions.GuiState(
-            configuration.evaluate_value(
-                config[trade.process]["interactive_windows"]
-            )
+    config = configure(trade)
+    configuration.ensure_section_exists(config, trade.process)
+    gui_state = gui_interactions.GuiState(
+        configuration.evaluate_value(
+            config[trade.process]["interactive_windows"]
         )
-        atexit.register(on_exit, trade, config)
+    )
+    atexit.register(on_exit, trade, config)
 
-        if args.r:
-            save_customer_margin_ratios(trade, config)
+    if args.r:
+        save_customer_margin_ratios(trade, config)
 
-        is_running = process_utilities.is_running(trade.process)
-        if args.s or args.l or args.a:
-            # Use 'BaseManager' to share 'SpeechManager' instance across
-            # processes.
-            BaseManager.register(
-                "SpeechManager", speech_synthesis.SpeechManager
-            )
-            base_manager = BaseManager()
-            base_manager.start()
-            trade.speech_manager = base_manager.SpeechManager()
-        if args.a:
-            if not (is_running and args.l):
-                start_listeners(
-                    trade,
-                    config,
-                    gui_state,
-                    base_manager,
-                    is_persistent=True,
-                )
-
-            execute_action(
+    is_running = process_utilities.is_running(trade.process)
+    if args.s or args.l or args.a:
+        # Use 'BaseManager' to share 'SpeechManager' instance across processes.
+        BaseManager.register("SpeechManager", speech_synthesis.SpeechManager)
+        base_manager = BaseManager()
+        base_manager.start()
+        trade.speech_manager = base_manager.SpeechManager()
+    if args.a:
+        if not (is_running and args.l):
+            start_listeners(
                 trade,
                 config,
                 gui_state,
-                config[trade.actions_section][args.a[0]],
+                base_manager,
+                is_persistent=True,
             )
-            if not (is_running and args.l):
-                process_utilities.stop_listeners(
-                    trade.mouse_listener,
-                    trade.keyboard_listener,
-                    base_manager,
-                    trade.speech_manager,
-                    trade.speaking_process,
-                )
-                trade.stop_listeners_event.set()
-                trade.wait_listeners_thread.join()
-        if args.l and is_running:
-            start_listeners(trade, config, gui_state, base_manager)
-        if args.s and is_running:
-            threading.Thread(
-                target=start_scheduler,
-                args=(trade, config, gui_state, trade.process, base_manager),
-            ).start()
-    except configuration.ConfigError as e:
-        print(f"Configuration error: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"An unexpected error: {e}")
-        sys.exit(1)
+
+        execute_action(
+            trade,
+            config,
+            gui_state,
+            config[trade.actions_section][args.a[0]],
+        )
+        if not (is_running and args.l):
+            process_utilities.stop_listeners(
+                trade.mouse_listener,
+                trade.keyboard_listener,
+                base_manager,
+                trade.speech_manager,
+                trade.speaking_process,
+            )
+            trade.stop_listeners_event.set()
+            trade.wait_listeners_thread.join()
+    if args.l and is_running:
+        start_listeners(trade, config, gui_state, base_manager)
+    if args.s and is_running:
+        threading.Thread(
+            target=start_scheduler,
+            args=(trade, config, gui_state, trade.process, base_manager),
+        ).start()
 
 
 def on_exit(trade, config):
@@ -2181,4 +2171,7 @@ if __name__ == "__main__":
         main()
     except configuration.ConfigError as e:
         print(f"Configuration error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected error: {e}")
         sys.exit(1)
