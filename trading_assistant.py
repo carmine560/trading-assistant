@@ -2173,5 +2173,5 @@ if __name__ == "__main__":
         print(f"Configuration error: {e}")
         sys.exit(1)
     except Exception as e:
-        print(f"An unexpected error: {e}")
+        print(f"Unexpected error: {e}")
         sys.exit(1)
