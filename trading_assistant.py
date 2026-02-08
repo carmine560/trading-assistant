@@ -563,6 +563,9 @@ class MessageThread(threading.Thread):
         root.mainloop()
 
 
+# Entry Point
+
+
 def main():
     """Execute the main program based on command-line arguments."""
     args = get_arguments()
@@ -625,12 +628,18 @@ def main():
         ).start()
 
 
+# Lifecycle and Shutdown
+
+
 def on_exit(trade, config):
     """Persist configuration on interpreter shutdown."""
     # Ensure the config is written on normal interpreter shutdown, since
     # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not run if
     # the main thread terminates abruptly.
     configuration.write_config(config, trade.config_path, is_encrypted=True)
+
+
+# CLI and Configuration
 
 
 def get_arguments():
@@ -1244,6 +1253,9 @@ def configure_exit(args, trade):
         sys.exit()
 
 
+# Core Predicates
+
+
 def _is_xy(value):
     """Return True if the value represents exactly two integers (X, Y)."""
     parts = [part.strip() for part in value.split(",")]
@@ -1255,6 +1267,16 @@ def _is_xy(value):
         return True
     except ValueError:
         return False
+
+
+def is_trading_day(date, market_holidays, date_format):
+    """Check if the given date is a trading day."""
+    return date.weekday() < 5 and date.strftime(date_format) not in set(
+        pd.read_csv(market_holidays, header=None, dtype=str)[0]
+    )
+
+
+# Data Creation and Persistence
 
 
 def create_completion(trade, config):
@@ -1462,6 +1484,9 @@ def get_latest(
     return False
 
 
+# Scheduling and Background Processes
+
+
 def start_scheduler(trade, config, gui_state, process, base_manager):
     """Start a scheduler for executing actions at specified times."""
     should_stop_speaking_process = False
@@ -1559,6 +1584,9 @@ def _start_speaking_process(trade, config):
         voice_name=config["General"]["voice_name"],
         speech_rate=int(config["General"]["speech_rate"]),
     )
+
+
+# Action Execution Pipeline
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
@@ -1876,7 +1904,7 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
             ):
                 return False
         elif command == "is_trading_day":
-            if _is_trading_day(
+            if is_trading_day(
                 pd.Timestamp.now(tz=config["Market Data"]["timezone"]),
                 trade.market_holidays,
                 config["Market Holidays"]["date_format"],
@@ -1971,11 +1999,7 @@ def _handle_cancellation_exit(trade, config, gui_state, additional_argument):
     return True
 
 
-def _is_trading_day(date, market_holidays, date_format):
-    """Check if the given date is a trading day."""
-    return date.weekday() < 5 and date.strftime(date_format) not in set(
-        pd.read_csv(market_holidays, header=None, dtype=str)[0]
-    )
+# Startup Automation
 
 
 def create_startup_script(trade, config):
@@ -2046,6 +2070,9 @@ def create_startup_script(trade, config):
 
     with open(trade.startup_script, "w", encoding="utf-8") as f:
         f.writelines(lines)
+
+
+# Trading Calculations
 
 
 def calculate_share_size(trade, config, position):
