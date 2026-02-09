@@ -9,7 +9,6 @@ import argparse
 import atexit
 import configparser
 import csv
-import inspect
 import math
 import os
 import re
@@ -135,9 +134,7 @@ class Trade(initializer.Initializer):
         self.schedules_section = f"{self.process} Schedules"
 
         self.instruction_items = {
-            "all_keys": initializer.extract_commands(
-                inspect.getsource(execute_action)
-            ),
+            "all_keys": sorted(_COMMAND_DISPATCH.keys()),
             "no_value_keys": {
                 "back_to",
                 "get_cash_balance",
@@ -1598,8 +1595,425 @@ def start_execute_action_thread(trade, config, gui_state, action):
     execute_action_thread.start()
 
 
+def _unpack_instruction(instruction):
+    """Extract command name and up to two arguments from an instruction."""
+    return (
+        instruction[0],
+        instruction[1] if len(instruction) > 1 else None,
+        instruction[2] if len(instruction) > 2 else None,
+    )
+
+
+def _handle_gui_command(trade, config, gui_state, instruction):
+    """Handle GUI interaction commands."""
+    command, argument, additional_argument = _unpack_instruction(instruction)
+
+    if command == "back_to":
+        pyautogui.moveTo(gui_state.previous_position)
+    elif command == "click":
+        (pyautogui.rightClick if gui_state.swapped else pyautogui.click)(
+            *map(int, argument.split(","))
+        )
+    elif command == "click_widget":
+        gui_interactions.click_widget(
+            gui_state,
+            os.path.join(trade.resource_directory, argument),
+            *map(int, additional_argument.split(",")),
+        )
+    elif command == "drag_to":
+        pyautogui.dragTo(*map(int, argument.split(",")))
+    elif command == "move_to":
+        pyautogui.moveTo(*map(int, argument.split(",")))
+    elif command == "press_hotkeys":
+        pyautogui.hotkey(*tuple(map(str.strip, argument.split(","))))
+    elif command == "press_key":
+        argument = tuple(map(str.strip, argument.split(",")))
+        presses = int(argument[1]) if len(argument) > 1 else 1
+        pyautogui.press(argument[0], presses=presses)
+    elif command == "right_click":
+        pyautogui.click(
+            *map(int, argument.split(",")),
+            button="left" if gui_state.swapped else "right",
+        )
+    elif command == "write_string":
+        pyautogui.write(argument)
+
+    return True
+
+
+def _handle_window_command(trade, config, gui_state, instruction):
+    """Handle window and indicator visibility commands."""
+    command, argument, additional_argument = _unpack_instruction(instruction)
+
+    if command == "hide_window":
+        gui_interactions.enumerate_windows(
+            gui_interactions.hide_window, argument
+        )
+    elif command == "show_hide_indicator":
+        if trade.indicator_thread:
+            trade.indicator_thread.stop()
+            trade.indicator_thread = None
+        elif trade.widgets_section in config:
+            # Consider using 'ensure_section_exists()' and
+            # 'ErrorPropagatingThread'.
+            trade.indicator_thread = IndicatorThread(trade, config)
+            trade.indicator_thread.start()
+        else:
+            print(f"The '{trade.widgets_section}' section is undefined.")
+    elif command == "show_hide_window":
+        gui_interactions.enumerate_windows(
+            gui_interactions.show_hide_window, argument
+        )
+    elif command == "show_window":
+        gui_interactions._show_window_state["count"] = 0
+        gui_interactions._show_window_state["max_count"] = int(
+            additional_argument or 1
+        )
+        gui_interactions.enumerate_windows(
+            gui_interactions.show_window, argument
+        )
+
+    return True
+
+
+def _handle_wait_command(trade, config, gui_state, instruction):
+    """Handle blocking and wait-related commands."""
+    command, argument, additional_argument = _unpack_instruction(instruction)
+
+    if command == "sleep":
+        time.sleep(float(argument))
+    elif command == "wait_for_key":
+        if not _wait_for_key(
+            trade,
+            config,
+            gui_state,
+            argument,
+            additional_argument,
+        ):
+            return False
+    elif command == "wait_for_key_count_down":
+        if not _wait_for_key(
+            trade,
+            config,
+            gui_state,
+            argument,
+            additional_argument,
+            should_count_down=True,
+        ):
+            return False
+    elif command == "wait_for_price":
+        trade.keyboard_listener_state = 1
+        trade.key_to_check = None
+        trade.should_continue = True
+        text_recognition.recognize_text(
+            *map(int, argument.split(",")),
+            int(config[trade.process]["image_magnification"]),
+            int(config[trade.process]["binarization_threshold"]),
+            config[trade.process].getboolean("is_dark_theme"),
+            should_continue_reference=lambda: trade.should_continue,
+        )
+        trade.keyboard_listener_state = 0
+        if not trade.should_continue and _handle_cancellation_exit(
+            trade, config, gui_state, additional_argument
+        ):
+            return False
+    elif command == "wait_for_window":
+        trade.keyboard_listener_state = 1
+        trade.key_to_check = None
+        trade.should_continue = True
+        gui_interactions.wait_for_window(
+            argument,
+            should_continue_reference=lambda: trade.should_continue,
+        )
+        trade.keyboard_listener_state = 0
+        if not trade.should_continue and _handle_cancellation_exit(
+            trade, config, gui_state, additional_argument
+        ):
+            return False
+
+    return True
+
+
+def _handle_speak_command(trade, config, gui_state, instruction):
+    """Handle speech and user notification commands."""
+    command, argument, additional_argument = _unpack_instruction(instruction)
+
+    if command == "speak_config":
+        trade.speech_manager.set_speech_text(
+            config[argument][additional_argument]
+        )
+    elif command == "speak_cpu_utilization":
+        trade.speech_manager.set_speech_text(
+            f"{round(psutil.cpu_percent(interval=float(argument)))}%."
+        )
+    elif command == "speak_minutes_since_hour":
+        if argument:
+            target_time = data_utilities.get_target_time(argument)
+        else:
+            now = pd.Timestamp.now()
+            target_time = time.mktime(
+                time.strptime(
+                    f"{now.strftime('%Y-%m-%d')} {now.hour}:00:00",
+                    "%Y-%m-%d %H:%M:%S",
+                )
+            )
+        now = time.time()
+        minutes_since = int((now - target_time) // 60)
+        if int(now % 60) >= 30:
+            minutes_since += 1
+        if minutes_since == 1:
+            trade.speech_manager.set_speech_text("1 minute.")
+        else:
+            trade.speech_manager.set_speech_text(f"{minutes_since} minutes.")
+    elif command == "speak_seconds_since_time":
+        seconds_since = math.floor(
+            time.time() - data_utilities.get_target_time(argument)
+        )
+        trade.speech_manager.set_speech_text(f"{seconds_since} seconds.")
+    elif command == "speak_seconds_until_time":
+        seconds_until = math.ceil(
+            data_utilities.get_target_time(argument) - time.time()
+        )
+        trade.speech_manager.set_speech_text(f"{seconds_until} seconds.")
+    elif command == "speak_show_text":
+        trade.speech_manager.set_speech_text(argument)
+        MessageThread(trade, config, argument).start()
+    elif command == "speak_text":
+        trade.speech_manager.set_speech_text(argument)
+
+    return True
+
+
+def _handle_market_data_command(trade, config, gui_state, instruction):
+    """Handle market data retrieval and persistence commands."""
+    command, argument, additional_argument = _unpack_instruction(instruction)
+
+    if command == "copy_symbols_from_column":
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardText(
+            " ".join(
+                text_recognition.recognize_text(
+                    *map(int, argument.split(",")),
+                    None,
+                    int(config[trade.process]["image_magnification"]),
+                    int(config[trade.process]["binarization_threshold"]),
+                    config[trade.process].getboolean("is_dark_theme"),
+                    text_type="securities_code_column",
+                )
+            )
+        )
+        win32clipboard.CloseClipboard()
+    elif command == "save_market_data":
+        save_market_data(trade, config)
+
+    return True
+
+
+def _handle_trade_state_command(trade, config, gui_state, instruction):
+    """Handle trade state and accounting commands."""
+    command, argument, additional_argument = _unpack_instruction(instruction)
+
+    if command == "calculate_share_size":
+        is_successful, text = calculate_share_size(trade, config, argument)
+        if not is_successful and text:
+            trade.speech_manager.set_speech_text(text)
+            return False
+    elif command == "check_daily_loss_limit":
+        daily_loss_limit = (
+            trade.cash_balance
+            * float(config[trade.process]["utilization_ratio"])
+            * float(config[trade.process]["daily_loss_limit_ratio"])
+        )
+        initial_cash_balance = int(
+            config[trade.variables_section]["initial_cash_balance"]
+        )
+        if initial_cash_balance == 0:
+            config[trade.variables_section]["initial_cash_balance"] = str(
+                trade.cash_balance
+            )
+            configuration.write_config(
+                config, trade.config_path, is_encrypted=True
+            )
+        else:
+            daily_profit = trade.cash_balance - initial_cash_balance
+            if daily_profit < daily_loss_limit:
+                trade.speech_manager.set_speech_text(argument)
+                return False
+    elif command == "check_maximum_daily_number_of_trades":
+        if (
+            0
+            < int(config[trade.process]["maximum_daily_number_of_trades"])
+            <= int(config[trade.variables_section]["current_number_of_trades"])
+        ):
+            trade.speech_manager.set_speech_text(argument)
+            return False
+    elif command == "count_trades":
+        current_number_of_trades = (
+            int(config[trade.variables_section]["current_number_of_trades"])
+            + 1
+        )
+        config[trade.variables_section]["current_number_of_trades"] = str(
+            current_number_of_trades
+        )
+        configuration.write_config(
+            config, trade.config_path, is_encrypted=True
+        )
+
+        file_utilities.write_chapter(
+            file_utilities.get_latest_file(
+                config[trade.process]["screencast_directory"],
+                config[trade.process]["screencast_regex"],
+            ),
+            (
+                f"Trade {current_number_of_trades}"
+                f"{f' for {trade.symbol}' if trade.symbol else ''}"
+                f" at {time.strftime('%Y-%m-%d %H:%M:%S')}"
+            ),
+            previous_title="Pre-trading",
+            offset=argument,
+        )
+    elif command == "get_cash_balance":
+        trade.cash_balance = int(
+            text_recognition.recognize_text(
+                *map(
+                    int,
+                    config[trade.geometries_section][
+                        "cash_balance_region"
+                    ].split(","),
+                ),
+                int(config[trade.process]["image_magnification"]),
+                int(config[trade.process]["binarization_threshold"]),
+                config[trade.process].getboolean("is_dark_theme"),
+            )
+        )
+    elif command == "get_symbol":
+        gui_interactions.enumerate_windows(trade.get_symbol, argument)
+    elif command == "write_chapter":
+        file_utilities.write_chapter(
+            file_utilities.get_latest_file(
+                config[trade.process]["screencast_directory"],
+                config[trade.process]["screencast_regex"],
+            ),
+            argument,
+            previous_title=additional_argument,
+        )
+    elif command == "write_share_size":
+        pyautogui.write(str(trade.share_size))
+
+    return True
+
+
+def _handle_control_flow_command(trade, config, gui_state, instruction):
+    """Handle conditional control-flow commands."""
+    command, argument, additional_argument = _unpack_instruction(instruction)
+
+    if command == "is_now_after":
+        if data_utilities.get_target_time(
+            argument
+        ) < time.time() and not _recursively_execute_action(
+            trade, config, gui_state, additional_argument
+        ):
+            return False
+    elif command == "is_now_before":
+        if time.time() < data_utilities.get_target_time(
+            argument
+        ) and not _recursively_execute_action(
+            trade, config, gui_state, additional_argument
+        ):
+            return False
+    elif command == "is_recording":
+        if file_utilities.is_writing(
+            file_utilities.get_latest_file(
+                config[trade.process]["screencast_directory"],
+                config[trade.process]["screencast_regex"],
+            )
+        ) == bool(
+            argument.lower() == "true"
+        ) and not _recursively_execute_action(
+            trade, config, gui_state, additional_argument
+        ):
+            return False
+    elif command == "is_trading_day":
+        if is_trading_day(
+            pd.Timestamp.now(tz=config["Market Data"]["timezone"]),
+            trade.market_holidays,
+            config["Market Holidays"]["date_format"],
+        ) == bool(
+            argument.lower() == "true"
+        ) and not _recursively_execute_action(
+            trade, config, gui_state, additional_argument
+        ):
+            return False
+
+    return True
+
+
+def _handle_execution_command(trade, config, gui_state, instruction):
+    """Handle execution and delegation commands."""
+    command, argument, additional_argument = _unpack_instruction(instruction)
+
+    if command == "execute_action":
+        if not _recursively_execute_action(trade, config, gui_state, argument):
+            return False
+
+    return True
+
+
+_COMMAND_DISPATCH = {
+    # GUI interaction commands
+    "back_to": _handle_gui_command,
+    "click": _handle_gui_command,
+    "click_widget": _handle_gui_command,
+    "drag_to": _handle_gui_command,
+    "move_to": _handle_gui_command,
+    "press_hotkeys": _handle_gui_command,
+    "press_key": _handle_gui_command,
+    "right_click": _handle_gui_command,
+    "write_string": _handle_gui_command,
+    # Window and indicator visibility commands
+    "hide_window": _handle_window_command,
+    "show_hide_indicator": _handle_window_command,
+    "show_hide_window": _handle_window_command,
+    "show_window": _handle_window_command,
+    # Blocking and wait-related commands
+    "sleep": _handle_wait_command,
+    "wait_for_key": _handle_wait_command,
+    "wait_for_key_count_down": _handle_wait_command,
+    "wait_for_price": _handle_wait_command,
+    "wait_for_window": _handle_wait_command,
+    # Speech and user notification commands
+    "speak_config": _handle_speak_command,
+    "speak_cpu_utilization": _handle_speak_command,
+    "speak_minutes_since_hour": _handle_speak_command,
+    "speak_seconds_since_time": _handle_speak_command,
+    "speak_seconds_until_time": _handle_speak_command,
+    "speak_show_text": _handle_speak_command,
+    "speak_text": _handle_speak_command,
+    # Market data retrieval and persistence commands
+    "copy_symbols_from_column": _handle_market_data_command,
+    "save_market_data": _handle_market_data_command,
+    # Trade state and accounting commands
+    "calculate_share_size": _handle_trade_state_command,
+    "check_daily_loss_limit": _handle_trade_state_command,
+    "check_maximum_daily_number_of_trades": _handle_trade_state_command,
+    "count_trades": _handle_trade_state_command,
+    "get_cash_balance": _handle_trade_state_command,
+    "get_symbol": _handle_trade_state_command,
+    "write_chapter": _handle_trade_state_command,
+    "write_share_size": _handle_trade_state_command,
+    # Conditional control-flow commands
+    "is_now_after": _handle_control_flow_command,
+    "is_now_before": _handle_control_flow_command,
+    "is_recording": _handle_control_flow_command,
+    "is_trading_day": _handle_control_flow_command,
+    # Execution and delegation commands
+    "execute_action": _handle_execution_command,
+}
+
+
 def execute_action(trade, config, gui_state, action, should_initialize=True):
-    """Carry out a specified action for a trade."""
+    """Execute a sequence of commands for a trade."""
     if should_initialize:
         trade.initialize_attributes()
         gui_state.initialize_attributes()
@@ -1609,315 +2023,14 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
 
     for instruction in action:
         command = instruction[0]
-        argument = instruction[1] if len(instruction) > 1 else None
-        additional_argument = instruction[2] if len(instruction) > 2 else None
+        handler = _COMMAND_DISPATCH.get(command)
 
-        if command == "back_to":
-            pyautogui.moveTo(gui_state.previous_position)
-        elif command == "calculate_share_size":
-            is_successful, text = calculate_share_size(trade, config, argument)
-            if not is_successful and text:
-                trade.speech_manager.set_speech_text(text)
-                return False
-        elif command == "check_daily_loss_limit":
-            daily_loss_limit = (
-                trade.cash_balance
-                * float(config[trade.process]["utilization_ratio"])
-                * float(config[trade.process]["daily_loss_limit_ratio"])
-            )
-            initial_cash_balance = int(
-                config[trade.variables_section]["initial_cash_balance"]
-            )
-            if initial_cash_balance == 0:
-                config[trade.variables_section]["initial_cash_balance"] = str(
-                    trade.cash_balance
-                )
-                configuration.write_config(
-                    config, trade.config_path, is_encrypted=True
-                )
-            else:
-                daily_profit = trade.cash_balance - initial_cash_balance
-                if daily_profit < daily_loss_limit:
-                    trade.speech_manager.set_speech_text(argument)
-                    return False
-        elif command == "check_maximum_daily_number_of_trades":
-            if (
-                0
-                < int(config[trade.process]["maximum_daily_number_of_trades"])
-                <= int(
-                    config[trade.variables_section]["current_number_of_trades"]
-                )
-            ):
-                trade.speech_manager.set_speech_text(argument)
-                return False
-        elif command == "click":
-            (pyautogui.rightClick if gui_state.swapped else pyautogui.click)(
-                *map(int, argument.split(","))
-            )
-        elif command == "click_widget":
-            gui_interactions.click_widget(
-                gui_state,
-                os.path.join(trade.resource_directory, argument),
-                *map(int, additional_argument.split(",")),
-            )
-        elif command == "copy_symbols_from_column":
-            win32clipboard.OpenClipboard()
-            win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardText(
-                " ".join(
-                    text_recognition.recognize_text(
-                        *map(int, argument.split(",")),
-                        None,
-                        int(config[trade.process]["image_magnification"]),
-                        int(config[trade.process]["binarization_threshold"]),
-                        config[trade.process].getboolean("is_dark_theme"),
-                        text_type="securities_code_column",
-                    )
-                )
-            )
-            win32clipboard.CloseClipboard()
-        elif command == "count_trades":
-            current_number_of_trades = (
-                int(
-                    config[trade.variables_section]["current_number_of_trades"]
-                )
-                + 1
-            )
-            config[trade.variables_section]["current_number_of_trades"] = str(
-                current_number_of_trades
-            )
-            configuration.write_config(
-                config, trade.config_path, is_encrypted=True
-            )
-
-            file_utilities.write_chapter(
-                file_utilities.get_latest_file(
-                    config[trade.process]["screencast_directory"],
-                    config[trade.process]["screencast_regex"],
-                ),
-                (
-                    f"Trade {current_number_of_trades}"
-                    f"{f' for {trade.symbol}' if trade.symbol else ''}"
-                    f" at {time.strftime('%Y-%m-%d %H:%M:%S')}"
-                ),
-                previous_title="Pre-trading",
-                offset=argument,
-            )
-        elif command == "drag_to":
-            pyautogui.dragTo(*map(int, argument.split(",")))
-        elif command == "execute_action":
-            if not _recursively_execute_action(
-                trade, config, gui_state, argument
-            ):
-                return False
-        elif command == "get_cash_balance":
-            trade.cash_balance = int(
-                text_recognition.recognize_text(
-                    *map(
-                        int,
-                        config[trade.geometries_section][
-                            "cash_balance_region"
-                        ].split(","),
-                    ),
-                    int(config[trade.process]["image_magnification"]),
-                    int(config[trade.process]["binarization_threshold"]),
-                    config[trade.process].getboolean("is_dark_theme"),
-                )
-            )
-        elif command == "get_symbol":
-            gui_interactions.enumerate_windows(trade.get_symbol, argument)
-        elif command == "hide_window":
-            gui_interactions.enumerate_windows(
-                gui_interactions.hide_window, argument
-            )
-        elif command == "move_to":
-            pyautogui.moveTo(*map(int, argument.split(",")))
-        elif command == "press_hotkeys":
-            pyautogui.hotkey(*tuple(map(str.strip, argument.split(","))))
-        elif command == "press_key":
-            argument = tuple(map(str.strip, argument.split(",")))
-            presses = int(argument[1]) if len(argument) > 1 else 1
-            pyautogui.press(argument[0], presses=presses)
-        elif command == "right_click":
-            pyautogui.click(
-                *map(int, argument.split(",")),
-                button="left" if gui_state.swapped else "right",
-            )
-        elif command == "save_market_data":
-            save_market_data(trade, config)
-        elif command == "show_hide_indicator":
-            if trade.indicator_thread:
-                trade.indicator_thread.stop()
-                trade.indicator_thread = None
-            elif trade.widgets_section in config:
-                # Consider using 'ensure_section_exists()' and
-                # 'ErrorPropagatingThread'.
-                trade.indicator_thread = IndicatorThread(trade, config)
-                trade.indicator_thread.start()
-            else:
-                print(f"The '{trade.widgets_section}' section is undefined.")
-        elif command == "show_hide_window":
-            gui_interactions.enumerate_windows(
-                gui_interactions.show_hide_window, argument
-            )
-        elif command == "show_window":
-            gui_interactions._show_window_state["count"] = 0
-            gui_interactions._show_window_state["max_count"] = int(
-                additional_argument or 1
-            )
-            gui_interactions.enumerate_windows(
-                gui_interactions.show_window, argument
-            )
-        elif command == "sleep":
-            time.sleep(float(argument))
-        elif command == "speak_config":
-            trade.speech_manager.set_speech_text(
-                config[argument][additional_argument]
-            )
-        elif command == "speak_cpu_utilization":
-            trade.speech_manager.set_speech_text(
-                f"{round(psutil.cpu_percent(interval=float(argument)))}%."
-            )
-        elif command == "speak_minutes_since_hour":
-            if argument:
-                target_time = data_utilities.get_target_time(argument)
-            else:
-                now = pd.Timestamp.now()
-                target_time = time.mktime(
-                    time.strptime(
-                        f"{now.strftime('%Y-%m-%d')} {now.hour}:00:00",
-                        "%Y-%m-%d %H:%M:%S",
-                    )
-                )
-            now = time.time()
-            minutes_since = int((now - target_time) // 60)
-            if int(now % 60) >= 30:
-                minutes_since += 1
-            if minutes_since == 1:
-                trade.speech_manager.set_speech_text("1 minute.")
-            else:
-                trade.speech_manager.set_speech_text(
-                    f"{minutes_since} minutes."
-                )
-        elif command == "speak_seconds_since_time":
-            seconds_since = math.floor(
-                time.time() - data_utilities.get_target_time(argument)
-            )
-            trade.speech_manager.set_speech_text(f"{seconds_since} seconds.")
-        elif command == "speak_seconds_until_time":
-            seconds_until = math.ceil(
-                data_utilities.get_target_time(argument) - time.time()
-            )
-            trade.speech_manager.set_speech_text(f"{seconds_until} seconds.")
-        elif command == "speak_show_text":
-            trade.speech_manager.set_speech_text(argument)
-            MessageThread(trade, config, argument).start()
-        elif command == "speak_text":
-            trade.speech_manager.set_speech_text(argument)
-        elif command == "wait_for_key":
-            if not _wait_for_key(
-                trade,
-                config,
-                gui_state,
-                argument,
-                additional_argument,
-            ):
-                return False
-        elif command == "wait_for_key_count_down":
-            if not _wait_for_key(
-                trade,
-                config,
-                gui_state,
-                argument,
-                additional_argument,
-                should_count_down=True,
-            ):
-                return False
-        elif command == "wait_for_price":
-            trade.keyboard_listener_state = 1
-            trade.key_to_check = None
-            trade.should_continue = True
-            text_recognition.recognize_text(
-                *map(int, argument.split(",")),
-                int(config[trade.process]["image_magnification"]),
-                int(config[trade.process]["binarization_threshold"]),
-                config[trade.process].getboolean("is_dark_theme"),
-                should_continue_reference=lambda: trade.should_continue,
-            )
-            trade.keyboard_listener_state = 0
-            if not trade.should_continue and _handle_cancellation_exit(
-                trade, config, gui_state, additional_argument
-            ):
-                return False
-        elif command == "wait_for_window":
-            trade.keyboard_listener_state = 1
-            trade.key_to_check = None
-            trade.should_continue = True
-            gui_interactions.wait_for_window(
-                argument,
-                should_continue_reference=lambda: trade.should_continue,
-            )
-            trade.keyboard_listener_state = 0
-            if not trade.should_continue and _handle_cancellation_exit(
-                trade, config, gui_state, additional_argument
-            ):
-                return False
-        elif command == "write_chapter":
-            file_utilities.write_chapter(
-                file_utilities.get_latest_file(
-                    config[trade.process]["screencast_directory"],
-                    config[trade.process]["screencast_regex"],
-                ),
-                argument,
-                previous_title=additional_argument,
-            )
-        elif command == "write_share_size":
-            pyautogui.write(str(trade.share_size))
-        elif command == "write_string":
-            pyautogui.write(argument)
-
-        # Control Flow Commands
-        elif command == "is_now_after":
-            if data_utilities.get_target_time(
-                argument
-            ) < time.time() and not _recursively_execute_action(
-                trade, config, gui_state, additional_argument
-            ):
-                return False
-        elif command == "is_now_before":
-            if time.time() < data_utilities.get_target_time(
-                argument
-            ) and not _recursively_execute_action(
-                trade, config, gui_state, additional_argument
-            ):
-                return False
-        elif command == "is_recording":
-            if file_utilities.is_writing(
-                file_utilities.get_latest_file(
-                    config[trade.process]["screencast_directory"],
-                    config[trade.process]["screencast_regex"],
-                )
-            ) == bool(
-                argument.lower() == "true"
-            ) and not _recursively_execute_action(
-                trade, config, gui_state, additional_argument
-            ):
-                return False
-        elif command == "is_trading_day":
-            if is_trading_day(
-                pd.Timestamp.now(tz=config["Market Data"]["timezone"]),
-                trade.market_holidays,
-                config["Market Holidays"]["date_format"],
-            ) == bool(
-                argument.lower() == "true"
-            ) and not _recursively_execute_action(
-                trade, config, gui_state, additional_argument
-            ):
-                return False
-
-        else:
-            print(command, "is not a recognized command.")
+        if not handler:
+            print(f"'{command}' is not a recognized command.")
             return False
+        if not handler(trade, config, gui_state, instruction):
+            return False
+
     return True
 
 
