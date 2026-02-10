@@ -116,27 +116,128 @@ An action is a list of sequential tuples, where each tuple consists of a
 command and its arguments. Possible commands include:
 
 <table>
-<thead>
-
-<tr><th>Command</th>
-
-<th>Description</th></tr>
-
-</thead>
 <tbody>
 
-<tr><td><code>('back_to',)</code></td>
+<tr><th>GUI Interaction Command</th>
+<th>Description</th></tr>
 
+<tr><td><code>('back_to',)</code></td>
 <td>Return the mouse pointer to its previous position.</td></tr>
 
-<tr><td><code>('calculate_share_size', 'long|short')</code></td>
+<tr><td><code>('click', 'X, Y')</code></td>
+<td>Click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
 
+<tr><td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
+<td>Wait for and locate the widget image in the region, then click it. The
+<code>IMAGE_FILE</code> must reside in the <code>HYPERSBI2</code> subdirectory
+of the same directory as the configuration file.</td></tr>
+
+<tr><td><code>('drag_to', 'X, Y')</code></td>
+<td>Drag the mouse pointer to the position.</td></tr>
+
+<tr><td><code>('move_to', 'X, Y')</code></td>
+<td>Move the mouse pointer to the position.</td></tr>
+
+<tr><td><code>('press_hotkeys', 'KEY[, ...]')</code></td>
+<td>Press the hotkeys. <strong>Note</strong>: Shortcut keys may not be accepted
+while a modal dialog (e.g., the “Urgent Notice” dialog in Hyper SBI 2) is
+open.</td></tr>
+
+<tr><td><code>('press_key', 'KEY[, PRESSES]')</code></td>
+<td>Press the key.</td></tr>
+
+<tr><td><code>('right_click', 'X, Y')</code></td>
+<td>Right-click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
+
+<tr><td><code>('write_string', 'STRING')</code></td>
+<td>Write the string.</td></tr>
+
+<tr><th>Window and Indicator Visibility Command</th>
+<th>Description</th></tr>
+
+<tr><td><code>('hide_window', 'TITLE_REGEX')</code></td>
+<td>Hide a window.</td></tr>
+
+<tr><td><code>('show_hide_indicator',)</code></td>
+<td>Show or hide the indicator.</td></tr>
+
+<tr><td><code>('show_hide_window', 'TITLE_REGEX')</code></td>
+<td>Show or hide a window.</td></tr>
+
+<tr><td><code>('show_window', 'TITLE_REGEX'[, 'MAX_COUNT'])</code></td>
+<td>Show a window. The <code>MAX_COUNT</code> parameter (default 1) limits the
+number of windows to show.</td></tr>
+
+<tr><th>Blocking and Wait-Related Command</th>
+<th>Description</th></tr>
+
+<tr><td><code>('sleep', 'PERIOD')</code></td>
+<td>Sleep for the period.</td></tr>
+
+<tr><td><code>('wait_for_key', 'KEY'[, ACTION|'ACTION'])</code></td>
+<td>Wait for a key press. Pressing the <code>Esc</code> key cancels the current
+action and executes the specified action, if provided.</td></tr>
+
+<tr><td><code>('wait_for_key_count_down', 'KEY'[, ACTION|'ACTION'])</code></td>
+<td>Wait for a key press and speak a countdown until the next 1-minute candle
+close. Pressing the <code>Esc</code> key cancels the current action and
+executes the specified action, if provided.</td></tr>
+
+<tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX'[, ACTION|'ACTION'])</code></td>
+<td>Wait until <code>trading_assistant.py</code> recognizes an integer in the
+region. Pressing the <code>Esc</code> key cancels the current action and
+executes the specified action, if provided. <strong>Note</strong>: Text
+recognition may fail in rare cases.</td></tr>
+
+<tr><td><code>('wait_for_window', 'TITLE_REGEX'[, ACTION|'ACTION'])</code></td>
+<td>Wait for a window. Pressing the <code>Esc</code> key cancels the current
+action and executes the specified action, if provided.</td></tr>
+
+<tr><th>Speech and User Notification Command</th>
+<th>Description</th></tr>
+
+<tr><td><code>('speak_config', 'SECTION', 'OPTION')</code></td>
+<td>Speak the configuration value.</td></tr>
+
+<tr><td><code>('speak_cpu_utilization', 'INTERVAL')</code></td>
+<td>Calculate CPU utilization for the interval and speak it.</td></tr>
+
+<tr><td><code>('speak_minutes_since_hour',[ '%H:%M:%S'])</code></td>
+<td>Speak minutes since the current hour, or since the time. Round up when
+$$seconds \geq 30$$.</td></tr>
+
+<tr><td><code>('speak_seconds_since_time', '%H:%M:%S')</code></td>
+<td>Speak seconds since the time.</td></tr>
+
+<tr><td><code>('speak_seconds_until_time', '%H:%M:%S')</code></td>
+<td>Speak seconds until the time.</td></tr>
+
+<tr><td><code>('speak_show_text', 'TEXT')</code></td>
+<td>Speak and show the text.</td></tr>
+
+<tr><td><code>('speak_text', 'TEXT')</code></td>
+<td>Speak the text.</td></tr>
+
+<tr><th>Market Data Retrieval and Persistence Command</th>
+<th>Description</th></tr>
+
+<tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
+<td>Recognize an alphanumeric column in the region, then copy securities codes
+to the clipboard. <strong>Note</strong>: Certain securities codes may fail to
+be recognized.</td></tr>
+
+<tr><td><code>('save_market_data',)</code></td>
+<td>Split the rankings CSV by the first digit of the securities code.</td></tr>
+
+<tr><th>Trade State and Accounting Command</th>
+<th>Description</th></tr>
+
+<tr><td><code>('calculate_share_size', 'long|short')</code></td>
 <td>Calculate the share size. You must call the <code>get_symbol</code> and
 <code>get_cash_balance</code> commands below before using this
 command.</td></tr>
 
 <tr><td><code>('check_daily_loss_limit', 'ALERT_TEXT')</code></td>
-
 <td>Check if the loss has reached the daily loss limit. If it has, speak the
 alert text and exit. You must call the <code>get_cash_balance</code> command
 below before using this command. The <code>-DLL</code> option configures the
@@ -146,184 +247,56 @@ limit\ ratio$$. <strong>Note</strong>: Trading fees, not considered here, may
 cause further cash balance reduction.</td></tr>
 
 <tr><td><code>('check_maximum_daily_number_of_trades', 'ALERT_TEXT')</code></td>
-
 <td>Check if the current number of trades for the day exceeds the maximum daily
 number of trades. If it does, speak the alert text and exit. You must call the
 <code>count_trades</code> command below before using this command. The
 <code>-MDN</code> option configures the maximum daily number of trades. A zero
 value for it indicates unlimited trades.</td></tr>
 
-<tr><td><code>('click', 'X, Y')</code></td>
-
-<td>Click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
-
-<tr><td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
-
-<td>Wait for and locate the widget image in the region, then click it. The
-<code>IMAGE_FILE</code> must reside in the <code>HYPERSBI2</code> subdirectory
-of the same directory as the configuration file.</td></tr>
-
-<tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
-
-<td>Recognize an alphanumeric column in the region, then copy securities codes
-to the clipboard. <strong>Note</strong>: Certain securities codes may fail to
-be recognized.</td></tr>
-
 <tr><td><code>('count_trades',[ 'CHAPTER_OFFSET'])</code></td>
-
 <td>Count the number of trades for the day. Additionally, write a chapter
 section for <a href="https://ffmpeg.org/ffmpeg-formats.html#Metadata-1">FFmpeg
 metadata</a> when Nvidia ShadowPlay records a screencast. The “CHAPTER_OFFSET”
 parameter specifies the offset in seconds for the chapter’s start time. You
 must call this command after the execution of an order.</td></tr>
 
-<tr><td><code>('drag_to', 'X, Y')</code></td>
-
-<td>Drag the mouse pointer to the position.</td></tr>
-
-<tr><td><code>('execute_action', ACTION|'ACTION')</code></td>
-
-<td>Execute the action. If the action fails, cancel the current
-action.</td></tr>
-
 <tr><td><code>('get_cash_balance',)</code></td>
-
 <td>Recognize the cash balance in the cash balance region specified in the “<a
 href="#configure-cash-balance-and-price-limit-regions">Configure Cash Balance
 and Price Limit Regions</a>” section.</td></tr>
 
 <tr><td><code>('get_symbol', 'TITLE_REGEX')</code></td>
-
 <td>Get the symbol from a window title.</td></tr>
 
-<tr><td><code>('hide_window', 'TITLE_REGEX')</code></td>
-
-<td>Hide a window.</td></tr>
-
-<tr><td><code>('move_to', 'X, Y')</code></td>
-
-<td>Move the mouse pointer to the position.</td></tr>
-
-<tr><td><code>('press_hotkeys', 'KEY[, ...]')</code></td>
-
-<td>Press the hotkeys. <strong>Note</strong>: Shortcut keys may not be accepted
-while a modal dialog (e.g., the “Urgent Notice” dialog in Hyper SBI 2) is
-open.</td></tr>
-
-<tr><td><code>('press_key', 'KEY[, PRESSES]')</code></td>
-
-<td>Press the key.</td></tr>
-
-<tr><td><code>('right_click', 'X, Y')</code></td>
-
-<td>Right-click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
-
-<tr><td><code>('save_market_data',)</code></td>
-
-<td>Split the rankings CSV by the first digit of the securities code.</td></tr>
-
-<tr><td><code>('show_hide_indicator',)</code></td>
-
-<td>Show or hide the indicator.</td></tr>
-
-<tr><td><code>('show_hide_window', 'TITLE_REGEX')</code></td>
-
-<td>Show or hide a window.</td></tr>
-
-<tr><td><code>('show_window', 'TITLE_REGEX'[, 'MAX_COUNT'])</code></td>
-
-<td>Show a window. The <code>MAX_COUNT</code> parameter (default 1) limits the
-number of windows to show.</td></tr>
-
-<tr><td><code>('sleep', 'PERIOD')</code></td>
-
-<td>Sleep for the period.</td></tr>
-
-<tr><td><code>('speak_config', 'SECTION', 'OPTION')</code></td>
-
-<td>Speak the configuration value.</td></tr>
-
-<tr><td><code>('speak_cpu_utilization', 'INTERVAL')</code></td>
-
-<td>Calculate CPU utilization for the interval and speak it.</td></tr>
-
-<tr><td><code>('speak_minutes_since_hour',[ '%H:%M:%S'])</code></td>
-
-<td>Speak minutes since the current hour, or since the time. Round up when
-$$seconds \geq 30$$.</td></tr>
-
-<tr><td><code>('speak_seconds_since_time', '%H:%M:%S')</code></td>
-
-<td>Speak seconds since the time.</td></tr>
-
-<tr><td><code>('speak_seconds_until_time', '%H:%M:%S')</code></td>
-
-<td>Speak seconds until the time.</td></tr>
-
-<tr><td><code>('speak_show_text', 'TEXT')</code></td>
-
-<td>Speak and show the text.</td></tr>
-
-<tr><td><code>('speak_text', 'TEXT')</code></td>
-
-<td>Speak the text.</td></tr>
-
-<tr><td><code>('wait_for_key', 'KEY'[, ACTION|'ACTION'])</code></td>
-
-<td>Wait for a key press. Pressing the <code>Esc</code> key cancels the current
-action and executes the specified action, if provided.</td></tr>
-
-<tr><td><code>('wait_for_key_count_down', 'KEY'[, ACTION|'ACTION'])</code></td>
-
-<td>Wait for a key press and speak a countdown until the next 1-minute candle
-close. Pressing the <code>Esc</code> key cancels the current action and
-executes the specified action, if provided.</td></tr>
-
-<tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX'[, ACTION|'ACTION'])</code></td>
-
-<td>Wait until <code>trading_assistant.py</code> recognizes an integer in the
-region. Pressing the <code>Esc</code> key cancels the current action and
-executes the specified action, if provided. <strong>Note</strong>: Text
-recognition may fail in rare cases.</td></tr>
-
-<tr><td><code>('wait_for_window', 'TITLE_REGEX'[, ACTION|'ACTION'])</code></td>
-
-<td>Wait for a window. Pressing the <code>Esc</code> key cancels the current
-action and executes the specified action, if provided.</td></tr>
-
 <tr><td><code>('write_chapter', 'CURRENT_TITLE'[, 'PREVIOUS_TITLE'])</code></td>
-
 <td>Write a chapter section for FFmpeg metadata. When creating a new metadata
 file, the <code>PREVIOUS_TITLE</code> parameter gives the title to the chapter
 that precedes the current chapter.</td></tr>
 
 <tr><td><code>('write_share_size',)</code></td>
-
 <td>Write the calculated share size.</td></tr>
 
-<tr><td><code>('write_string', 'STRING')</code></td>
-
-<td>Write the string.</td></tr>
-
-<tr><th>Control Flow Command</th>
-
+<tr><th>Conditional Control-Flow Command</th>
 <th>Description</th></tr>
 
 <tr><td><code>('is_now_after', '%H:%M:%S', ACTION|'ACTION')</code></td>
-
 <td>Execute the action if the current system time is after the time.</td></tr>
 
 <tr><td><code>('is_now_before', '%H:%M:%S', ACTION|'ACTION')</code></td>
-
 <td>Execute the action if the current system time is before the time.</td></tr>
 
 <tr><td><code>('is_recording', 'BOOL', ACTION|'ACTION')</code></td>
-
 <td>Execute the action if a screencast is being recorded.</td></tr>
 
 <tr><td><code>('is_trading_day', 'BOOL', ACTION|'ACTION')</code></td>
-
 <td>Execute the action if today is a trading day.</td></tr>
+
+<tr><th>Execution and Delegation Command</th>
+<th>Description</th></tr>
+
+<tr><td><code>('execute_action', ACTION|'ACTION')</code></td>
+<td>Execute the action. If the action fails, cancel the current
+action.</td></tr>
 
 </tbody>
 </table>
