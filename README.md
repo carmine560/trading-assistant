@@ -1,4 +1,4 @@
-# trading-assistant
+# `trading-assistant`
 
 <!-- Python script that assists with discretionary day trading of stocks on
 margin using Hyper SBI 2 -->
