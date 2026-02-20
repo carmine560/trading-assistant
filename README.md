@@ -115,11 +115,9 @@ python trading_assistant.py -A ACTION
 An action is a list of sequential tuples, where each tuple consists of a
 command and its arguments. Possible commands include:
 
-<table>
-<tbody>
+#### GUI Interaction Commands
 
-<tr><th>GUI Interaction Command</th>
-<th>Description</th></tr>
+<table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
 <tr><td><code>('back_to',)</code></td>
 <td>Return the mouse pointer to its previous position.</td></tr>
@@ -152,8 +150,11 @@ open.</td></tr>
 <tr><td><code>('write_string', 'STRING')</code></td>
 <td>Write the string.</td></tr>
 
-<tr><th>Window and Indicator Visibility Command</th>
-<th>Description</th></tr>
+</tbody></table>
+
+#### Window and Indicator Visibility Commands
+
+<table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
 <tr><td><code>('hide_window', 'TITLE_REGEX')</code></td>
 <td>Hide a window.</td></tr>
@@ -168,8 +169,11 @@ open.</td></tr>
 <td>Show a window. The <code>MAX_COUNT</code> parameter (default 1) limits the
 number of windows to show.</td></tr>
 
-<tr><th>Blocking and Wait-Related Command</th>
-<th>Description</th></tr>
+</tbody></table>
+
+#### Blocking and Wait-Related Commands
+
+<table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
 <tr><td><code>('sleep', 'PERIOD')</code></td>
 <td>Sleep for the period.</td></tr>
@@ -193,8 +197,11 @@ recognition may fail in rare cases.</td></tr>
 <td>Wait for a window. Pressing the <code>Esc</code> key cancels the current
 action and executes the specified action, if provided.</td></tr>
 
-<tr><th>Speech and User Notification Command</th>
-<th>Description</th></tr>
+</tbody></table>
+
+#### Speech and User Notification Commands
+
+<table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
 <tr><td><code>('speak_config', 'SECTION', 'OPTION')</code></td>
 <td>Speak the configuration value.</td></tr>
@@ -218,8 +225,11 @@ $$seconds \geq 30$$.</td></tr>
 <tr><td><code>('speak_text', 'TEXT')</code></td>
 <td>Speak the text.</td></tr>
 
-<tr><th>Market Data Retrieval and Persistence Command</th>
-<th>Description</th></tr>
+</tbody></table>
+
+#### Market Data Retrieval and Persistence Commands
+
+<table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
 <tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
 <td>Recognize an alphanumeric column in the region, then copy securities codes
@@ -229,8 +239,11 @@ be recognized.</td></tr>
 <tr><td><code>('save_market_data',)</code></td>
 <td>Split the rankings CSV by the first digit of the securities code.</td></tr>
 
-<tr><th>Trade State and Accounting Command</th>
-<th>Description</th></tr>
+</tbody></table>
+
+#### Trade State and Accounting Commands
+
+<table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
 <tr><td><code>('calculate_share_size', 'long|short')</code></td>
 <td>Calculate the share size. You must call the <code>get_symbol</code> and
@@ -276,8 +289,11 @@ that precedes the current chapter.</td></tr>
 <tr><td><code>('write_share_size',)</code></td>
 <td>Write the calculated share size.</td></tr>
 
-<tr><th>Conditional Control-Flow Command</th>
-<th>Description</th></tr>
+</tbody></table>
+
+#### Conditional Control-Flow Commands
+
+<table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
 <tr><td><code>('is_now_after', '%H:%M:%S', ACTION|'ACTION')</code></td>
 <td>Execute the action if the current system time is after the time.</td></tr>
@@ -291,15 +307,17 @@ that precedes the current chapter.</td></tr>
 <tr><td><code>('is_trading_day', 'BOOL', ACTION|'ACTION')</code></td>
 <td>Execute the action if today is a trading day.</td></tr>
 
-<tr><th>Execution and Delegation Command</th>
-<th>Description</th></tr>
+</tbody></table>
+
+#### Execution and Delegation Command
+
+<table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
 <tr><td><code>('execute_action', ACTION|'ACTION')</code></td>
 <td>Execute the action. If the action fails, cancel the current
 action.</td></tr>
 
-</tbody>
-</table>
+</tbody></table>
 
 ### Execute Action
 
