@@ -1,4 +1,4 @@
-chardet
+charset-normalizer
 lxml
 pandas
 prompt_toolkit

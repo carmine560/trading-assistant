@@ -24,7 +24,7 @@ consisting of a sequence of commands, this script can:
 Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
 10 with ESU and requires the following packages:
 
-  * [`chardet`](https://github.com/chardet/chardet),
+  * [`charset-normalizer`](https://charset-normalizer.readthedocs.io/en/latest/),
     [`lxml`](https://lxml.de/index.html),
     [`pandas`](https://pandas.pydata.org/),
     [`pyarrow`](https://arrow.apache.org/), and

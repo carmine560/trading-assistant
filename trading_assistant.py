@@ -19,10 +19,10 @@ import time
 import tkinter as tk
 import win32clipboard
 
+from charset_normalizer import from_bytes
 from pynput import keyboard
 from pynput import mouse
 from win32api import GetMonitorInfo, MonitorFromPoint
-import chardet
 import pandas as pd
 import psutil
 import pyautogui
@@ -1316,7 +1316,8 @@ def save_customer_margin_ratios(trade, config):
     ):
         try:
             response = requests.get(section["url"], timeout=5)
-            encoding = chardet.detect(response.content)["encoding"]
+            matched = from_bytes(response.content).best()
+            encoding = matched.encoding if matched else "utf-8"
             # Decode the content using the detected encoding and replace
             # invalid bytes.
             html = response.content.decode(encoding, errors="replace")
