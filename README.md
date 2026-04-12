@@ -439,22 +439,22 @@ is licensed under the CC0-1.0 license.
 
 ### Hyper SBI 2 Window Titles
 
-| Regular Expression for Window Title                            | Window          |
-|----------------------------------------------------------------|-----------------|
-| `お知らせ`                                                     | Announcements   |
-| `個別銘柄\s.*\((${Market Data:securities_code_regex})\)`       | Summary         |
-| `登録銘柄`                                                     | Watchlists      |
-| `保有証券`                                                     | Holdings        |
-| `注文一覧`                                                     | Order Status    |
-| `個別チャート\s.*\((${Market Data:securities_code_regex})\).*` | Chart           |
-| `マーケット`                                                   | Markets         |
-| `ランキング`                                                   | Rankings        |
-| `銘柄一覧`                                                     | Stock Lists     |
-| `口座情報`                                                     | Account         |
-| `ニュース`                                                     | News            |
-| `取引ポップアップ`                                             | Trading         |
-| `通知設定`                                                     | Notifications   |
-| `全板\s.*\((${Market Data:securities_code_regex})\)`           | Full Order Book |
+| Window Title     | Variable                                     |
+|------------------|----------------------------------------------|
+| お知らせ         | `${HYPERSBI2 Window Titles:announcements}`   |
+| 個別銘柄         | `${HYPERSBI2 Window Titles:summary}`         |
+| 登録銘柄         | `${HYPERSBI2 Window Titles:watchlists}`      |
+| 保有証券         | `${HYPERSBI2 Window Titles:holdings}`        |
+| 注文一覧         | `${HYPERSBI2 Window Titles:order status}`    |
+| 個別チャート     | `${HYPERSBI2 Window Titles:chart}`           |
+| マーケット       | `${HYPERSBI2 Window Titles:markets}`         |
+| ランキング       | `${HYPERSBI2 Window Titles:rankings}`        |
+| 銘柄一覧         | `${HYPERSBI2 Window Titles:stock lists}`     |
+| 口座情報         | `${HYPERSBI2 Window Titles:account}`         |
+| ニュース         | `${HYPERSBI2 Window Titles:news}`            |
+| 取引ポップアップ | `${HYPERSBI2 Window Titles:trading}`         |
+| 通知設定         | `${HYPERSBI2 Window Titles:notifications}`   |
+| 全板             | `${HYPERSBI2 Window Titles:full order book}` |
 
 ## Link
 

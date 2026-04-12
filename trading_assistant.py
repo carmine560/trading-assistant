@@ -100,6 +100,10 @@ class Trade(initializer.Initializer):
             self.market_directory, "closing_prices_"
         )
 
+        self.geometries_section = f"{self.process} Geometries"
+
+        self.schedules_section = f"{self.process} Schedules"
+
         self.customer_margin_ratios_section = (
             f"{self.vendor} Customer Margin Ratios"
         )
@@ -107,14 +111,16 @@ class Trade(initializer.Initializer):
             self.resource_directory, "customer_margin_ratios.csv"
         )
 
+        self.window_titles_section = f"{self.process} Window Titles"
+
+        self.widgets_section = f"{self.process} Widgets"
+        self.indicator_thread = None
+
         self.startup_script_section = f"{self.process} Startup Script"
         self.startup_script_base = f"{self.process.lower()}_assistant"
         self.startup_script = os.path.join(
             self.resource_directory, f"{self.startup_script_base}.ps1"
         )
-
-        self.widgets_section = f"{self.process} Widgets"
-        self.indicator_thread = None
 
         self.mouse_listener = None
 
@@ -130,8 +136,6 @@ class Trade(initializer.Initializer):
 
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
-
-        self.schedules_section = f"{self.process} Schedules"
 
         self.instruction_items = {
             "all_keys": sorted(_COMMAND_DISPATCH.keys()),
@@ -180,8 +184,6 @@ class Trade(initializer.Initializer):
             "boolean_value_keys": {"is_recording", "is_trading_day"},
             "preset_additional_values": None,
         }
-
-        self.geometries_section = f"{self.process} Geometries"
 
         self.symbol = ""
         self.initialize_attributes()
@@ -751,8 +753,10 @@ def configure(trade, can_interpolate=True, can_override=True):
         "last_order_time": "15:25:00",
         "closing_time": "15:30:00",
         "timezone": "Asia/Tokyo",
-        # Double backslashes are required because these options are evaluated
-        # as Python literals.
+        # Double backslashes are required because these values are stored as
+        # Python string literals for 'evaluate_value()':
+        # 'securities_code_regex' via 'interactive_windows' and user-defined
+        # actions, and 'rankings' via user-defined actions.
         "securities_code_regex": SECURITIES_CODE_REGEX.replace("\\", "\\\\"),
         "rankings": os.path.join(
             os.path.expanduser("~"),
@@ -760,7 +764,10 @@ def configure(trade, can_interpolate=True, can_override=True):
             "rankings.csv",
         ).replace("\\", "\\\\"),
     }
-    config[trade.schedules_section] = {}
+    config[trade.geometries_section] = {
+        "cash_balance_region": "0, 0, 0, 0, 0",
+        "price_limit_region": "0, 0, 0, 0, 0",
+    }
     config[trade.actions_section] = {
         "show_hide_indicator": [("show_hide_indicator",)],
         "start_manual_recording": [
@@ -849,10 +856,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             )
         ],
     }
-    config[trade.geometries_section] = {
-        "cash_balance_region": "0, 0, 0, 0, 0",
-        "price_limit_region": "0, 0, 0, 0, 0",
-    }
+    config[trade.schedules_section] = {}
     config[trade.variables_section] = {
         "current_date": date.min.strftime("%Y-%m-%d"),
         "initial_cash_balance": "0",
@@ -917,6 +921,32 @@ def configure(trade, can_interpolate=True, can_override=True):
             else re.sub(r"[\W_]+", " ", trade.script_base).strip().title()
         )
 
+        config[trade.window_titles_section] = {
+            # Double backslashes are required because these values are stored
+            # as Python string literals for 'evaluate_value()', used via
+            # 'interactive_windows' and user-defined actions.
+            "announcements": "お知らせ",
+            "summary": (
+                "個別銘柄" r"\\s.*\\((${Market Data:securities_code_regex})\\)"
+            ),
+            "watchlists": "登録銘柄",
+            "holdings": "保有証券",
+            "order status": "注文一覧",
+            "chart": (
+                "個別チャート"
+                r"\\s.*\\((${Market Data:securities_code_regex})\\).*"
+            ),
+            "markets": "マーケット",
+            "rankings": "ランキング",
+            "stock lists": "銘柄一覧",
+            "account": "口座情報",
+            "news": "ニュース",
+            "trading": "取引ポップアップ",
+            "notifications": "通知設定",
+            "full order book": (
+                "全板" r"\\s.*\\((${Market Data:securities_code_regex})\\)"
+            ),
+        }
         config[trade.process] = {
             "start_time": "${Market Data:opening_time}",
             "end_time": "${Market Data:closing_time}",
@@ -924,20 +954,20 @@ def configure(trade, can_interpolate=True, can_override=True):
             "title": title,
             "interactive_windows": (
                 file_description,
-                "お知らせ",
-                r"個別銘柄\s.*\((${Market Data:securities_code_regex})\)",
-                "登録銘柄",
-                "保有証券",
-                "注文一覧",
-                r"個別チャート\s.*\((${Market Data:securities_code_regex})\).*",
-                "マーケット",
-                "ランキング",
-                "銘柄一覧",
-                "口座情報",
-                "ニュース",
-                "取引ポップアップ",
-                "通知設定",
-                r"全板\s.*\((${Market Data:securities_code_regex})\)",
+                "${HYPERSBI2 Window Titles:announcements}",
+                "${HYPERSBI2 Window Titles:summary}",
+                "${HYPERSBI2 Window Titles:watchlists}",
+                "${HYPERSBI2 Window Titles:holdings}",
+                "${HYPERSBI2 Window Titles:order status}",
+                "${HYPERSBI2 Window Titles:chart}",
+                "${HYPERSBI2 Window Titles:markets}",
+                "${HYPERSBI2 Window Titles:rankings}",
+                "${HYPERSBI2 Window Titles:stock lists}",
+                "${HYPERSBI2 Window Titles:account}",
+                "${HYPERSBI2 Window Titles:news}",
+                "${HYPERSBI2 Window Titles:trading}",
+                "${HYPERSBI2 Window Titles:notifications}",
+                "${HYPERSBI2 Window Titles:full order book}",
                 r"${title}\s.*",
             ),
             "input_map": {
@@ -987,7 +1017,7 @@ def configure(trade, can_interpolate=True, can_override=True):
             "running_options": "-l",
         }
         config[trade.actions_section]["show_hide_watchlists"] = str(
-            [("show_hide_window", "登録銘柄")]
+            [("show_hide_window", "${HYPERSBI2 Window Titles:watchlists}")]
         )
 
     if can_override:
