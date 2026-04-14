@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from datetime import date
-from io import StringIO
+from io import BytesIO
 from multiprocessing.managers import BaseManager
 from tkinter import TclError
 import argparse
@@ -19,7 +19,6 @@ import time
 import tkinter as tk
 import win32clipboard
 
-from charset_normalizer import from_bytes
 from pynput import keyboard
 from pynput import mouse
 from win32api import GetMonitorInfo, MonitorFromPoint
@@ -1346,15 +1345,10 @@ def save_customer_margin_ratios(trade, config):
     ):
         try:
             response = requests.get(section["url"], timeout=5)
-            matched = from_bytes(response.content).best()
-            encoding = matched.encoding if matched else "utf-8"
-            # Decode the content using the detected encoding and replace
-            # invalid bytes.
-            html = response.content.decode(encoding, errors="replace")
-            # Wrap the HTML in 'StringIO()' so pandas does not treat it as a
-            # file path.
+            # 'lxml' reads the '<meta charset>' tag, so raw bytes are decoded
+            # correctly.
             dfs = pd.read_html(
-                StringIO(html),
+                BytesIO(response.content),
                 match=section["regulation_header"],
                 flavor="lxml",
                 header=0,
