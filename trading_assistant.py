@@ -738,7 +738,7 @@ def configure(trade, can_interpolate=True, can_override=True):
         "fingerprint": "",
         "voice_name": "Microsoft Zira Desktop",
         "speech_rate": "2",
-        "countdown_seconds_before_candle_close": "30, 10",
+        "countdown_seconds_before_candle_close": "30, 10, 5",
     }
     config["Market Holidays"] = {
         "url": "https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html",
