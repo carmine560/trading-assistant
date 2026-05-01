@@ -29,3 +29,7 @@ def test_title_except_acronyms_preserves_requested_words():
 
 def test_normalize_datetime_string_rolls_over_hours_past_midnight():
     assert normalize_datetime_string("2026-05-01 26:15") == "2026-05-02 02:15"
+
+
+def test_normalize_datetime_string_keeps_same_day_under_twenty_four_hours():
+    assert normalize_datetime_string("2026-05-01 09:05") == "2026-05-01 09:05"

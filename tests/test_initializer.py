@@ -23,3 +23,14 @@ def handle(action):
         return True
 """
     assert extract_commands(source, command="action") == ["save_market_data"]
+
+
+def test_extract_commands_ignores_non_constant_comparisons():
+    source = """
+def dispatch(command, dynamic_value):
+    if command == dynamic_value:
+        return 1
+    if command == "buy":
+        return 2
+"""
+    assert extract_commands(source) == ["buy"]

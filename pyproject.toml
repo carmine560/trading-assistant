@@ -3,3 +3,6 @@ line-length = 79
 
 [tool.flake8]
 extend-ignore = ["E203"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
