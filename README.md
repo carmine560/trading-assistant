@@ -59,6 +59,13 @@ python -m venv .venv
 python -m pip install -r requirements.txt -U
 ```
 
+## Run Tests (Optional)
+
+``` powershell
+python -m pip install -r requirements-dev.txt -U
+pytest -q
+```
+
 ## Usage
 
 ### Create Startup Script
