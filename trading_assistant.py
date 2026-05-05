@@ -1,6 +1,5 @@
 """Assist with discretionary day trading of stocks on margin."""
 
-from collections import defaultdict
 from datetime import date
 from io import BytesIO
 from multiprocessing.managers import BaseManager
@@ -35,6 +34,7 @@ from core_utilities import (
     initializer,
     process_utilities,
 )
+from app import market_data
 from app import trade_service
 from interaction_utilities import (
     gui_interactions,
@@ -1389,52 +1389,11 @@ def save_customer_margin_ratios(trade, config):
 def save_market_data(trade, config):
     """Split the rankings CSV by the first digit of the securities code."""
     rankings = config["Market Data"]["rankings"].replace("\\\\", "\\")
-    data_by_digit = defaultdict(list)
-
-    try:
-        with open(rankings, "r", encoding="utf-8") as f:
-            reader = csv.reader(f)
-            for row in reader:
-                securities_code = row[6].strip()
-                if not re.fullmatch(SECURITIES_CODE_REGEX, securities_code):
-                    continue
-                data_by_digit[securities_code[0]].append(
-                    (securities_code, row[9].strip().replace(",", ""))
-                )
-    except OSError as e:
-        print(e)
-        return False
-
-    for digit in range(1, 10):
-        digit_string = str(digit)
-        try:
-            with open(
-                f"{trade.closing_prices}{digit}.csv",
-                "w",
-                encoding="utf-8",
-                # 'csv.writer()' on Windows writes '\r\n' itself; without
-                # 'newline=""', 'open()' would translate '\n' to '\r\n',
-                # producing '\r\r\n' (seen as '^M') and causing extra blank
-                # lines.
-                newline="",
-            ) as f:
-                writer = csv.writer(f)
-                if digit_string in data_by_digit:
-                    for securities_code, current_price in data_by_digit[
-                        digit_string
-                    ]:
-                        writer.writerow([securities_code, current_price])
-        except OSError as e:
-            print(e)
-            return False
-
-    if os.path.isfile(rankings):
-        try:
-            os.remove(rankings)
-        except OSError as e:
-            print(e)
-
-    return True
+    return market_data.split_rankings_by_digit(
+        rankings=rankings,
+        closing_prices_prefix=trade.closing_prices,
+        code_regex=SECURITIES_CODE_REGEX,
+    )
 
 
 def get_latest(
