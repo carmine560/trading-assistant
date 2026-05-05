@@ -35,6 +35,7 @@ from core_utilities import (
     initializer,
     process_utilities,
 )
+from app import trade_service
 from interaction_utilities import (
     gui_interactions,
     speech_synthesis,
@@ -2234,22 +2235,17 @@ def calculate_share_size(trade, config, position):
         except OSError as e:
             print(e)
 
-        trading_unit = 100
-        share_size = (
-            int(
-                trade.cash_balance
-                * float(config[trade.process]["utilization_ratio"])
-                / customer_margin_ratio
-                / get_price_limit(trade, config)
-                / trading_unit
-            )
-            * trading_unit
+        share_size = trade_service.calculate_share_size_from_inputs(
+            cash_balance=trade.cash_balance,
+            utilization_ratio=float(
+                config[trade.process]["utilization_ratio"]
+            ),
+            customer_margin_ratio=customer_margin_ratio,
+            price_limit=get_price_limit(trade, config),
+            position=position,
         )
         if share_size == 0:
             return (False, "Insufficient cash balance.")
-
-        if position == "short" and share_size > 50 * trading_unit:
-            share_size = 50 * trading_unit
 
         trade.share_size = share_size
         return (True, None)
@@ -2275,46 +2271,9 @@ def get_price_limit(trade, config):
         print(e)
 
     if closing_price:
-        price_ranges = (
-            (100, 30),
-            (200, 50),
-            (500, 80),
-            (700, 100),
-            (1000, 150),
-            (1500, 300),
-            (2000, 400),
-            (3000, 500),
-            (5000, 700),
-            (7000, 1000),
-            (10000, 1500),
-            (15000, 3000),
-            (20000, 4000),
-            (30000, 5000),
-            (50000, 7000),
-            (70000, 10000),
-            (100000, 15000),
-            (150000, 30000),
-            (200000, 40000),
-            (300000, 50000),
-            (500000, 70000),
-            (700000, 100000),
-            (1000000, 150000),
-            (1500000, 300000),
-            (2000000, 400000),
-            (3000000, 500000),
-            (5000000, 700000),
-            (7000000, 1000000),
-            (10000000, 1500000),
-            (15000000, 3000000),
-            (20000000, 4000000),
-            (30000000, 5000000),
-            (50000000, 7000000),
-            (float("inf"), 10000000),
+        price_limit = trade_service.calculate_price_limit_from_closing_price(
+            closing_price
         )
-        for maximum_price, limit in price_ranges:
-            if closing_price < maximum_price:
-                price_limit = closing_price + limit
-                break
     else:
         price_limit = text_recognition.recognize_text(
             *map(
