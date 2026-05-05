@@ -8,7 +8,6 @@ import argparse
 import atexit
 import configparser
 import csv
-import math
 import os
 import re
 import sched
@@ -36,6 +35,7 @@ from core_utilities import (
 )
 from app import actions as app_actions
 from app import market_data
+from app import runtime as app_runtime
 from app import trade_service
 from interaction_utilities import (
     gui_interactions,
@@ -581,62 +581,13 @@ def main():
             config[trade.process]["interactive_windows"]
         )
     )
-    atexit.register(on_exit, trade, config)
-
-    if args.r:
-        save_customer_margin_ratios(trade, config)
-
-    is_running = process_utilities.is_running(trade.process)
-    if args.s or args.l or args.a:
-        # Use 'BaseManager' to share 'SpeechManager' instance across processes.
-        BaseManager.register("SpeechManager", speech_synthesis.SpeechManager)
-        base_manager = BaseManager()
-        base_manager.start()
-        trade.speech_manager = base_manager.SpeechManager()
-    if args.a:
-        if not (is_running and args.l):
-            start_listeners(
-                trade,
-                config,
-                gui_state,
-                base_manager,
-                is_persistent=True,
-            )
-
-        execute_action(
-            trade,
-            config,
-            gui_state,
-            config[trade.actions_section][args.a[0]],
-        )
-        if not (is_running and args.l):
-            process_utilities.stop_listeners(
-                trade.mouse_listener,
-                trade.keyboard_listener,
-                base_manager,
-                trade.speech_manager,
-                trade.speaking_process,
-            )
-            trade.stop_listeners_event.set()
-            trade.wait_listeners_thread.join()
-    if args.l and is_running:
-        start_listeners(trade, config, gui_state, base_manager)
-    if args.s and is_running:
-        threading.Thread(
-            target=start_scheduler,
-            args=(trade, config, gui_state, trade.process, base_manager),
-        ).start()
-
-
-# Lifecycle and Shutdown
-
-
-def on_exit(trade, config):
-    """Persist configuration on interpreter shutdown."""
-    # Ensure the config is written on normal interpreter shutdown, since
-    # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not run if
-    # the main thread terminates abruptly.
-    configuration.write_config(config, trade.config_path, is_encrypted=True)
+    app_runtime.run(
+        args,
+        trade,
+        config,
+        gui_state,
+        _get_runtime_dependencies(),
+    )
 
 
 # CLI and Configuration
@@ -1613,6 +1564,22 @@ def _get_action_dependencies():
         "save_market_data_fn": save_market_data,
         "text_recognition": text_recognition,
         "win32clipboard": win32clipboard,
+    }
+
+
+def _get_runtime_dependencies():
+    """Return runtime dependencies required by the app runtime."""
+    return {
+        "atexit": atexit,
+        "base_manager_cls": BaseManager,
+        "configuration": configuration,
+        "execute_action_fn": execute_action,
+        "process_utilities": process_utilities,
+        "save_customer_margin_ratios_fn": save_customer_margin_ratios,
+        "speech_synthesis": speech_synthesis,
+        "start_listeners_fn": start_listeners,
+        "start_scheduler_fn": start_scheduler,
+        "threading": threading,
     }
 
 
