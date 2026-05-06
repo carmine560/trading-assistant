@@ -1,14 +1,11 @@
 """Assist with discretionary day trading of stocks on margin."""
 
-from datetime import date
 from io import BytesIO
 from multiprocessing.managers import BaseManager
 import argparse
 import atexit
-import configparser
 import csv
 import os
-import re
 import sys
 import threading
 import win32clipboard
@@ -27,6 +24,8 @@ from core_utilities import (
     process_utilities,
 )
 from app import actions as app_actions
+from app import config_builder
+from app import config_workflow
 from app import listeners as app_listeners
 from app import market_data
 from app import models as app_models
@@ -173,556 +172,20 @@ def get_arguments():
 
 def configure(trade, can_interpolate=True, can_override=True):
     """Set up the configuration for a trade."""
-    if can_interpolate:
-        config = configparser.ConfigParser(
-            interpolation=configparser.ExtendedInterpolation()
-        )
-    else:
-        config = configparser.ConfigParser(interpolation=None)
-
-    config["General"] = {
-        "fingerprint": "",
-        "voice_name": "Microsoft Zira Desktop",
-        "speech_rate": "2",
-        "countdown_seconds_before_candle_close": "30, 10, 5",
-    }
-    config["Market Holidays"] = {
-        "url": "https://www.jpx.co.jp/corporate/about-jpx/calendar/index.html",
-        "date_header": "日付",
-        "date_format": "%Y/%m/%d",
-    }
-    config["Market Data"] = {
-        "opening_time": "09:00:00",
-        "midday_break_time": "11:30:00",
-        "reopening_time": "12:30:00",
-        "last_order_time": "15:25:00",
-        "closing_time": "15:30:00",
-        "timezone": "Asia/Tokyo",
-        # Double backslashes are required because these values are stored as
-        # Python string literals for 'evaluate_value()':
-        # 'securities_code_regex' via 'interactive_windows' and user-defined
-        # actions, and 'rankings' via user-defined actions.
-        "securities_code_regex": SECURITIES_CODE_REGEX.replace("\\", "\\\\"),
-        "rankings": os.path.join(
-            os.path.expanduser("~"),
-            "Downloads",
-            "rankings.csv",
-        ).replace("\\", "\\\\"),
-    }
-    config[trade.geometries_section] = {
-        "cash_balance_region": "0, 0, 0, 0, 0",
-        "price_limit_region": "0, 0, 0, 0, 0",
-    }
-    config[trade.actions_section] = {
-        "show_hide_indicator": [("show_hide_indicator",)],
-        "start_manual_recording": [
-            (
-                "is_trading_day",
-                "True",
-                [
-                    (
-                        "is_recording",
-                        "False",
-                        [
-                            ("press_hotkeys", "alt, f9"),
-                            ("sleep", "2"),
-                            (
-                                "is_recording",
-                                "False",
-                                [("speak_text", "Not recording.")],
-                            ),
-                        ],
-                    )
-                ],
-            )
-        ],
-        "create_opening_chapter": [("write_chapter", "Opening", "Pre-market")],
-        "create_midday_break_chapter": [("write_chapter", "Midday Break")],
-        "create_reopening_chapter": [("write_chapter", "Reopening")],
-        "stop_manual_recording": [
-            ("is_recording", "True", [("press_hotkeys", "alt, f9")])
-        ],
-        "speak_cpu_utilization": [
-            ("is_trading_day", "True", [("speak_cpu_utilization", "1")])
-        ],
-        "speak_seconds_until_open": [
-            (
-                "is_trading_day",
-                "True",
-                [("speak_seconds_until_time", "${Market Data:opening_time}")],
-            )
-        ],
-        "speak_seconds_until_midday_break": [
-            (
-                "is_trading_day",
-                "True",
-                [
-                    (
-                        "speak_seconds_until_time",
-                        "${Market Data:midday_break_time}",
-                    )
-                ],
-            )
-        ],
-        "speak_seconds_until_reopen": [
-            (
-                "is_trading_day",
-                "True",
-                [
-                    (
-                        "speak_seconds_until_time",
-                        "${Market Data:reopening_time}",
-                    )
-                ],
-            )
-        ],
-        "speak_seconds_until_last_order": [
-            (
-                "is_trading_day",
-                "True",
-                [
-                    (
-                        "speak_seconds_until_time",
-                        "${Market Data:last_order_time}",
-                    )
-                ],
-            )
-        ],
-        "speak_seconds_until_end": [
-            (
-                "is_trading_day",
-                "True",
-                [
-                    (
-                        "speak_seconds_until_time",
-                        f"${{{trade.process}:end_time}}",
-                    )
-                ],
-            )
-        ],
-    }
-    config[trade.schedules_section] = {}
-    config[trade.variables_section] = {
-        "current_date": date.min.strftime("%Y-%m-%d"),
-        "initial_cash_balance": "0",
-        "current_number_of_trades": "0",
-    }
-
-    if trade.vendor == "SBI Securities":
-        config[trade.customer_margin_ratios_section] = {
-            "customer_margin_ratio": "0.31",
-            "update_time": "20:00:00",
-            "timezone": "${Market Data:timezone}",
-            "url": (
-                "https://search.sbisec.co.jp/v2/popwin/attention/stock/"
-                "margin_M29.html"
-            ),
-            "symbol_header": "コード",
-            "regulation_header": "規制内容",
-            "headers": ("銘柄", "コード", "建玉", "信用取引区分", "規制内容"),
-            "customer_margin_ratio_string": "委託保証金率",
-            "suspended": "新規建停止",
-        }
-
-    if trade.process == "HYPERSBI2":
-        if not trade.executable:
-            location_dat = os.path.join(
-                os.path.expandvars("%LOCALAPPDATA%"),
-                trade.vendor,
-                trade.process,
-                "location.dat",
-            )
-            try:
-                with open(location_dat, encoding="utf-8") as f:
-                    trade.executable = os.path.normpath(
-                        os.path.join(f.read(), trade.process + ".exe")
-                    )
-            except OSError as e:
-                print(e)
-                for program_files in ("%ProgramFiles%", "%ProgramFiles(x86)%"):
-                    executable = os.path.join(
-                        os.path.expandvars(program_files),
-                        trade.vendor,
-                        trade.process,
-                        trade.process + ".exe",
-                    )
-                    if os.path.isfile(executable):
-                        trade.executable = executable
-                        break
-                if not trade.executable:
-                    print(
-                        f"The executable file for {trade.process}"
-                        " does not exist."
-                    )
-                    sys.exit(1)
-
-        file_description = file_utilities.get_file_description(
-            trade.executable
-        )
-        title = (
-            data_utilities.title_except_acronyms(file_description, ["SBI"])
-            + " Assistant"
-            if file_description
-            else re.sub(r"[\W_]+", " ", trade.script_base).strip().title()
-        )
-
-        config[trade.window_titles_section] = {
-            # Double backslashes are required because these values are stored
-            # as Python string literals for 'evaluate_value()', used via
-            # 'interactive_windows' and user-defined actions.
-            "announcements": "お知らせ",
-            "summary": (
-                "個別銘柄" r"\\s.*\\((${Market Data:securities_code_regex})\\)"
-            ),
-            "watchlists": "登録銘柄",
-            "holdings": "保有証券",
-            "order status": "注文一覧",
-            "chart": (
-                "個別チャート"
-                r"\\s.*\\((${Market Data:securities_code_regex})\\).*"
-            ),
-            "markets": "マーケット",
-            "rankings": "ランキング",
-            "stock lists": "銘柄一覧",
-            "account": "口座情報",
-            "news": "ニュース",
-            "trading": "取引ポップアップ",
-            "notifications": "通知設定",
-            "full order book": (
-                "全板" r"\\s.*\\((${Market Data:securities_code_regex})\\)"
-            ),
-        }
-        config[trade.process] = {
-            "start_time": "${Market Data:opening_time}",
-            "end_time": "${Market Data:closing_time}",
-            "executable": trade.executable,
-            "title": title,
-            "interactive_windows": (
-                file_description,
-                "${HYPERSBI2 Window Titles:announcements}",
-                "${HYPERSBI2 Window Titles:summary}",
-                "${HYPERSBI2 Window Titles:watchlists}",
-                "${HYPERSBI2 Window Titles:holdings}",
-                "${HYPERSBI2 Window Titles:order status}",
-                "${HYPERSBI2 Window Titles:chart}",
-                "${HYPERSBI2 Window Titles:markets}",
-                "${HYPERSBI2 Window Titles:rankings}",
-                "${HYPERSBI2 Window Titles:stock lists}",
-                "${HYPERSBI2 Window Titles:account}",
-                "${HYPERSBI2 Window Titles:news}",
-                "${HYPERSBI2 Window Titles:trading}",
-                "${HYPERSBI2 Window Titles:notifications}",
-                "${HYPERSBI2 Window Titles:full order book}",
-                r"${title}\s.*",
-            ),
-            "input_map": {
-                "left": "",
-                "middle": "show_hide_watchlists",
-                "right": "",
-                "x1": "",
-                "x2": "",
-                "f1": "",
-                "f2": "",
-                "f3": "",
-                "f4": "",
-                "f5": "show_hide_watchlists",
-                "f6": "",
-                "f7": "",
-                "f8": "",
-                "f9": "",
-                "f10": "",
-                "f11": "",
-                "f12": "",
-            },
-            "utilization_ratio": "1.0",
-            "daily_loss_limit_ratio": "-0.01",
-            "maximum_daily_number_of_trades": "0",
-            "image_magnification": "2",
-            "binarization_threshold": "128",
-            "is_dark_theme": "True",
-            "screencast_directory": os.path.join(
-                os.path.expanduser("~"), "Videos", trade.process.title()
-            ),
-            "screencast_regex": (
-                trade.process.title()
-                + r" \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d+\.mp4"
-            ),
-        }
-        config[trade.widgets_section] = {
-            "is_clock_label_enabled": "False",
-            "clock_label_position": "nw",
-            "clock_label_font_size": "12",
-            "status_bar_frame_position": "sw",
-            "status_bar_frame_font_size": "17",
-            "message_font_size": "14",
-        }
-        config[trade.startup_script_section] = {
-            "pre_start_options": "",
-            "post_start_options": "-rl",
-            "running_options": "-l",
-        }
-        config[trade.actions_section]["show_hide_watchlists"] = str(
-            [("show_hide_window", "${HYPERSBI2 Window Titles:watchlists}")]
-        )
-
-    if can_override:
-        configuration.read_config(config, trade.config_path, is_encrypted=True)
-
-    current_date = date.today()
-    if (
-        date.fromisoformat(config[trade.variables_section]["current_date"])
-        != current_date
-    ):
-        config[trade.variables_section]["current_date"] = str(current_date)
-        config[trade.variables_section]["initial_cash_balance"] = "0"
-        config[trade.variables_section]["current_number_of_trades"] = "0"
-
-    if trade.process == "HYPERSBI2":
-        theme_config = configparser.ConfigParser(interpolation=None)
-        theme_config.read(
-            os.path.join(
-                os.path.expandvars("%APPDATA%"),
-                trade.vendor,
-                trade.process,
-                "theme.ini",
-            )
-        )
-        if (
-            theme_config.has_option("General", "theme")
-            and theme_config["General"]["theme"] == "Light"
-        ):
-            config[trade.process]["is_dark_theme"] = "False"
-
-    return config
+    return config_builder.configure(
+        trade,
+        file_utilities=file_utilities,
+        configuration=configuration,
+        data_utilities=data_utilities,
+        securities_code_regex=SECURITIES_CODE_REGEX,
+        can_interpolate=can_interpolate,
+        can_override=can_override,
+    )
 
 
 def configure_exit(args, trade):
     """Configure parameters based on command-line arguments and exit."""
-    config = configure(trade, can_interpolate=False)
-    backup_parameters = {"number_of_backups": 8}
-    trade.instruction_items["preset_additional_values"] = (
-        configuration.list_section(config, trade.actions_section)
-    )
-
-    if any((args.S, args.L, args.CB, args.U, args.PL, args.DLL, args.MDN)):
-        for argument, (
-            section,
-            option,
-            can_insert_delete,
-            prompts,
-            all_values,
-            limits,
-        ) in {
-            "L": (
-                trade.process,
-                "input_map",
-                False,
-                {"value": "action"},
-                trade.instruction_items.get("preset_additional_values"),
-                (),
-            ),
-            "S": (
-                trade.schedules_section,
-                None,
-                True,
-                {
-                    "key": "schedule",
-                    "values": ("trigger", "action"),
-                    "end_of_list": "end of schedules",
-                },
-                (
-                    trade.instruction_items.get("preset_values"),
-                    trade.instruction_items.get("preset_additional_values"),
-                ),
-                (),
-            ),
-            "CB": (
-                trade.geometries_section,
-                "cash_balance_region",
-                False,
-                {"value": "x, y, width, height, index"},
-                None,
-                (),
-            ),
-            "U": (
-                trade.process,
-                "utilization_ratio",
-                False,
-                None,
-                None,
-                (RATIO_EPSILON, 1.0),
-            ),
-            "PL": (
-                trade.geometries_section,
-                "price_limit_region",
-                False,
-                {"value": "x, y, width, height, index"},
-                None,
-                (),
-            ),
-            "DLL": (
-                trade.process,
-                "daily_loss_limit_ratio",
-                False,
-                None,
-                None,
-                (-1.0, -RATIO_EPSILON),
-            ),
-            "MDN": (
-                trade.process,
-                "maximum_daily_number_of_trades",
-                False,
-                None,
-                None,
-                (0, sys.maxsize),
-            ),
-        }.items():
-            if getattr(args, argument):
-                configuration.modify_section(
-                    config,
-                    section,
-                    trade.config_path,
-                    backup_parameters=backup_parameters,
-                    can_insert_delete=can_insert_delete,
-                    option=option,
-                    prompts=prompts,
-                    all_values=all_values,
-                    limits=limits,
-                    is_encrypted=True,
-                )
-                break
-
-        sys.exit()
-    if args.SS and configuration.modify_section(
-        config,
-        trade.startup_script_section,
-        trade.config_path,
-        backup_parameters=backup_parameters,
-        is_encrypted=True,
-    ):
-        configuration.write_config(
-            config, trade.config_path, is_encrypted=True
-        )
-        config = configure(trade)
-        create_startup_script(trade, config)
-        powershell = file_utilities.select_executable(
-            ["pwsh.exe", "powershell.exe"]
-        )
-        if powershell:
-            file_utilities.create_shortcut(
-                trade.startup_script_base,
-                powershell,
-                f'-WindowStyle Hidden -File "{trade.startup_script}"',
-                program_group_base=config[trade.process]["title"],
-                icon_location=file_utilities.create_icon(
-                    trade.startup_script_base,
-                    icon_directory=trade.resource_directory,
-                ),
-            )
-
-        sys.exit()
-    if args.A:
-        items = (
-            option
-            for option, value in config[trade.geometries_section].items()
-            if _is_xy(value)
-        )
-        trade.instruction_items["preset_geometries"] = [
-            f"${{HYPERSBI2 Geometries:{option}}}" for option in sorted(items)
-        ]
-        if configuration.modify_option(
-            config,
-            trade.actions_section,
-            args.A[0],
-            trade.config_path,
-            backup_parameters=backup_parameters,
-            can_insert_delete=True,
-            initial_value="[()]",
-            prompts={
-                "key": "command",
-                "value": "argument",
-                "additional_value": "additional argument",
-                "preset_additional_value": "action",
-                "end_of_list": "end of commands",
-            },
-            items=trade.instruction_items,
-            is_encrypted=True,
-        ):
-            powershell = file_utilities.select_executable(
-                ["pwsh.exe", "powershell.exe"]
-            )
-            activate_path, interpreter = file_utilities.select_venv(
-                os.path.dirname(__file__), activate="Activate.ps1"
-            )
-
-            # To pin the shortcut to the Taskbar, specify an executable
-            # file as the 'target_path' argument.
-            file_utilities.create_shortcut(
-                args.A[0],
-                powershell if powershell else "py.exe",
-                (
-                    f'-Command ". {activate_path};'
-                    f' {interpreter} {__file__} -a {args.A[0]}"'
-                    if activate_path
-                    else f"{__file__} -a {args.A[0]}"
-                ),
-                program_group_base=config[trade.process]["title"],
-                icon_location=file_utilities.create_icon(
-                    args.A[0], icon_directory=trade.resource_directory
-                ),
-            )
-        else:
-            file_utilities.delete_shortcut(
-                args.A[0],
-                program_group_base=config[trade.process]["title"],
-                icon_location=os.path.join(
-                    trade.resource_directory, args.A[0] + ".ico"
-                ),
-            )
-
-        create_completion(trade, config)
-        sys.exit()
-    if args.D:
-        base = args.D[0]
-        if base == trade.script_base:
-            base = trade.startup_script_base
-            if os.path.isfile(trade.startup_script):
-                try:
-                    os.remove(trade.startup_script)
-                except OSError as e:
-                    print(e)
-        else:
-            configuration.delete_option(
-                config,
-                trade.actions_section,
-                base,
-                trade.config_path,
-                backup_parameters=backup_parameters,
-                is_encrypted=True,
-            )
-            create_completion(trade, config)
-
-        file_utilities.delete_shortcut(
-            base,
-            program_group_base=config[trade.process]["title"],
-            icon_location=os.path.join(
-                trade.resource_directory, f"{base}.ico"
-            ),
-        )
-        sys.exit()
-    if args.C:
-        configuration.check_config_changes(
-            configure(trade, can_interpolate=False, can_override=False),
-            trade.config_path,
-            excluded_sections=(
-                trade.geometries_section,
-                trade.variables_section,
-            ),
-            user_option_ignored_sections=(trade.actions_section,),
-            backup_parameters=backup_parameters,
-            is_encrypted=True,
-        )
-        sys.exit()
+    config_workflow.configure_exit(args, trade, _get_config_workflow_deps())
 
 
 # Core Predicates
@@ -730,15 +193,7 @@ def configure_exit(args, trade):
 
 def _is_xy(value):
     """Return True if the value represents exactly two integers (X, Y)."""
-    parts = [part.strip() for part in value.split(",")]
-    if len(parts) != 2:
-        return False
-    try:
-        int(parts[0])
-        int(parts[1])
-        return True
-    except ValueError:
-        return False
+    return config_workflow.is_xy(value)
 
 
 def is_trading_day(date, market_holidays, date_format):
@@ -753,24 +208,8 @@ def is_trading_day(date, market_holidays, date_format):
 
 def create_completion(trade, config):
     """Generate completion scripts for options and values."""
-    options = ("-a", "-A", "-D")
-    trade.instruction_items["preset_additional_values"] = (
-        configuration.list_section(config, trade.actions_section)
-    )
-
-    file_utilities.create_powershell_completion(
-        trade.script_base,
-        options,
-        trade.instruction_items.get("preset_additional_values"),
-        ("py", "python"),
-        os.path.join(trade.resource_directory, "completion.ps1"),
-    )
-    file_utilities.create_bash_completion(
-        trade.script_base,
-        options,
-        trade.instruction_items.get("preset_additional_values"),
-        ("py.exe", "python.exe"),
-        os.path.join(trade.resource_directory, "completion.sh"),
+    config_workflow.create_completion(
+        trade, config, configuration, file_utilities
     )
 
 
@@ -1029,6 +468,20 @@ def _get_runtime_dependencies():
         "start_listeners_fn": start_listeners,
         "start_scheduler_fn": start_scheduler,
         "threading": threading,
+    }
+
+
+def _get_config_workflow_deps():
+    """Return dependencies required by config workflow helpers."""
+    return {
+        "configuration": configuration,
+        "configure_fn": configure,
+        "create_completion_fn": create_completion,
+        "create_startup_script_fn": create_startup_script,
+        "file_utilities": file_utilities,
+        "is_xy_fn": _is_xy,
+        "ratio_epsilon": RATIO_EPSILON,
+        "script_path": __file__,
     }
 
 
