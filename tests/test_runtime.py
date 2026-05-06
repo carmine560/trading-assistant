@@ -36,9 +36,6 @@ def test_run_executes_single_action_with_transient_listeners():
             calls.append("manager.SpeechManager")
             return "speech_manager"
 
-    def start_listeners_fn(trade, config, gui_state, base_manager, **kwargs):
-        calls.append(("start_listeners", kwargs))
-
     deps = {
         "atexit": SimpleNamespace(
             register=lambda *args: calls.append("atexit")
@@ -60,7 +57,11 @@ def test_run_executes_single_action_with_transient_listeners():
             lambda trade, config: calls.append("save_customer_margin_ratios")
         ),
         "speech_synthesis": SimpleNamespace(SpeechManager=object),
-        "start_listeners_fn": start_listeners_fn,
+        "start_listeners_fn": (
+            lambda trade, config, gui_state, base_manager, **kwargs: (
+                calls.append(("start_listeners", kwargs))
+            )
+        ),
         "start_scheduler_fn": lambda *args: calls.append("start_scheduler"),
         "threading": SimpleNamespace(
             Thread=lambda *args, **kwargs: SimpleNamespace(

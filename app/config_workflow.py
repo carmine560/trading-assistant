@@ -70,7 +70,7 @@ def configure_exit(
             backup_parameters,
             ratio_epsilon,
         )
-        sys.exit()
+        return True
     if args.SS and configuration.modify_section(
         config,
         trade.startup_script_section,
@@ -97,7 +97,7 @@ def configure_exit(
                     icon_directory=trade.resource_directory,
                 ),
             )
-        sys.exit()
+        return True
     if args.A:
         items = (
             option
@@ -142,7 +142,7 @@ def configure_exit(
             )
 
         create_completion_fn(trade, config)
-        sys.exit()
+        return True
     if args.D:
         _delete_script_or_action(
             args,
@@ -153,7 +153,7 @@ def configure_exit(
             backup_parameters,
             file_utilities,
         )
-        sys.exit()
+        return True
     if args.C:
         configuration.check_config_changes(
             configure_fn(trade, can_interpolate=False, can_override=False),
@@ -166,7 +166,8 @@ def configure_exit(
             backup_parameters=backup_parameters,
             is_encrypted=True,
         )
-        sys.exit()
+        return True
+    return False
 
 
 def _configure_sections(
@@ -312,10 +313,7 @@ def _delete_script_or_action(
     if base == trade.script_base:
         base = trade.startup_script_base
         if os.path.isfile(trade.startup_script):
-            try:
-                os.remove(trade.startup_script)
-            except OSError as e:
-                print(e)
+            os.remove(trade.startup_script)
     else:
         configuration.delete_option(
             config,

@@ -64,8 +64,10 @@ def main():
         start_execute_action_thread_fn=start_execute_action_thread,
     )
 
-    file_utilities.create_launchers_exit(args, __file__)
-    configure_exit(args, trade)
+    if file_utilities.create_launchers_exit(args, __file__):
+        return
+    if configure_exit(args, trade):
+        return
 
     config = configure(trade)
     configuration.ensure_section_exists(config, trade.process)
@@ -186,7 +188,9 @@ def configure(trade, can_interpolate=True, can_override=True):
 
 def configure_exit(args, trade):
     """Configure parameters based on command-line arguments and exit."""
-    config_workflow.configure_exit(args, trade, _get_config_workflow_deps())
+    return config_workflow.configure_exit(
+        args, trade, _get_config_workflow_deps()
+    )
 
 
 # Core Predicates
