@@ -3,40 +3,38 @@
 from datetime import date
 from io import BytesIO
 from multiprocessing.managers import BaseManager
-from tkinter import TclError
 import argparse
 import atexit
 import configparser
 import csv
 import os
 import re
-import sched
 import sys
 import threading
-import time
-import tkinter as tk
 import win32clipboard
 
 from pynput import keyboard
 from pynput import mouse
-from win32api import GetMonitorInfo, MonitorFromPoint
 import pandas as pd
 import psutil
 import pyautogui
 import requests
-import win32gui
 
 from core_utilities import (
     configuration,
     data_utilities,
     file_utilities,
-    initializer,
     process_utilities,
 )
 from app import actions as app_actions
+from app import listeners as app_listeners
 from app import market_data
+from app import models as app_models
 from app import runtime as app_runtime
+from app import scheduler as app_scheduler
+from app import startup_script as app_startup_script
 from app import trade_service
+from app import ui as app_ui
 from interaction_utilities import (
     gui_interactions,
     speech_synthesis,
@@ -49,518 +47,9 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
-
-
-class Trade(initializer.Initializer):
-    """Handle trading operations for a specific vendor and process."""
-
-    _MODIFIER_KEYS = {
-        keyboard.Key.alt,
-        keyboard.Key.alt_gr,
-        keyboard.Key.alt_l,
-        keyboard.Key.alt_r,
-        keyboard.Key.cmd,
-        keyboard.Key.cmd_l,
-        keyboard.Key.cmd_r,
-        keyboard.Key.ctrl,
-        keyboard.Key.ctrl_l,
-        keyboard.Key.ctrl_r,
-        keyboard.Key.shift,
-        keyboard.Key.shift_l,
-        keyboard.Key.shift_r,
-    }
-    _FUNCTION_KEYS = (
-        keyboard.Key.f1,
-        keyboard.Key.f2,
-        keyboard.Key.f3,
-        keyboard.Key.f4,
-        keyboard.Key.f5,
-        keyboard.Key.f6,
-        keyboard.Key.f7,
-        keyboard.Key.f8,
-        keyboard.Key.f9,
-        keyboard.Key.f10,
-        keyboard.Key.f11,
-        keyboard.Key.f12,
-    )
-
-    def __init__(self, vendor, process):
-        """Initialize the Trade with the vendor and process."""
-        super().__init__(vendor, process, __file__)
-        self.market_directory = os.path.join(self.config_directory, "market")
-        self.resource_directory = os.path.join(
-            self.config_directory, self.process
-        )
-        for directory in [self.market_directory, self.resource_directory]:
-            file_utilities.check_directory(directory)
-
-        self.market_holidays = os.path.join(
-            self.market_directory, "market_holidays.csv"
-        )
-        self.closing_prices = os.path.join(
-            self.market_directory, "closing_prices_"
-        )
-
-        self.geometries_section = f"{self.process} Geometries"
-
-        self.schedules_section = f"{self.process} Schedules"
-
-        self.customer_margin_ratios_section = (
-            f"{self.vendor} Customer Margin Ratios"
-        )
-        self.customer_margin_ratios = os.path.join(
-            self.resource_directory, "customer_margin_ratios.csv"
-        )
-
-        self.window_titles_section = f"{self.process} Window Titles"
-
-        self.widgets_section = f"{self.process} Widgets"
-        self.indicator_thread = None
-
-        self.startup_script_section = f"{self.process} Startup Script"
-        self.startup_script_base = f"{self.process.lower()}_assistant"
-        self.startup_script = os.path.join(
-            self.resource_directory, f"{self.startup_script_base}.ps1"
-        )
-
-        self.mouse_listener = None
-
-        self.keyboard_listener = None
-        self.keyboard_listener_state = 0
-        self._pressed_modifiers = set()
-        self._last_action_time = 0
-        self.key_to_check = None
-        self.should_continue = False
-
-        self.speech_manager = None
-        self.speaking_process = None
-
-        self.stop_listeners_event = None
-        self.wait_listeners_thread = None
-
-        self.instruction_items = {
-            "all_keys": sorted(app_actions.ALL_KEYS),
-            "no_value_keys": {
-                "back_to",
-                "get_cash_balance",
-                "save_market_data",
-                "show_hide_indicator",
-                "write_share_size",
-            },
-            "optional_value_keys": {
-                "count_trades",
-                "speak_minutes_since_hour",
-            },
-            "additional_value_keys": {"click_widget", "speak_config"},
-            "optional_additional_value_keys": {"write_chapter"},
-            "positioning_keys": {"click", "drag_to", "move_to", "right_click"},
-            "preset_geometries": None,
-            "nested_keys": {"execute_action"},
-            "optional_additional_nested_keys": {
-                "wait_for_key",
-                "wait_for_price",
-            },
-            "control_flow_keys": {
-                "is_now_after",
-                "is_now_before",
-                "is_recording",
-                "is_trading_day",
-            },
-            "preset_value_keys": {
-                "is_now_after",
-                "is_now_before",
-                "speak_minutes_since_hour",
-                "speak_seconds_since_time",
-                "speak_seconds_until_time",
-            },
-            "preset_values": (
-                "${Market Data:opening_time}",
-                "${Market Data:midday_break_time}",
-                "${Market Data:reopening_time}",
-                "${Market Data:last_order_time}",
-                "${Market Data:closing_time}",
-                f"${{{self.process}:start_time}}",
-                f"${{{self.process}:end_time}}",
-            ),
-            "boolean_value_keys": {"is_recording", "is_trading_day"},
-            "preset_additional_values": None,
-        }
-
-        self.symbol = ""
-        self.initialize_attributes()
-
-    def initialize_attributes(self):
-        """Reset the symbol, cash balance, and share size to initial states."""
-        self.symbol = ""
-        self.cash_balance = 0
-        self.share_size = 0
-
-    def get_symbol(self, hwnd, title_regex):
-        """Get the symbol from a window title matching a regular expression."""
-        matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
-        if matched:
-            self.symbol = matched.group(1)
-            return False
-        return True
-
-    def on_click(self, _1, _2, button, pressed, config, gui_state):
-        """Handle mouse click events."""
-        if gui_state.is_interactive_window():
-            if not pressed:
-                action = configuration.evaluate_value(
-                    config[self.process]["input_map"]
-                ).get(button.name)
-                if action:
-                    start_execute_action_thread(
-                        self, config, gui_state, action
-                    )
-
-    def on_press(self, key, config, gui_state):
-        """Handle key press events."""
-        if gui_state.is_interactive_window():
-            # Add context for whether modifiers are pressed.
-            if key in Trade._MODIFIER_KEYS:
-                self._pressed_modifiers.add(key)
-                return
-            if self.keyboard_listener_state == 0:
-                if key in Trade._FUNCTION_KEYS and not self._pressed_modifiers:
-                    now = time.time()
-                    # A 0.3-second debounce interval prevents double-triggers
-                    # from both software detection and hardware chattering.
-                    if now - self._last_action_time > 0.3:
-                        action = configuration.evaluate_value(
-                            config[self.process]["input_map"]
-                        ).get(key.name)
-                        if action:
-                            start_execute_action_thread(
-                                self, config, gui_state, action
-                            )
-                            self._last_action_time = now
-            elif self.keyboard_listener_state == 1:
-                if (
-                    hasattr(key, "char") and key.char == self.key_to_check
-                ) or key == self.key_to_check:
-                    self.should_continue = True
-                    self.keyboard_listener_state = 0
-                elif key == keyboard.Key.esc:
-                    self.should_continue = False
-                    self.keyboard_listener_state = 0
-
-    def on_release(self, key, gui_state):
-        """Handle key release events to update modifiers."""
-        self._pressed_modifiers.discard(key)
-
-
-class IndicatorThread(threading.Thread):
-    """Handle a thread for displaying trading indicators."""
-
-    def __init__(self, trade, config):
-        """Construct a new IndicatorThread object."""
-        super().__init__()
-        self.trade = trade
-        self.config = config
-        self.root = None
-        self.stop_event = threading.Event()
-        self._utilization_ratio_string = None
-
-    def run(self):
-        """Run the thread, creating and placing widgets on the screen."""
-        # GUI should run in main thread; use 'queue.Queue' to receive updates
-        # from worker threads.
-        self.root = tk.Tk()
-        self.root.attributes("-alpha", 0.8)
-        self.root.attributes("-fullscreen", True)
-        self.root.attributes("-topmost", True)
-        self.root.attributes("-transparentcolor", "black")
-        self.root.config(bg="black")
-        self.root.overrideredirect(True)
-        self.root.title(
-            self.config[self.trade.process]["title"] + " Indicator"
-        )
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-        is_clock_label_enabled = self.config[
-            self.trade.widgets_section
-        ].getboolean("is_clock_label_enabled")
-        maximum_daily_number_of_trades = int(
-            self.config[self.trade.process]["maximum_daily_number_of_trades"]
-        )
-
-        if is_clock_label_enabled:
-            clock_label = tk.Label(
-                self.root,
-                font=(
-                    "Tahoma",
-                    -int(
-                        self.config[self.trade.widgets_section][
-                            "clock_label_font_size"
-                        ]
-                    ),
-                ),
-                bg="gray5",
-                fg="tan1",
-            )
-            self._place_widget(
-                clock_label,
-                self.config[self.trade.widgets_section][
-                    "clock_label_position"
-                ],
-            )
-            IndicatorTooltip(clock_label, "Current system time")
-
-        status_bar_frame_font_size = int(
-            self.config[self.trade.widgets_section][
-                "status_bar_frame_font_size"
-            ]
-        )
-        status_bar_frame = tk.Frame(self.root, bg="gray5")
-        self._place_widget(
-            status_bar_frame,
-            self.config[self.trade.widgets_section][
-                "status_bar_frame_position"
-            ],
-        )
-
-        current_number_of_trades_label = tk.Label(
-            status_bar_frame,
-            bg="gray5",
-            fg="tan1",
-            font=("Bahnschrift", -status_bar_frame_font_size),
-            height=1,
-            width=5,
-        )
-        current_number_of_trades_label.grid(row=0, column=0)
-        if maximum_daily_number_of_trades:
-            text = "Current number of trades / maximum daily number of trades"
-        else:
-            text = "Current number of trades"
-
-        IndicatorTooltip(current_number_of_trades_label, text)
-
-        self._utilization_ratio_string = tk.StringVar()
-        self._utilization_ratio_string.set(
-            self.config[self.trade.process]["utilization_ratio"]
-        )
-        utilization_ratio_spinbox = tk.Spinbox(
-            status_bar_frame,
-            bd=0,
-            bg="gray5",
-            fg="tan1",
-            font=("Bahnschrift", -status_bar_frame_font_size),
-            from_=RATIO_EPSILON,  # 'from' is a reserved keyword in Python.
-            highlightthickness=0,
-            increment=0.01,
-            insertbackground="tan1",
-            justify="center",
-            relief="flat",
-            selectbackground="tan1",
-            selectforeground="gray5",
-            textvariable=self._utilization_ratio_string,
-            to=1.0,
-            width=5,
-            # 'validate' and 'validatecommand' are inherited from tk.Entry.
-            validate="key",
-            validatecommand=(self.root.register(self._is_valid_float), "%P"),
-        )
-        utilization_ratio_spinbox.grid(row=0, column=1)
-        self._utilization_ratio_string.trace_add(
-            "write", self._on_utilization_ratio_change
-        )
-        utilization_ratio_spinbox.bind("<MouseWheel>", self._on_mouse_wheel)
-        IndicatorTooltip(utilization_ratio_spinbox, "Utilization ratio")
-
-        while not self.stop_event.is_set():
-            try:
-                if is_clock_label_enabled:
-                    clock_label.config(text=time.strftime("%H:%M:%S"))
-
-                current_number_of_trades = self.config[
-                    self.trade.variables_section
-                ]["current_number_of_trades"]
-                if maximum_daily_number_of_trades:
-                    current_number_of_trades_label.config(
-                        text=(
-                            f"{current_number_of_trades}"
-                            f"/{maximum_daily_number_of_trades}"
-                        )
-                    )
-                else:
-                    current_number_of_trades_label.config(
-                        text=current_number_of_trades
-                    )
-
-                self.root.update()
-            except TclError:
-                break
-            time.sleep(0.01)
-
-        if self.root:
-            try:
-                self.root.destroy()
-            except TclError:
-                pass
-
-    def stop(self):
-        """Set the stop_event to signal the thread to stop."""
-        self.stop_event.set()
-
-    def on_closing(self):
-        """Handle window close event."""
-        self.stop_event.set()
-        self.root.quit()
-
-    def _place_widget(self, widget, position):
-        """Place the widget according to the specified position."""
-        work_left, work_top, work_right, work_bottom = GetMonitorInfo(
-            MonitorFromPoint((0, 0))
-        ).get("Work")
-        work_center_x = int(0.5 * work_right)
-        work_center_y = int(0.5 * work_bottom)
-        position_map = {
-            "n": (work_center_x, work_top),
-            "ne": (work_right, work_top),
-            "e": (work_right, work_center_y),
-            "se": (work_right, work_bottom),
-            "s": (work_center_x, work_bottom),
-            "sw": (work_left, work_bottom),
-            "w": (work_left, work_center_y),
-            "nw": (work_left, work_top),
-            "center": (work_center_x, work_center_y),
-        }
-        if position in position_map:
-            widget.place(
-                x=position_map[position][0],
-                y=position_map[position][1],
-                anchor=position,
-            )
-        elif "," in position:
-            x, y = map(int, position.split(","))
-            widget.place(x=x, y=y)
-        else:
-            print(f"Invalid position: {position}")
-            widget.place(x=work_left, y=work_top)
-
-    def _is_valid_float(self, user_input):
-        """Check if the user input is a valid float."""
-        if user_input == "":
-            return True
-        try:
-            float(user_input)
-            return True
-        except ValueError:
-            return False
-
-    # Accept and ignore all positional arguments.
-    def _on_utilization_ratio_change(self, *_):
-        """Clamp and store the utilization ratio when the input changes."""
-        value = self._utilization_ratio_string.get()
-        if value in ("0", "0.", "0.0"):
-            return
-        try:
-            float_value = float(value)
-            float_value = max(RATIO_EPSILON, min(1.0, float_value))
-            self._utilization_ratio_string.set(f"{float_value:.2f}")
-            self.config[self.trade.process][
-                "utilization_ratio"
-            ] = self._utilization_ratio_string.get()
-        except ValueError:
-            pass
-
-    def _on_mouse_wheel(self, event):
-        """Adjust the utilization ratio with mouse wheel scroll."""
-        try:
-            delta = 0.1 if event.delta > 0 else -0.1
-            current = float(self._utilization_ratio_string.get())
-            new_value = max(RATIO_EPSILON, min(1.0, current + delta))
-            self._utilization_ratio_string.set(f"{new_value:.2f}")
-        except ValueError:
-            pass
-
-
-class IndicatorTooltip:
-    """Manage a tooltip for a specific widget."""
-
-    def __init__(self, widget, text):
-        """Construct a new IndicatorTooltip object."""
-        self.widget = widget
-        self.text = text
-        self.tooltip = None
-        self.widget.bind("<Enter>", self.show_tooltip)
-        self.widget.bind("<Leave>", self.hide_tooltip)
-
-    def show_tooltip(self, _):
-        """Show the tooltip when the mouse hovers over the widget."""
-        x, y, _, _ = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 20
-        y += self.widget.winfo_rooty() + 20
-
-        self.tooltip = tk.Toplevel(self.widget)
-        self.tooltip.attributes("-alpha", 0.8)
-        self.tooltip.attributes("-topmost", True)
-        self.tooltip.geometry(f"+{x}+{y}")
-        self.tooltip.overrideredirect(True)
-
-        tk.Label(
-            self.tooltip,
-            bg="tan1",
-            fg="gray5",
-            font=("Bahnschrift", -12),
-            text=self.text,
-        ).pack()
-
-    def hide_tooltip(self, _):
-        """Hide the tooltip when the mouse leaves the widget."""
-        if hasattr(self, "tooltip"):
-            self.tooltip.destroy()
-
-
-class MessageThread(threading.Thread):
-    """Handle a thread for displaying a message in a Tkinter window."""
-
-    def __init__(self, trade, config, text):
-        """Construct a new MessageThread object."""
-        super().__init__()
-        self.trade = trade
-        self.config = config
-        self.text = text
-
-    def run(self):
-        """Run the thread, creating and displaying a message window."""
-        root = tk.Tk()
-        root.attributes("-alpha", 0.8)
-        root.attributes("-toolwindow", True)
-        root.attributes("-topmost", True)
-        root.bind("<Escape>", lambda event: root.destroy())
-        root.resizable(False, False)
-        root.title(self.config[self.trade.process]["title"] + " Message")
-        root.withdraw()
-
-        tk.Message(
-            root,
-            bg="gray5",
-            fg="tan1",
-            font=(
-                "Bahnschrift",
-                -int(
-                    self.config[self.trade.widgets_section][
-                        "message_font_size"
-                    ]
-                ),
-            ),
-            text=self.text,
-        ).pack()
-
-        root.update()
-        _, _, work_right, work_bottom = GetMonitorInfo(
-            MonitorFromPoint((0, 0))
-        ).get("Work")
-        root.geometry(
-            f"+{int(0.5 * (work_right - root.winfo_width()))}"
-            f"+{int(0.5 * (work_bottom - root.winfo_height()))}"
-        )
-        root.deiconify()
-
-        root.mainloop()
+Trade = app_models.Trade
+IndicatorThread = app_ui.IndicatorThread
+MessageThread = app_ui.MessageThread
 
 
 # Entry Point
@@ -569,7 +58,11 @@ class MessageThread(threading.Thread):
 def main():
     """Execute the main program based on command-line arguments."""
     args = get_arguments()
-    trade = Trade(*args.P)
+    trade = Trade(
+        *args.P,
+        script_path=__file__,
+        start_execute_action_thread_fn=start_execute_action_thread,
+    )
 
     file_utilities.create_launchers_exit(args, __file__)
     configure_exit(args, trade)
@@ -1423,100 +916,34 @@ def get_latest(
 
 def start_scheduler(trade, config, gui_state, process, base_manager):
     """Start a scheduler for executing actions at specified times."""
-    should_stop_speaking_process = False
-    if not trade.speaking_process:
-        trade.speaking_process = _start_speaking_process(trade, config)
-        should_stop_speaking_process = True
-
-    scheduler = sched.scheduler(time.time, time.sleep)
-    schedules = []
-
-    section = config[trade.schedules_section]
-    for option in section:
-        trigger, action = configuration.evaluate_value(section[option])
-        trigger = time.strptime(
-            time.strftime("%Y-%m-%d ") + trigger, "%Y-%m-%d %H:%M:%S"
-        )
-        trigger = time.mktime(trigger)
-        if time.time() < trigger:
-            schedule = scheduler.enterabs(
-                trigger,
-                1,
-                execute_action,
-                argument=(
-                    trade,
-                    config,
-                    gui_state,
-                    config[trade.actions_section][action],
-                ),
-            )
-            schedules.append(schedule)
-
-    try:
-        while scheduler.queue:
-            if process_utilities.is_running(process):
-                scheduler.run(False)
-                time.sleep(
-                    max(0.0, min(scheduler.queue[0].time - time.time(), 1.0))
-                    if scheduler.queue
-                    else 1.0
-                )
-            else:
-                for schedule in schedules:
-                    if schedule in scheduler.queue:
-                        scheduler.cancel(schedule)
-    finally:
-        if should_stop_speaking_process:
-            speech_synthesis.stop_speaking_process(
-                base_manager, trade.speech_manager, trade.speaking_process
-            )
+    app_scheduler.start_scheduler(
+        trade,
+        config,
+        gui_state,
+        process,
+        base_manager,
+        _get_scheduler_dependencies(),
+    )
 
 
 def start_listeners(
     trade, config, gui_state, base_manager, is_persistent=False
 ):
     """Initiate listeners for mouse and keyboard events."""
-    trade.mouse_listener = mouse.Listener(
-        on_click=lambda x, y, button, pressed: trade.on_click(
-            x, y, button, pressed, config, gui_state
-        )
+    app_listeners.start_listeners(
+        trade,
+        config,
+        gui_state,
+        base_manager,
+        _get_listener_dependencies(),
+        is_persistent=is_persistent,
     )
-    trade.mouse_listener.start()
-
-    trade.keyboard_listener = keyboard.Listener(
-        on_press=lambda key: trade.on_press(key, config, gui_state),
-        on_release=lambda key: trade.on_release(key, gui_state),
-    )
-    trade.keyboard_listener.start()
-
-    trade.speaking_process = _start_speaking_process(trade, config)
-
-    trade.stop_listeners_event = threading.Event()
-    trade.wait_listeners_thread = threading.Thread(
-        target=process_utilities.wait_listeners,
-        args=(
-            trade.stop_listeners_event,
-            trade.process,
-            trade.mouse_listener,
-            trade.keyboard_listener,
-            base_manager,
-            trade.speech_manager,
-            trade.speaking_process,
-        ),
-        kwargs={
-            "indicator_thread": trade.indicator_thread,
-            "is_persistent": is_persistent,
-        },
-    )
-    trade.wait_listeners_thread.start()
 
 
 def _start_speaking_process(trade, config):
     """Start a speaking process using the configured voice settings."""
-    return speech_synthesis.start_speaking_process(
-        trade.speech_manager,
-        voice_name=config["General"]["voice_name"],
-        speech_rate=int(config["General"]["speech_rate"]),
+    return app_listeners.start_speaking_process(
+        trade, config, speech_synthesis
     )
 
 
@@ -1567,6 +994,28 @@ def _get_action_dependencies():
     }
 
 
+def _get_listener_dependencies():
+    """Return dependencies required by listener startup helpers."""
+    return {
+        "keyboard": keyboard,
+        "mouse": mouse,
+        "process_utilities": process_utilities,
+        "start_speaking_process_fn": _start_speaking_process,
+        "threading": threading,
+    }
+
+
+def _get_scheduler_dependencies():
+    """Return dependencies required by scheduler helpers."""
+    return {
+        "configuration": configuration,
+        "execute_action_fn": execute_action,
+        "process_utilities": process_utilities,
+        "speech_synthesis": speech_synthesis,
+        "start_speaking_process_fn": _start_speaking_process,
+    }
+
+
 def _get_runtime_dependencies():
     """Return runtime dependencies required by the app runtime."""
     return {
@@ -1588,72 +1037,9 @@ def _get_runtime_dependencies():
 
 def create_startup_script(trade, config):
     """Create a startup script for a trade."""
-
-    def generate_script_lines(interpreter, script_path, options):
-        """Generate lines of script for given options."""
-        return [
-            f"    {interpreter} `\n"
-            f"      {script_path} `\n"
-            f"      {option.strip()}\n"
-            for option in options
-            if option
-        ]
-
-    activate_path, interpreter = file_utilities.select_venv(
-        os.path.dirname(__file__), activate="Activate.ps1"
+    app_startup_script.create_startup_script(
+        trade, config, __file__, file_utilities
     )
-    if not interpreter:
-        interpreter = "python.exe"
-
-    start_process = (
-        "    Start-Process "
-        f'"{os.path.basename(config[trade.process]["executable"])}" `\n'
-        "      -WorkingDirectory "
-        f'"{os.path.dirname(config[trade.process]["executable"])}"\n'
-    )
-    pre_start_options = config[trade.startup_script_section][
-        "pre_start_options"
-    ].split(",")
-    post_start_options = config[trade.startup_script_section][
-        "post_start_options"
-    ].split(",")
-    running_options = config[trade.startup_script_section][
-        "running_options"
-    ].split(",")
-
-    lines = []
-    if activate_path:
-        lines.append(f". {activate_path}\n")
-
-    lines.append(
-        f'if (Get-Process "{trade.process}" '
-        "-ErrorAction SilentlyContinue) {\n"
-    )
-    lines.append(f'    Stop-Process -Name "{trade.process}"\n')
-    lines.append(
-        f'    while (Get-Process "{trade.process}" '
-        "-ErrorAction SilentlyContinue) {\n"
-    )
-    lines.append("        Start-Sleep -Seconds 0.1\n")
-    lines.append("    }\n")
-    lines.append("    Start-Sleep -Seconds 1.0\n")
-    lines.append(start_process)
-    lines.extend(generate_script_lines(interpreter, __file__, running_options))
-    lines.append("}\n")
-    lines.append("else {\n")
-    lines.extend(
-        generate_script_lines(interpreter, __file__, pre_start_options)
-    )
-    lines.append(start_process)
-    lines.extend(
-        generate_script_lines(interpreter, __file__, post_start_options)
-    )
-    lines.append("}\n")
-    if activate_path:
-        lines.append("deactivate\n")
-
-    with open(trade.startup_script, "w", encoding="utf-8") as f:
-        f.writelines(lines)
 
 
 # Trading Calculations
