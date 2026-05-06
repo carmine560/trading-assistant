@@ -20,6 +20,7 @@ import requests
 from core_utilities import (
     configuration,
     data_utilities,
+    errors,
     file_utilities,
     process_utilities,
 )
@@ -239,8 +240,9 @@ def save_customer_margin_ratios(trade, config):
                 header=0,
             )
         except (requests.exceptions.RequestException, OSError) as e:
-            print(e)
-            sys.exit(1)
+            raise errors.ExternalServiceError(
+                f"Unable to refresh customer margin ratios: {e}"
+            ) from e
 
         df = None
         headers = configuration.evaluate_value(section["headers"])
@@ -273,11 +275,14 @@ def save_customer_margin_ratios(trade, config):
 def save_market_data(trade, config):
     """Split the rankings CSV by the first digit of the securities code."""
     rankings = config["Market Data"]["rankings"].replace("\\\\", "\\")
-    return market_data.split_rankings_by_digit(
-        rankings=rankings,
-        closing_prices_prefix=trade.closing_prices,
-        code_regex=SECURITIES_CODE_REGEX,
-    )
+    try:
+        return market_data.split_rankings_by_digit(
+            rankings=rankings,
+            closing_prices_prefix=trade.closing_prices,
+            code_regex=SECURITIES_CODE_REGEX,
+        )
+    except errors.MarketDataError:
+        return False
 
 
 def get_latest(
@@ -516,8 +521,8 @@ def calculate_share_size(trade, config, position):
 
                         customer_margin_ratio = float(row[1])
                         break
-        except OSError as e:
-            print(e)
+        except OSError:
+            pass
 
         share_size = trade_service.calculate_share_size_from_inputs(
             cash_balance=trade.cash_balance,
@@ -551,8 +556,8 @@ def get_price_limit(trade, config):
                 if row[0].strip() == trade.symbol:
                     closing_price = float(row[1].strip())
                     break
-    except OSError as e:
-        print(e)
+    except OSError:
+        pass
 
     if closing_price:
         price_limit = trade_service.calculate_price_limit_from_closing_price(
@@ -579,6 +584,9 @@ if __name__ == "__main__":
         main()
     except configuration.ConfigError as e:
         print(f"Configuration error: {e}")
+        sys.exit(1)
+    except errors.TradingAssistantError as e:
+        print(e)
         sys.exit(1)
     except Exception as e:
         print(f"Unexpected error: {e}")

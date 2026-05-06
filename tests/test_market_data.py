@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from app import market_data
+from core_utilities.errors import MarketDataError
 
 
 def test_split_rankings_by_digit_saves_valid_symbols(rankings_csv, tmp_path):
@@ -23,8 +24,15 @@ def test_split_rankings_by_digit_saves_valid_symbols(rankings_csv, tmp_path):
 
 
 def test_split_rankings_by_digit_returns_false_for_missing_file(tmp_path):
-    assert not market_data.split_rankings_by_digit(
-        rankings=str(tmp_path / "missing.csv"),
-        closing_prices_prefix=str(tmp_path / "closing_prices_"),
-        code_regex=r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?",
-    )
+    try:
+        market_data.split_rankings_by_digit(
+            rankings=str(tmp_path / "missing.csv"),
+            closing_prices_prefix=str(tmp_path / "closing_prices_"),
+            code_regex=(
+                r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d" r"[\dACDFGHJKLMNPRSTUWXY]5?"
+            ),
+        )
+    except MarketDataError:
+        pass
+    else:
+        raise AssertionError("Expected MarketDataError for missing file.")

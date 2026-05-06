@@ -5,6 +5,8 @@ import csv
 import os
 import re
 
+from core_utilities.errors import MarketDataError
+
 
 def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
     """Split the rankings CSV by the first digit of the securities code."""
@@ -21,8 +23,9 @@ def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
                     (securities_code, row[9].strip().replace(",", ""))
                 )
     except OSError as e:
-        print(e)
-        return False
+        raise MarketDataError(
+            f"Unable to read rankings file: {rankings}"
+        ) from e
 
     for digit in range(1, 10):
         digit_string = str(digit)
@@ -40,13 +43,17 @@ def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
                     ]:
                         writer.writerow([securities_code, current_price])
         except OSError as e:
-            print(e)
-            return False
+            raise MarketDataError(
+                "Unable to write closing prices file for "
+                f"digit {digit_string}."
+            ) from e
 
     if os.path.isfile(rankings):
         try:
             os.remove(rankings)
         except OSError as e:
-            print(e)
+            raise MarketDataError(
+                f"Unable to remove processed rankings file: {rankings}"
+            ) from e
 
     return True

@@ -4,7 +4,8 @@ from datetime import date
 import configparser
 import os
 import re
-import sys
+
+from core_utilities.errors import ConfigBuildError
 
 
 def configure(
@@ -217,8 +218,7 @@ def _configure_hypersbi2(trade, config, file_utilities, data_utilities):
                 trade.executable = os.path.normpath(
                     os.path.join(f.read(), trade.process + ".exe")
                 )
-        except OSError as e:
-            print(e)
+        except OSError:
             for program_files in ("%ProgramFiles%", "%ProgramFiles(x86)%"):
                 executable = os.path.join(
                     os.path.expandvars(program_files),
@@ -230,11 +230,10 @@ def _configure_hypersbi2(trade, config, file_utilities, data_utilities):
                     trade.executable = executable
                     break
             if not trade.executable:
-                print(
+                raise ConfigBuildError(
                     f"The executable file for {trade.process}"
                     " does not exist."
                 )
-                sys.exit(1)
 
     file_description = file_utilities.get_file_description(trade.executable)
     title = (
