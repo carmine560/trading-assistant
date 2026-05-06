@@ -18,6 +18,7 @@ def _build_trade(spoken):
         market_holidays="market_holidays.csv",
         resource_directory="resources",
         speech_manager=SimpleNamespace(set_speech_text=spoken.append),
+        indicator_thread=None,
         keyboard_listener_state=0,
         key_to_check=None,
         should_continue=True,
@@ -192,6 +193,23 @@ def test_execute_action_returns_false_for_unknown_command(monkeypatch):
     assert spoken == []
 
 
+def test_execute_action_unknown_command_does_not_print(monkeypatch, capsys):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    deps, _ = _build_deps(monkeypatch, spoken)
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("unknown_command",)],
+        deps,
+    )
+    assert capsys.readouterr().out == ""
+
+
 def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -256,6 +274,43 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
         deps,
     )
     assert spoken == ["Margin trading suspended."]
+
+
+def test_show_hide_indicator_returns_false_without_widgets_section(
+    monkeypatch,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    deps, _ = _build_deps(monkeypatch, spoken)
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("show_hide_indicator",)],
+        deps,
+    )
+
+
+def test_invalid_nested_action_argument_returns_false_without_printing(
+    monkeypatch, capsys
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    deps, _ = _build_deps(monkeypatch, spoken)
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("is_now_after", "00:00:00", 123)],
+        deps,
+    )
+    assert capsys.readouterr().out == ""
 
 
 def test_all_keys_includes_execute_action_and_save_market_data():

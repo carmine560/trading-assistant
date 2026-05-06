@@ -83,7 +83,6 @@ def execute_action(
     for instruction in action:
         command = instruction[0]
         if command not in ALL_KEYS:
-            print(f"'{command}' is not a recognized command.")
             return False
         if not _execute_instruction(
             trade, config, gui_state, instruction, deps
@@ -273,7 +272,7 @@ def _handle_window_command(
             )
             trade.indicator_thread.start()
         else:
-            print(f"The '{trade.widgets_section}' section is undefined.")
+            return False
     elif command == "show_hide_window":
         gui_interactions.enumerate_windows(
             gui_interactions.show_hide_window, argument
@@ -631,7 +630,6 @@ def _recursively_execute_action(
             should_initialize=False,
         )
 
-    print(additional_argument, "is not a list or a string.")
     return False
 
 

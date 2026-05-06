@@ -8,6 +8,14 @@ from core_utilities import file_utilities
 from core_utilities.errors import UtilityOperationError
 
 
+class _IterableFiles(list):
+    """Provide list iteration plus a pandas-like `values` attribute."""
+
+    @property
+    def values(self):
+        return list(self)
+
+
 def test_archive_encrypt_directory_raises_when_gpg_is_unavailable(monkeypatch):
     monkeypatch.setattr(
         file_utilities,
@@ -56,3 +64,21 @@ def test_write_chapter_ignores_invalid_offset_without_printing(
 
     assert capsys.readouterr().out == ""
     assert "title=Current" in metadata.read_text(encoding="utf-8")
+
+
+def test_compare_directory_list_returns_structured_discrepancies(tmp_path):
+    directory = tmp_path / "files"
+    directory.mkdir()
+    (directory / "present.txt").write_text("", encoding="utf-8")
+    (directory / "unexpected.txt").write_text("", encoding="utf-8")
+
+    result = file_utilities.compare_directory_list(
+        str(directory),
+        r".+\.txt",
+        _IterableFiles(["present.txt", "missing.txt"]),
+    )
+
+    assert result == {
+        "unexpected_files": [str(directory / "unexpected.txt")],
+        "missing_files": [str(directory / "missing.txt")],
+    }
