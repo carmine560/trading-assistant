@@ -1,4 +1,4 @@
-"""Listener helpers extracted from the main entrypoint."""
+"""Start mouse, keyboard, and speech listeners."""
 
 
 def start_listeners(

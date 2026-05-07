@@ -1,4 +1,4 @@
-"""Scheduler helpers extracted from the main entrypoint."""
+"""Schedule configured actions while the trading process runs."""
 
 import sched
 import time

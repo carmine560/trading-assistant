@@ -1,4 +1,4 @@
-"""Configuration workflow helpers extracted from the entrypoint."""
+"""Configure actions, schedules, and persisted trading settings."""
 
 import os
 import sys

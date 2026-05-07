@@ -1,4 +1,4 @@
-"""Runtime orchestration extracted from the main entrypoint."""
+"""Run trading assistant startup and action workflows."""
 
 
 def run(args, trade, config, gui_state, deps):

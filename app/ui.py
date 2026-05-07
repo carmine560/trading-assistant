@@ -1,4 +1,4 @@
-"""UI helpers extracted from the main entrypoint."""
+"""Render indicator and message windows for trading state."""
 
 from tkinter import TclError
 import threading

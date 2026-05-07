@@ -1,4 +1,4 @@
-"""Application models extracted from the main entrypoint."""
+"""Define trading assistant state and input-handling models."""
 
 import os
 import re

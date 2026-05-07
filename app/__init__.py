@@ -1,1 +1,1 @@
-"""Application modules for trading assistant."""
+"""Expose trading assistant application modules."""

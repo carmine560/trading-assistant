@@ -1,4 +1,4 @@
-"""Trading math helpers extracted from the main entrypoint."""
+"""Calculate price limits and share sizes for trades."""
 
 PRICE_RANGES = (
     (100, 30),

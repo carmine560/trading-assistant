@@ -1,4 +1,4 @@
-"""Configuration-building helpers extracted from the entrypoint."""
+"""Build default and vendor-specific trading assistant configuration."""
 
 from datetime import date
 import configparser

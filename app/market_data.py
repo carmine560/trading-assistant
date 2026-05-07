@@ -1,4 +1,4 @@
-"""Market data helpers extracted from the main entrypoint."""
+"""Persist market rankings as per-digit closing price files."""
 
 from collections import defaultdict
 import csv

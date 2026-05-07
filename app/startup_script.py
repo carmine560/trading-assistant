@@ -1,4 +1,4 @@
-"""Startup-script helpers extracted from the main entrypoint."""
+"""Generate PowerShell startup scripts for trading workflows."""
 
 import os
 

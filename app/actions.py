@@ -1,4 +1,4 @@
-"""Action execution helpers extracted from the main entrypoint."""
+"""Execute configured trading assistant actions."""
 
 import math
 import os
