@@ -1,4 +1,4 @@
-"""Define trading assistant state and input-handling models."""
+"""Trading assistant state models and input event handlers."""
 
 import os
 import re

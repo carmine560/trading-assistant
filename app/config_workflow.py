@@ -1,4 +1,4 @@
-"""Configure actions, schedules, and persisted trading settings."""
+"""Interactive trading assistant configuration workflows and helpers."""
 
 import os
 import sys

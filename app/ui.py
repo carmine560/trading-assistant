@@ -1,4 +1,4 @@
-"""Render indicator and message windows for trading state."""
+"""Indicator and message window rendering for trading state."""
 
 from tkinter import TclError
 import threading

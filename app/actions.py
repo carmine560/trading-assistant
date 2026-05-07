@@ -1,4 +1,4 @@
-"""Execute configured trading assistant actions."""
+"""Configured action execution for trading assistant workflows."""
 
 import math
 import os

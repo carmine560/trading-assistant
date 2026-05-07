@@ -1,4 +1,4 @@
-"""Schedule configured actions while the trading process runs."""
+"""Time-based action scheduling for active trading assistant sessions."""
 
 import sched
 import time

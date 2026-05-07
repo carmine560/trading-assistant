@@ -1,4 +1,4 @@
-"""Build default and vendor-specific trading assistant configuration."""
+"""Trading assistant configuration defaults and vendor overrides."""
 
 from datetime import date
 import configparser

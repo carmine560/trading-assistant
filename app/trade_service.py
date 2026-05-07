@@ -1,4 +1,4 @@
-"""Calculate price limits and share sizes for trades."""
+"""Trade sizing and price-limit calculations for trading workflows."""
 
 PRICE_RANGES = (
     (100, 30),

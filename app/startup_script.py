@@ -1,4 +1,4 @@
-"""Generate PowerShell startup scripts for trading workflows."""
+"""PowerShell startup script generation for trading workflows."""
 
 import os
 

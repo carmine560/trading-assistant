@@ -1,4 +1,4 @@
-"""Persist market rankings as per-digit closing price files."""
+"""Market rankings processing into per-digit closing price files."""
 
 from collections import defaultdict
 import csv

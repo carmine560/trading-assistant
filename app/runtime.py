@@ -1,4 +1,4 @@
-"""Run trading assistant startup and action workflows."""
+"""Trading assistant runtime orchestration for actions and services."""
 
 
 def run(args, trade, config, gui_state, deps):
