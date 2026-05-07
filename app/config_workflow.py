@@ -283,6 +283,8 @@ def _create_action_shortcut(
     activate_path, interpreter = file_utilities.select_venv(
         os.path.dirname(script_path), activate="Activate.ps1"
     )
+    # To pin the shortcut to the Taskbar, specify an executable file as the
+    # 'target_path' argument.
     file_utilities.create_shortcut(
         action_name,
         powershell if powershell else "py.exe",

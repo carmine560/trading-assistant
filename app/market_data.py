@@ -34,6 +34,10 @@ def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
                 f"{closing_prices_prefix}{digit}.csv",
                 "w",
                 encoding="utf-8",
+                # 'csv.writer()' on Windows writes '\r\n' itself; without
+                # 'newline=""', 'open()' would translate '\n' to '\r\n',
+                # producing '\r\r\n' (seen as '^M') and causing extra blank
+                # lines.
                 newline="",
             ) as f:
                 writer = csv.writer(f)

@@ -181,12 +181,15 @@ class Trade(initializer.Initializer):
     def on_press(self, key, config, gui_state):
         """Handle key press events."""
         if gui_state.is_interactive_window():
+            # Add context for whether modifiers are pressed.
             if key in Trade._MODIFIER_KEYS:
                 self._pressed_modifiers.add(key)
                 return
             if self.keyboard_listener_state == 0:
                 if key in Trade._FUNCTION_KEYS and not self._pressed_modifiers:
                     now = time.time()
+                    # A 0.3-second debounce interval prevents double-triggers
+                    # from both software detection and hardware chattering.
                     if now - self._last_action_time > 0.3:
                         action = configuration.evaluate_value(
                             config[self.process]["input_map"]

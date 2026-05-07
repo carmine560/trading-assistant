@@ -34,6 +34,9 @@ def run(args, trade, config, gui_state, deps):
 
 def persist_config_on_exit(trade, config, deps):
     """Persist configuration on interpreter shutdown."""
+    # Ensure the config is written on normal interpreter shutdown, since
+    # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not run if
+    # the main thread terminates abruptly.
     deps["configuration"].write_config(
         config, trade.config_path, is_encrypted=True
     )
@@ -43,6 +46,7 @@ def _start_speech_manager(trade, deps):
     """Create and start the speech manager used by runtime workflows."""
     base_manager_cls = deps["base_manager_cls"]
     speech_synthesis = deps["speech_synthesis"]
+    # Use 'BaseManager' to share 'SpeechManager' across processes.
     base_manager_cls.register("SpeechManager", speech_synthesis.SpeechManager)
     base_manager = base_manager_cls()
     base_manager.start()
