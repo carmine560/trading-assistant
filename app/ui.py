@@ -7,6 +7,8 @@ import tkinter as tk
 
 from win32api import GetMonitorInfo, MonitorFromPoint
 
+from core_utilities.errors import WidgetPositionError
+
 RATIO_EPSILON = 1e-4
 
 
@@ -19,144 +21,158 @@ class IndicatorThread(threading.Thread):
         self.trade = trade
         self.config = config
         self.root = None
+        self.error = None
         self.stop_event = threading.Event()
         self._utilization_ratio_string = None
 
     def run(self):
         """Run the thread, creating and placing widgets on the screen."""
-        self.root = tk.Tk()
-        self.root.attributes("-alpha", 0.8)
-        self.root.attributes("-fullscreen", True)
-        self.root.attributes("-topmost", True)
-        self.root.attributes("-transparentcolor", "black")
-        self.root.config(bg="black")
-        self.root.overrideredirect(True)
-        self.root.title(
-            self.config[self.trade.process]["title"] + " Indicator"
-        )
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-        is_clock_label_enabled = self.config[
-            self.trade.widgets_section
-        ].getboolean("is_clock_label_enabled")
-        maximum_daily_number_of_trades = int(
-            self.config[self.trade.process]["maximum_daily_number_of_trades"]
-        )
-
-        if is_clock_label_enabled:
-            clock_label = tk.Label(
-                self.root,
-                font=(
-                    "Tahoma",
-                    -int(
-                        self.config[self.trade.widgets_section][
-                            "clock_label_font_size"
-                        ]
-                    ),
-                ),
-                bg="gray5",
-                fg="tan1",
+        try:
+            self.root = tk.Tk()
+            self.root.attributes("-alpha", 0.8)
+            self.root.attributes("-fullscreen", True)
+            self.root.attributes("-topmost", True)
+            self.root.attributes("-transparentcolor", "black")
+            self.root.config(bg="black")
+            self.root.overrideredirect(True)
+            self.root.title(
+                self.config[self.trade.process]["title"] + " Indicator"
             )
-            self._place_widget(
-                clock_label,
+            self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+            is_clock_label_enabled = self.config[
+                self.trade.widgets_section
+            ].getboolean("is_clock_label_enabled")
+            maximum_daily_number_of_trades = int(
+                self.config[self.trade.process][
+                    "maximum_daily_number_of_trades"
+                ]
+            )
+
+            if is_clock_label_enabled:
+                clock_label = tk.Label(
+                    self.root,
+                    font=(
+                        "Tahoma",
+                        -int(
+                            self.config[self.trade.widgets_section][
+                                "clock_label_font_size"
+                            ]
+                        ),
+                    ),
+                    bg="gray5",
+                    fg="tan1",
+                )
+                self._place_widget(
+                    clock_label,
+                    self.config[self.trade.widgets_section][
+                        "clock_label_position"
+                    ],
+                )
+                IndicatorTooltip(clock_label, "Current system time")
+
+            status_bar_frame_font_size = int(
                 self.config[self.trade.widgets_section][
-                    "clock_label_position"
+                    "status_bar_frame_font_size"
+                ]
+            )
+            status_bar_frame = tk.Frame(self.root, bg="gray5")
+            self._place_widget(
+                status_bar_frame,
+                self.config[self.trade.widgets_section][
+                    "status_bar_frame_position"
                 ],
             )
-            IndicatorTooltip(clock_label, "Current system time")
 
-        status_bar_frame_font_size = int(
-            self.config[self.trade.widgets_section][
-                "status_bar_frame_font_size"
-            ]
-        )
-        status_bar_frame = tk.Frame(self.root, bg="gray5")
-        self._place_widget(
-            status_bar_frame,
-            self.config[self.trade.widgets_section][
-                "status_bar_frame_position"
-            ],
-        )
+            current_number_of_trades_label = tk.Label(
+                status_bar_frame,
+                bg="gray5",
+                fg="tan1",
+                font=("Bahnschrift", -status_bar_frame_font_size),
+                height=1,
+                width=5,
+            )
+            current_number_of_trades_label.grid(row=0, column=0)
+            if maximum_daily_number_of_trades:
+                text = (
+                    "Current number of trades / maximum daily number of trades"
+                )
+            else:
+                text = "Current number of trades"
 
-        current_number_of_trades_label = tk.Label(
-            status_bar_frame,
-            bg="gray5",
-            fg="tan1",
-            font=("Bahnschrift", -status_bar_frame_font_size),
-            height=1,
-            width=5,
-        )
-        current_number_of_trades_label.grid(row=0, column=0)
-        if maximum_daily_number_of_trades:
-            text = "Current number of trades / maximum daily number of trades"
-        else:
-            text = "Current number of trades"
+            IndicatorTooltip(current_number_of_trades_label, text)
 
-        IndicatorTooltip(current_number_of_trades_label, text)
+            self._utilization_ratio_string = tk.StringVar()
+            self._utilization_ratio_string.set(
+                self.config[self.trade.process]["utilization_ratio"]
+            )
+            utilization_ratio_spinbox = tk.Spinbox(
+                status_bar_frame,
+                bd=0,
+                bg="gray5",
+                fg="tan1",
+                font=("Bahnschrift", -status_bar_frame_font_size),
+                # 'from' is a reserved keyword in Python.
+                from_=RATIO_EPSILON,
+                highlightthickness=0,
+                increment=0.01,
+                insertbackground="tan1",
+                justify="center",
+                relief="flat",
+                selectbackground="tan1",
+                selectforeground="gray5",
+                textvariable=self._utilization_ratio_string,
+                to=1.0,
+                width=5,
+                # 'validate' and 'validatecommand' are inherited from
+                # tk.Entry.
+                validate="key",
+                validatecommand=(
+                    self.root.register(self._is_valid_float),
+                    "%P",
+                ),
+            )
+            utilization_ratio_spinbox.grid(row=0, column=1)
+            self._utilization_ratio_string.trace_add(
+                "write", self._on_utilization_ratio_change
+            )
+            utilization_ratio_spinbox.bind(
+                "<MouseWheel>", self._on_mouse_wheel
+            )
+            IndicatorTooltip(utilization_ratio_spinbox, "Utilization ratio")
 
-        self._utilization_ratio_string = tk.StringVar()
-        self._utilization_ratio_string.set(
-            self.config[self.trade.process]["utilization_ratio"]
-        )
-        utilization_ratio_spinbox = tk.Spinbox(
-            status_bar_frame,
-            bd=0,
-            bg="gray5",
-            fg="tan1",
-            font=("Bahnschrift", -status_bar_frame_font_size),
-            # 'from' is a reserved keyword in Python.
-            from_=RATIO_EPSILON,
-            highlightthickness=0,
-            increment=0.01,
-            insertbackground="tan1",
-            justify="center",
-            relief="flat",
-            selectbackground="tan1",
-            selectforeground="gray5",
-            textvariable=self._utilization_ratio_string,
-            to=1.0,
-            width=5,
-            # 'validate' and 'validatecommand' are inherited from tk.Entry.
-            validate="key",
-            validatecommand=(self.root.register(self._is_valid_float), "%P"),
-        )
-        utilization_ratio_spinbox.grid(row=0, column=1)
-        self._utilization_ratio_string.trace_add(
-            "write", self._on_utilization_ratio_change
-        )
-        utilization_ratio_spinbox.bind("<MouseWheel>", self._on_mouse_wheel)
-        IndicatorTooltip(utilization_ratio_spinbox, "Utilization ratio")
+            while not self.stop_event.is_set():
+                try:
+                    if is_clock_label_enabled:
+                        clock_label.config(text=time.strftime("%H:%M:%S"))
 
-        while not self.stop_event.is_set():
-            try:
-                if is_clock_label_enabled:
-                    clock_label.config(text=time.strftime("%H:%M:%S"))
-
-                current_number_of_trades = self.config[
-                    self.trade.variables_section
-                ]["current_number_of_trades"]
-                if maximum_daily_number_of_trades:
-                    current_number_of_trades_label.config(
-                        text=(
-                            f"{current_number_of_trades}"
-                            f"/{maximum_daily_number_of_trades}"
+                    current_number_of_trades = self.config[
+                        self.trade.variables_section
+                    ]["current_number_of_trades"]
+                    if maximum_daily_number_of_trades:
+                        current_number_of_trades_label.config(
+                            text=(
+                                f"{current_number_of_trades}"
+                                f"/{maximum_daily_number_of_trades}"
+                            )
                         )
-                    )
-                else:
-                    current_number_of_trades_label.config(
-                        text=current_number_of_trades
-                    )
+                    else:
+                        current_number_of_trades_label.config(
+                            text=current_number_of_trades
+                        )
 
-                self.root.update()
-            except TclError:
-                break
-            time.sleep(0.01)
-
-        if self.root:
-            try:
-                self.root.destroy()
-            except TclError:
-                pass
+                    self.root.update()
+                except TclError:
+                    break
+                time.sleep(0.01)
+        except WidgetPositionError as exc:
+            self.error = exc
+        finally:
+            if self.root:
+                try:
+                    self.root.destroy()
+                except TclError:
+                    pass
 
     def stop(self):
         """Set the stop event to signal the thread to stop."""
@@ -195,8 +211,7 @@ class IndicatorThread(threading.Thread):
             x, y = map(int, position.split(","))
             widget.place(x=x, y=y)
         else:
-            print(f"Invalid position: {position}")
-            widget.place(x=work_left, y=work_top)
+            raise WidgetPositionError(f"Invalid widget position: {position}")
 
     def _is_valid_float(self, user_input):
         """Check if the user input is a valid float."""
