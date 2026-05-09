@@ -3,10 +3,11 @@
 import sched
 import time
 
+from core_utilities.config_validation import evaluate_value
+
 
 def start_scheduler(trade, config, gui_state, process, base_manager, deps):
     """Start a scheduler for executing actions at specified times."""
-    configuration = deps["configuration"]
     process_utilities = deps["process_utilities"]
     speech_synthesis = deps["speech_synthesis"]
 
@@ -22,7 +23,7 @@ def start_scheduler(trade, config, gui_state, process, base_manager, deps):
 
     section = config[trade.schedules_section]
     for option in section:
-        trigger, action = configuration.evaluate_value(section[option])
+        trigger, action = evaluate_value(section[option])
         trigger = time.strptime(
             time.strftime("%Y-%m-%d ") + trigger, "%Y-%m-%d %H:%M:%S"
         )

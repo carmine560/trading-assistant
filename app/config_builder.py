@@ -5,15 +5,16 @@ import configparser
 import os
 import re
 
+from core_utilities.config_io import read_config
 from core_utilities.errors import ConfigBuildError
 
 
 def configure(
     trade,
     file_utilities,
-    configuration,
     data_utilities,
     securities_code_regex,
+    read_config_fn=read_config,
     can_interpolate=True,
     can_override=True,
 ):
@@ -178,7 +179,7 @@ def configure(
         )
 
     if can_override:
-        configuration.read_config(config, trade.config_path, is_encrypted=True)
+        read_config_fn(config, trade.config_path, is_encrypted=True)
 
     current_date = date.today()
     if (

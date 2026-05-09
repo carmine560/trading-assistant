@@ -3,6 +3,15 @@
 import os
 import sys
 
+from core_utilities.config_diff import check_config_changes
+from core_utilities.config_io import write_config
+from core_utilities.config_prompt import (
+    delete_option,
+    modify_option,
+    modify_section,
+)
+from core_utilities.config_validation import list_section
+
 
 def is_xy(value):
     """Return True if the value represents exactly two integers (X, Y)."""
@@ -17,11 +26,11 @@ def is_xy(value):
         return False
 
 
-def create_completion(trade, config, configuration, file_utilities):
+def create_completion(trade, config, file_utilities):
     """Generate completion scripts for options and values."""
     options = ("-a", "-A", "-D")
-    trade.instruction_items["preset_additional_values"] = (
-        configuration.list_section(config, trade.actions_section)
+    trade.instruction_items["preset_additional_values"] = list_section(
+        config, trade.actions_section
     )
 
     file_utilities.create_powershell_completion(
@@ -47,7 +56,6 @@ def configure_exit(
 ):
     """Configure parameters based on command-line arguments and exit."""
     configure_fn = deps["configure_fn"]
-    configuration = deps["configuration"]
     create_completion_fn = deps["create_completion_fn"]
     create_startup_script_fn = deps["create_startup_script_fn"]
     file_utilities = deps["file_utilities"]
@@ -57,8 +65,8 @@ def configure_exit(
 
     config = configure_fn(trade, can_interpolate=False)
     backup_parameters = {"number_of_backups": 8}
-    trade.instruction_items["preset_additional_values"] = (
-        configuration.list_section(config, trade.actions_section)
+    trade.instruction_items["preset_additional_values"] = list_section(
+        config, trade.actions_section
     )
 
     if any((args.S, args.L, args.CB, args.U, args.PL, args.DLL, args.MDN)):
@@ -66,21 +74,18 @@ def configure_exit(
             args,
             trade,
             config,
-            configuration,
             backup_parameters,
             ratio_epsilon,
         )
         return True
-    if args.SS and configuration.modify_section(
+    if args.SS and modify_section(
         config,
         trade.startup_script_section,
         trade.config_path,
         backup_parameters=backup_parameters,
         is_encrypted=True,
     ):
-        configuration.write_config(
-            config, trade.config_path, is_encrypted=True
-        )
+        write_config(config, trade.config_path, is_encrypted=True)
         config = configure_fn(trade)
         create_startup_script_fn(trade, config)
         powershell = file_utilities.select_executable(
@@ -107,7 +112,7 @@ def configure_exit(
         trade.instruction_items["preset_geometries"] = [
             f"${{HYPERSBI2 Geometries:{option}}}" for option in sorted(items)
         ]
-        if configuration.modify_option(
+        if modify_option(
             config,
             trade.actions_section,
             args.A[0],
@@ -148,14 +153,13 @@ def configure_exit(
             args,
             trade,
             config,
-            configuration,
             create_completion_fn,
             backup_parameters,
             file_utilities,
         )
         return True
     if args.C:
-        configuration.check_config_changes(
+        check_config_changes(
             configure_fn(trade, can_interpolate=False, can_override=False),
             trade.config_path,
             excluded_sections=(
@@ -174,7 +178,6 @@ def _configure_sections(
     args,
     trade,
     config,
-    configuration,
     backup_parameters,
     ratio_epsilon,
 ):
@@ -254,7 +257,7 @@ def _configure_sections(
                 all_values,
                 limits,
             ) = values
-            configuration.modify_section(
+            modify_section(
                 config,
                 section,
                 trade.config_path,
@@ -305,7 +308,6 @@ def _delete_script_or_action(
     args,
     trade,
     config,
-    configuration,
     create_completion_fn,
     backup_parameters,
     file_utilities,
@@ -317,7 +319,7 @@ def _delete_script_or_action(
         if os.path.isfile(trade.startup_script):
             os.remove(trade.startup_script)
     else:
-        configuration.delete_option(
+        delete_option(
             config,
             trade.actions_section,
             base,

@@ -7,7 +7,8 @@ import time
 from pynput import keyboard
 import win32gui
 
-from core_utilities import configuration, file_utilities, initializer
+from core_utilities import file_utilities, initializer
+from core_utilities.config_validation import evaluate_value
 from app import actions as app_actions
 
 
@@ -170,9 +171,9 @@ class Trade(initializer.Initializer):
     def on_click(self, _1, _2, button, pressed, config, gui_state):
         """Handle mouse click events."""
         if gui_state.is_interactive_window() and not pressed:
-            action = configuration.evaluate_value(
-                config[self.process]["input_map"]
-            ).get(button.name)
+            action = evaluate_value(config[self.process]["input_map"]).get(
+                button.name
+            )
             if action:
                 self._start_execute_action_thread_fn(
                     self, config, gui_state, action
@@ -191,7 +192,7 @@ class Trade(initializer.Initializer):
                     # A 0.3-second debounce interval prevents double-triggers
                     # from both software detection and hardware chattering.
                     if now - self._last_action_time > 0.3:
-                        action = configuration.evaluate_value(
+                        action = evaluate_value(
                             config[self.process]["input_map"]
                         ).get(key.name)
                         if action:

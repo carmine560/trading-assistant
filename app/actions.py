@@ -5,6 +5,9 @@ import os
 import threading
 import time
 
+from core_utilities.config_io import write_config
+from core_utilities.config_validation import evaluate_value
+
 ALL_KEYS = (
     "back_to",
     "calculate_share_size",
@@ -78,7 +81,7 @@ def execute_action(
         gui_state.initialize_attributes()
 
     if isinstance(action, str):
-        action = deps["configuration"].evaluate_value(action)
+        action = evaluate_value(action)
 
     for instruction in action:
         command = instruction[0]
@@ -445,7 +448,6 @@ def _handle_trade_state_command(
     deps,
 ):
     """Handle trade state and accounting commands."""
-    configuration = deps["configuration"]
     file_utilities = deps["file_utilities"]
     gui_interactions = deps["gui_interactions"]
     pyautogui = deps["pyautogui"]
@@ -471,9 +473,7 @@ def _handle_trade_state_command(
             config[trade.variables_section]["initial_cash_balance"] = str(
                 trade.cash_balance
             )
-            configuration.write_config(
-                config, trade.config_path, is_encrypted=True
-            )
+            write_config(config, trade.config_path, is_encrypted=True)
         else:
             daily_profit = trade.cash_balance - initial_cash_balance
             if daily_profit < daily_loss_limit:
@@ -495,9 +495,7 @@ def _handle_trade_state_command(
         config[trade.variables_section]["current_number_of_trades"] = str(
             current_number_of_trades
         )
-        configuration.write_config(
-            config, trade.config_path, is_encrypted=True
-        )
+        write_config(config, trade.config_path, is_encrypted=True)
         file_utilities.write_chapter(
             file_utilities.get_latest_file(
                 config[trade.process]["screencast_directory"],

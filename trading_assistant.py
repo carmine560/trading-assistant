@@ -24,6 +24,12 @@ from core_utilities import (
     file_utilities,
     process_utilities,
 )
+from core_utilities.config_io import read_config
+from core_utilities.config_validation import (
+    ConfigError,
+    ensure_section_exists,
+    evaluate_value,
+)
 from app import actions as app_actions
 from app import config_builder
 from app import config_workflow
@@ -70,11 +76,9 @@ def main():
         return
 
     config = configure(trade)
-    configuration.ensure_section_exists(config, trade.process)
+    ensure_section_exists(config, trade.process)
     gui_state = gui_interactions.GuiState(
-        configuration.evaluate_value(
-            config[trade.process]["interactive_windows"]
-        )
+        evaluate_value(config[trade.process]["interactive_windows"])
     )
     app_runtime.run(
         args,
@@ -178,9 +182,9 @@ def configure(trade, can_interpolate=True, can_override=True):
     return config_builder.configure(
         trade,
         file_utilities=file_utilities,
-        configuration=configuration,
         data_utilities=data_utilities,
         securities_code_regex=SECURITIES_CODE_REGEX,
+        read_config_fn=read_config,
         can_interpolate=can_interpolate,
         can_override=can_override,
     )
@@ -213,16 +217,12 @@ def is_trading_day(date, market_holidays, date_format):
 
 def create_completion(trade, config):
     """Generate completion scripts for options and values."""
-    config_workflow.create_completion(
-        trade, config, configuration, file_utilities
-    )
+    config_workflow.create_completion(trade, config, file_utilities)
 
 
 def save_customer_margin_ratios(trade, config):
     """Save customer margin ratios for a given trade."""
-    configuration.ensure_section_exists(
-        config, trade.customer_margin_ratios_section
-    )
+    ensure_section_exists(config, trade.customer_margin_ratios_section)
 
     section = config[trade.customer_margin_ratios_section]
 
@@ -249,7 +249,7 @@ def save_customer_margin_ratios(trade, config):
             ) from e
 
         df = None
-        headers = configuration.evaluate_value(section["headers"])
+        headers = evaluate_value(section["headers"])
         for index, df in enumerate(dfs):
             if tuple(df.columns.values) == headers:
                 df = dfs[index][
@@ -425,7 +425,6 @@ def _get_action_dependencies():
     """Return runtime dependencies required by the action executor."""
     return {
         "calculate_share_size_fn": calculate_share_size,
-        "configuration": configuration,
         "data_utilities": data_utilities,
         "file_utilities": file_utilities,
         "gui_interactions": gui_interactions,
@@ -456,7 +455,6 @@ def _get_listener_dependencies():
 def _get_scheduler_dependencies():
     """Return dependencies required by scheduler helpers."""
     return {
-        "configuration": configuration,
         "execute_action_fn": execute_action,
         "process_utilities": process_utilities,
         "speech_synthesis": speech_synthesis,
@@ -483,7 +481,6 @@ def _get_runtime_dependencies():
 def _get_config_workflow_deps():
     """Return dependencies required by config workflow helpers."""
     return {
-        "configuration": configuration,
         "configure_fn": configure,
         "create_completion_fn": create_completion,
         "create_startup_script_fn": create_startup_script,
@@ -586,7 +583,7 @@ def get_price_limit(trade, config):
 if __name__ == "__main__":
     try:
         main()
-    except configuration.ConfigError as e:
+    except ConfigError as e:
         print(f"Configuration error: {e}")
         sys.exit(1)
     except errors.TradingAssistantError as e:
