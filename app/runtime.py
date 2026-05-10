@@ -37,9 +37,7 @@ def persist_config_on_exit(trade, config, deps):
     # Ensure the config is written on normal interpreter shutdown, since
     # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not run if
     # the main thread terminates abruptly.
-    deps["configuration"].write_config(
-        config, trade.config_path, is_encrypted=True
-    )
+    deps["write_config_fn"](config, trade.config_path, is_encrypted=True)
 
 
 def _start_speech_manager(trade, deps):

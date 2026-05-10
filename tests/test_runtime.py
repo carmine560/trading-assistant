@@ -41,9 +41,6 @@ def test_run_executes_single_action_with_transient_listeners():
             register=lambda *args: calls.append("atexit")
         ),
         "base_manager_cls": FakeManager,
-        "configuration": SimpleNamespace(
-            write_config=lambda *args, **kwargs: None
-        ),
         "execute_action_fn": (
             lambda trade, config, gui_state, action: calls.append(
                 ("execute_action", action)
@@ -68,6 +65,7 @@ def test_run_executes_single_action_with_transient_listeners():
                 start=lambda: calls.append("thread.start")
             )
         ),
+        "write_config_fn": lambda *args, **kwargs: None,
     }
 
     runtime.run(args, trade, config, gui_state, deps)

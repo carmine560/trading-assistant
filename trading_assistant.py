@@ -18,13 +18,12 @@ import pyautogui
 import requests
 
 from core_utilities import (
-    configuration,
     data_utilities,
     errors,
     file_utilities,
     process_utilities,
 )
-from core_utilities.config_io import read_config
+from core_utilities.config_io import read_config, write_config
 from core_utilities.config_validation import (
     ConfigError,
     ensure_section_exists,
@@ -467,7 +466,6 @@ def _get_runtime_dependencies():
     return {
         "atexit": atexit,
         "base_manager_cls": BaseManager,
-        "configuration": configuration,
         "execute_action_fn": execute_action,
         "process_utilities": process_utilities,
         "save_customer_margin_ratios_fn": save_customer_margin_ratios,
@@ -475,6 +473,7 @@ def _get_runtime_dependencies():
         "start_listeners_fn": start_listeners,
         "start_scheduler_fn": start_scheduler,
         "threading": threading,
+        "write_config_fn": write_config,
     }
 
 
