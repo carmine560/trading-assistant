@@ -6,14 +6,16 @@ import time
 from core_utilities.config_validation import evaluate_value
 
 
-def start_scheduler(trade, config, gui_state, process, base_manager, deps):
+def start_scheduler(
+    trade, config, gui_state, process, base_manager, dependencies
+):
     """Start a scheduler for executing actions at specified times."""
-    process_utilities = deps["process_utilities"]
-    speech_synthesis = deps["speech_synthesis"]
+    process_utilities = dependencies["process_utilities"]
+    speech_synthesis = dependencies["speech_synthesis"]
 
     should_stop_speaking_process = False
     if not trade.speaking_process:
-        trade.speaking_process = deps["start_speaking_process_fn"](
+        trade.speaking_process = dependencies["start_speaking_process_fn"](
             trade, config
         )
         should_stop_speaking_process = True
@@ -32,7 +34,7 @@ def start_scheduler(trade, config, gui_state, process, base_manager, deps):
             schedule = scheduler.enterabs(
                 trigger,
                 1,
-                deps["execute_action_fn"],
+                dependencies["execute_action_fn"],
                 argument=(
                     trade,
                     config,

@@ -52,16 +52,16 @@ def create_completion(trade, config, file_utilities):
 def configure_exit(
     args,
     trade,
-    deps,
+    dependencies,
 ):
     """Configure parameters based on command-line arguments and exit."""
-    configure_fn = deps["configure_fn"]
-    create_completion_fn = deps["create_completion_fn"]
-    create_startup_script_fn = deps["create_startup_script_fn"]
-    file_utilities = deps["file_utilities"]
-    is_xy_fn = deps["is_xy_fn"]
-    ratio_epsilon = deps["ratio_epsilon"]
-    script_path = deps["script_path"]
+    configure_fn = dependencies["configure_fn"]
+    create_completion_fn = dependencies["create_completion_fn"]
+    create_startup_script_fn = dependencies["create_startup_script_fn"]
+    file_utilities = dependencies["file_utilities"]
+    is_xy_fn = dependencies["is_xy_fn"]
+    ratio_epsilon = dependencies["ratio_epsilon"]
+    script_path = dependencies["script_path"]
 
     config = configure_fn(trade, can_interpolate=False)
     backup_parameters = {"number_of_backups": 8}

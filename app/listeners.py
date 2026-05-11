@@ -6,14 +6,14 @@ def start_listeners(
     config,
     gui_state,
     base_manager,
-    deps,
+    dependencies,
     is_persistent=False,
 ):
     """Initiate listeners for mouse and keyboard events."""
-    mouse = deps["mouse"]
-    keyboard = deps["keyboard"]
-    process_utilities = deps["process_utilities"]
-    threading = deps["threading"]
+    mouse = dependencies["mouse"]
+    keyboard = dependencies["keyboard"]
+    process_utilities = dependencies["process_utilities"]
+    threading = dependencies["threading"]
 
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed: trade.on_click(
@@ -28,7 +28,9 @@ def start_listeners(
     )
     trade.keyboard_listener.start()
 
-    trade.speaking_process = deps["start_speaking_process_fn"](trade, config)
+    trade.speaking_process = dependencies["start_speaking_process_fn"](
+        trade, config
+    )
 
     trade.stop_listeners_event = threading.Event()
     trade.wait_listeners_thread = threading.Thread(

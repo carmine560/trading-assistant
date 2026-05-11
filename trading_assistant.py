@@ -29,17 +29,19 @@ from core_utilities.config_validation import (
     ensure_section_exists,
     evaluate_value,
 )
-from app import actions as app_actions
-from app import config_builder
-from app import config_workflow
-from app import listeners as app_listeners
-from app import market_data
-from app import models as app_models
-from app import runtime as app_runtime
-from app import scheduler as app_scheduler
-from app import startup_script as app_startup_script
-from app import trade_service
-from app import ui as app_ui
+from app import (
+    actions,
+    config_builder,
+    config_workflow,
+    listeners,
+    market_data,
+    models,
+    runtime,
+    scheduler,
+    startup_script,
+    trade_service,
+    ui,
+)
 from interaction_utilities import (
     gui_interactions,
     speech_synthesis,
@@ -52,9 +54,9 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
-Trade = app_models.Trade
-IndicatorThread = app_ui.IndicatorThread
-MessageThread = app_ui.MessageThread
+Trade = models.Trade
+IndicatorThread = ui.IndicatorThread
+MessageThread = ui.MessageThread
 
 
 # Entry Point
@@ -79,7 +81,7 @@ def main():
     gui_state = gui_interactions.GuiState(
         evaluate_value(config[trade.process]["interactive_windows"])
     )
-    app_runtime.run(
+    runtime.run(
         args,
         trade,
         config,
@@ -192,7 +194,7 @@ def configure(trade, can_interpolate=True, can_override=True):
 def configure_exit(args, trade):
     """Configure parameters based on command-line arguments and exit."""
     return config_workflow.configure_exit(
-        args, trade, _get_config_workflow_deps()
+        args, trade, _get_config_workflow_dependencies()
     )
 
 
@@ -363,7 +365,7 @@ def get_latest(
 
 def start_scheduler(trade, config, gui_state, process, base_manager):
     """Start a scheduler for executing actions at specified times."""
-    app_scheduler.start_scheduler(
+    scheduler.start_scheduler(
         trade,
         config,
         gui_state,
@@ -377,7 +379,7 @@ def start_listeners(
     trade, config, gui_state, base_manager, is_persistent=False
 ):
     """Initiate listeners for mouse and keyboard events."""
-    app_listeners.start_listeners(
+    listeners.start_listeners(
         trade,
         config,
         gui_state,
@@ -389,9 +391,7 @@ def start_listeners(
 
 def _start_speaking_process(trade, config):
     """Start a speaking process using the configured voice settings."""
-    return app_listeners.start_speaking_process(
-        trade, config, speech_synthesis
-    )
+    return listeners.start_speaking_process(trade, config, speech_synthesis)
 
 
 # Action Execution Pipeline
@@ -399,7 +399,7 @@ def _start_speaking_process(trade, config):
 
 def start_execute_action_thread(trade, config, gui_state, action):
     """Start a new thread to execute a specified action."""
-    app_actions.start_execute_action_thread(
+    actions.start_execute_action_thread(
         trade,
         config,
         gui_state,
@@ -410,7 +410,7 @@ def start_execute_action_thread(trade, config, gui_state, action):
 
 def execute_action(trade, config, gui_state, action, should_initialize=True):
     """Execute a sequence of commands for a trade."""
-    return app_actions.execute_action(
+    return actions.execute_action(
         trade,
         config,
         gui_state,
@@ -477,7 +477,7 @@ def _get_runtime_dependencies():
     }
 
 
-def _get_config_workflow_deps():
+def _get_config_workflow_dependencies():
     """Return dependencies required by config workflow helpers."""
     return {
         "configure_fn": configure,
@@ -495,7 +495,7 @@ def _get_config_workflow_deps():
 
 def create_startup_script(trade, config):
     """Create a startup script for a trade."""
-    app_startup_script.create_startup_script(
+    startup_script.create_startup_script(
         trade, config, __file__, file_utilities
     )
 

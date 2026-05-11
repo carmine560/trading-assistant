@@ -165,8 +165,8 @@ class IndicatorThread(threading.Thread):
                 except TclError:
                     break
                 time.sleep(0.01)
-        except WidgetPositionError as exc:
-            self.error = exc
+        except WidgetPositionError as e:
+            self.error = e
         finally:
             if self.root:
                 try:

@@ -9,7 +9,7 @@ import win32gui
 
 from core_utilities import file_utilities, initializer
 from core_utilities.config_validation import evaluate_value
-from app import actions as app_actions
+from app import actions as actions
 
 
 class Trade(initializer.Initializer):
@@ -104,7 +104,7 @@ class Trade(initializer.Initializer):
         self.wait_listeners_thread = None
 
         self.instruction_items = {
-            "all_keys": sorted(app_actions.ALL_KEYS),
+            "all_keys": sorted(actions.ALL_KEYS),
             "no_value_keys": {
                 "back_to",
                 "get_cash_balance",

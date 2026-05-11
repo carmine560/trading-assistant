@@ -52,7 +52,9 @@ ALL_KEYS = (
 )
 
 
-def start_execute_action_thread(trade, config, gui_state, action, deps):
+def start_execute_action_thread(
+    trade, config, gui_state, action, dependencies
+):
     """Start a new thread to execute a specified action."""
     execute_action_thread = threading.Thread(
         target=execute_action,
@@ -61,7 +63,7 @@ def start_execute_action_thread(trade, config, gui_state, action, deps):
             config,
             gui_state,
             config[trade.actions_section][action],
-            deps,
+            dependencies,
         ),
     )
     execute_action_thread.start()
@@ -72,7 +74,7 @@ def execute_action(
     config,
     gui_state,
     action,
-    deps,
+    dependencies,
     should_initialize=True,
 ):
     """Execute a sequence of commands for a trade."""
@@ -88,14 +90,14 @@ def execute_action(
         if command not in ALL_KEYS:
             return False
         if not _execute_instruction(
-            trade, config, gui_state, instruction, deps
+            trade, config, gui_state, instruction, dependencies
         ):
             return False
 
     return True
 
 
-def _execute_instruction(trade, config, gui_state, instruction, deps):
+def _execute_instruction(trade, config, gui_state, instruction, dependencies):
     """Execute a single instruction."""
     command, argument, additional_argument = _unpack_instruction(instruction)
 
@@ -117,7 +119,7 @@ def _execute_instruction(trade, config, gui_state, instruction, deps):
             command,
             argument,
             additional_argument,
-            deps,
+            dependencies,
         )
     if command in {
         "hide_window",
@@ -126,7 +128,7 @@ def _execute_instruction(trade, config, gui_state, instruction, deps):
         "show_window",
     }:
         return _handle_window_command(
-            trade, config, command, argument, additional_argument, deps
+            trade, config, command, argument, additional_argument, dependencies
         )
     if command in {
         "sleep",
@@ -142,7 +144,7 @@ def _execute_instruction(trade, config, gui_state, instruction, deps):
             command,
             argument,
             additional_argument,
-            deps,
+            dependencies,
         )
     if command in {
         "speak_config",
@@ -154,11 +156,11 @@ def _execute_instruction(trade, config, gui_state, instruction, deps):
         "speak_text",
     }:
         return _handle_speak_command(
-            trade, config, command, argument, additional_argument, deps
+            trade, config, command, argument, additional_argument, dependencies
         )
     if command in {"copy_symbols_from_column", "save_market_data"}:
         return _handle_market_data_command(
-            trade, config, command, argument, deps
+            trade, config, command, argument, dependencies
         )
     if command in {
         "calculate_share_size",
@@ -171,7 +173,7 @@ def _execute_instruction(trade, config, gui_state, instruction, deps):
         "write_share_size",
     }:
         return _handle_trade_state_command(
-            trade, config, command, argument, additional_argument, deps
+            trade, config, command, argument, additional_argument, dependencies
         )
     if command in {
         "is_now_after",
@@ -186,11 +188,11 @@ def _execute_instruction(trade, config, gui_state, instruction, deps):
             command,
             argument,
             additional_argument,
-            deps,
+            dependencies,
         )
     if command == "execute_action":
         return _handle_execution_command(
-            trade, config, gui_state, argument, deps
+            trade, config, gui_state, argument, dependencies
         )
     return True
 
@@ -211,11 +213,11 @@ def _handle_gui_command(
     command,
     argument,
     additional_argument,
-    deps,
+    dependencies,
 ):
     """Handle GUI interaction commands."""
-    pyautogui = deps["pyautogui"]
-    gui_interactions = deps["gui_interactions"]
+    pyautogui = dependencies["pyautogui"]
+    gui_interactions = dependencies["gui_interactions"]
 
     if command == "back_to":
         pyautogui.moveTo(gui_state.previous_position)
@@ -256,10 +258,10 @@ def _handle_window_command(
     command,
     argument,
     additional_argument,
-    deps,
+    dependencies,
 ):
     """Handle window and indicator visibility commands."""
-    gui_interactions = deps["gui_interactions"]
+    gui_interactions = dependencies["gui_interactions"]
 
     if command == "hide_window":
         gui_interactions.enumerate_windows(
@@ -270,7 +272,7 @@ def _handle_window_command(
             trade.indicator_thread.stop()
             trade.indicator_thread = None
         elif trade.widgets_section in config:
-            trade.indicator_thread = deps["indicator_thread_cls"](
+            trade.indicator_thread = dependencies["indicator_thread_cls"](
                 trade, config
             )
             trade.indicator_thread.start()
@@ -299,14 +301,19 @@ def _handle_wait_command(
     command,
     argument,
     additional_argument,
-    deps,
+    dependencies,
 ):
     """Handle blocking and wait-related commands."""
     if command == "sleep":
         time.sleep(float(argument))
     elif command == "wait_for_key":
         if not _wait_for_key(
-            trade, config, gui_state, argument, additional_argument, deps
+            trade,
+            config,
+            gui_state,
+            argument,
+            additional_argument,
+            dependencies,
         ):
             return False
     elif command == "wait_for_key_count_down":
@@ -316,7 +323,7 @@ def _handle_wait_command(
             gui_state,
             argument,
             additional_argument,
-            deps,
+            dependencies,
             should_count_down=True,
         ):
             return False
@@ -324,7 +331,7 @@ def _handle_wait_command(
         trade.keyboard_listener_state = 1
         trade.key_to_check = None
         trade.should_continue = True
-        deps["text_recognition"].recognize_text(
+        dependencies["text_recognition"].recognize_text(
             *map(int, argument.split(",")),
             int(config[trade.process]["image_magnification"]),
             int(config[trade.process]["binarization_threshold"]),
@@ -333,20 +340,20 @@ def _handle_wait_command(
         )
         trade.keyboard_listener_state = 0
         if not trade.should_continue and _handle_cancellation_exit(
-            trade, config, gui_state, additional_argument, deps
+            trade, config, gui_state, additional_argument, dependencies
         ):
             return False
     elif command == "wait_for_window":
         trade.keyboard_listener_state = 1
         trade.key_to_check = None
         trade.should_continue = True
-        deps["gui_interactions"].wait_for_window(
+        dependencies["gui_interactions"].wait_for_window(
             argument,
             should_continue_reference=lambda: trade.should_continue,
         )
         trade.keyboard_listener_state = 0
         if not trade.should_continue and _handle_cancellation_exit(
-            trade, config, gui_state, additional_argument, deps
+            trade, config, gui_state, additional_argument, dependencies
         ):
             return False
 
@@ -359,7 +366,7 @@ def _handle_speak_command(
     command,
     argument,
     additional_argument,
-    deps,
+    dependencies,
 ):
     """Handle speech and user notification commands."""
     if command == "speak_config":
@@ -367,16 +374,16 @@ def _handle_speak_command(
             config[argument][additional_argument]
         )
     elif command == "speak_cpu_utilization":
-        psutil = deps["psutil"]
+        psutil = dependencies["psutil"]
         trade.speech_manager.set_speech_text(
             f"{round(psutil.cpu_percent(interval=float(argument)))}%."
         )
     elif command == "speak_minutes_since_hour":
-        data_utilities = deps["data_utilities"]
+        data_utilities = dependencies["data_utilities"]
         if argument:
             target_time = data_utilities.get_target_time(argument)
         else:
-            pd = deps["pd"]
+            pd = dependencies["pd"]
             now = pd.Timestamp.now()
             target_time = time.mktime(
                 time.strptime(
@@ -393,31 +400,33 @@ def _handle_speak_command(
         else:
             trade.speech_manager.set_speech_text(f"{minutes_since} minutes.")
     elif command == "speak_seconds_since_time":
-        data_utilities = deps["data_utilities"]
+        data_utilities = dependencies["data_utilities"]
         seconds_since = math.floor(
             time.time() - data_utilities.get_target_time(argument)
         )
         trade.speech_manager.set_speech_text(f"{seconds_since} seconds.")
     elif command == "speak_seconds_until_time":
-        data_utilities = deps["data_utilities"]
+        data_utilities = dependencies["data_utilities"]
         seconds_until = math.ceil(
             data_utilities.get_target_time(argument) - time.time()
         )
         trade.speech_manager.set_speech_text(f"{seconds_until} seconds.")
     elif command == "speak_show_text":
         trade.speech_manager.set_speech_text(argument)
-        deps["message_thread_cls"](trade, config, argument).start()
+        dependencies["message_thread_cls"](trade, config, argument).start()
     elif command == "speak_text":
         trade.speech_manager.set_speech_text(argument)
 
     return True
 
 
-def _handle_market_data_command(trade, config, command, argument, deps):
+def _handle_market_data_command(
+    trade, config, command, argument, dependencies
+):
     """Handle market data retrieval and persistence commands."""
     if command == "copy_symbols_from_column":
-        win32clipboard = deps["win32clipboard"]
-        text_recognition = deps["text_recognition"]
+        win32clipboard = dependencies["win32clipboard"]
+        text_recognition = dependencies["text_recognition"]
         win32clipboard.OpenClipboard()
         win32clipboard.EmptyClipboard()
         win32clipboard.SetClipboardText(
@@ -434,7 +443,7 @@ def _handle_market_data_command(trade, config, command, argument, deps):
         )
         win32clipboard.CloseClipboard()
     elif command == "save_market_data":
-        deps["save_market_data_fn"](trade, config)
+        dependencies["save_market_data_fn"](trade, config)
 
     return True
 
@@ -445,16 +454,16 @@ def _handle_trade_state_command(
     command,
     argument,
     additional_argument,
-    deps,
+    dependencies,
 ):
     """Handle trade state and accounting commands."""
-    file_utilities = deps["file_utilities"]
-    gui_interactions = deps["gui_interactions"]
-    pyautogui = deps["pyautogui"]
-    text_recognition = deps["text_recognition"]
+    file_utilities = dependencies["file_utilities"]
+    gui_interactions = dependencies["gui_interactions"]
+    pyautogui = dependencies["pyautogui"]
+    text_recognition = dependencies["text_recognition"]
 
     if command == "calculate_share_size":
-        is_successful, text = deps["calculate_share_size_fn"](
+        is_successful, text = dependencies["calculate_share_size_fn"](
             trade, config, argument
         )
         if not is_successful and text:
@@ -547,25 +556,25 @@ def _handle_control_flow_command(
     command,
     argument,
     additional_argument,
-    deps,
+    dependencies,
 ):
     """Handle conditional control-flow commands."""
-    data_utilities = deps["data_utilities"]
-    file_utilities = deps["file_utilities"]
-    pd = deps["pd"]
+    data_utilities = dependencies["data_utilities"]
+    file_utilities = dependencies["file_utilities"]
+    pd = dependencies["pd"]
 
     if command == "is_now_after":
         if data_utilities.get_target_time(
             argument
         ) < time.time() and not _recursively_execute_action(
-            trade, config, gui_state, additional_argument, deps
+            trade, config, gui_state, additional_argument, dependencies
         ):
             return False
     elif command == "is_now_before":
         if time.time() < data_utilities.get_target_time(
             argument
         ) and not _recursively_execute_action(
-            trade, config, gui_state, additional_argument, deps
+            trade, config, gui_state, additional_argument, dependencies
         ):
             return False
     elif command == "is_recording":
@@ -577,17 +586,17 @@ def _handle_control_flow_command(
         ) == bool(
             argument.lower() == "true"
         ) and not _recursively_execute_action(
-            trade, config, gui_state, additional_argument, deps
+            trade, config, gui_state, additional_argument, dependencies
         ):
             return False
     elif command == "is_trading_day":
-        if deps["is_trading_day_fn"](
+        if dependencies["is_trading_day_fn"](
             pd.Timestamp.now(tz=config["Market Data"]["timezone"]),
             trade.market_holidays,
             config["Market Holidays"]["date_format"],
         ) == bool(argument.lower() == "true") and not (
             _recursively_execute_action(
-                trade, config, gui_state, additional_argument, deps
+                trade, config, gui_state, additional_argument, dependencies
             )
         ):
             return False
@@ -595,10 +604,12 @@ def _handle_control_flow_command(
     return True
 
 
-def _handle_execution_command(trade, config, gui_state, argument, deps):
+def _handle_execution_command(
+    trade, config, gui_state, argument, dependencies
+):
     """Handle execution and delegation commands."""
     if not _recursively_execute_action(
-        trade, config, gui_state, argument, deps
+        trade, config, gui_state, argument, dependencies
     ):
         return False
 
@@ -606,7 +617,7 @@ def _handle_execution_command(trade, config, gui_state, argument, deps):
 
 
 def _recursively_execute_action(
-    trade, config, gui_state, additional_argument, deps
+    trade, config, gui_state, additional_argument, dependencies
 ):
     """Recursively execute an action if it is a list or a string."""
     if isinstance(additional_argument, list):
@@ -615,7 +626,7 @@ def _recursively_execute_action(
             config,
             gui_state,
             additional_argument,
-            deps,
+            dependencies,
             should_initialize=False,
         )
     if isinstance(additional_argument, str):
@@ -624,7 +635,7 @@ def _recursively_execute_action(
             config,
             gui_state,
             config[trade.actions_section][additional_argument],
-            deps,
+            dependencies,
             should_initialize=False,
         )
 
@@ -637,12 +648,12 @@ def _wait_for_key(
     gui_state,
     argument,
     additional_argument,
-    deps,
+    dependencies,
     should_count_down=False,
 ):
     """Wait for a key press with optional countdown."""
-    keyboard = deps["keyboard"]
-    pd = deps["pd"]
+    keyboard = dependencies["keyboard"]
+    pd = dependencies["pd"]
 
     trade.keyboard_listener_state = 1
     trade.key_to_check = (
@@ -673,19 +684,19 @@ def _wait_for_key(
         time.sleep(0.01)
 
     if not trade.should_continue and _handle_cancellation_exit(
-        trade, config, gui_state, additional_argument, deps
+        trade, config, gui_state, additional_argument, dependencies
     ):
         return False
     return True
 
 
 def _handle_cancellation_exit(
-    trade, config, gui_state, additional_argument, deps
+    trade, config, gui_state, additional_argument, dependencies
 ):
     """Perform cancellation actions and signal caller to exit."""
     if additional_argument:
         _recursively_execute_action(
-            trade, config, gui_state, additional_argument, deps
+            trade, config, gui_state, additional_argument, dependencies
         )
 
     trade.speech_manager.set_speech_text("Canceled.")

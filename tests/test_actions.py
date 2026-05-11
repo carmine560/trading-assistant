@@ -71,12 +71,12 @@ def _build_config():
     return config
 
 
-def _build_deps(monkeypatch, spoken, extra=None):
+def _build_dependencies(monkeypatch, spoken, extra=None):
     """Create a dependency bundle for action execution tests."""
     sleep_calls = []
     monkeypatch.setattr(actions.time, "sleep", sleep_calls.append)
 
-    deps = {
+    dependencies = {
         "calculate_share_size_fn": lambda *_args: (True, None),
         "configuration": SimpleNamespace(
             evaluate_value=lambda value: (
@@ -135,8 +135,8 @@ def _build_deps(monkeypatch, spoken, extra=None):
         ),
     }
     if extra:
-        deps.update(extra)
-    return deps, sleep_calls
+        dependencies.update(extra)
+    return dependencies, sleep_calls
 
 
 def test_execute_action_speaks_text_with_explicit_dependencies(monkeypatch):
@@ -144,14 +144,14 @@ def test_execute_action_speaks_text_with_explicit_dependencies(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    deps, _ = _build_deps(monkeypatch, spoken)
+    dependencies, _ = _build_dependencies(monkeypatch, spoken)
 
     assert actions.execute_action(
         trade,
         config,
         gui_state,
         [("speak_text", "ready")],
-        deps,
+        dependencies,
     )
     assert spoken == ["ready"]
     assert (trade.initialized, gui_state.initialized) == (1, 1)
@@ -163,14 +163,14 @@ def test_execute_action_runs_named_nested_action(monkeypatch):
     gui_state = _build_gui_state()
     config = _build_config()
     config["Actions"]["nested"] = str([("speak_text", "nested")])
-    deps, _ = _build_deps(monkeypatch, spoken)
+    dependencies, _ = _build_dependencies(monkeypatch, spoken)
 
     assert actions.execute_action(
         trade,
         config,
         gui_state,
         [("execute_action", "nested"), ("speak_text", "done")],
-        deps,
+        dependencies,
     )
     assert spoken == ["nested", "done"]
     assert (trade.initialized, gui_state.initialized) == (1, 1)
@@ -181,14 +181,14 @@ def test_execute_action_returns_false_for_unknown_command(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    deps, _ = _build_deps(monkeypatch, spoken)
+    dependencies, _ = _build_dependencies(monkeypatch, spoken)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("unknown_command",)],
-        deps,
+        dependencies,
     )
     assert spoken == []
 
@@ -198,14 +198,14 @@ def test_execute_action_unknown_command_does_not_print(monkeypatch, capsys):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    deps, _ = _build_deps(monkeypatch, spoken)
+    dependencies, _ = _build_dependencies(monkeypatch, spoken)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("unknown_command",)],
-        deps,
+        dependencies,
     )
     assert capsys.readouterr().out == ""
 
@@ -222,7 +222,7 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
         trade.should_continue = False
         return None
 
-    deps, _ = _build_deps(
+    dependencies, _ = _build_dependencies(
         monkeypatch,
         spoken,
         extra={
@@ -243,7 +243,7 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
                 [("speak_text", "cleanup")],
             )
         ],
-        deps,
+        dependencies,
     )
     assert spoken == ["cleanup", "Canceled."]
 
@@ -253,7 +253,7 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    deps, _ = _build_deps(
+    dependencies, _ = _build_dependencies(
         monkeypatch,
         spoken,
         extra={
@@ -271,7 +271,7 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
             ("calculate_share_size", "long"),
             ("speak_text", "should not run"),
         ],
-        deps,
+        dependencies,
     )
     assert spoken == ["Margin trading suspended."]
 
@@ -283,14 +283,14 @@ def test_show_hide_indicator_returns_false_without_widgets_section(
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    deps, _ = _build_deps(monkeypatch, spoken)
+    dependencies, _ = _build_dependencies(monkeypatch, spoken)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("show_hide_indicator",)],
-        deps,
+        dependencies,
     )
 
 
@@ -301,14 +301,14 @@ def test_invalid_nested_action_argument_returns_false_without_printing(
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    deps, _ = _build_deps(monkeypatch, spoken)
+    dependencies, _ = _build_dependencies(monkeypatch, spoken)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("is_now_after", "00:00:00", 123)],
-        deps,
+        dependencies,
     )
     assert capsys.readouterr().out == ""
 

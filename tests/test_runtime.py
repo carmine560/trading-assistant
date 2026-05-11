@@ -36,7 +36,7 @@ def test_run_executes_single_action_with_transient_listeners():
             calls.append("manager.SpeechManager")
             return "speech_manager"
 
-    deps = {
+    dependencies = {
         "atexit": SimpleNamespace(
             register=lambda *args: calls.append("atexit")
         ),
@@ -68,7 +68,7 @@ def test_run_executes_single_action_with_transient_listeners():
         "write_config_fn": lambda *args, **kwargs: None,
     }
 
-    runtime.run(args, trade, config, gui_state, deps)
+    runtime.run(args, trade, config, gui_state, dependencies)
 
     assert ("start_listeners", {"is_persistent": True}) in calls
     assert ("execute_action", [("speak_text", "ready")]) in calls
