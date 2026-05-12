@@ -422,22 +422,22 @@ def execute_action(trade, config, gui_state, action, should_initialize=True):
 
 def _get_action_dependencies():
     """Return runtime dependencies required by the action executor."""
-    return {
-        "calculate_share_size_fn": calculate_share_size,
-        "data_utilities": data_utilities,
-        "file_utilities": file_utilities,
-        "gui_interactions": gui_interactions,
-        "indicator_thread_cls": IndicatorThread,
-        "is_trading_day_fn": is_trading_day,
-        "keyboard": keyboard,
-        "message_thread_cls": MessageThread,
-        "pd": pd,
-        "psutil": psutil,
-        "pyautogui": pyautogui,
-        "save_market_data_fn": save_market_data,
-        "text_recognition": text_recognition,
-        "win32clipboard": win32clipboard,
-    }
+    return actions.ActionServices(
+        calculate_share_size_fn=calculate_share_size,
+        data_utilities=data_utilities,
+        file_utilities=file_utilities,
+        gui_interactions=gui_interactions,
+        indicator_thread_cls=IndicatorThread,
+        is_trading_day_fn=is_trading_day,
+        keyboard=keyboard,
+        message_thread_cls=MessageThread,
+        pd=pd,
+        psutil=psutil,
+        pyautogui=pyautogui,
+        save_market_data_fn=save_market_data,
+        text_recognition=text_recognition,
+        win32clipboard=win32clipboard,
+    )
 
 
 def _get_listener_dependencies():

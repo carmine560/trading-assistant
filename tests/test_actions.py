@@ -1,6 +1,5 @@
 """Tests for extracted action execution helpers."""
 
-import ast
 from configparser import ConfigParser
 from types import SimpleNamespace
 
@@ -71,18 +70,13 @@ def _build_config():
     return config
 
 
-def _build_dependencies(monkeypatch, spoken, extra=None):
-    """Create a dependency bundle for action execution tests."""
+def _build_services(monkeypatch, spoken, extra=None):
+    """Create action services for action execution tests."""
     sleep_calls = []
     monkeypatch.setattr(actions.time, "sleep", sleep_calls.append)
 
-    dependencies = {
+    service_values = {
         "calculate_share_size_fn": lambda *_args: (True, None),
-        "configuration": SimpleNamespace(
-            evaluate_value=lambda value: (
-                ast.literal_eval(value) if isinstance(value, str) else value
-            )
-        ),
         "data_utilities": SimpleNamespace(get_target_time=lambda *_args: 0),
         "file_utilities": SimpleNamespace(
             get_latest_file=lambda *_args: "video.mp4",
@@ -135,8 +129,8 @@ def _build_dependencies(monkeypatch, spoken, extra=None):
         ),
     }
     if extra:
-        dependencies.update(extra)
-    return dependencies, sleep_calls
+        service_values.update(extra)
+    return actions.ActionServices(**service_values), sleep_calls
 
 
 def test_execute_action_speaks_text_with_explicit_dependencies(monkeypatch):
@@ -144,14 +138,14 @@ def test_execute_action_speaks_text_with_explicit_dependencies(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    dependencies, _ = _build_dependencies(monkeypatch, spoken)
+    services, _ = _build_services(monkeypatch, spoken)
 
     assert actions.execute_action(
         trade,
         config,
         gui_state,
         [("speak_text", "ready")],
-        dependencies,
+        services,
     )
     assert spoken == ["ready"]
     assert (trade.initialized, gui_state.initialized) == (1, 1)
@@ -163,14 +157,14 @@ def test_execute_action_runs_named_nested_action(monkeypatch):
     gui_state = _build_gui_state()
     config = _build_config()
     config["Actions"]["nested"] = str([("speak_text", "nested")])
-    dependencies, _ = _build_dependencies(monkeypatch, spoken)
+    services, _ = _build_services(monkeypatch, spoken)
 
     assert actions.execute_action(
         trade,
         config,
         gui_state,
         [("execute_action", "nested"), ("speak_text", "done")],
-        dependencies,
+        services,
     )
     assert spoken == ["nested", "done"]
     assert (trade.initialized, gui_state.initialized) == (1, 1)
@@ -181,14 +175,14 @@ def test_execute_action_returns_false_for_unknown_command(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    dependencies, _ = _build_dependencies(monkeypatch, spoken)
+    services, _ = _build_services(monkeypatch, spoken)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("unknown_command",)],
-        dependencies,
+        services,
     )
     assert spoken == []
 
@@ -198,14 +192,14 @@ def test_execute_action_unknown_command_does_not_print(monkeypatch, capsys):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    dependencies, _ = _build_dependencies(monkeypatch, spoken)
+    services, _ = _build_services(monkeypatch, spoken)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("unknown_command",)],
-        dependencies,
+        services,
     )
     assert capsys.readouterr().out == ""
 
@@ -222,7 +216,7 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
         trade.should_continue = False
         return None
 
-    dependencies, _ = _build_dependencies(
+    services, _ = _build_services(
         monkeypatch,
         spoken,
         extra={
@@ -243,7 +237,7 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
                 [("speak_text", "cleanup")],
             )
         ],
-        dependencies,
+        services,
     )
     assert spoken == ["cleanup", "Canceled."]
 
@@ -253,7 +247,7 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    dependencies, _ = _build_dependencies(
+    services, _ = _build_services(
         monkeypatch,
         spoken,
         extra={
@@ -271,7 +265,7 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
             ("calculate_share_size", "long"),
             ("speak_text", "should not run"),
         ],
-        dependencies,
+        services,
     )
     assert spoken == ["Margin trading suspended."]
 
@@ -283,14 +277,14 @@ def test_show_hide_indicator_returns_false_without_widgets_section(
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    dependencies, _ = _build_dependencies(monkeypatch, spoken)
+    services, _ = _build_services(monkeypatch, spoken)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("show_hide_indicator",)],
-        dependencies,
+        services,
     )
 
 
@@ -301,14 +295,14 @@ def test_invalid_nested_action_argument_returns_false_without_printing(
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    dependencies, _ = _build_dependencies(monkeypatch, spoken)
+    services, _ = _build_services(monkeypatch, spoken)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("is_now_after", "00:00:00", 123)],
-        dependencies,
+        services,
     )
     assert capsys.readouterr().out == ""
 
@@ -316,3 +310,15 @@ def test_invalid_nested_action_argument_returns_false_without_printing(
 def test_all_keys_includes_execute_action_and_save_market_data():
     assert "execute_action" in actions.ALL_KEYS
     assert "save_market_data" in actions.ALL_KEYS
+
+
+def test_action_services_contract_rejects_unknown_keys(monkeypatch):
+    spoken = []
+    extra = {"configuration": object()}
+
+    try:
+        _build_services(monkeypatch, spoken, extra=extra)
+    except TypeError as exc:
+        assert "configuration" in str(exc)
+    else:
+        raise AssertionError("Expected ActionServices to reject unknown keys.")
