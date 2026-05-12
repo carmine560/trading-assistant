@@ -2,7 +2,6 @@
 
 from io import BytesIO
 import argparse
-import csv
 import os
 import sys
 
@@ -14,12 +13,10 @@ from app import (
     config_builder,
     config_workflow,
     listeners,
-    market_data,
     models,
     runtime,
     scheduler,
     startup_script,
-    trade_service,
 )
 from core_utilities import (
     data_utilities,
@@ -34,7 +31,6 @@ from core_utilities.config_validation import (
 )
 from interaction_utilities import (
     gui_interactions,
-    text_recognition,
 )
 from web_utilities import web_utilities
 
@@ -188,11 +184,6 @@ def configure_exit(args, trade):
     )
 
 
-def _is_xy(value):
-    """Return True if the value represents exactly two integers (X, Y)."""
-    return config_workflow.is_xy(value)
-
-
 # Data Creation and Persistence
 
 
@@ -255,19 +246,6 @@ def save_customer_margin_ratios(trade, config):
                 regex=True,
             )
             df.to_csv(trade.customer_margin_ratios, header=False, index=False)
-
-
-def save_market_data(trade, config):
-    """Split the rankings CSV by the first digit of the securities code."""
-    rankings = config["Market Data"]["rankings"].replace("\\\\", "\\")
-    try:
-        return market_data.split_rankings_by_digit(
-            rankings=rankings,
-            closing_prices_prefix=trade.closing_prices,
-            code_regex=SECURITIES_CODE_REGEX,
-        )
-    except errors.MarketDataError:
-        return False
 
 
 def get_latest(
@@ -369,85 +347,6 @@ def create_startup_script(trade, config):
     startup_script.create_startup_script(
         trade, config, __file__, file_utilities
     )
-
-
-# Trading Calculations
-
-
-def calculate_share_size(trade, config, position):
-    """Determine the share size for a given trade."""
-    if trade.symbol and trade.cash_balance:
-        customer_margin_ratio = float(
-            config[trade.customer_margin_ratios_section][
-                "customer_margin_ratio"
-            ]
-        )
-        try:
-            with open(trade.customer_margin_ratios, encoding="utf-8") as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if row[0] == trade.symbol:
-                        if row[1] == "suspended":
-                            return (False, "Margin trading suspended.")
-
-                        customer_margin_ratio = float(row[1])
-                        break
-        except OSError:
-            pass
-
-        share_size = trade_service.calculate_share_size_from_inputs(
-            cash_balance=trade.cash_balance,
-            utilization_ratio=float(
-                config[trade.process]["utilization_ratio"]
-            ),
-            customer_margin_ratio=customer_margin_ratio,
-            price_limit=get_price_limit(trade, config),
-            position=position,
-        )
-        if share_size == 0:
-            return (False, "Insufficient cash balance.")
-
-        trade.share_size = share_size
-        return (True, None)
-
-    return (False, "Symbol or cash balance not provided.")
-
-
-def get_price_limit(trade, config):
-    """Calculate the price limit for a trade."""
-    closing_price = 0.0
-    try:
-        with open(
-            f"{trade.closing_prices}{trade.symbol[0]}.csv", encoding="utf-8"
-        ) as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if len(row) < 2:
-                    continue
-                if row[0].strip() == trade.symbol:
-                    closing_price = float(row[1].strip())
-                    break
-    except OSError:
-        pass
-
-    if closing_price:
-        price_limit = trade_service.calculate_price_limit_from_closing_price(
-            closing_price
-        )
-    else:
-        price_limit = text_recognition.recognize_text(
-            *map(
-                int,
-                config[trade.geometries_section]["price_limit_region"].split(
-                    ","
-                ),
-            ),
-            int(config[trade.process]["image_magnification"]),
-            int(config[trade.process]["binarization_threshold"]),
-            config[trade.process].getboolean("is_dark_theme"),
-            text_type="decimal_numbers",
-        )
-    return price_limit
 
 
 if __name__ == "__main__":

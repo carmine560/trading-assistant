@@ -2,13 +2,13 @@
 
 from pathlib import Path
 
-import trading_assistant
+from app import actions, config_workflow
 
 
 def test_is_xy_accepts_two_integers_with_whitespace():
-    assert trading_assistant._is_xy(" 10,  25 ")
-    assert not trading_assistant._is_xy("10,25,30")
-    assert not trading_assistant._is_xy("10.5,25")
+    assert config_workflow.is_xy(" 10,  25 ")
+    assert not config_workflow.is_xy("10,25,30")
+    assert not config_workflow.is_xy("10.5,25")
 
 
 def test_save_market_data_splits_valid_symbols_and_strips_commas(
@@ -16,7 +16,7 @@ def test_save_market_data_splits_valid_symbols_and_strips_commas(
 ):
     sample_config["Market Data"]["rankings"] = str(rankings_csv)
 
-    assert trading_assistant.save_market_data(sample_trade, sample_config)
+    assert actions.save_market_data(sample_trade, sample_config)
     assert not rankings_csv.exists()
 
     closing_prices_1 = Path(f"{sample_trade.closing_prices}1.csv")
@@ -31,7 +31,7 @@ def test_save_market_data_returns_false_for_missing_rankings_file(
 ):
     sample_config["Market Data"]["rankings"] = str(tmp_path / "missing.csv")
 
-    assert not trading_assistant.save_market_data(sample_trade, sample_config)
+    assert not actions.save_market_data(sample_trade, sample_config)
 
 
 def test_get_price_limit_uses_saved_closing_price(sample_trade, sample_config):
@@ -39,10 +39,7 @@ def test_get_price_limit_uses_saved_closing_price(sample_trade, sample_config):
         "1234,980\n", encoding="utf-8"
     )
 
-    assert (
-        trading_assistant.get_price_limit(sample_trade, sample_config)
-        == 1130.0
-    )
+    assert actions.get_price_limit(sample_trade, sample_config) == 1130.0
 
 
 def test_get_price_limit_falls_back_to_recognized_value(
@@ -55,14 +52,12 @@ def test_get_price_limit_falls_back_to_recognized_value(
         return 4321
 
     monkeypatch.setattr(
-        trading_assistant.text_recognition,
+        actions.text_recognition,
         "recognize_text",
         fake_recognize_text,
     )
 
-    assert (
-        trading_assistant.get_price_limit(sample_trade, sample_config) == 4321
-    )
+    assert actions.get_price_limit(sample_trade, sample_config) == 4321
 
 
 def test_calculate_share_size_uses_margin_ratio_file(
@@ -75,7 +70,7 @@ def test_calculate_share_size_uses_margin_ratio_file(
         "1234,980\n", encoding="utf-8"
     )
 
-    success, message = trading_assistant.calculate_share_size(
+    success, message = actions.calculate_share_size(
         sample_trade, sample_config, "long"
     )
 
@@ -90,7 +85,7 @@ def test_calculate_share_size_rejects_suspended_symbol(
         "1234,suspended\n", encoding="utf-8"
     )
 
-    assert trading_assistant.calculate_share_size(
+    assert actions.calculate_share_size(
         sample_trade, sample_config, "long"
     ) == (False, "Margin trading suspended.")
 
@@ -106,7 +101,7 @@ def test_calculate_share_size_caps_short_positions_at_fifty_units(
         "1234,980\n", encoding="utf-8"
     )
 
-    success, message = trading_assistant.calculate_share_size(
+    success, message = actions.calculate_share_size(
         sample_trade, sample_config, "short"
     )
 
@@ -119,6 +114,6 @@ def test_calculate_share_size_requires_symbol_and_cash_balance(
 ):
     sample_trade.symbol = ""
 
-    assert trading_assistant.calculate_share_size(
+    assert actions.calculate_share_size(
         sample_trade, sample_config, "long"
     ) == (False, "Symbol or cash balance not provided.")
