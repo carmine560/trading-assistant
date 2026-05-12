@@ -3,6 +3,7 @@
 import os
 import sys
 
+from app import startup_script
 from core_utilities import file_utilities
 from core_utilities.config_diff import check_config_changes
 from core_utilities.config_io import write_config
@@ -55,7 +56,6 @@ def configure_exit(
     trade,
     configure_fn,
     create_completion_fn,
-    create_startup_script_fn,
     script_path,
     ratio_epsilon,
 ):
@@ -84,7 +84,12 @@ def configure_exit(
     ):
         write_config(config, trade.config_path, is_encrypted=True)
         config = configure_fn(trade)
-        create_startup_script_fn(trade, config)
+        startup_script.create_startup_script(
+            trade,
+            config,
+            script_path,
+            file_utilities,
+        )
         powershell = file_utilities.select_executable(
             ["pwsh.exe", "powershell.exe"]
         )

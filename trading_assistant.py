@@ -16,7 +16,6 @@ from app import (
     models,
     runtime,
     scheduler,
-    startup_script,
 )
 from core_utilities import (
     data_utilities,
@@ -32,6 +31,7 @@ from core_utilities.config_validation import (
 from interaction_utilities import gui_interactions
 from web_utilities import web_utilities
 
+RATIO_EPSILON = 1e-4
 SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
@@ -61,9 +61,8 @@ def main():
         trade,
         configure,
         config_workflow.create_completion,
-        create_startup_script,
         __file__,
-        1e-4,
+        RATIO_EPSILON,
     ):
         return
 
@@ -320,16 +319,6 @@ def start_listeners(
         gui_state,
         base_manager,
         is_persistent=is_persistent,
-    )
-
-
-# Startup Automation
-
-
-def create_startup_script(trade, config):
-    """Create a startup script for a trade."""
-    startup_script.create_startup_script(
-        trade, config, __file__, file_utilities
     )
 
 
