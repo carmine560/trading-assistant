@@ -3,19 +3,17 @@
 import sched
 import time
 
+from core_utilities import process_utilities
 from core_utilities.config_validation import evaluate_value
+from app import actions, listeners
+from interaction_utilities import speech_synthesis
 
 
-def start_scheduler(
-    trade, config, gui_state, process, base_manager, dependencies
-):
+def start_scheduler(trade, config, gui_state, process, base_manager):
     """Start a scheduler for executing actions at specified times."""
-    process_utilities = dependencies["process_utilities"]
-    speech_synthesis = dependencies["speech_synthesis"]
-
     should_stop_speaking_process = False
     if not trade.speaking_process:
-        trade.speaking_process = dependencies["start_speaking_process_fn"](
+        trade.speaking_process = listeners.start_speaking_process(
             trade, config
         )
         should_stop_speaking_process = True
@@ -34,7 +32,7 @@ def start_scheduler(
             schedule = scheduler.enterabs(
                 trigger,
                 1,
-                dependencies["execute_action_fn"],
+                actions.execute_action,
                 argument=(
                     trade,
                     config,

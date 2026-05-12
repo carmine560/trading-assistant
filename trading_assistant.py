@@ -25,7 +25,6 @@ from core_utilities import (
     data_utilities,
     errors,
     file_utilities,
-    process_utilities,
 )
 from core_utilities.config_io import read_config
 from core_utilities.config_validation import (
@@ -35,7 +34,6 @@ from core_utilities.config_validation import (
 )
 from interaction_utilities import (
     gui_interactions,
-    speech_synthesis,
     text_recognition,
 )
 from web_utilities import web_utilities
@@ -341,14 +339,7 @@ def get_latest(
 
 def start_scheduler(trade, config, gui_state, process, base_manager):
     """Start a scheduler for executing actions at specified times."""
-    scheduler.start_scheduler(
-        trade,
-        config,
-        gui_state,
-        process,
-        base_manager,
-        _get_scheduler_dependencies(),
-    )
+    scheduler.start_scheduler(trade, config, gui_state, process, base_manager)
 
 
 def start_listeners(
@@ -362,16 +353,6 @@ def start_listeners(
         base_manager,
         is_persistent=is_persistent,
     )
-
-
-def _get_scheduler_dependencies():
-    """Return dependencies required by scheduler helpers."""
-    return {
-        "execute_action_fn": actions.execute_action,
-        "process_utilities": process_utilities,
-        "speech_synthesis": speech_synthesis,
-        "start_speaking_process_fn": listeners.start_speaking_process,
-    }
 
 
 def _get_config_workflow_dependencies():
