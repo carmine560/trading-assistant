@@ -78,19 +78,21 @@ def _execute_single_action(
             is_persistent=True,
         )
 
-    dependencies["execute_action_fn"](
-        trade,
-        config,
-        gui_state,
-        config[trade.actions_section][args.a[0]],
-    )
-    if should_start_transient_listeners:
-        dependencies["process_utilities"].stop_listeners(
-            trade.mouse_listener,
-            trade.keyboard_listener,
-            base_manager,
-            trade.speech_manager,
-            trade.speaking_process,
+    try:
+        dependencies["execute_action_fn"](
+            trade,
+            config,
+            gui_state,
+            config[trade.actions_section][args.a[0]],
         )
-        trade.stop_listeners_event.set()
-        trade.wait_listeners_thread.join()
+    finally:
+        if should_start_transient_listeners:
+            dependencies["process_utilities"].stop_listeners(
+                trade.mouse_listener,
+                trade.keyboard_listener,
+                base_manager,
+                trade.speech_manager,
+                trade.speaking_process,
+            )
+            trade.stop_listeners_event.set()
+            trade.wait_listeners_thread.join()
