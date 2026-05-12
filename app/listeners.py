@@ -1,20 +1,21 @@
 """Mouse, keyboard, and speech listener startup helpers."""
 
+import threading
+
+from pynput import keyboard, mouse
+
+from core_utilities import process_utilities
+from interaction_utilities import speech_synthesis
+
 
 def start_listeners(
     trade,
     config,
     gui_state,
     base_manager,
-    dependencies,
     is_persistent=False,
 ):
     """Initiate listeners for mouse and keyboard events."""
-    mouse = dependencies["mouse"]
-    keyboard = dependencies["keyboard"]
-    process_utilities = dependencies["process_utilities"]
-    threading = dependencies["threading"]
-
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed: trade.on_click(
             x, y, button, pressed, config, gui_state
@@ -28,9 +29,7 @@ def start_listeners(
     )
     trade.keyboard_listener.start()
 
-    trade.speaking_process = dependencies["start_speaking_process_fn"](
-        trade, config
-    )
+    trade.speaking_process = start_speaking_process(trade, config)
 
     trade.stop_listeners_event = threading.Event()
     trade.wait_listeners_thread = threading.Thread(
@@ -52,7 +51,7 @@ def start_listeners(
     trade.wait_listeners_thread.start()
 
 
-def start_speaking_process(trade, config, speech_synthesis):
+def start_speaking_process(trade, config):
     """Start a speaking process using the configured voice settings."""
     return speech_synthesis.start_speaking_process(
         trade.speech_manager,

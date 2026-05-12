@@ -5,10 +5,7 @@ import argparse
 import csv
 import os
 import sys
-import threading
 
-from pynput import keyboard
-from pynput import mouse
 import pandas as pd
 import requests
 
@@ -363,25 +360,8 @@ def start_listeners(
         config,
         gui_state,
         base_manager,
-        _get_listener_dependencies(),
         is_persistent=is_persistent,
     )
-
-
-def _start_speaking_process(trade, config):
-    """Start a speaking process using the configured voice settings."""
-    return listeners.start_speaking_process(trade, config, speech_synthesis)
-
-
-def _get_listener_dependencies():
-    """Return dependencies required by listener startup helpers."""
-    return {
-        "keyboard": keyboard,
-        "mouse": mouse,
-        "process_utilities": process_utilities,
-        "start_speaking_process_fn": _start_speaking_process,
-        "threading": threading,
-    }
 
 
 def _get_scheduler_dependencies():
@@ -390,7 +370,7 @@ def _get_scheduler_dependencies():
         "execute_action_fn": actions.execute_action,
         "process_utilities": process_utilities,
         "speech_synthesis": speech_synthesis,
-        "start_speaking_process_fn": _start_speaking_process,
+        "start_speaking_process_fn": listeners.start_speaking_process,
     }
 
 
