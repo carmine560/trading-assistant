@@ -17,12 +17,6 @@ def test_run_executes_single_action_with_transient_listeners(monkeypatch):
         save_customer_margin_ratios_fn=(
             lambda trade, config: calls.append("save_customer_margin_ratios")
         ),
-        start_listeners_fn=(
-            lambda trade, config, gui_state, base_manager, **kwargs: (
-                calls.append(("start_listeners", kwargs))
-            )
-        ),
-        start_scheduler_fn=lambda *args: calls.append("start_scheduler"),
         stop_listeners_event=SimpleNamespace(
             set=lambda: calls.append("event.set")
         ),
@@ -58,6 +52,17 @@ def test_run_executes_single_action_with_transient_listeners(monkeypatch):
             execute_action=(
                 lambda trade, config, gui_state, action: calls.append(
                     ("execute_action", action)
+                )
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(
+            start_listeners=(
+                lambda trade, config, gui_state, base_manager, **kwargs: (
+                    calls.append(("start_listeners", kwargs))
                 )
             )
         ),
@@ -107,12 +112,6 @@ def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
         save_customer_margin_ratios_fn=(
             lambda trade, config: calls.append("save_customer_margin_ratios")
         ),
-        start_listeners_fn=(
-            lambda trade, config, gui_state, base_manager, **kwargs: (
-                calls.append(("start_listeners", kwargs))
-            )
-        ),
-        start_scheduler_fn=lambda *args: calls.append("start_scheduler"),
         stop_listeners_event=SimpleNamespace(
             set=lambda: calls.append("event.set")
         ),
@@ -149,6 +148,17 @@ def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
         runtime,
         "actions",
         SimpleNamespace(execute_action=raise_execute_action),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(
+            start_listeners=(
+                lambda trade, config, gui_state, base_manager, **kwargs: (
+                    calls.append(("start_listeners", kwargs))
+                )
+            )
+        ),
     )
     monkeypatch.setattr(
         runtime,

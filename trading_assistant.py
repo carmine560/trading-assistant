@@ -12,7 +12,6 @@ from app import (
     actions,
     config_builder,
     config_workflow,
-    listeners,
     models,
     runtime,
 )
@@ -50,7 +49,6 @@ def main():
         start_execute_action_thread_fn=actions.start_execute_action_thread,
     )
     trade.save_customer_margin_ratios_fn = save_customer_margin_ratios
-    trade.start_listeners_fn = start_listeners
 
     if file_utilities.create_launchers_exit(args, __file__):
         return
@@ -297,19 +295,6 @@ def get_latest(
         else:
             return latest
     return False
-
-
-def start_listeners(
-    trade, config, gui_state, base_manager, is_persistent=False
-):
-    """Initiate listeners for mouse and keyboard events."""
-    listeners.start_listeners(
-        trade,
-        config,
-        gui_state,
-        base_manager,
-        is_persistent=is_persistent,
-    )
 
 
 if __name__ == "__main__":

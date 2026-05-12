@@ -4,7 +4,7 @@ from multiprocessing.managers import BaseManager
 import atexit
 import threading
 
-from app import actions, scheduler
+from app import actions, listeners, scheduler
 from core_utilities import process_utilities
 from core_utilities.config_io import write_config
 from interaction_utilities import speech_synthesis
@@ -32,7 +32,7 @@ def run(args, trade, config, gui_state):
             is_running,
         )
     if args.l and is_running:
-        trade.start_listeners_fn(trade, config, gui_state, base_manager)
+        listeners.start_listeners(trade, config, gui_state, base_manager)
     if args.s and is_running:
         threading.Thread(
             target=scheduler.start_scheduler,
@@ -69,7 +69,7 @@ def _execute_single_action(
     """Execute a single configured action and manage transient listeners."""
     should_start_transient_listeners = not (is_running and args.l)
     if should_start_transient_listeners:
-        trade.start_listeners_fn(
+        listeners.start_listeners(
             trade,
             config,
             gui_state,
