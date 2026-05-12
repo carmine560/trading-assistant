@@ -55,8 +55,14 @@ def test_run_executes_single_action_with_transient_listeners(monkeypatch):
     )
     monkeypatch.setattr(
         runtime,
-        "save_customer_margin_ratios",
-        lambda trade, config: calls.append("save_customer_margin_ratios"),
+        "customer_margin_ratios",
+        SimpleNamespace(
+            save_customer_margin_ratios=(
+                lambda trade, config: calls.append(
+                    "save_customer_margin_ratios"
+                )
+            )
+        ),
     )
     monkeypatch.setattr(
         runtime,
