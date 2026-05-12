@@ -29,12 +29,9 @@ from core_utilities.config_validation import (
     ensure_section_exists,
     evaluate_value,
 )
-from interaction_utilities import (
-    gui_interactions,
-)
+from interaction_utilities import gui_interactions
 from web_utilities import web_utilities
 
-RATIO_EPSILON = 1e-4
 SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
@@ -59,7 +56,15 @@ def main():
 
     if file_utilities.create_launchers_exit(args, __file__):
         return
-    if configure_exit(args, trade):
+    if config_workflow.configure_exit(
+        args,
+        trade,
+        configure,
+        create_completion,
+        create_startup_script,
+        __file__,
+        1e-4,
+    ):
         return
 
     config = configure(trade)
@@ -168,19 +173,6 @@ def configure(trade, can_interpolate=True, can_override=True):
         read_config_fn=read_config,
         can_interpolate=can_interpolate,
         can_override=can_override,
-    )
-
-
-def configure_exit(args, trade):
-    """Configure parameters based on command-line arguments and exit."""
-    return config_workflow.configure_exit(
-        args,
-        trade,
-        configure,
-        create_completion,
-        create_startup_script,
-        __file__,
-        RATIO_EPSILON,
     )
 
 
