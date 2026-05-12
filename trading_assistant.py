@@ -178,7 +178,13 @@ def configure(trade, can_interpolate=True, can_override=True):
 def configure_exit(args, trade):
     """Configure parameters based on command-line arguments and exit."""
     return config_workflow.configure_exit(
-        args, trade, _get_config_workflow_dependencies()
+        args,
+        trade,
+        configure,
+        create_completion,
+        create_startup_script,
+        __file__,
+        RATIO_EPSILON,
     )
 
 
@@ -192,7 +198,7 @@ def _is_xy(value):
 
 def create_completion(trade, config):
     """Generate completion scripts for options and values."""
-    config_workflow.create_completion(trade, config, file_utilities)
+    config_workflow.create_completion(trade, config)
 
 
 def save_customer_margin_ratios(trade, config):
@@ -353,19 +359,6 @@ def start_listeners(
         base_manager,
         is_persistent=is_persistent,
     )
-
-
-def _get_config_workflow_dependencies():
-    """Return dependencies required by config workflow helpers."""
-    return {
-        "configure_fn": configure,
-        "create_completion_fn": create_completion,
-        "create_startup_script_fn": create_startup_script,
-        "file_utilities": file_utilities,
-        "is_xy_fn": _is_xy,
-        "ratio_epsilon": RATIO_EPSILON,
-        "script_path": __file__,
-    }
 
 
 # Startup Automation

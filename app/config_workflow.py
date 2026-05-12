@@ -3,6 +3,7 @@
 import os
 import sys
 
+from core_utilities import file_utilities
 from core_utilities.config_diff import check_config_changes
 from core_utilities.config_io import write_config
 from core_utilities.config_prompt import (
@@ -26,7 +27,7 @@ def is_xy(value):
         return False
 
 
-def create_completion(trade, config, file_utilities):
+def create_completion(trade, config):
     """Generate completion scripts for options and values."""
     options = ("-a", "-A", "-D")
     trade.instruction_items["preset_additional_values"] = list_section(
@@ -52,17 +53,13 @@ def create_completion(trade, config, file_utilities):
 def configure_exit(
     args,
     trade,
-    dependencies,
+    configure_fn,
+    create_completion_fn,
+    create_startup_script_fn,
+    script_path,
+    ratio_epsilon,
 ):
     """Configure parameters based on command-line arguments and exit."""
-    configure_fn = dependencies["configure_fn"]
-    create_completion_fn = dependencies["create_completion_fn"]
-    create_startup_script_fn = dependencies["create_startup_script_fn"]
-    file_utilities = dependencies["file_utilities"]
-    is_xy_fn = dependencies["is_xy_fn"]
-    ratio_epsilon = dependencies["ratio_epsilon"]
-    script_path = dependencies["script_path"]
-
     config = configure_fn(trade, can_interpolate=False)
     backup_parameters = {"number_of_backups": 8}
     trade.instruction_items["preset_additional_values"] = list_section(
@@ -107,7 +104,7 @@ def configure_exit(
         items = (
             option
             for option, value in config[trade.geometries_section].items()
-            if is_xy_fn(value)
+            if is_xy(value)
         )
         trade.instruction_items["preset_geometries"] = [
             f"${{HYPERSBI2 Geometries:{option}}}" for option in sorted(items)
