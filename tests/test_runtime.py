@@ -14,9 +14,6 @@ def test_run_executes_single_action_with_transient_listeners(monkeypatch):
         mouse_listener="mouse",
         keyboard_listener="keyboard",
         speaking_process="speaker",
-        save_customer_margin_ratios_fn=(
-            lambda trade, config: calls.append("save_customer_margin_ratios")
-        ),
         stop_listeners_event=SimpleNamespace(
             set=lambda: calls.append("event.set")
         ),
@@ -55,6 +52,11 @@ def test_run_executes_single_action_with_transient_listeners(monkeypatch):
                 )
             )
         ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "save_customer_margin_ratios",
+        lambda trade, config: calls.append("save_customer_margin_ratios"),
     )
     monkeypatch.setattr(
         runtime,
@@ -109,9 +111,6 @@ def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
         mouse_listener="mouse",
         keyboard_listener="keyboard",
         speaking_process="speaker",
-        save_customer_margin_ratios_fn=(
-            lambda trade, config: calls.append("save_customer_margin_ratios")
-        ),
         stop_listeners_event=SimpleNamespace(
             set=lambda: calls.append("event.set")
         ),
