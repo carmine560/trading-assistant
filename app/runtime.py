@@ -4,7 +4,7 @@ from multiprocessing.managers import BaseManager
 import atexit
 import threading
 
-from app import actions
+from app import actions, scheduler
 from core_utilities import process_utilities
 from core_utilities.config_io import write_config
 from interaction_utilities import speech_synthesis
@@ -35,7 +35,7 @@ def run(args, trade, config, gui_state):
         trade.start_listeners_fn(trade, config, gui_state, base_manager)
     if args.s and is_running:
         threading.Thread(
-            target=trade.start_scheduler_fn,
+            target=scheduler.start_scheduler,
             args=(trade, config, gui_state, trade.process, base_manager),
         ).start()
 

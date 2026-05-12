@@ -15,7 +15,6 @@ from app import (
     listeners,
     models,
     runtime,
-    scheduler,
 )
 from core_utilities import (
     data_utilities,
@@ -52,7 +51,6 @@ def main():
     )
     trade.save_customer_margin_ratios_fn = save_customer_margin_ratios
     trade.start_listeners_fn = start_listeners
-    trade.start_scheduler_fn = start_scheduler
 
     if file_utilities.create_launchers_exit(args, __file__):
         return
@@ -299,14 +297,6 @@ def get_latest(
         else:
             return latest
     return False
-
-
-# Scheduling and Background Processes
-
-
-def start_scheduler(trade, config, gui_state, process, base_manager):
-    """Start a scheduler for executing actions at specified times."""
-    scheduler.start_scheduler(trade, config, gui_state, process, base_manager)
 
 
 def start_listeners(
