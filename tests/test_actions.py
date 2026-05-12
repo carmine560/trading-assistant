@@ -70,20 +70,28 @@ def _build_config():
     return config
 
 
-def _build_services(monkeypatch, spoken, extra=None):
-    """Create action services for action execution tests."""
+def _patch_action_modules(monkeypatch):
+    """Patch direct module collaborators used by the action executor."""
     sleep_calls = []
     monkeypatch.setattr(actions.time, "sleep", sleep_calls.append)
-
-    service_values = {
-        "calculate_share_size_fn": lambda *_args: (True, None),
-        "data_utilities": SimpleNamespace(get_target_time=lambda *_args: 0),
-        "file_utilities": SimpleNamespace(
+    monkeypatch.setattr(
+        actions,
+        "data_utilities",
+        SimpleNamespace(get_target_time=lambda *_args: 0),
+    )
+    monkeypatch.setattr(
+        actions,
+        "file_utilities",
+        SimpleNamespace(
             get_latest_file=lambda *_args: "video.mp4",
             is_writing=lambda *_args: False,
             write_chapter=lambda *_args, **_kwargs: None,
         ),
-        "gui_interactions": SimpleNamespace(
+    )
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(
             _show_window_state={"count": 0, "max_count": 0},
             click_widget=lambda *_args, **_kwargs: None,
             enumerate_windows=lambda *_args, **_kwargs: None,
@@ -92,23 +100,35 @@ def _build_services(monkeypatch, spoken, extra=None):
             show_window=lambda *_args, **_kwargs: None,
             wait_for_window=lambda *_args, **_kwargs: None,
         ),
-        "indicator_thread_cls": lambda *_args: SimpleNamespace(
-            start=lambda: None
-        ),
-        "is_trading_day_fn": lambda *_args: True,
-        "keyboard": SimpleNamespace(Key={"enter": object()}),
-        "message_thread_cls": lambda *_args: SimpleNamespace(
-            start=lambda: None
-        ),
-        "pd": SimpleNamespace(
+    )
+    monkeypatch.setattr(
+        actions,
+        "keyboard",
+        SimpleNamespace(Key={"enter": object()}),
+    )
+    monkeypatch.setattr(
+        actions,
+        "pd",
+        SimpleNamespace(
             Timestamp=SimpleNamespace(
                 now=lambda **_kwargs: SimpleNamespace(
-                    second=0, minute=0, strftime=lambda _fmt: "2026-05-06"
+                    second=0,
+                    minute=0,
+                    hour=0,
+                    strftime=lambda _fmt: "2026-05-06",
                 )
             )
         ),
-        "psutil": SimpleNamespace(cpu_percent=lambda interval: 12.4),
-        "pyautogui": SimpleNamespace(
+    )
+    monkeypatch.setattr(
+        actions,
+        "psutil",
+        SimpleNamespace(cpu_percent=lambda interval: 12.4),
+    )
+    monkeypatch.setattr(
+        actions,
+        "pyautogui",
+        SimpleNamespace(
             click=lambda *_args, **_kwargs: None,
             dragTo=lambda *_args, **_kwargs: None,
             hotkey=lambda *_args, **_kwargs: None,
@@ -117,35 +137,50 @@ def _build_services(monkeypatch, spoken, extra=None):
             rightClick=lambda *_args, **_kwargs: None,
             write=lambda *_args, **_kwargs: None,
         ),
-        "save_market_data_fn": lambda *_args: True,
-        "text_recognition": SimpleNamespace(
-            recognize_text=lambda *_args, **_kwargs: 100
+    )
+    monkeypatch.setattr(actions, "save_market_data", lambda *_args: True)
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=lambda *_args, **_kwargs: 100),
+    )
+    monkeypatch.setattr(
+        actions,
+        "ui",
+        SimpleNamespace(
+            IndicatorThread=lambda *_args: SimpleNamespace(start=lambda: None),
+            MessageThread=lambda *_args: SimpleNamespace(start=lambda: None),
         ),
-        "win32clipboard": SimpleNamespace(
+    )
+    monkeypatch.setattr(
+        actions,
+        "win32clipboard",
+        SimpleNamespace(
             OpenClipboard=lambda: None,
             EmptyClipboard=lambda: None,
             SetClipboardText=lambda _text: None,
             CloseClipboard=lambda: None,
         ),
-    }
-    if extra:
-        service_values.update(extra)
-    return actions.ActionServices(**service_values), sleep_calls
+    )
+    monkeypatch.setattr(
+        actions, "calculate_share_size", lambda *_args: (True, None)
+    )
+    monkeypatch.setattr(actions, "is_trading_day", lambda *_args: True)
+    return sleep_calls
 
 
-def test_execute_action_speaks_text_with_explicit_dependencies(monkeypatch):
+def test_execute_action_speaks_text_with_direct_imports(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    services, _ = _build_services(monkeypatch, spoken)
+    _patch_action_modules(monkeypatch)
 
     assert actions.execute_action(
         trade,
         config,
         gui_state,
         [("speak_text", "ready")],
-        services,
     )
     assert spoken == ["ready"]
     assert (trade.initialized, gui_state.initialized) == (1, 1)
@@ -157,14 +192,13 @@ def test_execute_action_runs_named_nested_action(monkeypatch):
     gui_state = _build_gui_state()
     config = _build_config()
     config["Actions"]["nested"] = str([("speak_text", "nested")])
-    services, _ = _build_services(monkeypatch, spoken)
+    _patch_action_modules(monkeypatch)
 
     assert actions.execute_action(
         trade,
         config,
         gui_state,
         [("execute_action", "nested"), ("speak_text", "done")],
-        services,
     )
     assert spoken == ["nested", "done"]
     assert (trade.initialized, gui_state.initialized) == (1, 1)
@@ -175,14 +209,13 @@ def test_execute_action_returns_false_for_unknown_command(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    services, _ = _build_services(monkeypatch, spoken)
+    _patch_action_modules(monkeypatch)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("unknown_command",)],
-        services,
     )
     assert spoken == []
 
@@ -192,14 +225,13 @@ def test_execute_action_unknown_command_does_not_print(monkeypatch, capsys):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    services, _ = _build_services(monkeypatch, spoken)
+    _patch_action_modules(monkeypatch)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("unknown_command",)],
-        services,
     )
     assert capsys.readouterr().out == ""
 
@@ -209,6 +241,7 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
+    _patch_action_modules(monkeypatch)
 
     def fake_recognize_text(*_args, **kwargs):
         should_continue_reference = kwargs["should_continue_reference"]
@@ -216,14 +249,10 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
         trade.should_continue = False
         return None
 
-    services, _ = _build_services(
-        monkeypatch,
-        spoken,
-        extra={
-            "text_recognition": SimpleNamespace(
-                recognize_text=fake_recognize_text
-            )
-        },
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=fake_recognize_text),
     )
 
     assert not actions.execute_action(
@@ -237,7 +266,6 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
                 [("speak_text", "cleanup")],
             )
         ],
-        services,
     )
     assert spoken == ["cleanup", "Canceled."]
 
@@ -247,14 +275,11 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    services, _ = _build_services(
-        monkeypatch,
-        spoken,
-        extra={
-            "calculate_share_size_fn": (
-                lambda *_args: (False, "Margin trading suspended.")
-            )
-        },
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "calculate_share_size",
+        lambda *_args: (False, "Margin trading suspended."),
     )
 
     assert not actions.execute_action(
@@ -265,7 +290,6 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
             ("calculate_share_size", "long"),
             ("speak_text", "should not run"),
         ],
-        services,
     )
     assert spoken == ["Margin trading suspended."]
 
@@ -277,32 +301,31 @@ def test_show_hide_indicator_returns_false_without_widgets_section(
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    services, _ = _build_services(monkeypatch, spoken)
+    _patch_action_modules(monkeypatch)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("show_hide_indicator",)],
-        services,
     )
 
 
 def test_invalid_nested_action_argument_returns_false_without_printing(
-    monkeypatch, capsys
+    monkeypatch,
+    capsys,
 ):
     spoken = []
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
-    services, _ = _build_services(monkeypatch, spoken)
+    _patch_action_modules(monkeypatch)
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [("is_now_after", "00:00:00", 123)],
-        services,
     )
     assert capsys.readouterr().out == ""
 
@@ -310,15 +333,3 @@ def test_invalid_nested_action_argument_returns_false_without_printing(
 def test_all_keys_includes_execute_action_and_save_market_data():
     assert "execute_action" in actions.ALL_KEYS
     assert "save_market_data" in actions.ALL_KEYS
-
-
-def test_action_services_contract_rejects_unknown_keys(monkeypatch):
-    spoken = []
-    extra = {"configuration": object()}
-
-    try:
-        _build_services(monkeypatch, spoken, extra=extra)
-    except TypeError as exc:
-        assert "configuration" in str(exc)
-    else:
-        raise AssertionError("Expected ActionServices to reject unknown keys.")

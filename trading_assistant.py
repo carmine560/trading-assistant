@@ -8,13 +8,10 @@ import csv
 import os
 import sys
 import threading
-import win32clipboard
 
 from pynput import keyboard
 from pynput import mouse
 import pandas as pd
-import psutil
-import pyautogui
 import requests
 
 from core_utilities import (
@@ -40,7 +37,6 @@ from app import (
     scheduler,
     startup_script,
     trade_service,
-    ui,
 )
 from interaction_utilities import (
     gui_interactions,
@@ -55,8 +51,6 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
 )
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
 Trade = models.Trade
-IndicatorThread = ui.IndicatorThread
-MessageThread = ui.MessageThread
 
 
 # Entry Point
@@ -68,7 +62,7 @@ def main():
     trade = Trade(
         *args.P,
         script_path=__file__,
-        start_execute_action_thread_fn=start_execute_action_thread,
+        start_execute_action_thread_fn=actions.start_execute_action_thread,
     )
 
     if file_utilities.create_launchers_exit(args, __file__):
@@ -198,19 +192,9 @@ def configure_exit(args, trade):
     )
 
 
-# Core Predicates
-
-
 def _is_xy(value):
     """Return True if the value represents exactly two integers (X, Y)."""
     return config_workflow.is_xy(value)
-
-
-def is_trading_day(date, market_holidays, date_format):
-    """Check if the given date is a trading day."""
-    return date.weekday() < 5 and date.strftime(date_format) not in set(
-        pd.read_csv(market_holidays, header=None, dtype=str)[0]
-    )
 
 
 # Data Creation and Persistence
@@ -394,52 +378,6 @@ def _start_speaking_process(trade, config):
     return listeners.start_speaking_process(trade, config, speech_synthesis)
 
 
-# Action Execution Pipeline
-
-
-def start_execute_action_thread(trade, config, gui_state, action):
-    """Start a new thread to execute a specified action."""
-    actions.start_execute_action_thread(
-        trade,
-        config,
-        gui_state,
-        action,
-        _get_action_dependencies(),
-    )
-
-
-def execute_action(trade, config, gui_state, action, should_initialize=True):
-    """Execute a sequence of commands for a trade."""
-    return actions.execute_action(
-        trade,
-        config,
-        gui_state,
-        action,
-        _get_action_dependencies(),
-        should_initialize=should_initialize,
-    )
-
-
-def _get_action_dependencies():
-    """Return runtime dependencies required by the action executor."""
-    return actions.ActionServices(
-        calculate_share_size_fn=calculate_share_size,
-        data_utilities=data_utilities,
-        file_utilities=file_utilities,
-        gui_interactions=gui_interactions,
-        indicator_thread_cls=IndicatorThread,
-        is_trading_day_fn=is_trading_day,
-        keyboard=keyboard,
-        message_thread_cls=MessageThread,
-        pd=pd,
-        psutil=psutil,
-        pyautogui=pyautogui,
-        save_market_data_fn=save_market_data,
-        text_recognition=text_recognition,
-        win32clipboard=win32clipboard,
-    )
-
-
 def _get_listener_dependencies():
     """Return dependencies required by listener startup helpers."""
     return {
@@ -454,7 +392,7 @@ def _get_listener_dependencies():
 def _get_scheduler_dependencies():
     """Return dependencies required by scheduler helpers."""
     return {
-        "execute_action_fn": execute_action,
+        "execute_action_fn": actions.execute_action,
         "process_utilities": process_utilities,
         "speech_synthesis": speech_synthesis,
         "start_speaking_process_fn": _start_speaking_process,
@@ -466,7 +404,7 @@ def _get_runtime_dependencies():
     return {
         "atexit": atexit,
         "base_manager_cls": BaseManager,
-        "execute_action_fn": execute_action,
+        "execute_action_fn": actions.execute_action,
         "process_utilities": process_utilities,
         "save_customer_margin_ratios_fn": save_customer_margin_ratios,
         "speech_synthesis": speech_synthesis,
