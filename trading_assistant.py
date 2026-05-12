@@ -60,7 +60,7 @@ def main():
         args,
         trade,
         configure,
-        create_completion,
+        config_workflow.create_completion,
         create_startup_script,
         __file__,
         1e-4,
@@ -174,14 +174,6 @@ def configure(trade, can_interpolate=True, can_override=True):
         can_interpolate=can_interpolate,
         can_override=can_override,
     )
-
-
-# Data Creation and Persistence
-
-
-def create_completion(trade, config):
-    """Generate completion scripts for options and values."""
-    config_workflow.create_completion(trade, config)
 
 
 def save_customer_margin_ratios(trade, config):
