@@ -1,19 +1,26 @@
 """Trading assistant runtime orchestration for actions and services."""
 
+from multiprocessing.managers import BaseManager
+import atexit
+import threading
 
-def run(args, trade, config, gui_state, dependencies):
-    """Run the application using the provided runtime dependencies."""
-    dependencies["atexit"].register(
-        persist_config_on_exit, trade, config, dependencies
-    )
+from app import actions
+from core_utilities import process_utilities
+from core_utilities.config_io import write_config
+from interaction_utilities import speech_synthesis
+
+
+def run(args, trade, config, gui_state):
+    """Run the application."""
+    atexit.register(persist_config_on_exit, trade, config)
 
     if args.r:
-        dependencies["save_customer_margin_ratios_fn"](trade, config)
+        trade.save_customer_margin_ratios_fn(trade, config)
 
-    is_running = dependencies["process_utilities"].is_running(trade.process)
+    is_running = process_utilities.is_running(trade.process)
     base_manager = None
     if args.s or args.l or args.a:
-        base_manager = _start_speech_manager(trade, dependencies)
+        base_manager = _start_speech_manager(trade)
 
     if args.a:
         _execute_single_action(
@@ -23,36 +30,29 @@ def run(args, trade, config, gui_state, dependencies):
             gui_state,
             base_manager,
             is_running,
-            dependencies,
         )
     if args.l and is_running:
-        dependencies["start_listeners_fn"](
-            trade, config, gui_state, base_manager
-        )
+        trade.start_listeners_fn(trade, config, gui_state, base_manager)
     if args.s and is_running:
-        dependencies["threading"].Thread(
-            target=dependencies["start_scheduler_fn"],
+        threading.Thread(
+            target=trade.start_scheduler_fn,
             args=(trade, config, gui_state, trade.process, base_manager),
         ).start()
 
 
-def persist_config_on_exit(trade, config, dependencies):
+def persist_config_on_exit(trade, config):
     """Persist configuration on interpreter shutdown."""
     # Ensure the config is written on normal interpreter shutdown, since
     # 'IndicatorThread.stop()' or 'IndicatorThread.on_closing()' may not run if
     # the main thread terminates abruptly.
-    dependencies["write_config_fn"](
-        config, trade.config_path, is_encrypted=True
-    )
+    write_config(config, trade.config_path, is_encrypted=True)
 
 
-def _start_speech_manager(trade, dependencies):
+def _start_speech_manager(trade):
     """Create and start the speech manager used by runtime workflows."""
-    base_manager_cls = dependencies["base_manager_cls"]
-    speech_synthesis = dependencies["speech_synthesis"]
     # Use 'BaseManager' to share 'SpeechManager' across processes.
-    base_manager_cls.register("SpeechManager", speech_synthesis.SpeechManager)
-    base_manager = base_manager_cls()
+    BaseManager.register("SpeechManager", speech_synthesis.SpeechManager)
+    base_manager = BaseManager()
     base_manager.start()
     trade.speech_manager = base_manager.SpeechManager()
     return base_manager
@@ -65,12 +65,11 @@ def _execute_single_action(
     gui_state,
     base_manager,
     is_running,
-    dependencies,
 ):
     """Execute a single configured action and manage transient listeners."""
     should_start_transient_listeners = not (is_running and args.l)
     if should_start_transient_listeners:
-        dependencies["start_listeners_fn"](
+        trade.start_listeners_fn(
             trade,
             config,
             gui_state,
@@ -79,7 +78,7 @@ def _execute_single_action(
         )
 
     try:
-        dependencies["execute_action_fn"](
+        actions.execute_action(
             trade,
             config,
             gui_state,
@@ -87,7 +86,7 @@ def _execute_single_action(
         )
     finally:
         if should_start_transient_listeners:
-            dependencies["process_utilities"].stop_listeners(
+            process_utilities.stop_listeners(
                 trade.mouse_listener,
                 trade.keyboard_listener,
                 base_manager,

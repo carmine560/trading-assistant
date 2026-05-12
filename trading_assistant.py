@@ -1,9 +1,7 @@
 """Assist with discretionary day trading of stocks on margin."""
 
 from io import BytesIO
-from multiprocessing.managers import BaseManager
 import argparse
-import atexit
 import csv
 import os
 import sys
@@ -14,18 +12,6 @@ from pynput import mouse
 import pandas as pd
 import requests
 
-from core_utilities import (
-    data_utilities,
-    errors,
-    file_utilities,
-    process_utilities,
-)
-from core_utilities.config_io import read_config, write_config
-from core_utilities.config_validation import (
-    ConfigError,
-    ensure_section_exists,
-    evaluate_value,
-)
 from app import (
     actions,
     config_builder,
@@ -37,6 +23,18 @@ from app import (
     scheduler,
     startup_script,
     trade_service,
+)
+from core_utilities import (
+    data_utilities,
+    errors,
+    file_utilities,
+    process_utilities,
+)
+from core_utilities.config_io import read_config
+from core_utilities.config_validation import (
+    ConfigError,
+    ensure_section_exists,
+    evaluate_value,
 )
 from interaction_utilities import (
     gui_interactions,
@@ -64,6 +62,9 @@ def main():
         script_path=__file__,
         start_execute_action_thread_fn=actions.start_execute_action_thread,
     )
+    trade.save_customer_margin_ratios_fn = save_customer_margin_ratios
+    trade.start_listeners_fn = start_listeners
+    trade.start_scheduler_fn = start_scheduler
 
     if file_utilities.create_launchers_exit(args, __file__):
         return
@@ -75,13 +76,7 @@ def main():
     gui_state = gui_interactions.GuiState(
         evaluate_value(config[trade.process]["interactive_windows"])
     )
-    runtime.run(
-        args,
-        trade,
-        config,
-        gui_state,
-        _get_runtime_dependencies(),
-    )
+    runtime.run(args, trade, config, gui_state)
 
 
 # CLI and Configuration
@@ -396,22 +391,6 @@ def _get_scheduler_dependencies():
         "process_utilities": process_utilities,
         "speech_synthesis": speech_synthesis,
         "start_speaking_process_fn": _start_speaking_process,
-    }
-
-
-def _get_runtime_dependencies():
-    """Return runtime dependencies required by the app runtime."""
-    return {
-        "atexit": atexit,
-        "base_manager_cls": BaseManager,
-        "execute_action_fn": actions.execute_action,
-        "process_utilities": process_utilities,
-        "save_customer_margin_ratios_fn": save_customer_margin_ratios,
-        "speech_synthesis": speech_synthesis,
-        "start_listeners_fn": start_listeners,
-        "start_scheduler_fn": start_scheduler,
-        "threading": threading,
-        "write_config_fn": write_config,
     }
 
 

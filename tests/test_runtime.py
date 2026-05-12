@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from app import runtime
 
 
-def test_run_executes_single_action_with_transient_listeners():
+def test_run_executes_single_action_with_transient_listeners(monkeypatch):
     calls = []
     args = SimpleNamespace(r=False, s=False, l=False, a=["open"])
     trade = SimpleNamespace(
@@ -14,6 +14,15 @@ def test_run_executes_single_action_with_transient_listeners():
         mouse_listener="mouse",
         keyboard_listener="keyboard",
         speaking_process="speaker",
+        save_customer_margin_ratios_fn=(
+            lambda trade, config: calls.append("save_customer_margin_ratios")
+        ),
+        start_listeners_fn=(
+            lambda trade, config, gui_state, base_manager, **kwargs: (
+                calls.append(("start_listeners", kwargs))
+            )
+        ),
+        start_scheduler_fn=lambda *args: calls.append("start_scheduler"),
         stop_listeners_event=SimpleNamespace(
             set=lambda: calls.append("event.set")
         ),
@@ -36,39 +45,48 @@ def test_run_executes_single_action_with_transient_listeners():
             calls.append("manager.SpeechManager")
             return "speech_manager"
 
-    dependencies = {
-        "atexit": SimpleNamespace(
-            register=lambda *args: calls.append("atexit")
-        ),
-        "base_manager_cls": FakeManager,
-        "execute_action_fn": (
-            lambda trade, config, gui_state, action: calls.append(
-                ("execute_action", action)
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "actions",
+        SimpleNamespace(
+            execute_action=(
+                lambda trade, config, gui_state, action: calls.append(
+                    ("execute_action", action)
+                )
             )
         ),
-        "process_utilities": SimpleNamespace(
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(
             is_running=lambda process: False,
             stop_listeners=lambda *args: calls.append("stop_listeners"),
         ),
-        "save_customer_margin_ratios_fn": (
-            lambda trade, config: calls.append("save_customer_margin_ratios")
-        ),
-        "speech_synthesis": SimpleNamespace(SpeechManager=object),
-        "start_listeners_fn": (
-            lambda trade, config, gui_state, base_manager, **kwargs: (
-                calls.append(("start_listeners", kwargs))
-            )
-        ),
-        "start_scheduler_fn": lambda *args: calls.append("start_scheduler"),
-        "threading": SimpleNamespace(
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "threading",
+        SimpleNamespace(
             Thread=lambda *args, **kwargs: SimpleNamespace(
                 start=lambda: calls.append("thread.start")
             )
         ),
-        "write_config_fn": lambda *args, **kwargs: None,
-    }
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
 
-    runtime.run(args, trade, config, gui_state, dependencies)
+    runtime.run(args, trade, config, gui_state)
 
     assert ("start_listeners", {"is_persistent": True}) in calls
     assert ("execute_action", [("speak_text", "ready")]) in calls
@@ -77,7 +95,7 @@ def test_run_executes_single_action_with_transient_listeners():
     assert "thread.join" in calls
 
 
-def test_run_cleans_up_transient_listeners_when_action_raises():
+def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
     calls = []
     args = SimpleNamespace(r=False, s=False, l=False, a=["open"])
     trade = SimpleNamespace(
@@ -86,6 +104,15 @@ def test_run_cleans_up_transient_listeners_when_action_raises():
         mouse_listener="mouse",
         keyboard_listener="keyboard",
         speaking_process="speaker",
+        save_customer_margin_ratios_fn=(
+            lambda trade, config: calls.append("save_customer_margin_ratios")
+        ),
+        start_listeners_fn=(
+            lambda trade, config, gui_state, base_manager, **kwargs: (
+                calls.append(("start_listeners", kwargs))
+            )
+        ),
+        start_scheduler_fn=lambda *args: calls.append("start_scheduler"),
         stop_listeners_event=SimpleNamespace(
             set=lambda: calls.append("event.set")
         ),
@@ -112,36 +139,43 @@ def test_run_cleans_up_transient_listeners_when_action_raises():
         calls.append("execute_action")
         raise RuntimeError("boom")
 
-    dependencies = {
-        "atexit": SimpleNamespace(
-            register=lambda *args: calls.append("atexit")
-        ),
-        "base_manager_cls": FakeManager,
-        "execute_action_fn": raise_execute_action,
-        "process_utilities": SimpleNamespace(
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "actions",
+        SimpleNamespace(execute_action=raise_execute_action),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(
             is_running=lambda process: False,
             stop_listeners=lambda *args: calls.append("stop_listeners"),
         ),
-        "save_customer_margin_ratios_fn": (
-            lambda trade, config: calls.append("save_customer_margin_ratios")
-        ),
-        "speech_synthesis": SimpleNamespace(SpeechManager=object),
-        "start_listeners_fn": (
-            lambda trade, config, gui_state, base_manager, **kwargs: (
-                calls.append(("start_listeners", kwargs))
-            )
-        ),
-        "start_scheduler_fn": lambda *args: calls.append("start_scheduler"),
-        "threading": SimpleNamespace(
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "threading",
+        SimpleNamespace(
             Thread=lambda *args, **kwargs: SimpleNamespace(
                 start=lambda: calls.append("thread.start")
             )
         ),
-        "write_config_fn": lambda *args, **kwargs: None,
-    }
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
 
     try:
-        runtime.run(args, trade, config, gui_state, dependencies)
+        runtime.run(args, trade, config, gui_state)
     except RuntimeError as exc:
         assert str(exc) == "boom"
     else:

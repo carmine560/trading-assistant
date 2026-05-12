@@ -12,10 +12,10 @@ import psutil
 import pyautogui
 import win32clipboard
 
+from app import market_data, trade_service, ui
 from core_utilities import data_utilities, errors, file_utilities
 from core_utilities.config_io import write_config
 from core_utilities.config_validation import evaluate_value
-from app import market_data, trade_service, ui
 from interaction_utilities import gui_interactions, text_recognition
 
 ALL_KEYS = (

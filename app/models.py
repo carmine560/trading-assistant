@@ -7,9 +7,9 @@ import time
 from pynput import keyboard
 import win32gui
 
+from app import actions as actions
 from core_utilities import file_utilities, initializer
 from core_utilities.config_validation import evaluate_value
-from app import actions as actions
 
 
 class Trade(initializer.Initializer):
