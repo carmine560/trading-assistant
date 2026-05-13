@@ -77,7 +77,7 @@ def start_execute_action_thread(trade, config, gui_state, action):
             gui_state,
             config[trade.actions_section][action],
         ),
-        kwargs={"action_name": action},
+        kwargs={"action_path": (action,)},
     )
     execute_action_thread.start()
 
@@ -88,14 +88,14 @@ def execute_action(
     gui_state,
     action,
     should_initialize=True,
-    action_name=None,
+    action_path=None,
 ):
     """Execute a sequence of commands for a trade."""
     if should_initialize:
         trade.initialize_attributes()
         gui_state.initialize_attributes()
 
-    action_name = action_name or "inline action"
+    action_path = tuple(action_path or ("inline action",))
     if isinstance(action, str):
         action = evaluate_value(action)
 
@@ -104,20 +104,41 @@ def execute_action(
         if command not in ALL_KEYS:
             raise errors.ActionExecutionError(
                 (
-                    f"Action '{action_name}' failed at instruction "
-                    f"{instruction_index} ({command}): unknown command."
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index} ({command}): "
+                    "unknown command."
                 ),
-                action_name=action_name,
+                action_path=action_path,
                 instruction_index=instruction_index,
                 command=command,
             )
-        if not _execute_instruction(trade, config, gui_state, instruction):
+        if not _execute_instruction(
+            trade,
+            config,
+            gui_state,
+            instruction,
+            action_path,
+            instruction_index,
+        ):
             return False
 
     return True
 
 
-def _execute_instruction(trade, config, gui_state, instruction):
+def _format_action_path(action_path):
+    """Return a readable representation of nested action context."""
+    return " -> ".join(action_path)
+
+
+def _execute_instruction(
+    trade,
+    config,
+    gui_state,
+    instruction,
+    action_path,
+    instruction_index,
+):
     """Execute a single instruction."""
     command, argument, additional_argument = _unpack_instruction(instruction)
 
@@ -162,6 +183,8 @@ def _execute_instruction(trade, config, gui_state, instruction):
             command,
             argument,
             additional_argument,
+            action_path,
+            instruction_index,
         )
     if command in {
         "speak_config",
@@ -203,9 +226,18 @@ def _execute_instruction(trade, config, gui_state, instruction):
             command,
             argument,
             additional_argument,
+            action_path,
+            instruction_index,
         )
     if command == "execute_action":
-        return _handle_execution_command(trade, config, gui_state, argument)
+        return _handle_execution_command(
+            trade,
+            config,
+            gui_state,
+            argument,
+            action_path,
+            instruction_index,
+        )
     return True
 
 
@@ -303,6 +335,8 @@ def _handle_wait_command(
     command,
     argument,
     additional_argument,
+    action_path,
+    instruction_index,
 ):
     """Handle blocking and wait-related commands."""
     if command == "sleep":
@@ -314,6 +348,8 @@ def _handle_wait_command(
             gui_state,
             argument,
             additional_argument,
+            action_path,
+            instruction_index,
         ):
             return False
     elif command == "wait_for_key_count_down":
@@ -324,6 +360,8 @@ def _handle_wait_command(
             argument,
             additional_argument,
             should_count_down=True,
+            action_path=action_path,
+            instruction_index=instruction_index,
         ):
             return False
     elif command == "wait_for_price":
@@ -339,7 +377,12 @@ def _handle_wait_command(
         )
         trade.keyboard_listener_state = 0
         if not trade.should_continue and _handle_cancellation_exit(
-            trade, config, gui_state, additional_argument
+            trade,
+            config,
+            gui_state,
+            additional_argument,
+            action_path,
+            instruction_index,
         ):
             return False
     elif command == "wait_for_window":
@@ -352,7 +395,12 @@ def _handle_wait_command(
         )
         trade.keyboard_listener_state = 0
         if not trade.should_continue and _handle_cancellation_exit(
-            trade, config, gui_state, additional_argument
+            trade,
+            config,
+            gui_state,
+            additional_argument,
+            action_path,
+            instruction_index,
         ):
             return False
 
@@ -544,20 +592,32 @@ def _handle_control_flow_command(
     command,
     argument,
     additional_argument,
+    action_path,
+    instruction_index,
 ):
     """Handle conditional control-flow commands."""
     if command == "is_now_after":
         if data_utilities.get_target_time(
             argument
         ) < time.time() and not _recursively_execute_action(
-            trade, config, gui_state, additional_argument
+            trade,
+            config,
+            gui_state,
+            additional_argument,
+            action_path,
+            instruction_index,
         ):
             return False
     elif command == "is_now_before":
         if time.time() < data_utilities.get_target_time(
             argument
         ) and not _recursively_execute_action(
-            trade, config, gui_state, additional_argument
+            trade,
+            config,
+            gui_state,
+            additional_argument,
+            action_path,
+            instruction_index,
         ):
             return False
     elif command == "is_recording":
@@ -569,7 +629,12 @@ def _handle_control_flow_command(
         ) == bool(
             argument.lower() == "true"
         ) and not _recursively_execute_action(
-            trade, config, gui_state, additional_argument
+            trade,
+            config,
+            gui_state,
+            additional_argument,
+            action_path,
+            instruction_index,
         ):
             return False
     elif command == "is_trading_day":
@@ -579,7 +644,12 @@ def _handle_control_flow_command(
             config["Market Holidays"]["date_format"],
         ) == bool(argument.lower() == "true") and not (
             _recursively_execute_action(
-                trade, config, gui_state, additional_argument
+                trade,
+                config,
+                gui_state,
+                additional_argument,
+                action_path,
+                instruction_index,
             )
         ):
             return False
@@ -587,15 +657,36 @@ def _handle_control_flow_command(
     return True
 
 
-def _handle_execution_command(trade, config, gui_state, argument):
+def _handle_execution_command(
+    trade,
+    config,
+    gui_state,
+    argument,
+    action_path,
+    instruction_index,
+):
     """Handle execution and delegation commands."""
-    if not _recursively_execute_action(trade, config, gui_state, argument):
+    if not _recursively_execute_action(
+        trade,
+        config,
+        gui_state,
+        argument,
+        action_path,
+        instruction_index,
+    ):
         return False
 
     return True
 
 
-def _recursively_execute_action(trade, config, gui_state, additional_argument):
+def _recursively_execute_action(
+    trade,
+    config,
+    gui_state,
+    additional_argument,
+    action_path,
+    instruction_index,
+):
     """Recursively execute an action if it is a list or a string."""
     if isinstance(additional_argument, list):
         return execute_action(
@@ -604,7 +695,7 @@ def _recursively_execute_action(trade, config, gui_state, additional_argument):
             gui_state,
             additional_argument,
             should_initialize=False,
-            action_name="inline action",
+            action_path=(*action_path, f"inline@{instruction_index}"),
         )
     if isinstance(additional_argument, str):
         return execute_action(
@@ -613,7 +704,7 @@ def _recursively_execute_action(trade, config, gui_state, additional_argument):
             gui_state,
             config[trade.actions_section][additional_argument],
             should_initialize=False,
-            action_name=additional_argument,
+            action_path=(*action_path, additional_argument),
         )
 
     return False
@@ -626,6 +717,8 @@ def _wait_for_key(
     argument,
     additional_argument,
     should_count_down=False,
+    action_path=None,
+    instruction_index=None,
 ):
     """Wait for a key press with optional countdown."""
     trade.keyboard_listener_state = 1
@@ -657,7 +750,12 @@ def _wait_for_key(
         time.sleep(0.01)
 
     if not trade.should_continue and _handle_cancellation_exit(
-        trade, config, gui_state, additional_argument
+        trade,
+        config,
+        gui_state,
+        additional_argument,
+        action_path,
+        instruction_index,
     ):
         return False
     return True
@@ -668,11 +766,18 @@ def _handle_cancellation_exit(
     config,
     gui_state,
     additional_argument,
+    action_path,
+    instruction_index,
 ):
     """Perform cancellation actions and signal caller to exit."""
     if additional_argument:
         _recursively_execute_action(
-            trade, config, gui_state, additional_argument
+            trade,
+            config,
+            gui_state,
+            additional_argument,
+            action_path,
+            instruction_index,
         )
 
     trade.speech_manager.set_speech_text("Canceled.")

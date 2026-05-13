@@ -222,7 +222,7 @@ def test_execute_action_raises_for_unknown_command(monkeypatch):
             [("unknown_command",)],
         )
 
-    assert e.value.action_name == "inline action"
+    assert e.value.action_path == ("inline action",)
     assert e.value.instruction_index == 1
     assert e.value.command == "unknown_command"
     assert spoken == []
@@ -243,6 +243,54 @@ def test_execute_action_unknown_command_does_not_print(monkeypatch, capsys):
             [("unknown_command",)],
         )
     assert capsys.readouterr().out == ""
+
+
+def test_execute_action_reports_inline_nested_action_path(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [
+                (
+                    "execute_action",
+                    [("unknown_command",)],
+                )
+            ],
+            action_path=("action_1",),
+        )
+
+    assert e.value.action_path == ("action_1", "inline@1")
+    assert e.value.instruction_index == 1
+    assert e.value.command == "unknown_command"
+
+
+def test_execute_action_reports_named_nested_action_path(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Actions"]["action_2"] = str([("unknown_command",)])
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("execute_action", "action_2")],
+            action_path=("action_3",),
+        )
+
+    assert e.value.action_path == ("action_3", "action_2")
+    assert e.value.instruction_index == 1
+    assert e.value.command == "unknown_command"
 
 
 def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
