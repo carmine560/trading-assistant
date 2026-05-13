@@ -36,3 +36,29 @@ def test_split_rankings_by_digit_returns_false_for_missing_file(tmp_path):
         pass
     else:
         raise AssertionError("Expected MarketDataError for missing file.")
+
+
+def test_split_rankings_by_digit_raises_for_malformed_row(tmp_path):
+    rankings = tmp_path / "rankings.csv"
+    rankings.write_text(
+        "\n".join(
+            (
+                'a,b,c,d,e,f,1234,h,i,"1,500"',
+                "too,short,row",
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        market_data.split_rankings_by_digit(
+            rankings=str(rankings),
+            closing_prices_prefix=str(tmp_path / "closing_prices_"),
+            code_regex=(
+                r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d" r"[\dACDFGHJKLMNPRSTUWXY]5?"
+            ),
+        )
+    except MarketDataError as e:
+        assert "malformed row 2 has 3 columns" in str(e)
+    else:
+        raise AssertionError("Expected MarketDataError for malformed row.")

@@ -11,11 +11,15 @@ from core_utilities.errors import MarketDataError
 def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
     """Split the rankings CSV by the first digit of the securities code."""
     data_by_digit = defaultdict(list)
+    malformed_rows = []
 
     try:
         with open(rankings, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
-            for row in reader:
+            for row_number, row in enumerate(reader, start=1):
+                if len(row) <= 9:
+                    malformed_rows.append((row_number, len(row)))
+                    continue
                 securities_code = row[6].strip()
                 if not re.fullmatch(code_regex, securities_code):
                     continue
@@ -26,6 +30,13 @@ def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
         raise MarketDataError(
             f"Unable to read rankings file: {rankings}"
         ) from e
+
+    if malformed_rows:
+        row_number, column_count = malformed_rows[0]
+        raise MarketDataError(
+            "Unable to read rankings file: malformed row "
+            f"{row_number} has {column_count} columns."
+        )
 
     for digit in range(1, 10):
         digit_string = str(digit)
