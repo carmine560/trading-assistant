@@ -172,6 +172,13 @@ def _patch_action_modules(monkeypatch):
     return sleep_calls
 
 
+def _assert_action_error(e, action_path, instruction_index, command):
+    """Assert the common context carried by action execution errors."""
+    assert e.value.action_path == action_path
+    assert e.value.instruction_index == instruction_index
+    assert e.value.command == command
+
+
 def test_execute_action_speaks_text_with_direct_imports(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -222,9 +229,7 @@ def test_execute_action_raises_for_unknown_command(monkeypatch):
             [("unknown_command",)],
         )
 
-    assert e.value.action_path == ("inline action",)
-    assert e.value.instruction_index == 1
-    assert e.value.command == "unknown_command"
+    _assert_action_error(e, ("inline action",), 1, "unknown_command")
     assert spoken == []
 
 
@@ -266,9 +271,7 @@ def test_execute_action_reports_inline_nested_action_path(monkeypatch):
             action_path=("action_1",),
         )
 
-    assert e.value.action_path == ("action_1", "inline@1")
-    assert e.value.instruction_index == 1
-    assert e.value.command == "unknown_command"
+    _assert_action_error(e, ("action_1", "inline@1"), 1, "unknown_command")
 
 
 def test_execute_action_reports_named_nested_action_path(monkeypatch):
@@ -288,9 +291,7 @@ def test_execute_action_reports_named_nested_action_path(monkeypatch):
             action_path=("action_3",),
         )
 
-    assert e.value.action_path == ("action_3", "action_2")
-    assert e.value.instruction_index == 1
-    assert e.value.command == "unknown_command"
+    _assert_action_error(e, ("action_3", "action_2"), 1, "unknown_command")
 
 
 def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):

@@ -102,16 +102,10 @@ def execute_action(
     for instruction_index, instruction in enumerate(action, start=1):
         command = instruction[0]
         if command not in ALL_KEYS:
-            raise errors.ActionExecutionError(
-                (
-                    "Action path "
-                    f"'{_format_action_path(action_path)}' failed at "
-                    f"instruction {instruction_index} ({command}): "
-                    "unknown command."
-                ),
-                action_path=action_path,
-                instruction_index=instruction_index,
-                command=command,
+            _raise_unknown_command_error(
+                action_path,
+                instruction_index,
+                command,
             )
         if not _execute_instruction(
             trade,
@@ -124,6 +118,21 @@ def execute_action(
             return False
 
     return True
+
+
+def _raise_unknown_command_error(action_path, instruction_index, command):
+    """Raise a contextual error for an unknown action command."""
+    raise errors.ActionExecutionError(
+        (
+            "Action path "
+            f"'{_format_action_path(action_path)}' failed at "
+            f"instruction {instruction_index} ({command}): "
+            "unknown command."
+        ),
+        action_path=action_path,
+        instruction_index=instruction_index,
+        command=command,
+    )
 
 
 def _format_action_path(action_path):
