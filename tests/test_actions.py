@@ -3,7 +3,10 @@
 from configparser import ConfigParser
 from types import SimpleNamespace
 
+import pytest
+
 from app import actions
+from core_utilities.errors import ActionExecutionError
 
 
 def _build_trade(spoken):
@@ -204,19 +207,24 @@ def test_execute_action_runs_named_nested_action(monkeypatch):
     assert (trade.initialized, gui_state.initialized) == (1, 1)
 
 
-def test_execute_action_returns_false_for_unknown_command(monkeypatch):
+def test_execute_action_raises_for_unknown_command(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
     _patch_action_modules(monkeypatch)
 
-    assert not actions.execute_action(
-        trade,
-        config,
-        gui_state,
-        [("unknown_command",)],
-    )
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("unknown_command",)],
+        )
+
+    assert e.value.action_name == "inline action"
+    assert e.value.instruction_index == 1
+    assert e.value.command == "unknown_command"
     assert spoken == []
 
 
@@ -227,12 +235,13 @@ def test_execute_action_unknown_command_does_not_print(monkeypatch, capsys):
     config = _build_config()
     _patch_action_modules(monkeypatch)
 
-    assert not actions.execute_action(
-        trade,
-        config,
-        gui_state,
-        [("unknown_command",)],
-    )
+    with pytest.raises(ActionExecutionError):
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("unknown_command",)],
+        )
     assert capsys.readouterr().out == ""
 
 

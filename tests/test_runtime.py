@@ -47,8 +47,8 @@ def test_run_executes_single_action_with_transient_listeners(monkeypatch):
         "actions",
         SimpleNamespace(
             execute_action=(
-                lambda trade, config, gui_state, action: calls.append(
-                    ("execute_action", action)
+                lambda trade, config, gui_state, action, **kwargs: (
+                    calls.append(("execute_action", action))
                 )
             )
         ),
@@ -139,7 +139,7 @@ def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
             calls.append("manager.SpeechManager")
             return "speech_manager"
 
-    def raise_execute_action(*_args):
+    def raise_execute_action(*_args, **_kwargs):
         calls.append("execute_action")
         raise RuntimeError("boom")
 

@@ -77,23 +77,40 @@ def start_execute_action_thread(trade, config, gui_state, action):
             gui_state,
             config[trade.actions_section][action],
         ),
+        kwargs={"action_name": action},
     )
     execute_action_thread.start()
 
 
-def execute_action(trade, config, gui_state, action, should_initialize=True):
+def execute_action(
+    trade,
+    config,
+    gui_state,
+    action,
+    should_initialize=True,
+    action_name=None,
+):
     """Execute a sequence of commands for a trade."""
     if should_initialize:
         trade.initialize_attributes()
         gui_state.initialize_attributes()
 
+    action_name = action_name or "inline action"
     if isinstance(action, str):
         action = evaluate_value(action)
 
-    for instruction in action:
+    for instruction_index, instruction in enumerate(action, start=1):
         command = instruction[0]
         if command not in ALL_KEYS:
-            return False
+            raise errors.ActionExecutionError(
+                (
+                    f"Action '{action_name}' failed at instruction "
+                    f"{instruction_index} ({command}): unknown command."
+                ),
+                action_name=action_name,
+                instruction_index=instruction_index,
+                command=command,
+            )
         if not _execute_instruction(trade, config, gui_state, instruction):
             return False
 
@@ -587,6 +604,7 @@ def _recursively_execute_action(trade, config, gui_state, additional_argument):
             gui_state,
             additional_argument,
             should_initialize=False,
+            action_name="inline action",
         )
     if isinstance(additional_argument, str):
         return execute_action(
@@ -595,6 +613,7 @@ def _recursively_execute_action(trade, config, gui_state, additional_argument):
             gui_state,
             config[trade.actions_section][additional_argument],
             should_initialize=False,
+            action_name=additional_argument,
         )
 
     return False

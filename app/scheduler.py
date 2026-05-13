@@ -39,6 +39,7 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
                     gui_state,
                     config[trade.actions_section][action],
                 ),
+                kwargs={"action_name": action},
             )
             schedules.append(schedule)
 

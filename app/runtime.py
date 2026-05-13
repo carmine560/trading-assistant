@@ -84,6 +84,7 @@ def _execute_single_action(
             config,
             gui_state,
             config[trade.actions_section][args.a[0]],
+            action_name=args.a[0],
         )
     finally:
         if should_start_transient_listeners:
