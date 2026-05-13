@@ -10,6 +10,22 @@ from core_utilities.errors import MarketDataError
 
 def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
     """Split the rankings CSV by the first digit of the securities code."""
+    data_by_digit = _read_rankings(rankings, code_regex)
+    _write_closing_prices_files(closing_prices_prefix, data_by_digit)
+
+    if os.path.isfile(rankings):
+        try:
+            os.remove(rankings)
+        except OSError as e:
+            raise MarketDataError(
+                f"Unable to remove processed rankings file: {rankings}"
+            ) from e
+
+    return True
+
+
+def _read_rankings(rankings, code_regex):
+    """Read rankings rows and group valid prices by leading digit."""
     data_by_digit = defaultdict(list)
     malformed_rows = []
 
@@ -38,6 +54,11 @@ def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
             f"{row_number} has {column_count} columns."
         )
 
+    return data_by_digit
+
+
+def _write_closing_prices_files(closing_prices_prefix, data_by_digit):
+    """Write grouped closing-price rows to per-digit output files."""
     for digit in range(1, 10):
         digit_string = str(digit)
         try:
@@ -52,23 +73,12 @@ def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
                 newline="",
             ) as f:
                 writer = csv.writer(f)
-                if digit_string in data_by_digit:
-                    for securities_code, current_price in data_by_digit[
-                        digit_string
-                    ]:
-                        writer.writerow([securities_code, current_price])
+                for securities_code, current_price in data_by_digit.get(
+                    digit_string, []
+                ):
+                    writer.writerow([securities_code, current_price])
         except OSError as e:
             raise MarketDataError(
                 "Unable to write closing prices file for "
                 f"digit {digit_string}."
             ) from e
-
-    if os.path.isfile(rankings):
-        try:
-            os.remove(rankings)
-        except OSError as e:
-            raise MarketDataError(
-                f"Unable to remove processed rankings file: {rankings}"
-            ) from e
-
-    return True

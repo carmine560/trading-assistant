@@ -5,6 +5,8 @@ from pathlib import Path
 from app import market_data
 from core_utilities.errors import MarketDataError
 
+CODE_REGEX = r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d" r"[\dACDFGHJKLMNPRSTUWXY]5?"
+
 
 def test_split_rankings_by_digit_saves_valid_symbols(rankings_csv, tmp_path):
     closing_prices_prefix = str(tmp_path / "closing_prices_")
@@ -12,7 +14,7 @@ def test_split_rankings_by_digit_saves_valid_symbols(rankings_csv, tmp_path):
     assert market_data.split_rankings_by_digit(
         rankings=str(rankings_csv),
         closing_prices_prefix=closing_prices_prefix,
-        code_regex=r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?",
+        code_regex=CODE_REGEX,
     )
     assert not rankings_csv.exists()
 
@@ -28,9 +30,7 @@ def test_split_rankings_by_digit_returns_false_for_missing_file(tmp_path):
         market_data.split_rankings_by_digit(
             rankings=str(tmp_path / "missing.csv"),
             closing_prices_prefix=str(tmp_path / "closing_prices_"),
-            code_regex=(
-                r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d" r"[\dACDFGHJKLMNPRSTUWXY]5?"
-            ),
+            code_regex=CODE_REGEX,
         )
     except MarketDataError:
         pass
@@ -54,9 +54,7 @@ def test_split_rankings_by_digit_raises_for_malformed_row(tmp_path):
         market_data.split_rankings_by_digit(
             rankings=str(rankings),
             closing_prices_prefix=str(tmp_path / "closing_prices_"),
-            code_regex=(
-                r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d" r"[\dACDFGHJKLMNPRSTUWXY]5?"
-            ),
+            code_regex=CODE_REGEX,
         )
     except MarketDataError as e:
         assert "malformed row 2 has 3 columns" in str(e)
