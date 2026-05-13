@@ -14,35 +14,6 @@ from core_utilities.config_validation import (
 from web_utilities import web_utilities
 
 
-def get_latest(
-    config, market_holidays, update_time, timezone, *paths, volatile_time=None
-):
-    """Check if the latest market data needs to be fetched."""
-    section = config["Market Holidays"]
-    holidays_modified_time = _get_file_modified_time(market_holidays)
-    _refresh_market_holidays_cache(
-        section,
-        market_holidays,
-        holidays_modified_time,
-    )
-    modified_time = _get_paths_modified_time(paths)
-    df = _load_market_holidays_cache(market_holidays)
-    latest = _get_latest_trading_day(df, section, update_time, timezone)
-
-    if modified_time >= latest:
-        return False
-    if volatile_time and not _is_stable_refresh_window(
-        df,
-        section,
-        timezone,
-        update_time,
-        volatile_time,
-    ):
-        return False
-
-    return latest
-
-
 def save_customer_margin_ratios(trade, config):
     """Save customer margin ratios for a given trade."""
     ensure_section_exists(config, trade.customer_margin_ratios_section)
@@ -104,6 +75,35 @@ def save_customer_margin_ratios(trade, config):
         matched_df.to_csv(
             trade.customer_margin_ratios, header=False, index=False
         )
+
+
+def get_latest(
+    config, market_holidays, update_time, timezone, *paths, volatile_time=None
+):
+    """Check if the latest market data needs to be fetched."""
+    section = config["Market Holidays"]
+    holidays_modified_time = _get_file_modified_time(market_holidays)
+    _refresh_market_holidays_cache(
+        section,
+        market_holidays,
+        holidays_modified_time,
+    )
+    modified_time = _get_paths_modified_time(paths)
+    df = _load_market_holidays_cache(market_holidays)
+    latest = _get_latest_trading_day(df, section, update_time, timezone)
+
+    if modified_time >= latest:
+        return False
+    if volatile_time and not _is_stable_refresh_window(
+        df,
+        section,
+        timezone,
+        update_time,
+        volatile_time,
+    ):
+        return False
+
+    return latest
 
 
 def _get_file_modified_time(path):
