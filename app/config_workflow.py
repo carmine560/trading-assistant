@@ -112,7 +112,8 @@ def configure_exit(
             if is_xy(value)
         )
         trade.instruction_items["preset_geometries"] = [
-            f"${{HYPERSBI2 Geometries:{option}}}" for option in sorted(items)
+            f"${{{trade.geometries_section}:{option}}}"
+            for option in sorted(items)
         ]
         if modify_option(
             config,
