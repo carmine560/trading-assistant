@@ -81,16 +81,65 @@ def get_latest(
     config, market_holidays, update_time, timezone, *paths, volatile_time=None
 ):
     """Check if the latest market data needs to be fetched."""
-    modified_time = pd.Timestamp(0, tz="UTC", unit="s")
-    if os.path.isfile(market_holidays):
-        modified_time = pd.Timestamp(
-            os.path.getmtime(market_holidays), tz="UTC", unit="s"
-        )
-
     section = config["Market Holidays"]
+    holidays_modified_time = _get_file_modified_time(market_holidays)
+    _refresh_market_holidays_cache(
+        section,
+        market_holidays,
+        holidays_modified_time,
+    )
+    modified_time = _get_paths_modified_time(paths)
+    df = _load_market_holidays_cache(market_holidays)
+    latest = _get_latest_trading_day(df, section, update_time, timezone)
+
+    if modified_time >= latest:
+        return False
+    if volatile_time and not _is_stable_refresh_window(
+        df,
+        section,
+        timezone,
+        update_time,
+        volatile_time,
+    ):
+        return False
+
+    return latest
+
+
+def _get_file_modified_time(path):
+    """Return the file modification time, or the epoch if absent."""
+    if os.path.isfile(path):
+        return pd.Timestamp(os.path.getmtime(path), tz="UTC", unit="s")
+    return pd.Timestamp(0, tz="UTC", unit="s")
+
+
+def _refresh_market_holidays_cache(section, market_holidays, modified_time):
+    """Refresh the market-holidays cache when the upstream page is newer."""
+    last_modified = _get_market_holidays_last_modified(section["url"])
+    if modified_time >= last_modified:
+        return
+
     try:
-        head = web_utilities.make_head_request(section["url"])
-        last_modified = pd.Timestamp(head.headers["last-modified"])
+        dfs = pd.read_html(section["url"], match=section["date_header"])
+        df = pd.concat(dfs)[section["date_header"]]
+        df.replace(
+            r"^(\d{4}/\d{2}/\d{2}).*$",
+            r"\1",
+            inplace=True,
+            regex=True,
+        )
+        df.to_csv(market_holidays, header=False, index=False)
+    except (KeyError, OSError, ValueError) as e:
+        raise errors.ExternalServiceError(
+            f"Unable to refresh market holidays: {e}"
+        ) from e
+
+
+def _get_market_holidays_last_modified(url):
+    """Fetch the last-modified timestamp for the market-holidays page."""
+    try:
+        head = web_utilities.make_head_request(url)
+        return pd.Timestamp(head.headers["last-modified"])
     except (
         KeyError,
         ValueError,
@@ -99,77 +148,60 @@ def get_latest(
         raise errors.ExternalServiceError(
             f"Unable to refresh market holidays: {e}"
         ) from e
-    if modified_time < last_modified:
-        try:
-            dfs = pd.read_html(
-                section["url"],
-                match=section["date_header"],
-            )
-            df = pd.concat(dfs)[section["date_header"]]
-            df.replace(
-                r"^(\d{4}/\d{2}/\d{2}).*$",
-                r"\1",
-                inplace=True,
-                regex=True,
-            )
-            df.to_csv(market_holidays, header=False, index=False)
-        except (KeyError, OSError, ValueError) as e:
-            raise errors.ExternalServiceError(
-                f"Unable to refresh market holidays: {e}"
-            ) from e
 
+
+def _get_paths_modified_time(paths):
+    """Return the oldest modification time across required output paths."""
     modified_time = pd.Timestamp.now(tz="UTC")
-    for i, _ in enumerate(paths):
-        if os.path.isfile(paths[i]):
-            modified_time = min(
-                pd.Timestamp(os.path.getmtime(paths[i]), tz="UTC", unit="s"),
-                modified_time,
-            )
-        else:
-            modified_time = pd.Timestamp(0, tz="UTC", unit="s")
-            break
+    for path in paths:
+        if not os.path.isfile(path):
+            return pd.Timestamp(0, tz="UTC", unit="s")
+        modified_time = min(modified_time, _get_file_modified_time(path))
+    return modified_time
 
+
+def _load_market_holidays_cache(market_holidays):
+    """Load the cached market-holidays file with validation."""
     try:
         df = pd.read_csv(market_holidays, header=None, dtype=str)
         if df.empty or 0 not in df:
             raise ValueError("market holidays cache is empty or malformed")
+        return df
     except (OSError, pd.errors.EmptyDataError, ValueError) as e:
         raise errors.MarketDataError(
             f"Unable to read market holidays cache: {e}"
         ) from e
-    # Assume the web page is updated at 'update_time'.
+
+
+def _get_latest_trading_day(df, section, update_time, timezone):
+    """Return the most recent trading day implied by the holiday calendar."""
     latest = pd.Timestamp(update_time, tz=timezone)
     if pd.Timestamp.now(tz="UTC") < latest:
         latest -= pd.Timedelta(days=1)
 
-    while (
-        df[0]
-        .str.contains(
-            latest.strftime(config["Market Holidays"]["date_format"])
-        )
-        .any()
-        or latest.weekday() >= 5
-    ):
+    while _is_holiday_or_weekend(df, section["date_format"], latest):
         latest -= pd.Timedelta(days=1)
 
-    if modified_time < latest:
-        if volatile_time:
-            now = pd.Timestamp.now(tz=timezone)
-            if (
-                df[0]
-                .str.contains(
-                    now.strftime(config["Market Holidays"]["date_format"])
-                )
-                .any()
-                or now.weekday() >= 5
-            ):
-                return latest
-            if (
-                not pd.Timestamp(volatile_time, tz=timezone)
-                <= now
-                <= pd.Timestamp(update_time, tz=timezone)
-            ):
-                return latest
-        else:
-            return latest
-    return False
+    return latest
+
+
+def _is_holiday_or_weekend(df, date_format, date):
+    """Return True when the date is a weekend or listed holiday."""
+    return (
+        date.weekday() >= 5
+        or df[0].str.contains(date.strftime(date_format)).any()
+    )
+
+
+def _is_stable_refresh_window(
+    df, section, timezone, update_time, volatile_time
+):
+    """Return True when a volatile refresh window should still refresh."""
+    now = pd.Timestamp.now(tz=timezone)
+    if _is_holiday_or_weekend(df, section["date_format"], now):
+        return True
+    return not (
+        pd.Timestamp(volatile_time, tz=timezone)
+        <= now
+        <= pd.Timestamp(update_time, tz=timezone)
+    )
