@@ -191,8 +191,8 @@ def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
 
     try:
         runtime.run(args, trade, config, gui_state)
-    except RuntimeError as exc:
-        assert str(exc) == "boom"
+    except RuntimeError as e:
+        assert str(e) == "boom"
     else:
         raise AssertionError("Expected runtime.run() to re-raise the action.")
 

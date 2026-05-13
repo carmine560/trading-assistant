@@ -74,7 +74,7 @@ def test_recognize_text_raises_typed_failure_after_max_attempts(monkeypatch):
     )
     monkeypatch.setattr(module.time, "sleep", lambda *_args: None)
 
-    with pytest.raises(TextRecognitionError) as exc_info:
+    with pytest.raises(TextRecognitionError) as e:
         module.recognize_text(
             10,
             20,
@@ -87,7 +87,7 @@ def test_recognize_text_raises_typed_failure_after_max_attempts(monkeypatch):
             max_attempts=2,
         )
 
-    error = exc_info.value
+    error = e.value
     assert error.attempts == 2
     assert error.last_output == "still bad"
     assert error.region == (10, 20, 30, 40)

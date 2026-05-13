@@ -37,37 +37,44 @@ def save_customer_margin_ratios(trade, config):
                 flavor="lxml",
                 header=0,
             )
-        except (requests.exceptions.RequestException, OSError) as exc:
+        except (requests.exceptions.RequestException, OSError) as e:
             raise errors.ExternalServiceError(
-                f"Unable to refresh customer margin ratios: {exc}"
-            ) from exc
+                f"Unable to refresh customer margin ratios: {e}"
+            ) from e
 
-        df = None
+        matched_df = None
         headers = evaluate_value(section["headers"])
-        for index, df in enumerate(dfs):
+        for df in dfs:
             if tuple(df.columns.values) == headers:
-                df = dfs[index][
+                matched_df = df[
                     [section["symbol_header"], section["regulation_header"]]
                 ]
                 break
-        if df is not None:
-            df = df[
-                df[section["regulation_header"]].str.contains(
-                    f"{section['suspended']}|"
-                    f"{section['customer_margin_ratio_string']}"
-                )
-            ]
-            df[section["regulation_header"]] = df[
-                section["regulation_header"]
-            ].replace(f".*{section['suspended']}.*", "suspended", regex=True)
-            df[section["regulation_header"]] = df[
-                section["regulation_header"]
-            ].replace(
-                rf".*{section['customer_margin_ratio_string']}(\d+).*",
-                r"0.\1",
-                regex=True,
+        if matched_df is None:
+            raise errors.ExternalServiceError(
+                "Unable to refresh customer margin ratios: "
+                "expected table headers were not found."
             )
-            df.to_csv(trade.customer_margin_ratios, header=False, index=False)
+
+        matched_df = matched_df[
+            matched_df[section["regulation_header"]].str.contains(
+                f"{section['suspended']}|"
+                f"{section['customer_margin_ratio_string']}"
+            )
+        ]
+        matched_df[section["regulation_header"]] = matched_df[
+            section["regulation_header"]
+        ].replace(f".*{section['suspended']}.*", "suspended", regex=True)
+        matched_df[section["regulation_header"]] = matched_df[
+            section["regulation_header"]
+        ].replace(
+            rf".*{section['customer_margin_ratio_string']}(\d+).*",
+            r"0.\1",
+            regex=True,
+        )
+        matched_df.to_csv(
+            trade.customer_margin_ratios, header=False, index=False
+        )
 
 
 def get_latest(

@@ -111,10 +111,10 @@ def test_enumerate_windows_raises_typed_error_for_unexpected_failure():
 
     module.win32gui.EnumWindows = raise_unexpected_error
 
-    with pytest.raises(GuiInteractionError) as exc_info:
+    with pytest.raises(GuiInteractionError) as e:
         module.enumerate_windows(lambda *_args: None, None)
 
-    assert "Unable to enumerate windows" in str(exc_info.value)
+    assert "Unable to enumerate windows" in str(e.value)
 
 
 def test_browser_execute_action_raises_typed_error_for_unknown_command(
@@ -122,24 +122,24 @@ def test_browser_execute_action_raises_typed_error_for_unknown_command(
 ):
     browser_driver = _load_browser_driver_module()
 
-    with pytest.raises(BrowserAutomationError) as exc_info:
+    with pytest.raises(BrowserAutomationError) as e:
         browser_driver.execute_action(SimpleNamespace(), [("unknown",)])
 
-    assert "Unrecognized browser command" in str(exc_info.value)
+    assert "Unrecognized browser command" in str(e.value)
     assert capsys.readouterr().out == ""
 
 
 def test_browser_execute_action_wraps_instruction_failures(capsys):
     browser_driver = _load_browser_driver_module()
 
-    with pytest.raises(BrowserAutomationError) as exc_info:
+    with pytest.raises(BrowserAutomationError) as e:
         browser_driver.execute_action(
             SimpleNamespace(),
             [("sleep", "not-a-number")],
         )
 
-    assert "Browser instruction failed" in str(exc_info.value)
-    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "Browser instruction failed" in str(e.value)
+    assert isinstance(e.value.__cause__, ValueError)
     assert capsys.readouterr().out == ""
 
 
@@ -153,7 +153,7 @@ def test_indicator_thread_raises_typed_error_for_invalid_position():
     ui.GetMonitorInfo = lambda *_args, **_kwargs: {"Work": (0, 0, 100, 100)}
     ui.MonitorFromPoint = lambda *_args, **_kwargs: None
 
-    with pytest.raises(WidgetPositionError) as exc_info:
+    with pytest.raises(WidgetPositionError) as e:
         thread._place_widget(widget, "invalid")
 
-    assert "Invalid widget position" in str(exc_info.value)
+    assert "Invalid widget position" in str(e.value)
