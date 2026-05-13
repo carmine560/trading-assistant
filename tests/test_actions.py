@@ -294,23 +294,6 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
     assert spoken == ["Margin trading suspended."]
 
 
-def test_show_hide_indicator_returns_false_without_widgets_section(
-    monkeypatch,
-):
-    spoken = []
-    trade = _build_trade(spoken)
-    gui_state = _build_gui_state()
-    config = _build_config()
-    _patch_action_modules(monkeypatch)
-
-    assert not actions.execute_action(
-        trade,
-        config,
-        gui_state,
-        [("show_hide_indicator",)],
-    )
-
-
 def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -328,7 +311,24 @@ def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
             ("speak_text", "should not run"),
         ],
     )
-    assert spoken == ["Unable to save market data."]
+    assert spoken == [actions.SAVE_MARKET_DATA_ERROR]
+
+
+def test_show_hide_indicator_returns_false_without_widgets_section(
+    monkeypatch,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("show_hide_indicator",)],
+    )
 
 
 def test_invalid_nested_action_argument_returns_false_without_printing(

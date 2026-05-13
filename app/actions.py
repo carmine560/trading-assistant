@@ -64,6 +64,7 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
+SAVE_MARKET_DATA_ERROR = "Unable to save market data."
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
@@ -398,27 +399,32 @@ def _handle_speak_command(
 def _handle_market_data_command(trade, config, command, argument):
     """Handle market data retrieval and persistence commands."""
     if command == "copy_symbols_from_column":
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(
-            " ".join(
-                text_recognition.recognize_text(
-                    *map(int, argument.split(",")),
-                    None,
-                    int(config[trade.process]["image_magnification"]),
-                    int(config[trade.process]["binarization_threshold"]),
-                    config[trade.process].getboolean("is_dark_theme"),
-                    text_type="securities_code_column",
-                )
-            )
-        )
-        win32clipboard.CloseClipboard()
+        _copy_symbols_from_column(trade, config, argument)
     elif command == "save_market_data":
         if not save_market_data(trade, config):
-            trade.speech_manager.set_speech_text("Unable to save market data.")
+            trade.speech_manager.set_speech_text(SAVE_MARKET_DATA_ERROR)
             return False
 
     return True
+
+
+def _copy_symbols_from_column(trade, config, argument):
+    """Recognize symbols from a column region and copy them to clipboard."""
+    win32clipboard.OpenClipboard()
+    win32clipboard.EmptyClipboard()
+    win32clipboard.SetClipboardText(
+        " ".join(
+            text_recognition.recognize_text(
+                *map(int, argument.split(",")),
+                None,
+                int(config[trade.process]["image_magnification"]),
+                int(config[trade.process]["binarization_threshold"]),
+                config[trade.process].getboolean("is_dark_theme"),
+                text_type="securities_code_column",
+            )
+        )
+    )
+    win32clipboard.CloseClipboard()
 
 
 def _handle_trade_state_command(
