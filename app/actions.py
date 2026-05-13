@@ -414,7 +414,9 @@ def _handle_market_data_command(trade, config, command, argument):
         )
         win32clipboard.CloseClipboard()
     elif command == "save_market_data":
-        save_market_data(trade, config)
+        if not save_market_data(trade, config):
+            trade.speech_manager.set_speech_text("Unable to save market data.")
+            return False
 
     return True
 

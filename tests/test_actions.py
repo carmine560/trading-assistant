@@ -311,6 +311,26 @@ def test_show_hide_indicator_returns_false_without_widgets_section(
     )
 
 
+def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(actions, "save_market_data", lambda *_args: False)
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [
+            ("save_market_data", None),
+            ("speak_text", "should not run"),
+        ],
+    )
+    assert spoken == ["Unable to save market data."]
+
+
 def test_invalid_nested_action_argument_returns_false_without_printing(
     monkeypatch,
     capsys,
