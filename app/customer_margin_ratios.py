@@ -87,15 +87,36 @@ def get_latest(
             os.path.getmtime(market_holidays), tz="UTC", unit="s"
         )
 
-    head = web_utilities.make_head_request(config["Market Holidays"]["url"])
-    if modified_time < pd.Timestamp(head.headers["last-modified"]):
-        dfs = pd.read_html(
-            config["Market Holidays"]["url"],
-            match=config["Market Holidays"]["date_header"],
-        )
-        df = pd.concat(dfs)[config["Market Holidays"]["date_header"]]
-        df.replace(r"^(\d{4}/\d{2}/\d{2}).*$", r"\1", inplace=True, regex=True)
-        df.to_csv(market_holidays, header=False, index=False)
+    section = config["Market Holidays"]
+    try:
+        head = web_utilities.make_head_request(section["url"])
+        last_modified = pd.Timestamp(head.headers["last-modified"])
+    except (
+        KeyError,
+        ValueError,
+        requests.exceptions.RequestException,
+    ) as e:
+        raise errors.ExternalServiceError(
+            f"Unable to refresh market holidays: {e}"
+        ) from e
+    if modified_time < last_modified:
+        try:
+            dfs = pd.read_html(
+                section["url"],
+                match=section["date_header"],
+            )
+            df = pd.concat(dfs)[section["date_header"]]
+            df.replace(
+                r"^(\d{4}/\d{2}/\d{2}).*$",
+                r"\1",
+                inplace=True,
+                regex=True,
+            )
+            df.to_csv(market_holidays, header=False, index=False)
+        except (KeyError, OSError, ValueError) as e:
+            raise errors.ExternalServiceError(
+                f"Unable to refresh market holidays: {e}"
+            ) from e
 
     modified_time = pd.Timestamp.now(tz="UTC")
     for i, _ in enumerate(paths):
@@ -108,7 +129,14 @@ def get_latest(
             modified_time = pd.Timestamp(0, tz="UTC", unit="s")
             break
 
-    df = pd.read_csv(market_holidays, header=None, dtype=str)
+    try:
+        df = pd.read_csv(market_holidays, header=None, dtype=str)
+        if df.empty or 0 not in df:
+            raise ValueError("market holidays cache is empty or malformed")
+    except (OSError, pd.errors.EmptyDataError, ValueError) as e:
+        raise errors.MarketDataError(
+            f"Unable to read market holidays cache: {e}"
+        ) from e
     # Assume the web page is updated at 'update_time'.
     latest = pd.Timestamp(update_time, tz=timezone)
     if pd.Timestamp.now(tz="UTC") < latest:
