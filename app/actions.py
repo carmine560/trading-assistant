@@ -18,48 +18,6 @@ from core_utilities.config_io import write_config
 from core_utilities.config_validation import evaluate_value
 from interaction_utilities import gui_interactions, text_recognition
 
-ALL_KEYS = (
-    "back_to",
-    "calculate_share_size",
-    "check_daily_loss_limit",
-    "check_maximum_daily_number_of_trades",
-    "click",
-    "click_widget",
-    "copy_symbols_from_column",
-    "count_trades",
-    "drag_to",
-    "execute_action",
-    "get_cash_balance",
-    "get_symbol",
-    "hide_window",
-    "is_now_after",
-    "is_now_before",
-    "is_recording",
-    "is_trading_day",
-    "move_to",
-    "press_hotkeys",
-    "press_key",
-    "right_click",
-    "save_market_data",
-    "show_hide_indicator",
-    "show_hide_window",
-    "show_window",
-    "sleep",
-    "speak_config",
-    "speak_cpu_utilization",
-    "speak_minutes_since_hour",
-    "speak_seconds_since_time",
-    "speak_seconds_until_time",
-    "speak_show_text",
-    "speak_text",
-    "wait_for_key",
-    "wait_for_key_count_down",
-    "wait_for_price",
-    "wait_for_window",
-    "write_chapter",
-    "write_share_size",
-    "write_string",
-)
 SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
@@ -150,42 +108,20 @@ def _execute_instruction(
 ):
     """Execute a single instruction."""
     command, argument, additional_argument = _unpack_instruction(instruction)
+    handler = _COMMAND_DISPATCH[command]
 
-    if command in {
-        "back_to",
-        "click",
-        "click_widget",
-        "drag_to",
-        "move_to",
-        "press_hotkeys",
-        "press_key",
-        "right_click",
-        "write_string",
-    }:
-        return _handle_gui_command(
+    if handler is _handle_gui_command:
+        return handler(
             trade,
             gui_state,
             command,
             argument,
             additional_argument,
         )
-    if command in {
-        "hide_window",
-        "show_hide_indicator",
-        "show_hide_window",
-        "show_window",
-    }:
-        return _handle_window_command(
-            trade, config, command, argument, additional_argument
-        )
-    if command in {
-        "sleep",
-        "wait_for_key",
-        "wait_for_key_count_down",
-        "wait_for_price",
-        "wait_for_window",
-    }:
-        return _handle_wait_command(
+    if handler is _handle_window_command:
+        return handler(trade, config, command, argument, additional_argument)
+    if handler is _handle_wait_command:
+        return handler(
             trade,
             config,
             gui_state,
@@ -195,40 +131,14 @@ def _execute_instruction(
             action_path,
             instruction_index,
         )
-    if command in {
-        "speak_config",
-        "speak_cpu_utilization",
-        "speak_minutes_since_hour",
-        "speak_seconds_since_time",
-        "speak_seconds_until_time",
-        "speak_show_text",
-        "speak_text",
-    }:
-        return _handle_speak_command(
-            trade, config, command, argument, additional_argument
-        )
-    if command in {"copy_symbols_from_column", "save_market_data"}:
-        return _handle_market_data_command(trade, config, command, argument)
-    if command in {
-        "calculate_share_size",
-        "check_daily_loss_limit",
-        "check_maximum_daily_number_of_trades",
-        "count_trades",
-        "get_cash_balance",
-        "get_symbol",
-        "write_chapter",
-        "write_share_size",
-    }:
-        return _handle_trade_state_command(
-            trade, config, command, argument, additional_argument
-        )
-    if command in {
-        "is_now_after",
-        "is_now_before",
-        "is_recording",
-        "is_trading_day",
-    }:
-        return _handle_control_flow_command(
+    if handler is _handle_speak_command:
+        return handler(trade, config, command, argument, additional_argument)
+    if handler is _handle_market_data_command:
+        return handler(trade, config, command, argument)
+    if handler is _handle_trade_state_command:
+        return handler(trade, config, command, argument, additional_argument)
+    if handler is _handle_control_flow_command:
+        return handler(
             trade,
             config,
             gui_state,
@@ -238,8 +148,8 @@ def _execute_instruction(
             action_path,
             instruction_index,
         )
-    if command == "execute_action":
-        return _handle_execution_command(
+    if handler is _handle_execution_command:
+        return handler(
             trade,
             config,
             gui_state,
@@ -688,6 +598,59 @@ def _handle_execution_command(
         return False
 
     return True
+
+
+_COMMAND_DISPATCH = {
+    # GUI interaction commands
+    "back_to": _handle_gui_command,
+    "click": _handle_gui_command,
+    "click_widget": _handle_gui_command,
+    "drag_to": _handle_gui_command,
+    "move_to": _handle_gui_command,
+    "press_hotkeys": _handle_gui_command,
+    "press_key": _handle_gui_command,
+    "right_click": _handle_gui_command,
+    "write_string": _handle_gui_command,
+    # Window and indicator visibility commands
+    "hide_window": _handle_window_command,
+    "show_hide_indicator": _handle_window_command,
+    "show_hide_window": _handle_window_command,
+    "show_window": _handle_window_command,
+    # Blocking and wait-related commands
+    "sleep": _handle_wait_command,
+    "wait_for_key": _handle_wait_command,
+    "wait_for_key_count_down": _handle_wait_command,
+    "wait_for_price": _handle_wait_command,
+    "wait_for_window": _handle_wait_command,
+    # Speech and user notification commands
+    "speak_config": _handle_speak_command,
+    "speak_cpu_utilization": _handle_speak_command,
+    "speak_minutes_since_hour": _handle_speak_command,
+    "speak_seconds_since_time": _handle_speak_command,
+    "speak_seconds_until_time": _handle_speak_command,
+    "speak_show_text": _handle_speak_command,
+    "speak_text": _handle_speak_command,
+    # Market data retrieval and persistence commands
+    "copy_symbols_from_column": _handle_market_data_command,
+    "save_market_data": _handle_market_data_command,
+    # Trade state and accounting commands
+    "calculate_share_size": _handle_trade_state_command,
+    "check_daily_loss_limit": _handle_trade_state_command,
+    "check_maximum_daily_number_of_trades": _handle_trade_state_command,
+    "count_trades": _handle_trade_state_command,
+    "get_cash_balance": _handle_trade_state_command,
+    "get_symbol": _handle_trade_state_command,
+    "write_chapter": _handle_trade_state_command,
+    "write_share_size": _handle_trade_state_command,
+    # Conditional control-flow commands
+    "is_now_after": _handle_control_flow_command,
+    "is_now_before": _handle_control_flow_command,
+    "is_recording": _handle_control_flow_command,
+    "is_trading_day": _handle_control_flow_command,
+    # Execution and delegation commands
+    "execute_action": _handle_execution_command,
+}
+ALL_KEYS = tuple(sorted(_COMMAND_DISPATCH))
 
 
 def _recursively_execute_action(

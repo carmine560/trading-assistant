@@ -478,3 +478,7 @@ def test_invalid_nested_action_argument_returns_false_without_printing(
 def test_all_keys_includes_execute_action_and_save_market_data():
     assert "execute_action" in actions.ALL_KEYS
     assert "save_market_data" in actions.ALL_KEYS
+
+
+def test_all_keys_are_sorted_command_dispatch_keys():
+    assert actions.ALL_KEYS == tuple(sorted(actions._COMMAND_DISPATCH))
