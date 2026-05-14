@@ -600,59 +600,6 @@ def _handle_execution_command(
     return True
 
 
-_COMMAND_DISPATCH = {
-    # GUI interaction commands
-    "back_to": _handle_gui_command,
-    "click": _handle_gui_command,
-    "click_widget": _handle_gui_command,
-    "drag_to": _handle_gui_command,
-    "move_to": _handle_gui_command,
-    "press_hotkeys": _handle_gui_command,
-    "press_key": _handle_gui_command,
-    "right_click": _handle_gui_command,
-    "write_string": _handle_gui_command,
-    # Window and indicator visibility commands
-    "hide_window": _handle_window_command,
-    "show_hide_indicator": _handle_window_command,
-    "show_hide_window": _handle_window_command,
-    "show_window": _handle_window_command,
-    # Blocking and wait-related commands
-    "sleep": _handle_wait_command,
-    "wait_for_key": _handle_wait_command,
-    "wait_for_key_count_down": _handle_wait_command,
-    "wait_for_price": _handle_wait_command,
-    "wait_for_window": _handle_wait_command,
-    # Speech and user notification commands
-    "speak_config": _handle_speak_command,
-    "speak_cpu_utilization": _handle_speak_command,
-    "speak_minutes_since_hour": _handle_speak_command,
-    "speak_seconds_since_time": _handle_speak_command,
-    "speak_seconds_until_time": _handle_speak_command,
-    "speak_show_text": _handle_speak_command,
-    "speak_text": _handle_speak_command,
-    # Market data retrieval and persistence commands
-    "copy_symbols_from_column": _handle_market_data_command,
-    "save_market_data": _handle_market_data_command,
-    # Trade state and accounting commands
-    "calculate_share_size": _handle_trade_state_command,
-    "check_daily_loss_limit": _handle_trade_state_command,
-    "check_maximum_daily_number_of_trades": _handle_trade_state_command,
-    "count_trades": _handle_trade_state_command,
-    "get_cash_balance": _handle_trade_state_command,
-    "get_symbol": _handle_trade_state_command,
-    "write_chapter": _handle_trade_state_command,
-    "write_share_size": _handle_trade_state_command,
-    # Conditional control-flow commands
-    "is_now_after": _handle_control_flow_command,
-    "is_now_before": _handle_control_flow_command,
-    "is_recording": _handle_control_flow_command,
-    "is_trading_day": _handle_control_flow_command,
-    # Execution and delegation commands
-    "execute_action": _handle_execution_command,
-}
-ALL_KEYS = tuple(sorted(_COMMAND_DISPATCH))
-
-
 def _recursively_execute_action(
     trade,
     config,
@@ -756,6 +703,59 @@ def _handle_cancellation_exit(
 
     trade.speech_manager.set_speech_text("Canceled.")
     return True
+
+
+_COMMAND_DISPATCH = {
+    # GUI interaction commands
+    "back_to": _handle_gui_command,
+    "click": _handle_gui_command,
+    "click_widget": _handle_gui_command,
+    "drag_to": _handle_gui_command,
+    "move_to": _handle_gui_command,
+    "press_hotkeys": _handle_gui_command,
+    "press_key": _handle_gui_command,
+    "right_click": _handle_gui_command,
+    "write_string": _handle_gui_command,
+    # Window and indicator visibility commands
+    "hide_window": _handle_window_command,
+    "show_hide_indicator": _handle_window_command,
+    "show_hide_window": _handle_window_command,
+    "show_window": _handle_window_command,
+    # Blocking and wait-related commands
+    "sleep": _handle_wait_command,
+    "wait_for_key": _handle_wait_command,
+    "wait_for_key_count_down": _handle_wait_command,
+    "wait_for_price": _handle_wait_command,
+    "wait_for_window": _handle_wait_command,
+    # Speech and user notification commands
+    "speak_config": _handle_speak_command,
+    "speak_cpu_utilization": _handle_speak_command,
+    "speak_minutes_since_hour": _handle_speak_command,
+    "speak_seconds_since_time": _handle_speak_command,
+    "speak_seconds_until_time": _handle_speak_command,
+    "speak_show_text": _handle_speak_command,
+    "speak_text": _handle_speak_command,
+    # Market data retrieval and persistence commands
+    "copy_symbols_from_column": _handle_market_data_command,
+    "save_market_data": _handle_market_data_command,
+    # Trade state and accounting commands
+    "calculate_share_size": _handle_trade_state_command,
+    "check_daily_loss_limit": _handle_trade_state_command,
+    "check_maximum_daily_number_of_trades": _handle_trade_state_command,
+    "count_trades": _handle_trade_state_command,
+    "get_cash_balance": _handle_trade_state_command,
+    "get_symbol": _handle_trade_state_command,
+    "write_chapter": _handle_trade_state_command,
+    "write_share_size": _handle_trade_state_command,
+    # Conditional control-flow commands
+    "is_now_after": _handle_control_flow_command,
+    "is_now_before": _handle_control_flow_command,
+    "is_recording": _handle_control_flow_command,
+    "is_trading_day": _handle_control_flow_command,
+    # Execution and delegation commands
+    "execute_action": _handle_execution_command,
+}
+ALL_KEYS = tuple(sorted(_COMMAND_DISPATCH))
 
 
 def is_trading_day(date, market_holidays, date_format):
