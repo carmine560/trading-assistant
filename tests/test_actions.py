@@ -328,6 +328,77 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
     assert spoken == ["cleanup", "Canceled."]
 
 
+def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    calls = []
+    monkeypatch.setattr(
+        actions,
+        "win32clipboard",
+        SimpleNamespace(
+            OpenClipboard=lambda: calls.append("open"),
+            EmptyClipboard=lambda: calls.append("empty"),
+            SetClipboardText=lambda text: calls.append(("set", text)),
+            CloseClipboard=lambda: calls.append("close"),
+        ),
+    )
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(
+            recognize_text=lambda *_args, **_kwargs: ["1234", "5678"]
+        ),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("copy_symbols_from_column", "0, 0, 10, 10, 0")],
+    )
+    assert calls == ["open", "empty", ("set", "1234 5678"), "close"]
+
+
+def test_copy_symbols_from_column_closes_clipboard_on_error(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    calls = []
+
+    def fail_recognize_text(*_args, **_kwargs):
+        raise RuntimeError("ocr failed")
+
+    monkeypatch.setattr(
+        actions,
+        "win32clipboard",
+        SimpleNamespace(
+            OpenClipboard=lambda: calls.append("open"),
+            EmptyClipboard=lambda: calls.append("empty"),
+            SetClipboardText=lambda text: calls.append(("set", text)),
+            CloseClipboard=lambda: calls.append("close"),
+        ),
+    )
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=fail_recognize_text),
+    )
+
+    with pytest.raises(RuntimeError, match="ocr failed"):
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("copy_symbols_from_column", "0, 0, 10, 10, 0")],
+        )
+    assert calls == ["open", "empty", "close"]
+
+
 def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)

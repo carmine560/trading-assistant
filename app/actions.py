@@ -484,21 +484,26 @@ def _handle_market_data_command(trade, config, command, argument):
 
 def _copy_symbols_from_column(trade, config, argument):
     """Recognize symbols from a column region and copy them to clipboard."""
-    win32clipboard.OpenClipboard()
-    win32clipboard.EmptyClipboard()
-    win32clipboard.SetClipboardText(
-        " ".join(
-            text_recognition.recognize_text(
-                *map(int, argument.split(",")),
-                None,
-                int(config[trade.process]["image_magnification"]),
-                int(config[trade.process]["binarization_threshold"]),
-                config[trade.process].getboolean("is_dark_theme"),
-                text_type="securities_code_column",
+    is_clipboard_open = False
+    try:
+        win32clipboard.OpenClipboard()
+        is_clipboard_open = True
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardText(
+            " ".join(
+                text_recognition.recognize_text(
+                    *map(int, argument.split(",")),
+                    None,
+                    int(config[trade.process]["image_magnification"]),
+                    int(config[trade.process]["binarization_threshold"]),
+                    config[trade.process].getboolean("is_dark_theme"),
+                    text_type="securities_code_column",
+                )
             )
         )
-    )
-    win32clipboard.CloseClipboard()
+    finally:
+        if is_clipboard_open:
+            win32clipboard.CloseClipboard()
 
 
 def _handle_trade_state_command(
