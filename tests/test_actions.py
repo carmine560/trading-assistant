@@ -179,6 +179,22 @@ def _assert_action_error(e, action_path, instruction_index, command):
     assert e.value.command == command
 
 
+def _patch_clipboard(monkeypatch):
+    """Patch clipboard calls and return the call log."""
+    calls = []
+    monkeypatch.setattr(
+        actions,
+        "win32clipboard",
+        SimpleNamespace(
+            OpenClipboard=lambda: calls.append("open"),
+            EmptyClipboard=lambda: calls.append("empty"),
+            SetClipboardText=lambda text: calls.append(("set", text)),
+            CloseClipboard=lambda: calls.append("close"),
+        ),
+    )
+    return calls
+
+
 def test_execute_action_speaks_text_with_direct_imports(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -334,17 +350,7 @@ def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
     gui_state = _build_gui_state()
     config = _build_config()
     _patch_action_modules(monkeypatch)
-    calls = []
-    monkeypatch.setattr(
-        actions,
-        "win32clipboard",
-        SimpleNamespace(
-            OpenClipboard=lambda: calls.append("open"),
-            EmptyClipboard=lambda: calls.append("empty"),
-            SetClipboardText=lambda text: calls.append(("set", text)),
-            CloseClipboard=lambda: calls.append("close"),
-        ),
-    )
+    calls = _patch_clipboard(monkeypatch)
     monkeypatch.setattr(
         actions,
         "text_recognition",
@@ -368,21 +374,11 @@ def test_copy_symbols_from_column_closes_clipboard_on_error(monkeypatch):
     gui_state = _build_gui_state()
     config = _build_config()
     _patch_action_modules(monkeypatch)
-    calls = []
+    calls = _patch_clipboard(monkeypatch)
 
     def fail_recognize_text(*_args, **_kwargs):
         raise RuntimeError("ocr failed")
 
-    monkeypatch.setattr(
-        actions,
-        "win32clipboard",
-        SimpleNamespace(
-            OpenClipboard=lambda: calls.append("open"),
-            EmptyClipboard=lambda: calls.append("empty"),
-            SetClipboardText=lambda text: calls.append(("set", text)),
-            CloseClipboard=lambda: calls.append("close"),
-        ),
-    )
     monkeypatch.setattr(
         actions,
         "text_recognition",
