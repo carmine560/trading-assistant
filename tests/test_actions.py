@@ -425,7 +425,11 @@ def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
     gui_state = _build_gui_state()
     config = _build_config()
     _patch_action_modules(monkeypatch)
-    monkeypatch.setattr(actions, "save_market_data", lambda *_args: False)
+    monkeypatch.setattr(
+        actions,
+        "save_market_data",
+        lambda *_args: (False, "Unable to save market data. details"),
+    )
 
     assert not actions.execute_action(
         trade,
@@ -436,7 +440,7 @@ def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
             ("speak_text", "should not run"),
         ],
     )
-    assert spoken == [actions.SAVE_MARKET_DATA_ERROR]
+    assert spoken == ["Unable to save market data. details"]
 
 
 def test_show_hide_indicator_returns_false_without_widgets_section(

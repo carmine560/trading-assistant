@@ -16,7 +16,10 @@ def test_save_market_data_splits_valid_symbols_and_strips_commas(
 ):
     sample_config["Market Data"]["rankings"] = str(rankings_csv)
 
-    assert actions.save_market_data(sample_trade, sample_config)
+    assert actions.save_market_data(sample_trade, sample_config) == (
+        True,
+        None,
+    )
     assert not rankings_csv.exists()
 
     closing_prices_1 = Path(f"{sample_trade.closing_prices}1.csv")
@@ -31,7 +34,14 @@ def test_save_market_data_returns_false_for_missing_rankings_file(
 ):
     sample_config["Market Data"]["rankings"] = str(tmp_path / "missing.csv")
 
-    assert not actions.save_market_data(sample_trade, sample_config)
+    is_successful, text = actions.save_market_data(
+        sample_trade,
+        sample_config,
+    )
+    assert not is_successful
+    assert text.startswith(actions.SAVE_MARKET_DATA_ERROR)
+    assert "Unable to read rankings file" in text
+    assert "missing.csv" in text
 
 
 def test_get_price_limit_uses_saved_closing_price(sample_trade, sample_config):

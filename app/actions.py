@@ -385,8 +385,9 @@ def _handle_market_data_command(trade, config, command, argument):
     if command == "copy_symbols_from_column":
         _copy_symbols_from_column(trade, config, argument)
     elif command == "save_market_data":
-        if not save_market_data(trade, config):
-            trade.speech_manager.set_speech_text(SAVE_MARKET_DATA_ERROR)
+        is_successful, text = save_market_data(trade, config)
+        if not is_successful:
+            trade.speech_manager.set_speech_text(text)
             return False
 
     return True
@@ -769,13 +770,14 @@ def save_market_data(trade, config):
     """Split the rankings CSV by the first digit of the securities code."""
     rankings = config["Market Data"]["rankings"].replace("\\\\", "\\")
     try:
-        return market_data.split_rankings_by_digit(
+        market_data.split_rankings_by_digit(
             rankings=rankings,
             closing_prices_prefix=trade.closing_prices,
             code_regex=SECURITIES_CODE_REGEX,
         )
-    except errors.MarketDataError:
-        return False
+        return (True, None)
+    except errors.MarketDataError as e:
+        return (False, f"{SAVE_MARKET_DATA_ERROR} {e}")
 
 
 def calculate_share_size(trade, config, position):
