@@ -1,12 +1,12 @@
 """Trading assistant runtime orchestration for actions and services."""
 
-from multiprocessing.managers import BaseManager
 import atexit
 import threading
+from multiprocessing.managers import BaseManager
 
 from app import actions, customer_margin_ratios, listeners, scheduler
 
-from core_utilities import process_utilities
+from core_utilities import errors, process_utilities
 from core_utilities.config_io import write_config
 from interaction_utilities import speech_synthesis
 
@@ -79,12 +79,21 @@ def _execute_single_action(
         )
 
     try:
+        action_name = args.a[0]
+        try:
+            action = config[trade.actions_section][action_name]
+        except KeyError as e:
+            raise errors.ActionLookupError(
+                f"Action '{action_name}' is not defined.",
+                action_name=action_name,
+            ) from e
+
         actions.execute_action(
             trade,
             config,
             gui_state,
-            config[trade.actions_section][args.a[0]],
-            action_path=(args.a[0],),
+            action,
+            action_path=(action_name,),
         )
     finally:
         if should_start_transient_listeners:
