@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from app import actions
-from core_utilities.errors import ActionExecutionError
+from app.action_errors import ActionExecutionError
 
 
 def _build_trade(spoken):

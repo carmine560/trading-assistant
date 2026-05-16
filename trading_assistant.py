@@ -170,7 +170,7 @@ if __name__ == "__main__":
     except ConfigError as e:
         print(f"Configuration error: {e}")
         sys.exit(1)
-    except errors.TradingAssistantError as e:
+    except errors.CoreUtilitiesError as e:
         print(e)
         sys.exit(1)
     except Exception as e:

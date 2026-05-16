@@ -12,6 +12,7 @@ import psutil
 import pyautogui
 import win32clipboard
 
+from app import action_errors
 from app import market_data, trade_service, ui
 from core_utilities import data_utilities, errors, file_utilities
 from core_utilities.config_io import write_config
@@ -80,7 +81,7 @@ def execute_action(
 
 def _raise_unknown_command_error(action_path, instruction_index, command):
     """Raise a contextual error for an unknown action command."""
-    raise errors.ActionExecutionError(
+    raise action_errors.ActionExecutionError(
         (
             "Action path "
             f"'{_format_action_path(action_path)}' failed at "

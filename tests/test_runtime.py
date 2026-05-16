@@ -2,8 +2,7 @@
 
 from types import SimpleNamespace
 
-from app import runtime
-from core_utilities import errors
+from app import action_errors, runtime
 
 
 def test_run_executes_single_action_with_transient_listeners(monkeypatch):
@@ -183,7 +182,7 @@ def test_run_raises_typed_error_for_missing_single_action(monkeypatch):
 
     try:
         runtime.run(args, trade, config, gui_state)
-    except errors.ActionLookupError as e:
+    except action_errors.ActionLookupError as e:
         assert str(e) == "Action 'missing' is not defined."
         assert e.action_name == "missing"
     else:

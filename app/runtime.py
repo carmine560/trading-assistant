@@ -4,9 +4,15 @@ import atexit
 import threading
 from multiprocessing.managers import BaseManager
 
-from app import actions, customer_margin_ratios, listeners, scheduler
+from app import (
+    action_errors,
+    actions,
+    customer_margin_ratios,
+    listeners,
+    scheduler,
+)
 
-from core_utilities import errors, process_utilities
+from core_utilities import process_utilities
 from core_utilities.config_io import write_config
 from interaction_utilities import speech_synthesis
 
@@ -83,7 +89,7 @@ def _execute_single_action(
         try:
             action = config[trade.actions_section][action_name]
         except KeyError as e:
-            raise errors.ActionLookupError(
+            raise action_errors.ActionLookupError(
                 f"Action '{action_name}' is not defined.",
                 action_name=action_name,
             ) from e
