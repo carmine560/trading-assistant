@@ -344,6 +344,62 @@ def test_execute_action_reports_named_nested_action_path(monkeypatch):
     _assert_action_error(e, ("action_3", "action_2"), 1, "unknown_command")
 
 
+def test_wait_for_key_cancellation_runs_cleanup_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    def stop_wait(_seconds):
+        trade.keyboard_listener_state = 0
+        trade.should_continue = False
+
+    monkeypatch.setattr(actions.time, "sleep", stop_wait)
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("wait_for_key", "enter", [("speak_text", "cleanup")])],
+    )
+    assert trade.key_to_check is actions.keyboard.Key["enter"]
+    assert spoken == ["cleanup", "Canceled."]
+
+
+def test_wait_for_key_count_down_cancellation_speaks_countdown(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    monkeypatch.setattr(
+        actions,
+        "pd",
+        SimpleNamespace(
+            Timestamp=SimpleNamespace(
+                now=lambda: SimpleNamespace(second=30, minute=2)
+            )
+        ),
+    )
+
+    def stop_wait(_seconds):
+        trade.keyboard_listener_state = 0
+        trade.should_continue = False
+
+    monkeypatch.setattr(actions.time, "sleep", stop_wait)
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("wait_for_key_count_down", "enter", [("speak_text", "cleanup")])],
+    )
+    assert trade.key_to_check is actions.keyboard.Key["enter"]
+    assert spoken == ["30 seconds.", "cleanup", "Canceled."]
+
+
 def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -416,6 +472,34 @@ def test_wait_for_price_cancellation_raises_for_cleanup_failure(monkeypatch):
     assert spoken == []
 
 
+def test_wait_for_window_cancellation_runs_cleanup_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    def fake_wait_for_window(_title, *, should_continue_reference):
+        assert should_continue_reference()
+        trade.should_continue = False
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(wait_for_window=fake_wait_for_window),
+    )
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("wait_for_window", "Order", [("speak_text", "cleanup")])],
+    )
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == ["cleanup", "Canceled."]
+
+
 def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -467,6 +551,30 @@ def test_copy_symbols_from_column_closes_clipboard_on_error(monkeypatch):
     assert calls == ["open", "empty", "close"]
 
 
+def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "save_market_data",
+        lambda *_args: (False, "Unable to save market data. details"),
+    )
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [
+            ("save_market_data", None),
+            ("speak_text", "should not run"),
+        ],
+    )
+    assert spoken == ["Unable to save market data. details"]
+
+
 def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -491,28 +599,48 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
     assert spoken == ["Margin trading suspended."]
 
 
-def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
+def test_daily_loss_limit_failure_speaks_error_and_stops(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
+    trade.cash_balance = 98000
     gui_state = _build_gui_state()
     config = _build_config()
+    config["Variables"]["initial_cash_balance"] = "100000"
     _patch_action_modules(monkeypatch)
-    monkeypatch.setattr(
-        actions,
-        "save_market_data",
-        lambda *_args: (False, "Unable to save market data. details"),
-    )
 
     assert not actions.execute_action(
         trade,
         config,
         gui_state,
         [
-            ("save_market_data", None),
+            ("check_daily_loss_limit", "Daily loss limit reached."),
             ("speak_text", "should not run"),
         ],
     )
-    assert spoken == ["Unable to save market data. details"]
+    assert spoken == ["Daily loss limit reached."]
+
+
+def test_maximum_daily_number_of_trades_speaks_error_and_stops(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Variables"]["current_number_of_trades"] = "5"
+    _patch_action_modules(monkeypatch)
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [
+            (
+                "check_maximum_daily_number_of_trades",
+                "Trade count limit reached.",
+            ),
+            ("speak_text", "should not run"),
+        ],
+    )
+    assert spoken == ["Trade count limit reached."]
 
 
 def test_show_hide_indicator_returns_false_without_widgets_section(

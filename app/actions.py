@@ -296,8 +296,8 @@ def _handle_wait_command(
             gui_state,
             argument,
             additional_argument,
-            action_path,
-            instruction_index,
+            action_path=action_path,
+            instruction_index=instruction_index,
         ):
             return False
     elif command == "wait_for_key_count_down":
