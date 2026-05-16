@@ -195,6 +195,107 @@ def test_run_raises_typed_error_for_missing_single_action(monkeypatch):
     assert "thread.join" in calls
 
 
+def test_run_cleans_up_partial_transient_listener_startup(monkeypatch):
+    calls = []
+    args = SimpleNamespace(r=False, s=False, l=False, a=["open"])
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+        mouse_listener=None,
+        keyboard_listener=None,
+        speaking_process=None,
+        stop_listeners_event=None,
+        wait_listeners_thread=None,
+    )
+    config = {"Actions": {"open": [("speak_text", "ready")]}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return "speech_manager"
+
+        def shutdown(self):
+            calls.append("manager.shutdown")
+
+    def raise_start_listeners(
+        trade, config, gui_state, base_manager, **kwargs
+    ):
+        trade.mouse_listener = "mouse"
+        trade.keyboard_listener = "keyboard"
+        calls.append(("start_listeners", kwargs))
+        raise RuntimeError("listener boom")
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "actions",
+        SimpleNamespace(
+            execute_action=lambda *_args, **_kwargs: calls.append(
+                "execute_action"
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(start_listeners=raise_start_listeners),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(
+            is_running=lambda process: False,
+            stop_listeners=lambda *args: calls.append(
+                ("stop_listeners", args)
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except RuntimeError as e:
+        assert str(e) == "listener boom"
+    else:
+        raise AssertionError(
+            "Expected partial listener startup failure to re-raise."
+        )
+
+    assert ("start_listeners", {"is_persistent": True}) in calls
+    assert "execute_action" not in calls
+    assert "manager.shutdown" in calls
+    assert "event.set" not in calls
+    assert "thread.join" not in calls
+    stop_call = next(
+        call
+        for call in calls
+        if isinstance(call, tuple) and call[0] == "stop_listeners"
+    )
+    assert stop_call[1][0] == "mouse"
+    assert stop_call[1][1] == "keyboard"
+    assert stop_call[1][2].__class__ is FakeManager
+    assert stop_call[1][3] == "speech_manager"
+    assert stop_call[1][4] is None
+
+
 def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
     calls = []
     args = SimpleNamespace(r=False, s=False, l=False, a=["open"])

@@ -75,16 +75,16 @@ def _execute_single_action(
 ):
     """Execute a single configured action and manage transient listeners."""
     should_start_transient_listeners = not (is_running and args.l)
-    if should_start_transient_listeners:
-        listeners.start_listeners(
-            trade,
-            config,
-            gui_state,
-            base_manager,
-            is_persistent=True,
-        )
-
     try:
+        if should_start_transient_listeners:
+            listeners.start_listeners(
+                trade,
+                config,
+                gui_state,
+                base_manager,
+                is_persistent=True,
+            )
+
         action_name = args.a[0]
         try:
             action = config[trade.actions_section][action_name]
@@ -103,12 +103,22 @@ def _execute_single_action(
         )
     finally:
         if should_start_transient_listeners:
-            process_utilities.stop_listeners(
-                trade.mouse_listener,
-                trade.keyboard_listener,
-                base_manager,
-                trade.speech_manager,
-                trade.speaking_process,
-            )
-            trade.stop_listeners_event.set()
-            trade.wait_listeners_thread.join()
+            speech_manager = getattr(trade, "speech_manager", None)
+            speaking_process = getattr(trade, "speaking_process", None)
+            stop_event = getattr(trade, "stop_listeners_event", None)
+            wait_thread = getattr(trade, "wait_listeners_thread", None)
+            try:
+                process_utilities.stop_listeners(
+                    getattr(trade, "mouse_listener", None),
+                    getattr(trade, "keyboard_listener", None),
+                    base_manager,
+                    speech_manager,
+                    speaking_process,
+                )
+            finally:
+                if base_manager and speech_manager and not speaking_process:
+                    base_manager.shutdown()
+                if stop_event:
+                    stop_event.set()
+                if wait_thread:
+                    wait_thread.join()
