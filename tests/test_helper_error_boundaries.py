@@ -10,9 +10,11 @@ import pytest
 from core_utilities.errors import (
     BrowserAutomationError,
     GuiInteractionError,
+    ProcessStateError,
     WidgetPositionError,
 )
 from app import ui
+from core_utilities import process_utilities
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -92,6 +94,25 @@ def _load_browser_driver_module():
     return module
 
 
+def _load_speech_synthesis_module():
+    """Load the speech helper module with lightweight Win32 COM stubs."""
+    win32com_module = ModuleType("win32com")
+    win32com_client_module = ModuleType("win32com.client")
+    win32com_client_module.Dispatch = lambda *_args, **_kwargs: None
+    win32com_module.client = win32com_client_module
+    sys.modules["win32com"] = win32com_module
+    sys.modules["win32com.client"] = win32com_client_module
+
+    spec = spec_from_file_location(
+        "test_speech_synthesis_module",
+        PROJECT_ROOT / "interaction_utilities" / "speech_synthesis.py",
+    )
+    module = module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_enumerate_windows_returns_false_for_expected_win32_errors():
     module = _load_gui_interactions_module()
 
@@ -141,6 +162,115 @@ def test_browser_execute_action_wraps_instruction_failures(capsys):
     assert "Browser instruction failed" in str(e.value)
     assert isinstance(e.value.__cause__, ValueError)
     assert capsys.readouterr().out == ""
+
+
+def test_speech_process_start_timeout_terminates_process(monkeypatch):
+    speech_synthesis = _load_speech_synthesis_module()
+
+    class FakeProcess:
+        instance = None
+
+        def __init__(self, *_args, **_kwargs):
+            self.calls = []
+            FakeProcess.instance = self
+
+        def start(self):
+            self.calls.append("start")
+
+        def terminate(self):
+            self.calls.append("terminate")
+
+        def join(self, timeout=None):
+            self.calls.append(("join", timeout))
+
+    speech_manager = SimpleNamespace(is_ready=lambda: False)
+    monkeypatch.setattr(speech_synthesis, "Process", FakeProcess)
+    monkeypatch.setattr(speech_synthesis.time, "monotonic", lambda: 0)
+    monkeypatch.setattr(speech_synthesis.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(ProcessStateError) as e:
+        speech_synthesis.start_speaking_process(
+            speech_manager,
+            ready_timeout=0,
+        )
+
+    assert "did not become ready" in str(e.value)
+    assert FakeProcess.instance.calls == [
+        "start",
+        "terminate",
+        ("join", speech_synthesis.TERMINATE_TIMEOUT_SECONDS),
+    ]
+
+
+def test_speech_process_stop_timeout_terminates_process():
+    speech_synthesis = _load_speech_synthesis_module()
+    calls = []
+    speech_manager = SimpleNamespace(
+        get_speech_text=lambda: "",
+        set_can_speak=lambda value: calls.append(("can_speak", value)),
+    )
+    speaking_process = SimpleNamespace(
+        join=lambda timeout=None: calls.append(("join", timeout)),
+        is_alive=lambda: True,
+        terminate=lambda: calls.append("terminate"),
+    )
+    base_manager = SimpleNamespace(shutdown=lambda: calls.append("shutdown"))
+
+    with pytest.raises(ProcessStateError) as e:
+        speech_synthesis.stop_speaking_process(
+            base_manager,
+            speech_manager,
+            speaking_process,
+            join_timeout=0,
+        )
+
+    assert "did not stop" in str(e.value)
+    assert calls == [
+        ("can_speak", False),
+        ("join", 0),
+        "terminate",
+        ("join", speech_synthesis.TERMINATE_TIMEOUT_SECONDS),
+        "shutdown",
+    ]
+
+
+def test_stop_listeners_timeout_terminates_speech_process():
+    calls = []
+    mouse_listener = SimpleNamespace(stop=lambda: calls.append("mouse.stop"))
+    keyboard_listener = SimpleNamespace(
+        stop=lambda: calls.append("keyboard.stop")
+    )
+    speech_manager = SimpleNamespace(
+        get_speech_text=lambda: "",
+        set_can_speak=lambda value: calls.append(("can_speak", value)),
+    )
+    speaking_process = SimpleNamespace(
+        join=lambda timeout=None: calls.append(("join", timeout)),
+        is_alive=lambda: True,
+        terminate=lambda: calls.append("terminate"),
+    )
+    base_manager = SimpleNamespace(shutdown=lambda: calls.append("shutdown"))
+
+    with pytest.raises(ProcessStateError) as e:
+        process_utilities.stop_listeners(
+            mouse_listener,
+            keyboard_listener,
+            base_manager,
+            speech_manager,
+            speaking_process,
+            speech_join_timeout=0,
+        )
+
+    assert "did not stop" in str(e.value)
+    assert calls == [
+        "mouse.stop",
+        "keyboard.stop",
+        ("can_speak", False),
+        ("join", 0),
+        "terminate",
+        ("join", process_utilities.TERMINATE_TIMEOUT_SECONDS),
+        "shutdown",
+    ]
 
 
 def test_indicator_thread_raises_typed_error_for_invalid_position():
