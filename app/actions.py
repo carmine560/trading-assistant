@@ -694,14 +694,25 @@ def _handle_cancellation_exit(
 ):
     """Perform cancellation actions and signal caller to exit."""
     if additional_argument:
-        _recursively_execute_action(
+        if not _recursively_execute_action(
             trade,
             config,
             gui_state,
             additional_argument,
             action_path,
             instruction_index,
-        )
+        ):
+            raise action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index}: "
+                    "cancellation cleanup action failed."
+                ),
+                action_path=action_path,
+                instruction_index=instruction_index,
+                command="cancellation_cleanup",
+            )
 
     trade.speech_manager.set_speech_text("Canceled.")
     return True

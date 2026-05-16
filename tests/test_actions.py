@@ -344,6 +344,44 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
     assert spoken == ["cleanup", "Canceled."]
 
 
+def test_wait_for_price_cancellation_raises_for_cleanup_failure(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    def fake_recognize_text(*_args, **kwargs):
+        should_continue_reference = kwargs["should_continue_reference"]
+        assert should_continue_reference()
+        trade.should_continue = False
+        return None
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=fake_recognize_text),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [
+                (
+                    "wait_for_price",
+                    "0, 0, 10, 10, 0",
+                    [("show_hide_indicator",)],
+                )
+            ],
+        )
+
+    assert "cancellation cleanup action failed" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "cancellation_cleanup")
+    assert spoken == []
+
+
 def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
