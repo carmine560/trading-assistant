@@ -649,6 +649,18 @@ def _recursively_execute_action(
             action_path=(*action_path, f"inline@{instruction_index}"),
         )
     if isinstance(additional_argument, str):
+        if additional_argument not in config[trade.actions_section]:
+            raise action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index} (execute_action): "
+                    f"nested action '{additional_argument}' is not defined."
+                ),
+                action_path=action_path,
+                instruction_index=instruction_index,
+                command="execute_action",
+            )
         return execute_action(
             trade,
             config,

@@ -324,6 +324,27 @@ def test_execute_action_reports_inline_nested_action_path(monkeypatch):
     _assert_action_error(e, ("action_1", "inline@1"), 1, "unknown_command")
 
 
+def test_execute_action_raises_for_missing_named_nested_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("execute_action", "missing_action")],
+            action_path=("action_3",),
+        )
+
+    assert "nested action 'missing_action' is not defined" in str(e.value)
+    _assert_action_error(e, ("action_3",), 1, "execute_action")
+    assert spoken == []
+
+
 def test_execute_action_reports_named_nested_action_path(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
