@@ -287,3 +287,92 @@ def test_indicator_thread_raises_typed_error_for_invalid_position():
         thread._place_widget(widget, "invalid")
 
     assert "Invalid widget position" in str(e.value)
+
+
+def test_message_thread_captures_tk_error(monkeypatch):
+    def raise_tcl_error():
+        raise ui.TclError("tk failed")
+
+    monkeypatch.setattr(ui.tk, "Tk", raise_tcl_error)
+    thread = ui.MessageThread(
+        SimpleNamespace(),
+        SimpleNamespace(),
+        "message",
+    )
+
+    thread.run()
+
+    assert isinstance(thread.error, ui.TclError)
+    assert "tk failed" in str(thread.error)
+    assert thread.root is None
+
+
+def test_message_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
+    calls = []
+
+    class FakeRoot:
+        def attributes(self, *args):
+            calls.append(("attributes", args))
+
+        def bind(self, *_args):
+            calls.append("bind")
+
+        def resizable(self, *_args):
+            calls.append("resizable")
+
+        def title(self, text):
+            calls.append(("title", text))
+
+        def withdraw(self):
+            calls.append("withdraw")
+
+        def update(self):
+            calls.append("update")
+
+        def winfo_width(self):
+            return 20
+
+        def winfo_height(self):
+            return 10
+
+        def geometry(self, value):
+            calls.append(("geometry", value))
+
+        def deiconify(self):
+            calls.append("deiconify")
+
+        def mainloop(self):
+            calls.append("mainloop")
+
+        def destroy(self):
+            calls.append("destroy")
+            raise ui.TclError("destroy failed")
+
+    class FakeMessage:
+        def __init__(self, root, **kwargs):
+            calls.append(("message", root, kwargs["text"]))
+
+        def pack(self):
+            calls.append("pack")
+
+    monkeypatch.setattr(ui.tk, "Tk", FakeRoot)
+    monkeypatch.setattr(ui.tk, "Message", FakeMessage, raising=False)
+    monkeypatch.setattr(
+        ui,
+        "GetMonitorInfo",
+        lambda *_args, **_kwargs: {"Work": (0, 0, 100, 100)},
+    )
+    monkeypatch.setattr(ui, "MonitorFromPoint", lambda *_args, **_kwargs: None)
+
+    trade = SimpleNamespace(process="HYPERSBI2", widgets_section="Widgets")
+    config = {
+        "HYPERSBI2": {"title": "Trading"},
+        "Widgets": {"message_font_size": "12"},
+    }
+    thread = ui.MessageThread(trade, config, "message")
+
+    thread.run()
+
+    assert thread.error is None
+    assert "mainloop" in calls
+    assert "destroy" in calls

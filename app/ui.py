@@ -296,40 +296,53 @@ class MessageThread(threading.Thread):
         self.trade = trade
         self.config = config
         self.text = text
+        self.root = None
+        self.error = None
 
     def run(self):
         """Run the thread, creating and displaying a message window."""
-        root = tk.Tk()
-        root.attributes("-alpha", 0.8)
-        root.attributes("-toolwindow", True)
-        root.attributes("-topmost", True)
-        root.bind("<Escape>", lambda event: root.destroy())
-        root.resizable(False, False)
-        root.title(self.config[self.trade.process]["title"] + " Message")
-        root.withdraw()
+        try:
+            self.root = tk.Tk()
+            self.root.attributes("-alpha", 0.8)
+            self.root.attributes("-toolwindow", True)
+            self.root.attributes("-topmost", True)
+            self.root.bind("<Escape>", lambda event: self.root.destroy())
+            self.root.resizable(False, False)
+            self.root.title(
+                self.config[self.trade.process]["title"] + " Message"
+            )
+            self.root.withdraw()
 
-        tk.Message(
-            root,
-            bg="gray5",
-            fg="tan1",
-            font=(
-                "Bahnschrift",
-                -int(
-                    self.config[self.trade.widgets_section][
-                        "message_font_size"
-                    ]
+            tk.Message(
+                self.root,
+                bg="gray5",
+                fg="tan1",
+                font=(
+                    "Bahnschrift",
+                    -int(
+                        self.config[self.trade.widgets_section][
+                            "message_font_size"
+                        ]
+                    ),
                 ),
-            ),
-            text=self.text,
-        ).pack()
+                text=self.text,
+            ).pack()
 
-        root.update()
-        _, _, work_right, work_bottom = GetMonitorInfo(
-            MonitorFromPoint((0, 0))
-        ).get("Work")
-        root.geometry(
-            f"+{int(0.5 * (work_right - root.winfo_width()))}"
-            f"+{int(0.5 * (work_bottom - root.winfo_height()))}"
-        )
-        root.deiconify()
-        root.mainloop()
+            self.root.update()
+            _, _, work_right, work_bottom = GetMonitorInfo(
+                MonitorFromPoint((0, 0))
+            ).get("Work")
+            self.root.geometry(
+                f"+{int(0.5 * (work_right - self.root.winfo_width()))}"
+                f"+{int(0.5 * (work_bottom - self.root.winfo_height()))}"
+            )
+            self.root.deiconify()
+            self.root.mainloop()
+        except (TclError, WidgetPositionError) as e:
+            self.error = e
+        finally:
+            if self.root:
+                try:
+                    self.root.destroy()
+                except TclError:
+                    pass
