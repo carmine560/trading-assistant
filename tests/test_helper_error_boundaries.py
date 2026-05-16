@@ -1,9 +1,10 @@
 """Tests for helper-level exception boundaries."""
 
+from configparser import ConfigParser
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
 import sys
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -287,6 +288,145 @@ def test_indicator_thread_raises_typed_error_for_invalid_position():
         thread._place_widget(widget, "invalid")
 
     assert "Invalid widget position" in str(e.value)
+
+
+def test_indicator_thread_captures_tk_error(monkeypatch):
+    def raise_tcl_error():
+        raise ui.TclError("tk failed")
+
+    monkeypatch.setattr(ui.tk, "Tk", raise_tcl_error)
+    thread = ui.IndicatorThread(
+        SimpleNamespace(),
+        SimpleNamespace(),
+    )
+
+    thread.run()
+
+    assert isinstance(thread.error, ui.TclError)
+    assert "tk failed" in str(thread.error)
+    assert thread.root is None
+
+
+def test_indicator_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
+    calls = []
+
+    class FakeRoot:
+        def attributes(self, *args):
+            calls.append(("attributes", args))
+
+        def config(self, **kwargs):
+            calls.append(("config", kwargs))
+
+        def overrideredirect(self, value):
+            calls.append(("overrideredirect", value))
+
+        def title(self, text):
+            calls.append(("title", text))
+
+        def protocol(self, name, callback):
+            calls.append(("protocol", name, callback))
+
+        def register(self, callback):
+            calls.append(("register", callback))
+            return callback
+
+        def update(self):
+            calls.append("update")
+            raise ui.TclError("update failed")
+
+        def destroy(self):
+            calls.append("destroy")
+            raise ui.TclError("destroy failed")
+
+    class FakeLabel:
+        def __init__(self, *args, **kwargs):
+            calls.append(("label", args, kwargs))
+
+        def grid(self, **kwargs):
+            calls.append(("label.grid", kwargs))
+
+        def bind(self, event, callback):
+            calls.append(("label.bind", event, callback))
+
+        def bbox(self, *_args):
+            return (0, 0, 0, 0)
+
+        def winfo_rootx(self):
+            return 0
+
+        def winfo_rooty(self):
+            return 0
+
+        def config(self, **kwargs):
+            calls.append(("label.config", kwargs))
+
+    class FakeFrame:
+        def __init__(self, *args, **kwargs):
+            calls.append(("frame", args, kwargs))
+
+        def place(self, **kwargs):
+            calls.append(("frame.place", kwargs))
+
+    class FakeSpinbox:
+        def __init__(self, *args, **kwargs):
+            calls.append(("spinbox", args, kwargs))
+
+        def grid(self, **kwargs):
+            calls.append(("spinbox.grid", kwargs))
+
+        def bind(self, event, callback):
+            calls.append(("spinbox.bind", event, callback))
+
+    class FakeStringVar:
+        def __init__(self):
+            self.value = ""
+
+        def set(self, value):
+            self.value = value
+            calls.append(("stringvar.set", value))
+
+        def get(self):
+            return self.value
+
+        def trace_add(self, mode, callback):
+            calls.append(("stringvar.trace_add", mode, callback))
+
+    monkeypatch.setattr(ui.tk, "Tk", FakeRoot)
+    monkeypatch.setattr(ui.tk, "Label", FakeLabel, raising=False)
+    monkeypatch.setattr(ui.tk, "Frame", FakeFrame, raising=False)
+    monkeypatch.setattr(ui.tk, "Spinbox", FakeSpinbox, raising=False)
+    monkeypatch.setattr(ui.tk, "StringVar", FakeStringVar, raising=False)
+    monkeypatch.setattr(
+        ui,
+        "GetMonitorInfo",
+        lambda *_args, **_kwargs: {"Work": (0, 0, 100, 100)},
+    )
+    monkeypatch.setattr(ui, "MonitorFromPoint", lambda *_args, **_kwargs: None)
+
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        variables_section="Variables",
+        widgets_section="Widgets",
+    )
+    config = ConfigParser(interpolation=None)
+    config["HYPERSBI2"] = {
+        "title": "Trading",
+        "maximum_daily_number_of_trades": "1",
+        "utilization_ratio": "0.5",
+    }
+    config["Variables"] = {"current_number_of_trades": "0"}
+    config["Widgets"] = {
+        "is_clock_label_enabled": "false",
+        "status_bar_frame_font_size": "12",
+        "status_bar_frame_position": "center",
+    }
+    thread = ui.IndicatorThread(trade, config)
+
+    thread.run()
+
+    assert thread.error is None
+    assert "update" in calls
+    assert "destroy" in calls
 
 
 def test_message_thread_captures_tk_error(monkeypatch):

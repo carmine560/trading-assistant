@@ -1,9 +1,9 @@
 """Indicator and message window rendering for trading state."""
 
-from tkinter import TclError
 import threading
 import time
 import tkinter as tk
+from tkinter import TclError
 
 from win32api import GetMonitorInfo, MonitorFromPoint
 
@@ -165,7 +165,7 @@ class IndicatorThread(threading.Thread):
                 except TclError:
                     break
                 time.sleep(0.01)
-        except WidgetPositionError as e:
+        except (TclError, WidgetPositionError) as e:
             self.error = e
         finally:
             if self.root:
