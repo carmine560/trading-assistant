@@ -266,6 +266,40 @@ def test_execute_action_unknown_command_does_not_print(monkeypatch, capsys):
     assert capsys.readouterr().out == ""
 
 
+@pytest.mark.parametrize(
+    ("instruction", "command"),
+    [
+        ([], None),
+        (123, None),
+        ("speak_text", None),
+        (("speak_text", "ready", None, "extra"), "speak_text"),
+    ],
+)
+def test_execute_action_raises_for_malformed_instruction(
+    monkeypatch,
+    instruction,
+    command,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [instruction],
+        )
+
+    assert "malformed instruction" in str(e.value)
+    assert repr(instruction) in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, command)
+    assert spoken == []
+
+
 def test_execute_action_reports_inline_nested_action_path(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)

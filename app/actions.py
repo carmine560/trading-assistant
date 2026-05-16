@@ -59,7 +59,11 @@ def execute_action(
         action = evaluate_value(action)
 
     for instruction_index, instruction in enumerate(action, start=1):
-        command = instruction[0]
+        command, argument, additional_argument = _unpack_instruction(
+            instruction,
+            action_path,
+            instruction_index,
+        )
         if command not in ALL_KEYS:
             _raise_unknown_command_error(
                 action_path,
@@ -70,13 +74,45 @@ def execute_action(
             trade,
             config,
             gui_state,
-            instruction,
+            command,
+            argument,
+            additional_argument,
             action_path,
             instruction_index,
         ):
             return False
 
     return True
+
+
+def _unpack_instruction(instruction, action_path, instruction_index):
+    """Validate and unpack one action instruction."""
+    command = None
+    if not isinstance(instruction, (str, bytes)):
+        try:
+            command = instruction[0] if instruction else None
+            instruction_length = len(instruction)
+        except (IndexError, TypeError):
+            instruction_length = None
+
+    if command is None or instruction_length not in range(1, 4):
+        raise action_errors.ActionExecutionError(
+            (
+                "Action path "
+                f"'{_format_action_path(action_path)}' failed at "
+                f"instruction {instruction_index}: "
+                f"malformed instruction {instruction!r}."
+            ),
+            action_path=action_path,
+            instruction_index=instruction_index,
+            command=command,
+        )
+
+    return (
+        command,
+        instruction[1] if len(instruction) > 1 else None,
+        instruction[2] if len(instruction) > 2 else None,
+    )
 
 
 def _raise_unknown_command_error(action_path, instruction_index, command):
@@ -103,12 +139,13 @@ def _execute_instruction(
     trade,
     config,
     gui_state,
-    instruction,
+    command,
+    argument,
+    additional_argument,
     action_path,
     instruction_index,
 ):
     """Execute a single instruction."""
-    command, argument, additional_argument = _unpack_instruction(instruction)
     handler = _COMMAND_DISPATCH[command]
 
     if handler is _handle_gui_command:
@@ -159,15 +196,6 @@ def _execute_instruction(
             instruction_index,
         )
     return True
-
-
-def _unpack_instruction(instruction):
-    """Extract command name and up to two arguments from an instruction."""
-    return (
-        instruction[0],
-        instruction[1] if len(instruction) > 1 else None,
-        instruction[2] if len(instruction) > 2 else None,
-    )
 
 
 def _handle_gui_command(
