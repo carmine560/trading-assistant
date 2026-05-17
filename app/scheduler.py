@@ -3,9 +3,9 @@
 import sched
 import time
 
+from app import action_errors, actions, listeners
 from core_utilities import process_utilities
 from core_utilities.config_validation import evaluate_value
-from app import actions, listeners
 from interaction_utilities import speech_synthesis
 
 
@@ -18,32 +18,40 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
         )
         should_stop_speaking_process = True
 
-    scheduler = sched.scheduler(time.time, time.sleep)
-    schedules = []
-
-    section = config[trade.schedules_section]
-    for option in section:
-        trigger, action = evaluate_value(section[option])
-        trigger = time.strptime(
-            time.strftime("%Y-%m-%d ") + trigger, "%Y-%m-%d %H:%M:%S"
-        )
-        trigger = time.mktime(trigger)
-        if time.time() < trigger:
-            schedule = scheduler.enterabs(
-                trigger,
-                1,
-                actions.execute_action,
-                argument=(
-                    trade,
-                    config,
-                    gui_state,
-                    config[trade.actions_section][action],
-                ),
-                kwargs={"action_path": (action,)},
-            )
-            schedules.append(schedule)
-
     try:
+        scheduler = sched.scheduler(time.time, time.sleep)
+        schedules = []
+
+        section = config[trade.schedules_section]
+        for option in section:
+            trigger, action = evaluate_value(section[option])
+            trigger = time.strptime(
+                time.strftime("%Y-%m-%d ") + trigger,
+                "%Y-%m-%d %H:%M:%S",
+            )
+            trigger = time.mktime(trigger)
+            if time.time() < trigger:
+                try:
+                    scheduled_action = config[trade.actions_section][action]
+                except KeyError as e:
+                    raise action_errors.ActionLookupError(
+                        f"Action '{action}' is not defined.",
+                        action_name=action,
+                    ) from e
+                schedule = scheduler.enterabs(
+                    trigger,
+                    1,
+                    actions.execute_action,
+                    argument=(
+                        trade,
+                        config,
+                        gui_state,
+                        scheduled_action,
+                    ),
+                    kwargs={"action_path": (action,)},
+                )
+                schedules.append(schedule)
+
         while scheduler.queue:
             if process_utilities.is_running(process):
                 scheduler.run(False)
