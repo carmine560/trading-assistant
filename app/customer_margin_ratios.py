@@ -1,7 +1,7 @@
 """Customer margin ratio refresh and market-data freshness helpers."""
 
-from io import BytesIO
 import os
+from io import BytesIO
 
 import pandas as pd
 import requests
@@ -121,7 +121,12 @@ def _refresh_market_holidays_cache(section, market_holidays, modified_time):
         return
 
     try:
-        dfs = pd.read_html(section["url"], match=section["date_header"])
+        response = requests.get(section["url"], timeout=5)
+        response.raise_for_status()
+        dfs = pd.read_html(
+            BytesIO(response.content),
+            match=section["date_header"],
+        )
         df = pd.concat(dfs)[section["date_header"]]
         df.replace(
             r"^(\d{4}/\d{2}/\d{2}).*$",
@@ -130,7 +135,12 @@ def _refresh_market_holidays_cache(section, market_holidays, modified_time):
             regex=True,
         )
         df.to_csv(market_holidays, header=False, index=False)
-    except (KeyError, OSError, ValueError) as e:
+    except (
+        KeyError,
+        OSError,
+        ValueError,
+        requests.exceptions.RequestException,
+    ) as e:
         raise errors.ExternalServiceError(
             f"Unable to refresh market holidays: {e}"
         ) from e
