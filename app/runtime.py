@@ -39,7 +39,29 @@ def run(args, trade, config, gui_state):
             is_running,
         )
     if args.l and is_running:
-        listeners.start_listeners(trade, config, gui_state, base_manager)
+        try:
+            listeners.start_listeners(trade, config, gui_state, base_manager)
+        except Exception:
+            speech_manager = getattr(trade, "speech_manager", None)
+            speaking_process = getattr(trade, "speaking_process", None)
+            stop_event = getattr(trade, "stop_listeners_event", None)
+            wait_thread = getattr(trade, "wait_listeners_thread", None)
+            try:
+                process_utilities.stop_listeners(
+                    getattr(trade, "mouse_listener", None),
+                    getattr(trade, "keyboard_listener", None),
+                    base_manager,
+                    speech_manager,
+                    speaking_process,
+                )
+            finally:
+                if base_manager and speech_manager and not speaking_process:
+                    base_manager.shutdown()
+                if stop_event:
+                    stop_event.set()
+                if wait_thread:
+                    wait_thread.join()
+            raise
     if args.s and is_running:
         threading.Thread(
             target=scheduler.start_scheduler,
