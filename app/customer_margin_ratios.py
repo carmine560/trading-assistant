@@ -1,7 +1,7 @@
 """Customer margin ratio refresh and market-data freshness helpers."""
 
-import os
 from io import BytesIO
+import os
 
 import pandas as pd
 import requests

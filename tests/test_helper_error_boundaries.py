@@ -235,6 +235,31 @@ def test_speech_process_stop_timeout_terminates_process():
     ]
 
 
+def test_is_running_wraps_process_status_probe_failure(monkeypatch):
+    def raise_called_process_error(*_args, **_kwargs):
+        raise process_utilities.subprocess.CalledProcessError(
+            1,
+            ["tasklist"],
+        )
+
+    monkeypatch.setattr(
+        process_utilities.subprocess,
+        "check_output",
+        raise_called_process_error,
+    )
+
+    with pytest.raises(ProcessStateError) as e:
+        process_utilities.is_running("HYPERSBI2")
+
+    assert "Unable to check whether process 'HYPERSBI2' is running" in str(
+        e.value
+    )
+    assert isinstance(
+        e.value.__cause__,
+        process_utilities.subprocess.CalledProcessError,
+    )
+
+
 def test_stop_listeners_timeout_terminates_speech_process():
     calls = []
     mouse_listener = SimpleNamespace(stop=lambda: calls.append("mouse.stop"))
