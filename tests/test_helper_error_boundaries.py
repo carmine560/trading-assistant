@@ -8,13 +8,13 @@ from types import ModuleType, SimpleNamespace
 
 import pytest
 
+from app import ui
 from core_utilities.errors import (
     BrowserAutomationError,
     GuiInteractionError,
     ProcessStateError,
     WidgetPositionError,
 )
-from app import ui
 from core_utilities import process_utilities
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -258,6 +258,52 @@ def test_is_running_wraps_process_status_probe_failure(monkeypatch):
         e.value.__cause__,
         process_utilities.subprocess.CalledProcessError,
     )
+
+
+def test_wait_listeners_stops_resources_after_process_probe_failure(
+    monkeypatch,
+):
+    calls = []
+
+    def raise_process_state_error(_process):
+        raise ProcessStateError("tasklist failed")
+
+    monkeypatch.setattr(
+        process_utilities,
+        "is_running",
+        raise_process_state_error,
+    )
+    monkeypatch.setattr(
+        process_utilities,
+        "stop_listeners",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    with pytest.raises(ProcessStateError) as e:
+        process_utilities.wait_listeners(
+            SimpleNamespace(is_set=lambda: False),
+            "HYPERSBI2",
+            "mouse",
+            "keyboard",
+            "base_manager",
+            "speech_manager",
+            "speaking_process",
+            indicator_thread="indicator",
+        )
+
+    assert str(e.value) == "tasklist failed"
+    assert calls == [
+        (
+            (
+                "mouse",
+                "keyboard",
+                "base_manager",
+                "speech_manager",
+                "speaking_process",
+            ),
+            {"indicator_thread": "indicator"},
+        )
+    ]
 
 
 def test_stop_listeners_timeout_terminates_speech_process():
