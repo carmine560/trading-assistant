@@ -1,7 +1,7 @@
 """Customer margin ratio refresh and market-data freshness helpers."""
 
-from io import BytesIO
 import os
+from io import BytesIO
 
 import pandas as pd
 import requests
@@ -29,6 +29,7 @@ def save_customer_margin_ratios(trade, config):
     ):
         try:
             response = requests.get(section["url"], timeout=5)
+            response.raise_for_status()
             # 'lxml' reads the '<meta charset>' tag, so raw bytes are decoded
             # correctly.
             dfs = pd.read_html(
