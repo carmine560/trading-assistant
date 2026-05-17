@@ -6,11 +6,11 @@ import os
 import threading
 import time
 
-from pynput import keyboard
 import pandas as pd
 import psutil
 import pyautogui
 import win32clipboard
+from pynput import keyboard
 
 from app import action_errors
 from app import market_data, trade_service, ui
@@ -316,14 +316,17 @@ def _handle_wait_command(
         trade.keyboard_listener_state = 1
         trade.key_to_check = None
         trade.should_continue = True
-        text_recognition.recognize_text(
-            *map(int, argument.split(",")),
-            int(config[trade.process]["image_magnification"]),
-            int(config[trade.process]["binarization_threshold"]),
-            config[trade.process].getboolean("is_dark_theme"),
-            should_continue_reference=lambda: trade.should_continue,
-        )
-        trade.keyboard_listener_state = 0
+        try:
+            text_recognition.recognize_text(
+                *map(int, argument.split(",")),
+                int(config[trade.process]["image_magnification"]),
+                int(config[trade.process]["binarization_threshold"]),
+                config[trade.process].getboolean("is_dark_theme"),
+                should_continue_reference=lambda: trade.should_continue,
+            )
+        finally:
+            trade.keyboard_listener_state = 0
+            trade.key_to_check = None
         if not trade.should_continue and _handle_cancellation_exit(
             trade,
             config,
@@ -337,11 +340,14 @@ def _handle_wait_command(
         trade.keyboard_listener_state = 1
         trade.key_to_check = None
         trade.should_continue = True
-        gui_interactions.wait_for_window(
-            argument,
-            should_continue_reference=lambda: trade.should_continue,
-        )
-        trade.keyboard_listener_state = 0
+        try:
+            gui_interactions.wait_for_window(
+                argument,
+                should_continue_reference=lambda: trade.should_continue,
+            )
+        finally:
+            trade.keyboard_listener_state = 0
+            trade.key_to_check = None
         if not trade.should_continue and _handle_cancellation_exit(
             trade,
             config,

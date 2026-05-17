@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from app import actions
 from app.action_errors import ActionExecutionError
+from app import actions
 
 
 def _build_trade(spoken):
@@ -493,6 +493,36 @@ def test_wait_for_price_cancellation_raises_for_cleanup_failure(monkeypatch):
     assert spoken == []
 
 
+def test_wait_for_price_failure_resets_listener_state(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    def fail_recognize_text(*_args, **kwargs):
+        assert kwargs["should_continue_reference"]()
+        raise RuntimeError("ocr failed")
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=fail_recognize_text),
+    )
+
+    with pytest.raises(RuntimeError, match="ocr failed"):
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("wait_for_price", "0, 0, 10, 10, 0")],
+        )
+
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
+
+
 def test_wait_for_window_cancellation_runs_cleanup_action(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -519,6 +549,36 @@ def test_wait_for_window_cancellation_runs_cleanup_action(monkeypatch):
     assert trade.keyboard_listener_state == 0
     assert trade.key_to_check is None
     assert spoken == ["cleanup", "Canceled."]
+
+
+def test_wait_for_window_failure_resets_listener_state(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    def fail_wait_for_window(_title, *, should_continue_reference):
+        assert should_continue_reference()
+        raise RuntimeError("window failed")
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(wait_for_window=fail_wait_for_window),
+    )
+
+    with pytest.raises(RuntimeError, match="window failed"):
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("wait_for_window", "Order")],
+        )
+
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
 
 
 def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
