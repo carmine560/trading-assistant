@@ -28,13 +28,21 @@ SAVE_MARKET_DATA_ERROR = "Unable to save market data."
 
 def start_execute_action_thread(trade, config, gui_state, action):
     """Start a new thread to execute a specified action."""
+    try:
+        configured_action = config[trade.actions_section][action]
+    except KeyError as e:
+        raise action_errors.ActionLookupError(
+            f"Action '{action}' is not defined.",
+            action_name=action,
+        ) from e
+
     execute_action_thread = threading.Thread(
         target=execute_action,
         args=(
             trade,
             config,
             gui_state,
-            config[trade.actions_section][action],
+            configured_action,
         ),
         kwargs={"action_path": (action,)},
     )

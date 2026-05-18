@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.action_errors import ActionExecutionError
 from app import actions
+from app.action_errors import ActionExecutionError, ActionLookupError
 
 
 def _build_trade(spoken):
@@ -71,6 +71,67 @@ def _build_config():
     config["Market Holidays"] = {"date_format": "%Y/%m/%d"}
     config["Actions"] = {}
     return config
+
+
+def test_start_execute_action_thread_raises_for_missing_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+
+    monkeypatch.setattr(
+        actions.threading,
+        "Thread",
+        lambda *_args, **_kwargs: pytest.fail("Thread should not start"),
+    )
+
+    with pytest.raises(ActionLookupError) as e:
+        actions.start_execute_action_thread(
+            trade,
+            config,
+            gui_state,
+            "missing",
+        )
+
+    assert str(e.value) == "Action 'missing' is not defined."
+    assert e.value.action_name == "missing"
+
+
+def test_start_execute_action_thread_starts_configured_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Actions"]["open"] = str([("speak_text", "ready")])
+    calls = []
+
+    class FakeThread:
+        def __init__(self, **kwargs):
+            calls.append(("thread", kwargs))
+
+        def start(self):
+            calls.append("start")
+
+    monkeypatch.setattr(actions.threading, "Thread", FakeThread)
+
+    actions.start_execute_action_thread(trade, config, gui_state, "open")
+
+    assert calls == [
+        (
+            "thread",
+            {
+                "target": actions.execute_action,
+                "args": (
+                    trade,
+                    config,
+                    gui_state,
+                    "[('speak_text', 'ready')]",
+                ),
+                "kwargs": {"action_path": ("open",)},
+            },
+        ),
+        "start",
+    ]
 
 
 def _patch_action_modules(monkeypatch):
