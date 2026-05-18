@@ -38,7 +38,11 @@ def save_customer_margin_ratios(trade, config):
                 flavor="lxml",
                 header=0,
             )
-        except (requests.exceptions.RequestException, OSError) as e:
+        except (
+            OSError,
+            ValueError,
+            requests.exceptions.RequestException,
+        ) as e:
             raise errors.ExternalServiceError(
                 f"Unable to refresh customer margin ratios: {e}"
             ) from e
