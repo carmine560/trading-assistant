@@ -35,17 +35,6 @@ def start_execute_action_thread(trade, config, gui_state, action):
             action_name=action,
         ) from e
 
-    if not trade.action_lock.acquire(blocking=False):
-        trade.last_action_error = action_errors.ActionConcurrencyError(
-            f"Action '{action}' skipped because another action is running.",
-            action_name=action,
-        )
-        speech_manager = getattr(trade, "speech_manager", None)
-        if speech_manager:
-            speech_manager.set_speech_text("Action busy.")
-        return None
-
-    trade.last_action_error = None
     execute_action_thread = threading.Thread(
         target=_execute_action_thread,
         args=(
@@ -56,56 +45,8 @@ def start_execute_action_thread(trade, config, gui_state, action):
             action,
         ),
     )
-    try:
-        execute_action_thread.start()
-    except Exception:
-        trade.action_lock.release()
-        raise
+    execute_action_thread.start()
     return execute_action_thread
-
-
-def execute_action(
-    trade,
-    config,
-    gui_state,
-    action,
-    should_initialize=True,
-    action_path=None,
-):
-    """Execute a sequence of commands for a trade."""
-    if should_initialize:
-        trade.initialize_attributes()
-        gui_state.initialize_attributes()
-
-    action_path = tuple(action_path or ("inline action",))
-    if isinstance(action, str):
-        action = evaluate_value(action)
-
-    for instruction_index, instruction in enumerate(action, start=1):
-        command, argument, additional_argument = _unpack_instruction(
-            instruction,
-            action_path,
-            instruction_index,
-        )
-        if command not in ALL_KEYS:
-            _raise_unknown_command_error(
-                action_path,
-                instruction_index,
-                command,
-            )
-        if not _execute_instruction(
-            trade,
-            config,
-            gui_state,
-            command,
-            argument,
-            additional_argument,
-            action_path,
-            instruction_index,
-        ):
-            return False
-
-    return True
 
 
 def _execute_action_thread(trade, config, gui_state, action, action_name):
@@ -128,8 +69,72 @@ def _execute_action_thread(trade, config, gui_state, action, action_name):
         speech_manager = getattr(trade, "speech_manager", None)
         if speech_manager:
             speech_manager.set_speech_text("Action failed unexpectedly.")
+
+
+def execute_action(
+    trade,
+    config,
+    gui_state,
+    action,
+    should_initialize=True,
+    action_path=None,
+):
+    """Execute a sequence of commands for a trade."""
+    action_path = tuple(action_path or ("inline action",))
+    lock_acquired = False
+    if should_initialize:
+        if not trade.action_lock.acquire(blocking=False):
+            action_name = action_path[0]
+            trade.last_action_error = action_errors.ActionConcurrencyError(
+                (
+                    f"Action '{action_name}' skipped because another action "
+                    "is running."
+                ),
+                action_name=action_name,
+            )
+            speech_manager = getattr(trade, "speech_manager", None)
+            if speech_manager:
+                speech_manager.set_speech_text("Action busy.")
+            return False
+        lock_acquired = True
+        trade.last_action_error = None
+
+    try:
+        if should_initialize:
+            trade.initialize_attributes()
+            gui_state.initialize_attributes()
+
+        if isinstance(action, str):
+            action = evaluate_value(action)
+
+        for instruction_index, instruction in enumerate(action, start=1):
+            command, argument, additional_argument = _unpack_instruction(
+                instruction,
+                action_path,
+                instruction_index,
+            )
+            if command not in ALL_KEYS:
+                _raise_unknown_command_error(
+                    action_path,
+                    instruction_index,
+                    command,
+                )
+            if not _execute_instruction(
+                trade,
+                config,
+                gui_state,
+                command,
+                argument,
+                additional_argument,
+                action_path,
+                instruction_index,
+            ):
+                return False
+
+        return True
     finally:
-        trade.action_lock.release()
+        if lock_acquired:
+            trade.action_lock.release()
 
 
 def _unpack_instruction(instruction, action_path, instruction_index):
