@@ -34,17 +34,33 @@ def start_execute_action_thread(trade, config, gui_state, action):
             action_name=action,
         ) from e
 
+    if not trade.action_lock.acquire(blocking=False):
+        trade.last_action_error = action_errors.ActionConcurrencyError(
+            f"Action '{action}' skipped because another action is running.",
+            action_name=action,
+        )
+        speech_manager = getattr(trade, "speech_manager", None)
+        if speech_manager:
+            speech_manager.set_speech_text("Action busy.")
+        return None
+
+    trade.last_action_error = None
     execute_action_thread = threading.Thread(
-        target=execute_action,
+        target=_execute_action_thread,
         args=(
             trade,
             config,
             gui_state,
             configured_action,
+            action,
         ),
-        kwargs={"action_path": (action,)},
     )
-    execute_action_thread.start()
+    try:
+        execute_action_thread.start()
+    except Exception:
+        trade.action_lock.release()
+        raise
+    return execute_action_thread
 
 
 def execute_action(
@@ -89,6 +105,30 @@ def execute_action(
             return False
 
     return True
+
+
+def _execute_action_thread(trade, config, gui_state, action, action_name):
+    """Execute one listener-triggered action and report thread failures."""
+    try:
+        execute_action(
+            trade,
+            config,
+            gui_state,
+            action,
+            action_path=(action_name,),
+        )
+    except errors.CoreUtilitiesError as e:
+        trade.last_action_error = e
+        speech_manager = getattr(trade, "speech_manager", None)
+        if speech_manager:
+            speech_manager.set_speech_text("Action failed.")
+    except Exception as e:
+        trade.last_action_error = e
+        speech_manager = getattr(trade, "speech_manager", None)
+        if speech_manager:
+            speech_manager.set_speech_text("Action failed unexpectedly.")
+    finally:
+        trade.action_lock.release()
 
 
 def _unpack_instruction(instruction, action_path, instruction_index):

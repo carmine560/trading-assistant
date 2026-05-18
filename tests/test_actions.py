@@ -1,5 +1,6 @@
 """Tests for extracted action execution helpers."""
 
+import threading
 from configparser import ConfigParser
 from types import SimpleNamespace
 
@@ -24,6 +25,8 @@ def _build_trade(spoken):
         keyboard_listener_state=0,
         key_to_check=None,
         should_continue=True,
+        action_lock=threading.Lock(),
+        last_action_error=None,
         share_size=0,
         cash_balance=0,
         symbol="1234",
@@ -107,31 +110,128 @@ def test_start_execute_action_thread_starts_configured_action(monkeypatch):
 
     class FakeThread:
         def __init__(self, **kwargs):
-            calls.append(("thread", kwargs))
+            self.kwargs = kwargs
+            calls.append(("thread", kwargs["target"], kwargs["args"]))
 
         def start(self):
             calls.append("start")
+            self.kwargs["target"](*self.kwargs["args"])
 
     monkeypatch.setattr(actions.threading, "Thread", FakeThread)
 
-    actions.start_execute_action_thread(trade, config, gui_state, "open")
+    thread = actions.start_execute_action_thread(
+        trade,
+        config,
+        gui_state,
+        "open",
+    )
 
+    assert isinstance(thread, FakeThread)
     assert calls == [
         (
             "thread",
-            {
-                "target": actions.execute_action,
-                "args": (
-                    trade,
-                    config,
-                    gui_state,
-                    "[('speak_text', 'ready')]",
-                ),
-                "kwargs": {"action_path": ("open",)},
-            },
+            actions._execute_action_thread,
+            (
+                trade,
+                config,
+                gui_state,
+                "[('speak_text', 'ready')]",
+                "open",
+            ),
         ),
         "start",
     ]
+    assert spoken == ["ready"]
+    assert trade.last_action_error is None
+    assert not trade.action_lock.locked()
+
+
+def test_start_execute_action_thread_suppresses_concurrent_trigger(
+    monkeypatch,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Actions"]["open"] = str([("speak_text", "ready")])
+    assert trade.action_lock.acquire(blocking=False)
+
+    monkeypatch.setattr(
+        actions.threading,
+        "Thread",
+        lambda *_args, **_kwargs: pytest.fail("Thread should not start"),
+    )
+
+    assert (
+        actions.start_execute_action_thread(
+            trade,
+            config,
+            gui_state,
+            "open",
+        )
+        is None
+    )
+
+    error = trade.last_action_error
+    assert isinstance(error, actions.action_errors.ActionConcurrencyError)
+    assert error.action_name == "open"
+    assert spoken == ["Action busy."]
+    trade.action_lock.release()
+
+
+def test_execute_action_thread_records_typed_failure(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+
+    def fail_execute_action(*_args, **_kwargs):
+        raise ActionExecutionError(
+            "Action path 'open' failed.",
+            action_path=("open",),
+            instruction_index=1,
+            command="bad",
+        )
+
+    assert trade.action_lock.acquire(blocking=False)
+    monkeypatch.setattr(actions, "execute_action", fail_execute_action)
+
+    actions._execute_action_thread(
+        trade,
+        config,
+        gui_state,
+        [("bad",)],
+        "open",
+    )
+
+    assert isinstance(trade.last_action_error, ActionExecutionError)
+    assert spoken == ["Action failed."]
+    assert not trade.action_lock.locked()
+
+
+def test_execute_action_thread_records_unexpected_failure(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+
+    def fail_execute_action(*_args, **_kwargs):
+        raise RuntimeError("boom")
+
+    assert trade.action_lock.acquire(blocking=False)
+    monkeypatch.setattr(actions, "execute_action", fail_execute_action)
+
+    actions._execute_action_thread(
+        trade,
+        config,
+        gui_state,
+        [("bad",)],
+        "open",
+    )
+
+    assert isinstance(trade.last_action_error, RuntimeError)
+    assert spoken == ["Action failed unexpectedly."]
+    assert not trade.action_lock.locked()
 
 
 def _patch_action_modules(monkeypatch):

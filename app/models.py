@@ -2,6 +2,7 @@
 
 import os
 import re
+import threading
 import time
 
 import win32gui
@@ -92,6 +93,8 @@ class Trade(initializer.Initializer):
         self.mouse_listener = None
         self.keyboard_listener = None
         self.keyboard_listener_state = 0
+        self.action_lock = threading.Lock()
+        self.last_action_error = None
         self._pressed_modifiers = set()
         self._last_action_time = 0
         self.key_to_check = None

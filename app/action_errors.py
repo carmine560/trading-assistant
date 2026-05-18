@@ -12,6 +12,15 @@ class ActionLookupError(CoreUtilitiesError):
         self.action_name = action_name
 
 
+class ActionConcurrencyError(CoreUtilitiesError):
+    """Raised when an action trigger arrives while another action runs."""
+
+    def __init__(self, message, *, action_name):
+        """Store skipped action context for callers and diagnostics."""
+        super().__init__(message)
+        self.action_name = action_name
+
+
 class ActionExecutionError(CoreUtilitiesError):
     """Raised when an action definition is invalid at execution time."""
 
