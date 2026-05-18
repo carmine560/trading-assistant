@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from app import actions
 from app.action_errors import ActionExecutionError, ActionLookupError
+from app import actions
 
 
 def _build_trade(spoken):
@@ -445,8 +445,29 @@ def test_wait_for_key_cancellation_runs_cleanup_action(monkeypatch):
         gui_state,
         [("wait_for_key", "enter", [("speak_text", "cleanup")])],
     )
-    assert trade.key_to_check is actions.keyboard.Key["enter"]
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
     assert spoken == ["cleanup", "Canceled."]
+
+
+def test_wait_for_key_invalid_key_resets_listener_state(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(KeyError):
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("wait_for_key", "missing")],
+        )
+
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
 
 
 def test_wait_for_key_count_down_cancellation_speaks_countdown(monkeypatch):
@@ -478,8 +499,32 @@ def test_wait_for_key_count_down_cancellation_speaks_countdown(monkeypatch):
         gui_state,
         [("wait_for_key_count_down", "enter", [("speak_text", "cleanup")])],
     )
-    assert trade.key_to_check is actions.keyboard.Key["enter"]
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
     assert spoken == ["30 seconds.", "cleanup", "Canceled."]
+
+
+def test_wait_for_key_count_down_parse_failure_resets_listener_state(
+    monkeypatch,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["General"]["countdown_seconds_before_candle_close"] = "30, bad"
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ValueError):
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("wait_for_key_count_down", "enter")],
+        )
+
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
 
 
 def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):

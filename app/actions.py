@@ -12,8 +12,7 @@ import pyautogui
 import win32clipboard
 from pynput import keyboard
 
-from app import action_errors
-from app import market_data, trade_service, ui
+from app import action_errors, market_data, trade_service, ui
 from core_utilities import data_utilities, errors, file_utilities
 from core_utilities.config_io import write_config
 from core_utilities.config_validation import evaluate_value
@@ -23,7 +22,6 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
-SAVE_MARKET_DATA_ERROR = "Unable to save market data."
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
@@ -699,32 +697,38 @@ def _wait_for_key(
 ):
     """Wait for a key press with optional countdown."""
     trade.keyboard_listener_state = 1
-    trade.key_to_check = (
-        argument if len(argument) == 1 else keyboard.Key[argument]
-    )
-    countdown_seconds = [
-        int(seconds.strip())
-        for seconds in config["General"][
-            "countdown_seconds_before_candle_close"
-        ].split(",")
-    ]
-    announced_minutes = {seconds: -1 for seconds in countdown_seconds}
+    try:
+        trade.key_to_check = (
+            argument if len(argument) == 1 else keyboard.Key[argument]
+        )
+        countdown_seconds = [
+            int(seconds.strip())
+            for seconds in config["General"][
+                "countdown_seconds_before_candle_close"
+            ].split(",")
+        ]
+        announced_minutes = {seconds: -1 for seconds in countdown_seconds}
 
-    while trade.keyboard_listener_state == 1:
-        if should_count_down:
-            now = pd.Timestamp.now()
-            current_second = now.second
-            current_minute = now.minute
+        while trade.keyboard_listener_state == 1:
+            if should_count_down:
+                now = pd.Timestamp.now()
+                current_second = now.second
+                current_minute = now.minute
 
-            for seconds in countdown_seconds:
-                if (
-                    current_second == 60 - seconds
-                    and current_minute != announced_minutes[seconds]
-                ):
-                    trade.speech_manager.set_speech_text(f"{seconds} seconds.")
-                    announced_minutes[seconds] = current_minute
+                for seconds in countdown_seconds:
+                    if (
+                        current_second == 60 - seconds
+                        and current_minute != announced_minutes[seconds]
+                    ):
+                        trade.speech_manager.set_speech_text(
+                            f"{seconds} seconds."
+                        )
+                        announced_minutes[seconds] = current_minute
 
-        time.sleep(0.01)
+            time.sleep(0.01)
+    finally:
+        trade.keyboard_listener_state = 0
+        trade.key_to_check = None
 
     if not trade.should_continue and _handle_cancellation_exit(
         trade,
@@ -830,6 +834,9 @@ def is_trading_day(date, market_holidays, date_format):
     return date.weekday() < 5 and date.strftime(date_format) not in set(
         pd.read_csv(market_holidays, header=None, dtype=str)[0]
     )
+
+
+SAVE_MARKET_DATA_ERROR = "Unable to save market data."
 
 
 def save_market_data(trade, config):
