@@ -1,9 +1,10 @@
 """Market rankings processing into per-digit closing price files."""
 
-from collections import defaultdict
 import csv
 import os
 import re
+import tempfile
+from collections import defaultdict
 
 from core_utilities.errors import MarketDataError
 
@@ -59,26 +60,57 @@ def _read_rankings(rankings, code_regex):
 
 def _write_closing_prices_files(closing_prices_prefix, data_by_digit):
     """Write grouped closing-price rows to per-digit output files."""
+    temporary_paths = []
     for digit in range(1, 10):
         digit_string = str(digit)
+        target_path = f"{closing_prices_prefix}{digit_string}.csv"
+        directory = os.path.dirname(os.path.abspath(target_path)) or "."
+        prefix = f".{os.path.basename(target_path)}."
+        fd = None
         try:
-            with open(
-                f"{closing_prices_prefix}{digit}.csv",
+            fd, temporary_path = tempfile.mkstemp(
+                prefix=prefix,
+                suffix=".tmp",
+                dir=directory,
+            )
+            temporary_paths.append((temporary_path, target_path))
+            with os.fdopen(
+                fd,
                 "w",
                 encoding="utf-8",
-                # 'csv.writer()' on Windows writes '\r\n' itself; without
-                # 'newline=""', 'open()' would translate '\n' to '\r\n',
-                # producing '\r\r\n' (seen as '^M') and causing extra blank
-                # lines.
+                # csv.writer() on Windows writes \r\n itself; without
+                # newline="", open() would translate \n to \r\n, producing
+                # \r\r\n (seen as ^M) and causing extra blank lines.
                 newline="",
             ) as f:
+                fd = None
                 writer = csv.writer(f)
                 for securities_code, current_price in data_by_digit.get(
                     digit_string, []
                 ):
                     writer.writerow([securities_code, current_price])
         except OSError as e:
+            if fd is not None:
+                os.close(fd)
+            _remove_temporary_files(temporary_paths)
             raise MarketDataError(
                 "Unable to write closing prices file for "
                 f"digit {digit_string}."
             ) from e
+
+    try:
+        for temporary_path, target_path in temporary_paths:
+            os.replace(temporary_path, target_path)
+    except OSError as e:
+        _remove_temporary_files(temporary_paths)
+        raise MarketDataError("Unable to replace closing prices files.") from e
+
+
+def _remove_temporary_files(temporary_paths):
+    """Remove any staged closing-price temp files that still exist."""
+    for temporary_path, _target_path in temporary_paths:
+        try:
+            if os.path.exists(temporary_path):
+                os.remove(temporary_path)
+        except OSError:
+            pass

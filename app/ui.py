@@ -112,7 +112,7 @@ class IndicatorThread(threading.Thread):
                 bg="gray5",
                 fg="tan1",
                 font=("Bahnschrift", -status_bar_frame_font_size),
-                # 'from' is a reserved keyword in Python.
+                # from is a reserved keyword in Python.
                 from_=RATIO_EPSILON,
                 highlightthickness=0,
                 increment=0.01,
@@ -124,8 +124,7 @@ class IndicatorThread(threading.Thread):
                 textvariable=self._utilization_ratio_string,
                 to=1.0,
                 width=5,
-                # 'validate' and 'validatecommand' are inherited from
-                # tk.Entry.
+                # validate and validatecommand are inherited from tk.Entry.
                 validate="key",
                 validatecommand=(
                     self.root.register(self._is_valid_float),

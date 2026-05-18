@@ -7,6 +7,7 @@ import pandas as pd
 import requests
 
 from core_utilities import errors
+from core_utilities.config_io import write_file_atomically
 from core_utilities.config_validation import (
     ensure_section_exists,
     evaluate_value,
@@ -30,7 +31,7 @@ def save_customer_margin_ratios(trade, config):
         try:
             response = requests.get(section["url"], timeout=5)
             response.raise_for_status()
-            # 'lxml' reads the '<meta charset>' tag, so raw bytes are decoded
+            # lxml reads the <meta charset> tag, so raw bytes are decoded
             # correctly.
             dfs = pd.read_html(
                 BytesIO(response.content),
@@ -77,9 +78,17 @@ def save_customer_margin_ratios(trade, config):
             r"0.\1",
             regex=True,
         )
-        matched_df.to_csv(
-            trade.customer_margin_ratios, header=False, index=False
-        )
+        try:
+            write_file_atomically(
+                trade.customer_margin_ratios,
+                "w",
+                lambda f: matched_df.to_csv(f, header=False, index=False),
+                newline="",
+            )
+        except OSError as e:
+            raise errors.ExternalServiceError(
+                f"Unable to refresh customer margin ratios: {e}"
+            ) from e
 
 
 def get_latest(
@@ -138,7 +147,12 @@ def _refresh_market_holidays_cache(section, market_holidays, modified_time):
             inplace=True,
             regex=True,
         )
-        df.to_csv(market_holidays, header=False, index=False)
+        write_file_atomically(
+            market_holidays,
+            "w",
+            lambda f: df.to_csv(f, header=False, index=False),
+            newline="",
+        )
     except (
         KeyError,
         OSError,

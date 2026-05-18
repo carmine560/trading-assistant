@@ -1,7 +1,7 @@
 """Tests for customer margin ratio refresh behavior."""
 
-from configparser import ConfigParser
 import sys
+from configparser import ConfigParser
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 
 from core_utilities.errors import ExternalServiceError, MarketDataError
+from core_utilities import config_io
 from app import customer_margin_ratios
 
 
@@ -165,6 +166,119 @@ def test_save_customer_margin_ratios_wraps_html_parse_errors(
     assert "Unable to refresh customer margin ratios" in str(e.value)
     assert "No tables found" in str(e.value)
     assert not Path(trade.customer_margin_ratios).exists()
+
+
+def test_save_customer_margin_ratios_preserves_previous_file_on_write_error(
+    monkeypatch, tmp_path
+):
+    trade = SimpleNamespace(
+        customer_margin_ratios_section="SBI Customer Margin Ratios",
+        customer_margin_ratios=str(tmp_path / "customer_margin_ratios.csv"),
+        market_holidays=str(tmp_path / "market_holidays.csv"),
+    )
+    config = ConfigParser()
+    config["SBI Customer Margin Ratios"] = {
+        "update_time": "15:30:00",
+        "timezone": "Asia/Tokyo",
+        "url": "https://example.invalid/ratios",
+        "regulation_header": "Regulation",
+        "headers": "('Symbol', 'Regulation')",
+        "symbol_header": "Symbol",
+        "suspended": "Suspended",
+        "customer_margin_ratio_string": "Ratio ",
+    }
+    target_path = Path(trade.customer_margin_ratios)
+    target_path.write_text("1111,0.9\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        customer_margin_ratios,
+        "get_latest",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.requests,
+        "get",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            content=b"<html></html>",
+            raise_for_status=lambda: None,
+        ),
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.pd,
+        "read_html",
+        lambda *_args, **_kwargs: [
+            pd.DataFrame(
+                [["1234", "Ratio 30"]],
+                columns=["Symbol", "Regulation"],
+            )
+        ],
+    )
+
+    def raise_replace_error(*_args, **_kwargs):
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(config_io.os, "replace", raise_replace_error)
+
+    with pytest.raises(ExternalServiceError) as e:
+        customer_margin_ratios.save_customer_margin_ratios(trade, config)
+
+    assert "Unable to refresh customer margin ratios" in str(e.value)
+    assert "replace failed" in str(e.value)
+    assert target_path.read_text(encoding="utf-8") == "1111,0.9\n"
+    assert not list(tmp_path.glob(".customer_margin_ratios.csv.*.tmp"))
+
+
+def test_save_customer_margin_ratios_does_not_double_carriage_returns(
+    monkeypatch, tmp_path
+):
+    trade = SimpleNamespace(
+        customer_margin_ratios_section="SBI Customer Margin Ratios",
+        customer_margin_ratios=str(tmp_path / "customer_margin_ratios.csv"),
+        market_holidays=str(tmp_path / "market_holidays.csv"),
+    )
+    config = ConfigParser()
+    config["SBI Customer Margin Ratios"] = {
+        "update_time": "15:30:00",
+        "timezone": "Asia/Tokyo",
+        "url": "https://example.invalid/ratios",
+        "regulation_header": "Regulation",
+        "headers": "('Symbol', 'Regulation')",
+        "symbol_header": "Symbol",
+        "suspended": "Suspended",
+        "customer_margin_ratio_string": "Ratio ",
+    }
+
+    monkeypatch.setattr(
+        customer_margin_ratios,
+        "get_latest",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.requests,
+        "get",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            content=b"<html></html>",
+            raise_for_status=lambda: None,
+        ),
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.pd,
+        "read_html",
+        lambda *_args, **_kwargs: [
+            pd.DataFrame(
+                [["1234", "Ratio 30"], ["5678", "Suspended"]],
+                columns=["Symbol", "Regulation"],
+            )
+        ],
+    )
+
+    customer_margin_ratios.save_customer_margin_ratios(trade, config)
+
+    csv_bytes = Path(trade.customer_margin_ratios).read_bytes()
+    assert b"\r\r\n" not in csv_bytes
+    assert csv_bytes.replace(b"\r\n", b"\n") == (
+        b"1234,0.30\n5678,suspended\n"
+    )
 
 
 def test_get_latest_wraps_market_holiday_refresh_errors(monkeypatch, tmp_path):

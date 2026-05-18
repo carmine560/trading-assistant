@@ -45,9 +45,9 @@ def configure(
         "closing_time": "15:30:00",
         "timezone": "Asia/Tokyo",
         # Double backslashes are required because these values are stored as
-        # Python string literals for 'evaluate_value()':
-        # 'securities_code_regex' via 'interactive_windows' and user-defined
-        # actions, and 'rankings' via user-defined actions.
+        # Python string literals for evaluate_value(): securities_code_regex
+        # via interactive_windows and user-defined actions, and rankings via
+        # user-defined actions.
         "securities_code_regex": securities_code_regex.replace("\\", "\\\\"),
         "rankings": os.path.join(
             os.path.expanduser("~"),
@@ -250,8 +250,8 @@ def _configure_hypersbi2(trade, config, file_utilities, data_utilities):
 
     config[trade.window_titles_section] = {
         # Double backslashes are required because these values are stored as
-        # Python string literals for 'evaluate_value()', used via
-        # 'interactive_windows' and user-defined actions.
+        # Python string literals for evaluate_value(), used via
+        # interactive_windows and user-defined actions.
         "announcements": "お知らせ",
         "summary": (
             "個別銘柄" r"\\s.*\\((${Market Data:securities_code_regex})\\)"
