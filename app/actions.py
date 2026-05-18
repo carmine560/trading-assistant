@@ -462,20 +462,6 @@ def _handle_speak_command(
     return True
 
 
-def save_market_data(trade, config):
-    """Split the rankings CSV by the first digit of the securities code."""
-    rankings = config["Market Data"]["rankings"].replace("\\\\", "\\")
-    try:
-        market_data.split_rankings_by_digit(
-            rankings=rankings,
-            closing_prices_prefix=trade.closing_prices,
-            code_regex=SECURITIES_CODE_REGEX,
-        )
-        return (True, None)
-    except errors.MarketDataError as e:
-        return (False, f"{SAVE_MARKET_DATA_ERROR} {e}")
-
-
 def _handle_market_data_command(trade, config, command, argument):
     """Handle market data retrieval and persistence commands."""
     if command == "copy_symbols_from_column":
@@ -507,6 +493,20 @@ def _copy_symbols_from_column(trade, config, argument):
     finally:
         if is_clipboard_open:
             win32clipboard.CloseClipboard()
+
+
+def save_market_data(trade, config):
+    """Split the rankings CSV by the first digit of the securities code."""
+    rankings = config["Market Data"]["rankings"].replace("\\\\", "\\")
+    try:
+        market_data.split_rankings_by_digit(
+            rankings=rankings,
+            closing_prices_prefix=trade.closing_prices,
+            code_regex=SECURITIES_CODE_REGEX,
+        )
+        return (True, None)
+    except errors.MarketDataError as e:
+        return (False, f"{SAVE_MARKET_DATA_ERROR} {e}")
 
 
 def _handle_trade_state_command(
@@ -901,12 +901,26 @@ def calculate_share_size(trade, config, position):
         try:
             with open(trade.customer_margin_ratios, encoding="utf-8") as f:
                 reader = csv.reader(f)
-                for row in reader:
+                for row_number, row in enumerate(reader, start=1):
+                    if len(row) < 2:
+                        raise errors.MarketDataError(
+                            "Unable to read customer margin ratios file "
+                            f"{trade.customer_margin_ratios}: row "
+                            f"{row_number} has {len(row)} columns."
+                        )
                     if row[0] == trade.symbol:
                         if row[1] == "suspended":
                             return (False, "Margin trading suspended.")
 
-                        customer_margin_ratio = float(row[1])
+                        try:
+                            customer_margin_ratio = float(row[1])
+                        except ValueError as e:
+                            raise errors.MarketDataError(
+                                "Unable to read customer margin ratios file "
+                                f"{trade.customer_margin_ratios}: row "
+                                f"{row_number} has invalid margin ratio "
+                                f"{row[1]!r}."
+                            ) from e
                         break
         except OSError:
             pass
@@ -938,11 +952,21 @@ def get_price_limit(trade, config):
             encoding="utf-8",
         ) as f:
             reader = csv.reader(f)
-            for row in reader:
+            for row_number, row in enumerate(reader, start=1):
                 if len(row) < 2:
-                    continue
+                    raise errors.MarketDataError(
+                        f"Unable to read closing prices file {f.name}: row "
+                        f"{row_number} has {len(row)} columns."
+                    )
                 if row[0].strip() == trade.symbol:
-                    closing_price = float(row[1].strip())
+                    try:
+                        closing_price = float(row[1].strip())
+                    except ValueError as e:
+                        raise errors.MarketDataError(
+                            f"Unable to read closing prices file {f.name}: "
+                            f"row {row_number} has invalid closing price "
+                            f"{row[1].strip()!r}."
+                        ) from e
                     break
     except OSError:
         pass

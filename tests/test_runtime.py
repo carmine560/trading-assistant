@@ -2,8 +2,7 @@
 
 from types import SimpleNamespace
 
-from app import action_errors
-from app import runtime
+from app import action_errors, runtime
 
 
 def test_run_executes_single_action_with_transient_listeners(monkeypatch):
