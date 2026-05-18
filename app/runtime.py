@@ -11,7 +11,6 @@ from app import (
     listeners,
     scheduler,
 )
-
 from core_utilities import process_utilities
 from core_utilities.config_io import write_config
 from interaction_utilities import speech_synthesis
@@ -63,9 +62,26 @@ def run(args, trade, config, gui_state):
                     wait_thread.join()
             raise
     if args.s and is_running:
+
+        def run_scheduler():
+            try:
+                scheduler.start_scheduler(
+                    trade,
+                    config,
+                    gui_state,
+                    trade.process,
+                    base_manager,
+                )
+            except Exception as e:
+                trade.scheduler_error = e
+                speech_manager = getattr(trade, "speech_manager", None)
+                if speech_manager:
+                    speech_manager.set_speech_text(f"Scheduler stopped: {e}")
+                else:
+                    print(f"Scheduler stopped: {e}")
+
         threading.Thread(
-            target=scheduler.start_scheduler,
-            args=(trade, config, gui_state, trade.process, base_manager),
+            target=run_scheduler,
         ).start()
 
 

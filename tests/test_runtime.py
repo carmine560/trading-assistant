@@ -2,7 +2,9 @@
 
 from types import SimpleNamespace
 
-from app import action_errors, runtime
+from app import action_errors
+from app import runtime
+from app.action_errors import ActionLookupError
 
 
 def test_run_executes_single_action_with_transient_listeners(monkeypatch):
@@ -389,6 +391,77 @@ def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
     assert "stop_listeners" in calls
     assert "event.set" in calls
     assert "thread.join" in calls
+
+
+def test_run_captures_scheduler_thread_failure(monkeypatch):
+    calls = []
+    spoken = []
+    args = SimpleNamespace(r=False, s=True, l=False, a=None)
+    trade = SimpleNamespace(process="HYPERSBI2")
+    config = {"Actions": {}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return SimpleNamespace(set_speech_text=spoken.append)
+
+    class FakeThread:
+        def __init__(self, *, target):
+            self.target = target
+            calls.append(("thread", target))
+
+        def start(self):
+            calls.append("thread.start")
+            self.target()
+
+    def raise_scheduler_error(*_args):
+        raise action_errors.ActionLookupError(
+            "Action 'open' is not defined.",
+            action_name="open",
+        )
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(is_running=lambda process: True),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "scheduler",
+        SimpleNamespace(start_scheduler=raise_scheduler_error),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "threading",
+        SimpleNamespace(Thread=FakeThread),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    runtime.run(args, trade, config, gui_state)
+
+    assert isinstance(trade.scheduler_error, action_errors.ActionLookupError)
+    assert trade.scheduler_error.action_name == "open"
+    assert spoken == ["Scheduler stopped: Action 'open' is not defined."]
+    assert "thread.start" in calls
 
 
 def test_run_cleans_up_partial_persistent_listener_startup(monkeypatch):
