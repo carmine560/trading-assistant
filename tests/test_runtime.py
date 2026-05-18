@@ -4,7 +4,6 @@ from types import SimpleNamespace
 
 from app import action_errors
 from app import runtime
-from app.action_errors import ActionLookupError
 
 
 def test_run_executes_single_action_with_transient_listeners(monkeypatch):
@@ -460,7 +459,7 @@ def test_run_captures_scheduler_thread_failure(monkeypatch):
 
     assert isinstance(trade.scheduler_error, action_errors.ActionLookupError)
     assert trade.scheduler_error.action_name == "open"
-    assert spoken == ["Scheduler stopped: Action 'open' is not defined."]
+    assert spoken == [runtime.RUN_SCHEDULER_ERROR]
     assert "thread.start" in calls
 
 

@@ -859,7 +859,7 @@ def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
             ("speak_text", "should not run"),
         ],
     )
-    assert spoken == ["Unable to save market data. details"]
+    assert spoken == [actions.SAVE_MARKET_DATA_ERROR]
 
 
 def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):

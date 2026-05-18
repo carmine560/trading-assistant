@@ -15,6 +15,8 @@ from core_utilities import process_utilities
 from core_utilities.config_io import write_config
 from interaction_utilities import speech_synthesis
 
+RUN_SCHEDULER_ERROR = "Scheduler stopped."
+
 
 def run(args, trade, config, gui_state):
     """Run the application."""
@@ -76,7 +78,7 @@ def run(args, trade, config, gui_state):
                 trade.scheduler_error = e
                 speech_manager = getattr(trade, "speech_manager", None)
                 if speech_manager:
-                    speech_manager.set_speech_text(f"Scheduler stopped: {e}")
+                    speech_manager.set_speech_text(RUN_SCHEDULER_ERROR)
                 else:
                     print(f"Scheduler stopped: {e}")
 
