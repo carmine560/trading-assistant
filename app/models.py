@@ -4,10 +4,10 @@ import os
 import re
 import time
 
-from pynput import keyboard
 import win32gui
+from pynput import keyboard
 
-from app import actions as actions
+from app import actions
 from core_utilities import file_utilities, initializer
 from core_utilities.config_validation import evaluate_value
 
@@ -123,7 +123,9 @@ class Trade(initializer.Initializer):
             "nested_keys": {"execute_action"},
             "optional_additional_nested_keys": {
                 "wait_for_key",
+                "wait_for_key_count_down",
                 "wait_for_price",
+                "wait_for_window",
             },
             "control_flow_keys": {
                 "is_now_after",
