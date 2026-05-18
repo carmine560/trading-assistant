@@ -1,9 +1,10 @@
 """Tests for helper-level exception boundaries."""
 
+import sys
+
 from configparser import ConfigParser
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-import sys
 from types import ModuleType, SimpleNamespace
 
 import pytest
@@ -137,6 +138,138 @@ def test_enumerate_windows_raises_typed_error_for_unexpected_failure():
         module.enumerate_windows(lambda *_args: None, None)
 
     assert "Unable to enumerate windows" in str(e.value)
+
+
+def test_click_widget_clicks_found_widget(monkeypatch):
+    module = _load_gui_interactions_module()
+    calls = []
+    location = object()
+    module.pyautogui.ImageNotFoundException = Exception
+    module.pyautogui.locateOnScreen = (
+        lambda image, region: calls.append((image, region)) or location
+    )
+    module.pyautogui.center = lambda found: ("center", found)
+    module.pyautogui.click = lambda position: calls.append(("click", position))
+    module.pyautogui.rightClick = lambda position: calls.append(
+        ("right", position)
+    )
+    monkeypatch.setattr(
+        module.time,
+        "sleep",
+        lambda _seconds: calls.append("sleep"),
+    )
+
+    assert module.click_widget(
+        SimpleNamespace(swapped=False),
+        "button.png",
+        1,
+        2,
+        3,
+        4,
+    )
+
+    assert calls == [
+        ("button.png", (1, 2, 3, 4)),
+        ("click", ("center", location)),
+    ]
+
+
+def test_click_widget_returns_none_when_canceled_before_polling():
+    module = _load_gui_interactions_module()
+    calls = []
+    module.pyautogui.ImageNotFoundException = Exception
+    module.pyautogui.locateOnScreen = lambda *_args, **_kwargs: calls.append(
+        "locate"
+    )
+
+    assert (
+        module.click_widget(
+            SimpleNamespace(swapped=False),
+            "button.png",
+            1,
+            2,
+            3,
+            4,
+            should_continue_reference=lambda: False,
+        )
+        is None
+    )
+    assert calls == []
+
+
+def test_click_widget_raises_typed_error_after_timeout(monkeypatch):
+    module = _load_gui_interactions_module()
+    module.pyautogui.ImageNotFoundException = Exception
+    module.pyautogui.locateOnScreen = lambda *_args, **_kwargs: None
+    monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
+    monotonic_values = iter((0.0, 2.0))
+    monkeypatch.setattr(
+        module.time,
+        "monotonic",
+        lambda: next(monotonic_values),
+    )
+
+    with pytest.raises(GuiInteractionError) as e:
+        module.click_widget(
+            SimpleNamespace(swapped=False),
+            "button.png",
+            1,
+            2,
+            3,
+            4,
+            timeout_seconds=1.0,
+            retry_interval_seconds=0,
+        )
+
+    assert "Widget image was not found within 1.0 seconds" in str(e.value)
+
+
+def test_wait_for_window_returns_true_when_window_exists():
+    module = _load_gui_interactions_module()
+
+    def enum_windows(callback, extra):
+        callback("hwnd", extra)
+
+    module.win32gui.EnumWindows = enum_windows
+    module.win32gui.GetWindowText = lambda _hwnd: "Order"
+
+    assert module.wait_for_window("Order")
+
+
+def test_wait_for_window_returns_none_when_canceled_before_polling():
+    module = _load_gui_interactions_module()
+    calls = []
+    module.win32gui.EnumWindows = lambda *_args: calls.append("enum")
+
+    assert (
+        module.wait_for_window(
+            "Order",
+            should_continue_reference=lambda: False,
+        )
+        is None
+    )
+    assert calls == []
+
+
+def test_wait_for_window_raises_typed_error_after_timeout(monkeypatch):
+    module = _load_gui_interactions_module()
+    module.win32gui.EnumWindows = lambda callback, extra: None
+    monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
+    monotonic_values = iter((0.0, 2.0))
+    monkeypatch.setattr(
+        module.time,
+        "monotonic",
+        lambda: next(monotonic_values),
+    )
+
+    with pytest.raises(GuiInteractionError) as e:
+        module.wait_for_window(
+            "Order",
+            timeout_seconds=1.0,
+            retry_interval_seconds=0,
+        )
+
+    assert "Window was not found within 1.0 seconds" in str(e.value)
 
 
 def test_browser_execute_action_raises_typed_error_for_unknown_command(

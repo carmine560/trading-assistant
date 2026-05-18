@@ -265,11 +265,22 @@ def _handle_gui_command(
             *map(int, argument.split(","))
         )
     elif command == "click_widget":
-        gui_interactions.click_widget(
-            gui_state,
-            os.path.join(trade.resource_directory, argument),
-            *map(int, additional_argument.split(",")),
-        )
+        trade.keyboard_listener_state = 1
+        trade.key_to_check = None
+        trade.should_continue = True
+        try:
+            gui_interactions.click_widget(
+                gui_state,
+                os.path.join(trade.resource_directory, argument),
+                *map(int, additional_argument.split(",")),
+                should_continue_reference=lambda: trade.should_continue,
+            )
+        finally:
+            trade.keyboard_listener_state = 0
+            trade.key_to_check = None
+        if not trade.should_continue:
+            trade.speech_manager.set_speech_text("Canceled.")
+            return False
     elif command == "drag_to":
         pyautogui.dragTo(*map(int, argument.split(",")))
     elif command == "move_to":

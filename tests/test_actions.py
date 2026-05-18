@@ -1,7 +1,6 @@
 """Tests for extracted action execution helpers."""
 
 import threading
-
 import pytest
 
 from configparser import ConfigParser
@@ -430,6 +429,37 @@ def test_execute_action_runs_named_nested_action(monkeypatch):
     )
     assert spoken == ["nested", "done"]
     assert (trade.initialized, gui_state.initialized) == (1, 1)
+
+
+def test_click_widget_cancellation_stops_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    def cancel_click_widget(*_args, **kwargs):
+        assert kwargs["should_continue_reference"]()
+        trade.should_continue = False
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(click_widget=cancel_click_widget),
+    )
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [
+            ("click_widget", "button.png", "0, 0, 10, 10"),
+            ("speak_text", "should not run"),
+        ],
+    )
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == ["Canceled."]
 
 
 def test_execute_action_raises_for_unknown_command(monkeypatch):
