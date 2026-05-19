@@ -1,12 +1,12 @@
 """Shared pytest fixtures and import stubs for platform-specific modules."""
 
+import sys
+
 from configparser import ConfigParser
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-import sys
 
 import pytest
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -100,6 +100,7 @@ def sample_trade(tmp_path):
         geometries_section="HYPERSBI2 Geometries",
         customer_margin_ratios_section="SBI Customer Margin Ratios",
         customer_margin_ratios=str(tmp_path / "customer_margin_ratios.csv"),
+        market_holidays=str(tmp_path / "market_holidays.csv"),
         closing_prices=str(tmp_path / "closing_prices_"),
     )
 
@@ -115,7 +116,11 @@ def sample_config():
         "is_dark_theme": "false",
     }
     config["HYPERSBI2 Geometries"] = {"price_limit_region": "0, 0, 10, 10"}
-    config["SBI Customer Margin Ratios"] = {"customer_margin_ratio": "0.3"}
+    config["SBI Customer Margin Ratios"] = {
+        "default_customer_margin_ratio": "0.3",
+        "timezone": "Asia/Tokyo",
+        "update_time": "20:00:00",
+    }
     config["Market Data"] = {"rankings": ""}
     return config
 

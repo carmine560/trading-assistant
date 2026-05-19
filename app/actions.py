@@ -12,7 +12,13 @@ import pyautogui
 import win32clipboard
 from pynput import keyboard
 
-from app import action_errors, market_data, trade_service, ui
+from app import (
+    action_errors,
+    customer_margin_ratios,
+    market_data,
+    trade_service,
+    ui,
+)
 from core_utilities import data_utilities, errors, file_utilities
 from core_utilities.config_io import write_config
 from core_utilities.config_validation import evaluate_value
@@ -906,59 +912,6 @@ def is_trading_day(date, market_holidays, date_format):
     )
 
 
-def calculate_share_size(trade, config, position):
-    """Determine the share size for a given trade."""
-    if trade.symbol and trade.cash_balance:
-        customer_margin_ratio = float(
-            config[trade.customer_margin_ratios_section][
-                "customer_margin_ratio"
-            ]
-        )
-        try:
-            with open(trade.customer_margin_ratios, encoding="utf-8") as f:
-                reader = csv.reader(f)
-                for row_number, row in enumerate(reader, start=1):
-                    if len(row) < 2:
-                        raise errors.MarketDataError(
-                            "Unable to read customer margin ratios file "
-                            f"{trade.customer_margin_ratios}: row "
-                            f"{row_number} has {len(row)} columns."
-                        )
-                    if row[0] == trade.symbol:
-                        if row[1] == "suspended":
-                            return (False, "Margin trading suspended.")
-
-                        try:
-                            customer_margin_ratio = float(row[1])
-                        except ValueError as e:
-                            raise errors.MarketDataError(
-                                "Unable to read customer margin ratios file "
-                                f"{trade.customer_margin_ratios}: row "
-                                f"{row_number} has invalid margin ratio "
-                                f"{row[1]!r}."
-                            ) from e
-                        break
-        except OSError:
-            pass
-
-        share_size = trade_service.calculate_share_size_from_inputs(
-            cash_balance=trade.cash_balance,
-            utilization_ratio=float(
-                config[trade.process]["utilization_ratio"]
-            ),
-            customer_margin_ratio=customer_margin_ratio,
-            price_limit=get_price_limit(trade, config),
-            position=position,
-        )
-        if share_size == 0:
-            return (False, "Insufficient cash balance.")
-
-        trade.share_size = share_size
-        return (True, None)
-
-    return (False, "Symbol or cash balance not provided.")
-
-
 def get_price_limit(trade, config):
     """Calculate the price limit for a trade."""
     closing_price = 0.0
@@ -1002,3 +955,70 @@ def get_price_limit(trade, config):
         config[trade.process].getboolean("is_dark_theme"),
         text_type="decimal_numbers",
     )
+
+
+def calculate_share_size(trade, config, position):
+    """Determine the share size for a given trade."""
+    if trade.symbol and trade.cash_balance:
+        section = config[trade.customer_margin_ratios_section]
+        try:
+            if customer_margin_ratios.get_latest(
+                config,
+                trade.market_holidays,
+                section["update_time"],
+                section["timezone"],
+                trade.customer_margin_ratios,
+            ):
+                return (
+                    False,
+                    "Customer margin ratios are stale.",
+                )
+        except errors.CoreUtilitiesError:
+            return (False, "Unable to verify customer margin ratios.")
+
+        default_customer_margin_ratio = float(
+            section["default_customer_margin_ratio"]
+        )
+        try:
+            with open(trade.customer_margin_ratios, encoding="utf-8") as f:
+                reader = csv.reader(f)
+                for row_number, row in enumerate(reader, start=1):
+                    if len(row) < 2:
+                        raise errors.MarketDataError(
+                            "Unable to read customer margin ratios file "
+                            f"{trade.customer_margin_ratios}: row "
+                            f"{row_number} has {len(row)} columns."
+                        )
+                    if row[0] == trade.symbol:
+                        if row[1] == "suspended":
+                            return (False, "Margin trading suspended.")
+
+                        try:
+                            default_customer_margin_ratio = float(row[1])
+                        except ValueError as e:
+                            raise errors.MarketDataError(
+                                "Unable to read customer margin ratios file "
+                                f"{trade.customer_margin_ratios}: row "
+                                f"{row_number} has invalid margin ratio "
+                                f"{row[1]!r}."
+                            ) from e
+                        break
+        except OSError:
+            return (False, "Unable to read customer margin ratios file.")
+
+        share_size = trade_service.calculate_share_size_from_inputs(
+            cash_balance=trade.cash_balance,
+            utilization_ratio=float(
+                config[trade.process]["utilization_ratio"]
+            ),
+            customer_margin_ratio=default_customer_margin_ratio,
+            price_limit=get_price_limit(trade, config),
+            position=position,
+        )
+        if share_size == 0:
+            return (False, "Insufficient cash balance.")
+
+        trade.share_size = share_size
+        return (True, None)
+
+    return (False, "Symbol or cash balance not provided.")

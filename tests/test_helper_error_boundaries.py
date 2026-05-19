@@ -2,12 +2,12 @@
 
 import sys
 
+import pytest
+
 from configparser import ConfigParser
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-
-import pytest
 
 from app import ui
 from core_utilities.errors import (

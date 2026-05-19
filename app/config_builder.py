@@ -1,9 +1,9 @@
 """Trading assistant configuration defaults and vendor overrides."""
 
-from datetime import date
 import configparser
 import os
 import re
+from datetime import date
 
 from core_utilities.config_io import read_config
 from core_utilities.errors import ConfigBuildError
@@ -156,7 +156,7 @@ def configure(
 
     if trade.vendor == "SBI Securities":
         config[trade.customer_margin_ratios_section] = {
-            "customer_margin_ratio": "0.31",
+            "default_customer_margin_ratio": "0.31",
             "update_time": "20:00:00",
             "timezone": "${Market Data:timezone}",
             "url": (
@@ -165,7 +165,13 @@ def configure(
             ),
             "symbol_header": "コード",
             "regulation_header": "規制内容",
-            "headers": ("銘柄", "コード", "建玉", "信用取引区分", "規制内容"),
+            "headers": (
+                "銘柄",
+                "コード",
+                "建玉",
+                "信用取引区分",
+                "規制内容",
+            ),
             "customer_margin_ratio_string": "委託保証金率",
             "suspended": "新規建停止",
         }

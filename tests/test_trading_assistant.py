@@ -1,11 +1,21 @@
 """Tests for deterministic parsing and calculation helpers."""
 
-from pathlib import Path
-
 import pytest
+
+from pathlib import Path
 
 from app import actions, config_workflow
 from core_utilities import errors
+
+
+@pytest.fixture(autouse=True)
+def _use_fresh_customer_margin_ratios(monkeypatch):
+    """Keep calculation tests focused on local ratio parsing."""
+    monkeypatch.setattr(
+        actions.customer_margin_ratios,
+        "get_latest",
+        lambda *_args, **_kwargs: False,
+    )
 
 
 def test_is_xy_accepts_two_integers_with_whitespace():
@@ -127,6 +137,50 @@ def test_calculate_share_size_rejects_suspended_symbol(
     assert actions.calculate_share_size(
         sample_trade, sample_config, "long"
     ) == (False, "Margin trading suspended.")
+
+
+def test_calculate_share_size_rejects_stale_margin_ratios(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+):
+    monkeypatch.setattr(
+        actions.customer_margin_ratios,
+        "get_latest",
+        lambda *_args, **_kwargs: True,
+    )
+
+    assert actions.calculate_share_size(
+        sample_trade,
+        sample_config,
+        "long",
+    ) == (False, "Customer margin ratios are stale.")
+    assert sample_trade.share_size == 0
+
+
+def test_calculate_share_size_rejects_unverifiable_margin_ratios(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+):
+    def raise_market_data_error(*_args, **_kwargs):
+        raise errors.MarketDataError("market holidays unavailable")
+
+    monkeypatch.setattr(
+        actions.customer_margin_ratios,
+        "get_latest",
+        raise_market_data_error,
+    )
+
+    success, message = actions.calculate_share_size(
+        sample_trade,
+        sample_config,
+        "long",
+    )
+
+    assert not success
+    assert message == "Unable to verify customer margin ratios."
+    assert sample_trade.share_size == 0
 
 
 def test_calculate_share_size_raises_for_short_margin_ratio_row(
