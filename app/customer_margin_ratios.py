@@ -130,7 +130,10 @@ def _get_file_modified_time(path):
 def _refresh_market_holidays_cache(section, market_holidays, modified_time):
     """Refresh the market-holidays cache when the upstream page is newer."""
     last_modified = _get_market_holidays_last_modified(section["url"])
-    if modified_time >= last_modified:
+    if last_modified is None:
+        if modified_time > pd.Timestamp(0, tz="UTC", unit="s"):
+            return
+    elif modified_time >= last_modified:
         return
 
     try:
@@ -172,11 +175,10 @@ def _get_market_holidays_last_modified(url):
     except (
         KeyError,
         ValueError,
+        errors.ExternalServiceError,
         requests.exceptions.RequestException,
-    ) as e:
-        raise errors.ExternalServiceError(
-            f"Unable to refresh market holidays: {e}"
-        ) from e
+    ):
+        return None
 
 
 def _get_paths_modified_time(paths):

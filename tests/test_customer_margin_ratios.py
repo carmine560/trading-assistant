@@ -1,15 +1,15 @@
 """Tests for customer margin ratio refresh behavior."""
 
 import sys
+import pandas as pd
+import pytest
+
 from configparser import ConfigParser
 from pathlib import Path
 from types import SimpleNamespace
 
-import pandas as pd
-import pytest
-
-from core_utilities.errors import ExternalServiceError, MarketDataError
 from core_utilities import config_io
+from core_utilities.errors import ExternalServiceError, MarketDataError
 from app import customer_margin_ratios
 
 
@@ -281,10 +281,17 @@ def test_save_customer_margin_ratios_does_not_double_carriage_returns(
     )
 
 
-def test_get_latest_wraps_market_holiday_refresh_errors(monkeypatch, tmp_path):
+def test_get_latest_wraps_market_holiday_refresh_get_errors(
+    monkeypatch, tmp_path
+):
     config = _build_market_holidays_config()
 
-    def raise_request_exception(*_args, **_kwargs):
+    def raise_head_exception(*_args, **_kwargs):
+        raise customer_margin_ratios.requests.exceptions.RequestException(
+            "head failed"
+        )
+
+    def raise_get_exception(*_args, **_kwargs):
         raise customer_margin_ratios.requests.exceptions.RequestException(
             "boom"
         )
@@ -292,7 +299,12 @@ def test_get_latest_wraps_market_holiday_refresh_errors(monkeypatch, tmp_path):
     monkeypatch.setattr(
         customer_margin_ratios.web_utilities,
         "make_head_request",
-        raise_request_exception,
+        raise_head_exception,
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.requests,
+        "get",
+        raise_get_exception,
     )
 
     with pytest.raises(ExternalServiceError) as e:
@@ -304,6 +316,69 @@ def test_get_latest_wraps_market_holiday_refresh_errors(monkeypatch, tmp_path):
         )
 
     assert "Unable to refresh market holidays" in str(e.value)
+
+
+def test_get_latest_uses_cached_market_holidays_after_head_timeout(
+    monkeypatch, tmp_path
+):
+    config = _build_market_holidays_config()
+    market_holidays = tmp_path / "market_holidays.csv"
+    market_holidays.write_text("2026/01/01\n", encoding="utf-8")
+
+    def raise_head_timeout(*_args, **_kwargs):
+        raise customer_margin_ratios.requests.exceptions.Timeout(
+            "head timed out"
+        )
+
+    monkeypatch.setattr(
+        customer_margin_ratios.web_utilities,
+        "make_head_request",
+        raise_head_timeout,
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.requests,
+        "get",
+        lambda *_args, **_kwargs: pytest.fail("GET should not run"),
+    )
+
+    assert (
+        customer_margin_ratios.get_latest(
+            config,
+            str(market_holidays),
+            "00:00:00",
+            "Asia/Tokyo",
+        )
+        is False
+    )
+
+
+def test_get_latest_uses_cached_market_holidays_without_last_modified(
+    monkeypatch, tmp_path
+):
+    config = _build_market_holidays_config()
+    market_holidays = tmp_path / "market_holidays.csv"
+    market_holidays.write_text("2026/01/01\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        customer_margin_ratios.web_utilities,
+        "make_head_request",
+        lambda *_args, **_kwargs: SimpleNamespace(headers={}),
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.requests,
+        "get",
+        lambda *_args, **_kwargs: pytest.fail("GET should not run"),
+    )
+
+    assert (
+        customer_margin_ratios.get_latest(
+            config,
+            str(market_holidays),
+            "00:00:00",
+            "Asia/Tokyo",
+        )
+        is False
+    )
 
 
 def test_refresh_market_holidays_wraps_http_status_errors(
