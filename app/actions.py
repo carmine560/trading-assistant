@@ -980,15 +980,18 @@ def calculate_share_size(trade, config, position):
         if margin_ratio_error:
             return margin_ratio_error
 
-        share_size = trade_service.calculate_share_size_from_inputs(
-            cash_balance=trade.cash_balance,
-            utilization_ratio=float(
-                config[trade.process]["utilization_ratio"]
-            ),
-            customer_margin_ratio=customer_margin_ratio,
-            price_limit=get_price_limit(trade, config),
-            position=position,
-        )
+        try:
+            share_size = trade_service.calculate_share_size_from_inputs(
+                cash_balance=trade.cash_balance,
+                utilization_ratio=float(
+                    config[trade.process]["utilization_ratio"]
+                ),
+                customer_margin_ratio=customer_margin_ratio,
+                price_limit=get_price_limit(trade, config),
+                position=position,
+            )
+        except ValueError as e:
+            return (False, str(e))
         if share_size == 0:
             return (False, "Insufficient cash balance.")
 

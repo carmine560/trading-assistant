@@ -56,6 +56,15 @@ def calculate_share_size_from_inputs(
     position,
 ):
     """Return the share size using only already-resolved numeric inputs."""
+    if cash_balance <= 0:
+        raise ValueError("Cash balance must be positive.")
+    if utilization_ratio <= 0:
+        raise ValueError("Utilization ratio must be positive.")
+    if customer_margin_ratio <= 0:
+        raise ValueError("Customer margin ratio must be positive.")
+    if price_limit <= 0:
+        raise ValueError("Price limit must be positive.")
+
     share_size = (
         int(
             cash_balance

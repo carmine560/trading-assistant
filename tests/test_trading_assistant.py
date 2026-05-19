@@ -257,6 +257,26 @@ def test_calculate_share_size_rejects_unverifiable_margin_ratios(
     assert sample_trade.share_size == 0
 
 
+def test_calculate_share_size_returns_message_for_invalid_sizing_input(
+    sample_trade,
+    sample_config,
+):
+    sample_config["HYPERSBI2"]["utilization_ratio"] = "0"
+    Path(sample_trade.customer_margin_ratios).write_text(
+        "1234,0.5\n", encoding="utf-8"
+    )
+    Path(f"{sample_trade.closing_prices}1.csv").write_text(
+        "1234,980\n", encoding="utf-8"
+    )
+
+    assert actions.calculate_share_size(
+        sample_trade,
+        sample_config,
+        "long",
+    ) == (False, "Utilization ratio must be positive.")
+    assert sample_trade.share_size == 0
+
+
 def test_calculate_share_size_raises_for_short_margin_ratio_row(
     sample_trade, sample_config
 ):

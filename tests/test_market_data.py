@@ -1,8 +1,8 @@
 """Tests for extracted market data helpers."""
 
-from app import market_data
 from pathlib import Path
 
+from app import market_data
 from core_utilities.errors import MarketDataError
 
 CODE_REGEX = r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d" r"[\dACDFGHJKLMNPRSTUWXY]5?"
