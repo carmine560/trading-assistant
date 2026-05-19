@@ -29,6 +29,7 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
 )
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
 SAVE_MARKET_DATA_ERROR = "Unable to save market data."
+CUSTOMER_MARGIN_RATIOS_FRESHNESS_CACHE_SECONDS = 30 * 60
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
@@ -961,57 +962,30 @@ def calculate_share_size(trade, config, position):
     """Determine the share size for a given trade."""
     if trade.symbol and trade.cash_balance:
         section = config[trade.customer_margin_ratios_section]
-        try:
-            if customer_margin_ratios.get_latest(
-                config,
-                trade.market_holidays,
-                section["update_time"],
-                section["timezone"],
-                trade.customer_margin_ratios,
-            ):
-                return (
-                    False,
-                    "Customer margin ratios are stale.",
-                )
-        except errors.CoreUtilitiesError:
-            return (False, "Unable to verify customer margin ratios.")
-
-        default_customer_margin_ratio = float(
-            section["default_customer_margin_ratio"]
+        freshness_error = _get_customer_margin_ratios_freshness_error(
+            trade,
+            config,
+            section,
         )
-        try:
-            with open(trade.customer_margin_ratios, encoding="utf-8") as f:
-                reader = csv.reader(f)
-                for row_number, row in enumerate(reader, start=1):
-                    if len(row) < 2:
-                        raise errors.MarketDataError(
-                            "Unable to read customer margin ratios file "
-                            f"{trade.customer_margin_ratios}: row "
-                            f"{row_number} has {len(row)} columns."
-                        )
-                    if row[0] == trade.symbol:
-                        if row[1] == "suspended":
-                            return (False, "Margin trading suspended.")
+        if freshness_error:
+            return (False, freshness_error)
 
-                        try:
-                            default_customer_margin_ratio = float(row[1])
-                        except ValueError as e:
-                            raise errors.MarketDataError(
-                                "Unable to read customer margin ratios file "
-                                f"{trade.customer_margin_ratios}: row "
-                                f"{row_number} has invalid margin ratio "
-                                f"{row[1]!r}."
-                            ) from e
-                        break
-        except OSError:
-            return (False, "Unable to read customer margin ratios file.")
+        customer_margin_ratio = float(section["default_customer_margin_ratio"])
+        margin_ratio_error, customer_margin_ratio = _get_customer_margin_ratio(
+            trade,
+            customer_margin_ratio,
+        )
+        # _get_customer_margin_ratio() returns either an error tuple or a
+        # ratio.
+        if margin_ratio_error:
+            return margin_ratio_error
 
         share_size = trade_service.calculate_share_size_from_inputs(
             cash_balance=trade.cash_balance,
             utilization_ratio=float(
                 config[trade.process]["utilization_ratio"]
             ),
-            customer_margin_ratio=default_customer_margin_ratio,
+            customer_margin_ratio=customer_margin_ratio,
             price_limit=get_price_limit(trade, config),
             position=position,
         )
@@ -1022,3 +996,65 @@ def calculate_share_size(trade, config, position):
         return (True, None)
 
     return (False, "Symbol or cash balance not provided.")
+
+
+def _get_customer_margin_ratios_freshness_error(trade, config, section):
+    """Return a blocking message for stale or unverifiable margin ratios."""
+    customer_margin_ratios_checked_at = getattr(
+        trade,
+        "customer_margin_ratios_checked_at",
+        None,
+    )
+    if (
+        customer_margin_ratios_checked_at is not None
+        and time.monotonic() - customer_margin_ratios_checked_at
+        <= CUSTOMER_MARGIN_RATIOS_FRESHNESS_CACHE_SECONDS
+    ):
+        return None
+
+    try:
+        if customer_margin_ratios.get_latest(
+            config,
+            trade.market_holidays,
+            section["update_time"],
+            section["timezone"],
+            trade.customer_margin_ratios,
+        ):
+            return "Customer margin ratios are stale."
+    except errors.CoreUtilitiesError:
+        return "Unable to verify customer margin ratios."
+
+    trade.customer_margin_ratios_checked_at = time.monotonic()
+    return None
+
+
+def _get_customer_margin_ratio(trade, customer_margin_ratio):
+    """Return a trade-specific customer margin ratio or a blocking error."""
+    try:
+        with open(trade.customer_margin_ratios, encoding="utf-8") as f:
+            reader = csv.reader(f)
+            for row_number, row in enumerate(reader, start=1):
+                if len(row) < 2:
+                    raise errors.MarketDataError(
+                        "Unable to read customer margin ratios file "
+                        f"{trade.customer_margin_ratios}: row "
+                        f"{row_number} has {len(row)} columns."
+                    )
+                if row[0] == trade.symbol:
+                    if row[1] == "suspended":
+                        return (False, "Margin trading suspended."), None
+
+                    try:
+                        customer_margin_ratio = float(row[1])
+                    except ValueError as e:
+                        raise errors.MarketDataError(
+                            "Unable to read customer margin ratios file "
+                            f"{trade.customer_margin_ratios}: row "
+                            f"{row_number} has invalid margin ratio "
+                            f"{row[1]!r}."
+                        ) from e
+                    break
+    except OSError:
+        return (False, "Unable to read customer margin ratios file."), None
+
+    return None, customer_margin_ratio

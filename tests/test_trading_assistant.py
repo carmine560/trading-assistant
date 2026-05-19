@@ -1,8 +1,8 @@
 """Tests for deterministic parsing and calculation helpers."""
 
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from app import actions, config_workflow
 from core_utilities import errors
@@ -125,6 +125,80 @@ def test_calculate_share_size_uses_margin_ratio_file(
 
     assert (success, message) == (True, None)
     assert sample_trade.share_size == 200
+
+
+def test_calculate_share_size_caches_fresh_margin_ratio_check(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+):
+    calls = []
+    Path(sample_trade.customer_margin_ratios).write_text(
+        "1234,0.5\n", encoding="utf-8"
+    )
+    Path(f"{sample_trade.closing_prices}1.csv").write_text(
+        "1234,980\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(
+        actions.customer_margin_ratios,
+        "get_latest",
+        lambda *_args, **_kwargs: calls.append("get_latest") or False,
+    )
+    monotonic_values = iter((1000.0, 1100.0))
+    monkeypatch.setattr(
+        actions.time,
+        "monotonic",
+        lambda: next(monotonic_values),
+    )
+
+    assert actions.calculate_share_size(
+        sample_trade,
+        sample_config,
+        "long",
+    ) == (True, None)
+    assert actions.calculate_share_size(
+        sample_trade,
+        sample_config,
+        "long",
+    ) == (True, None)
+    assert calls == ["get_latest"]
+
+
+def test_calculate_share_size_refreshes_expired_margin_ratio_check(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+):
+    calls = []
+    Path(sample_trade.customer_margin_ratios).write_text(
+        "1234,0.5\n", encoding="utf-8"
+    )
+    Path(f"{sample_trade.closing_prices}1.csv").write_text(
+        "1234,980\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(
+        actions.customer_margin_ratios,
+        "get_latest",
+        lambda *_args, **_kwargs: calls.append("get_latest") or False,
+    )
+    monotonic_values = iter((1000.0, 2801.0, 2801.0))
+    monkeypatch.setattr(
+        actions.time,
+        "monotonic",
+        lambda: next(monotonic_values),
+    )
+
+    assert actions.calculate_share_size(
+        sample_trade,
+        sample_config,
+        "long",
+    ) == (True, None)
+    assert actions.calculate_share_size(
+        sample_trade,
+        sample_config,
+        "long",
+    ) == (True, None)
+    assert calls == ["get_latest", "get_latest"]
 
 
 def test_calculate_share_size_rejects_suspended_symbol(
