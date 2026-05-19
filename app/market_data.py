@@ -40,8 +40,17 @@ def _read_rankings(rankings, code_regex):
                 securities_code = row[6].strip()
                 if not re.fullmatch(code_regex, securities_code):
                     continue
+                current_price = row[9].strip().replace(",", "")
+                try:
+                    float(current_price)
+                except ValueError as e:
+                    raise MarketDataError(
+                        "Unable to read rankings file: row "
+                        f"{row_number} has invalid closing price "
+                        f"{row[9].strip()!r}."
+                    ) from e
                 data_by_digit[securities_code[0]].append(
-                    (securities_code, row[9].strip().replace(",", ""))
+                    (securities_code, current_price)
                 )
     except OSError as e:
         raise MarketDataError(

@@ -1,8 +1,8 @@
 """Tests for extracted market data helpers."""
 
+from app import market_data
 from pathlib import Path
 
-from app import market_data
 from core_utilities.errors import MarketDataError
 
 CODE_REGEX = r"[1-9][\dACDFGHJKLMNPRSTUWXY]\d" r"[\dACDFGHJKLMNPRSTUWXY]5?"
@@ -60,6 +60,38 @@ def test_split_rankings_by_digit_raises_for_malformed_row(tmp_path):
         assert "malformed row 2 has 3 columns" in str(e)
     else:
         raise AssertionError("Expected MarketDataError for malformed row.")
+
+
+def test_split_rankings_by_digit_rejects_non_numeric_closing_price(tmp_path):
+    rankings = tmp_path / "rankings.csv"
+    rankings.write_text(
+        "a,b,c,d,e,f,1234,h,i,bad\n",
+        encoding="utf-8",
+    )
+    closing_prices_prefix = str(tmp_path / "closing_prices_")
+    previous_files = []
+    for digit in range(1, 10):
+        path = Path(f"{closing_prices_prefix}{digit}.csv")
+        path.write_text(f"{digit}111,old\n", encoding="utf-8")
+        previous_files.append(path)
+
+    try:
+        market_data.split_rankings_by_digit(
+            rankings=str(rankings),
+            closing_prices_prefix=closing_prices_prefix,
+            code_regex=CODE_REGEX,
+        )
+    except MarketDataError as e:
+        assert "row 1 has invalid closing price 'bad'" in str(e)
+    else:
+        raise AssertionError(
+            "Expected MarketDataError for non-numeric closing price."
+        )
+
+    for digit, path in enumerate(previous_files, start=1):
+        assert path.read_text(encoding="utf-8") == f"{digit}111,old\n"
+    assert rankings.exists()
+    assert not list(tmp_path.glob(".closing_prices_*.csv.*.tmp"))
 
 
 def test_split_rankings_by_digit_preserves_files_on_write_error(
