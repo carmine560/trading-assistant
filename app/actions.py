@@ -28,8 +28,9 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
-SAVE_MARKET_DATA_ERROR = "Unable to save market data."
 CUSTOMER_MARGIN_RATIOS_FRESHNESS_CACHE_SECONDS = 30 * 60
+SAVE_MARKET_DATA_ERROR = "Unable to save market data."
+SHARE_SIZE_ERROR = "Unable to calculate share size."
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
@@ -991,7 +992,8 @@ def calculate_share_size(trade, config, position):
                 position=position,
             )
         except ValueError as e:
-            return (False, str(e))
+            trade.last_action_error = e
+            return (False, SHARE_SIZE_ERROR)
         if share_size == 0:
             return (False, "Insufficient cash balance.")
 
@@ -1024,7 +1026,8 @@ def _get_customer_margin_ratios_freshness_error(trade, config, section):
             trade.customer_margin_ratios,
         ):
             return "Customer margin ratios are stale."
-    except errors.CoreUtilitiesError:
+    except errors.CoreUtilitiesError as e:
+        trade.last_action_error = e
         return "Unable to verify customer margin ratios."
 
     trade.customer_margin_ratios_checked_at = time.monotonic()
@@ -1057,7 +1060,11 @@ def _get_customer_margin_ratio(trade, customer_margin_ratio):
                             f"{row[1]!r}."
                         ) from e
                     break
-    except OSError:
+    except OSError as e:
+        trade.last_action_error = errors.MarketDataError(
+            "Unable to read customer margin ratios file "
+            f"{trade.customer_margin_ratios}: {e}"
+        )
         return (False, "Unable to read customer margin ratios file."), None
 
     return None, customer_margin_ratio

@@ -1,8 +1,8 @@
 """Tests for deterministic parsing and calculation helpers."""
 
-from pathlib import Path
-
 import pytest
+
+from pathlib import Path
 
 from app import actions, config_workflow
 from core_utilities import errors
@@ -254,6 +254,8 @@ def test_calculate_share_size_rejects_unverifiable_margin_ratios(
 
     assert not success
     assert message == "Unable to verify customer margin ratios."
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
+    assert str(sample_trade.last_action_error) == "market holidays unavailable"
     assert sample_trade.share_size == 0
 
 
@@ -273,7 +275,11 @@ def test_calculate_share_size_returns_message_for_invalid_sizing_input(
         sample_trade,
         sample_config,
         "long",
-    ) == (False, "Utilization ratio must be positive.")
+    ) == (False, actions.SHARE_SIZE_ERROR)
+    assert isinstance(sample_trade.last_action_error, ValueError)
+    assert str(sample_trade.last_action_error) == (
+        "Utilization ratio must be positive."
+    )
     assert sample_trade.share_size == 0
 
 
