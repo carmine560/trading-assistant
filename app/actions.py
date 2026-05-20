@@ -773,11 +773,11 @@ def _wait_for_key(
     instruction_index=None,
 ):
     """Wait for a key press with optional countdown."""
-    trade.keyboard_listener_state = 1
     try:
         trade.key_to_check = (
             argument if len(argument) == 1 else keyboard.Key[argument]
         )
+        trade.keyboard_listener_state = 1
         countdown_seconds = [
             int(seconds.strip())
             for seconds in config["General"][
