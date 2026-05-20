@@ -30,6 +30,11 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
 SAVE_MARKET_DATA_ERROR = "Unable to save market data."
 SHARE_SIZE_ERROR = "Unable to calculate share size."
+PRICE_LIMIT_ERROR = "Unable to get price limit."
+CLOSING_PRICES_FILE_ERROR = "Unable to read closing prices file"
+CUSTOMER_MARGIN_RATIOS_FILE_ERROR = (
+    "Unable to read customer margin ratios file"
+)
 CUSTOMER_MARGIN_RATIOS_FRESHNESS_CACHE_SECONDS = 30 * 60
 
 
@@ -926,7 +931,7 @@ def get_price_limit(trade, config):
             for row_number, row in enumerate(reader, start=1):
                 if len(row) < 2:
                     raise errors.MarketDataError(
-                        f"Unable to read closing prices file {f.name}: row "
+                        f"{CLOSING_PRICES_FILE_ERROR} {f.name}: row "
                         f"{row_number} has {len(row)} columns."
                     )
                 if row[0].strip() == trade.symbol:
@@ -934,11 +939,14 @@ def get_price_limit(trade, config):
                         closing_price = float(row[1].strip())
                     except ValueError as e:
                         raise errors.MarketDataError(
-                            f"Unable to read closing prices file {f.name}: "
+                            f"{CLOSING_PRICES_FILE_ERROR} {f.name}: "
                             f"row {row_number} has invalid closing price "
                             f"{row[1].strip()!r}."
                         ) from e
                     break
+    except errors.MarketDataError as e:
+        trade.last_action_error = e
+        raise ValueError(PRICE_LIMIT_ERROR) from e
     except OSError:
         pass
 
@@ -992,6 +1000,8 @@ def calculate_share_size(trade, config, position):
                 position=position,
             )
         except ValueError as e:
+            if str(e) == PRICE_LIMIT_ERROR:
+                return (False, PRICE_LIMIT_ERROR)
             trade.last_action_error = e
             return (False, SHARE_SIZE_ERROR)
         if share_size == 0:
@@ -1042,7 +1052,7 @@ def _get_customer_margin_ratio(trade, customer_margin_ratio):
             for row_number, row in enumerate(reader, start=1):
                 if len(row) < 2:
                     raise errors.MarketDataError(
-                        "Unable to read customer margin ratios file "
+                        f"{CUSTOMER_MARGIN_RATIOS_FILE_ERROR} "
                         f"{trade.customer_margin_ratios}: row "
                         f"{row_number} has {len(row)} columns."
                     )
@@ -1054,17 +1064,20 @@ def _get_customer_margin_ratio(trade, customer_margin_ratio):
                         customer_margin_ratio = float(row[1])
                     except ValueError as e:
                         raise errors.MarketDataError(
-                            "Unable to read customer margin ratios file "
+                            f"{CUSTOMER_MARGIN_RATIOS_FILE_ERROR} "
                             f"{trade.customer_margin_ratios}: row "
                             f"{row_number} has invalid margin ratio "
                             f"{row[1]!r}."
                         ) from e
                     break
+    except errors.MarketDataError as e:
+        trade.last_action_error = e
+        return (False, f"{CUSTOMER_MARGIN_RATIOS_FILE_ERROR}."), None
     except OSError as e:
         trade.last_action_error = errors.MarketDataError(
-            "Unable to read customer margin ratios file "
+            f"{CUSTOMER_MARGIN_RATIOS_FILE_ERROR} "
             f"{trade.customer_margin_ratios}: {e}"
         )
-        return (False, "Unable to read customer margin ratios file."), None
+        return (False, f"{CUSTOMER_MARGIN_RATIOS_FILE_ERROR}."), None
 
     return None, customer_margin_ratio

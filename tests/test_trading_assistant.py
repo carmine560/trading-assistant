@@ -89,11 +89,15 @@ def test_get_price_limit_raises_for_short_closing_price_row(
     path = Path(f"{sample_trade.closing_prices}1.csv")
     path.write_text("1234\n", encoding="utf-8")
 
-    with pytest.raises(errors.MarketDataError) as e:
+    with pytest.raises(ValueError) as e:
         actions.get_price_limit(sample_trade, sample_config)
 
-    assert f"Unable to read closing prices file {path}" in str(e.value)
-    assert "row 1 has 1 columns" in str(e.value)
+    assert str(e.value) == actions.PRICE_LIMIT_ERROR
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
+    assert f"Unable to read closing prices file {path}" in str(
+        sample_trade.last_action_error
+    )
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_error)
 
 
 def test_get_price_limit_raises_for_non_numeric_closing_price(
@@ -102,11 +106,17 @@ def test_get_price_limit_raises_for_non_numeric_closing_price(
     path = Path(f"{sample_trade.closing_prices}1.csv")
     path.write_text("1234,bad\n", encoding="utf-8")
 
-    with pytest.raises(errors.MarketDataError) as e:
+    with pytest.raises(ValueError) as e:
         actions.get_price_limit(sample_trade, sample_config)
 
-    assert f"Unable to read closing prices file {path}" in str(e.value)
-    assert "row 1 has invalid closing price 'bad'" in str(e.value)
+    assert str(e.value) == actions.PRICE_LIMIT_ERROR
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
+    assert f"Unable to read closing prices file {path}" in str(
+        sample_trade.last_action_error
+    )
+    assert "row 1 has invalid closing price 'bad'" in str(
+        sample_trade.last_action_error
+    )
 
 
 def test_calculate_share_size_uses_margin_ratio_file(
@@ -283,30 +293,61 @@ def test_calculate_share_size_returns_message_for_invalid_sizing_input(
     assert sample_trade.share_size == 0
 
 
-def test_calculate_share_size_raises_for_short_margin_ratio_row(
+def test_calculate_share_size_rejects_invalid_closing_price_file(
+    sample_trade,
+    sample_config,
+):
+    path = Path(f"{sample_trade.closing_prices}1.csv")
+    Path(sample_trade.customer_margin_ratios).write_text(
+        "1234,0.5\n", encoding="utf-8"
+    )
+    path.write_text("1234\n", encoding="utf-8")
+
+    assert actions.calculate_share_size(
+        sample_trade, sample_config, "long"
+    ) == (False, actions.PRICE_LIMIT_ERROR)
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
+    assert f"Unable to read closing prices file {path}" in str(
+        sample_trade.last_action_error
+    )
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_error)
+    assert sample_trade.share_size == 0
+
+
+def test_calculate_share_size_rejects_short_margin_ratio_row(
     sample_trade, sample_config
 ):
     path = Path(sample_trade.customer_margin_ratios)
     path.write_text("1234\n", encoding="utf-8")
 
-    with pytest.raises(errors.MarketDataError) as e:
-        actions.calculate_share_size(sample_trade, sample_config, "long")
+    assert actions.calculate_share_size(
+        sample_trade, sample_config, "long"
+    ) == (False, f"{actions.CUSTOMER_MARGIN_RATIOS_FILE_ERROR}.")
 
-    assert f"Unable to read customer margin ratios file {path}" in str(e.value)
-    assert "row 1 has 1 columns" in str(e.value)
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
+    assert f"{actions.CUSTOMER_MARGIN_RATIOS_FILE_ERROR} {path}" in str(
+        sample_trade.last_action_error
+    )
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_error)
 
 
-def test_calculate_share_size_raises_for_non_numeric_margin_ratio(
+def test_calculate_share_size_rejects_non_numeric_margin_ratio(
     sample_trade, sample_config
 ):
     path = Path(sample_trade.customer_margin_ratios)
     path.write_text("1234,bad\n", encoding="utf-8")
 
-    with pytest.raises(errors.MarketDataError) as e:
-        actions.calculate_share_size(sample_trade, sample_config, "long")
+    assert actions.calculate_share_size(
+        sample_trade, sample_config, "long"
+    ) == (False, f"{actions.CUSTOMER_MARGIN_RATIOS_FILE_ERROR}.")
 
-    assert f"Unable to read customer margin ratios file {path}" in str(e.value)
-    assert "row 1 has invalid margin ratio 'bad'" in str(e.value)
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
+    assert f"{actions.CUSTOMER_MARGIN_RATIOS_FILE_ERROR} {path}" in str(
+        sample_trade.last_action_error
+    )
+    assert "row 1 has invalid margin ratio 'bad'" in str(
+        sample_trade.last_action_error
+    )
 
 
 def test_calculate_share_size_caps_short_positions_at_fifty_units(
