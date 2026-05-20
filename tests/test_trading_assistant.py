@@ -1,8 +1,8 @@
 """Tests for deterministic parsing and calculation helpers."""
 
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from app import actions, config_workflow
 from core_utilities import errors

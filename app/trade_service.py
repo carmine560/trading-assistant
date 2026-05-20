@@ -64,6 +64,8 @@ def calculate_share_size_from_inputs(
         raise ValueError("Customer margin ratio must be positive.")
     if price_limit <= 0:
         raise ValueError("Price limit must be positive.")
+    if position not in {"long", "short"}:
+        raise ValueError("Position must be 'long' or 'short'.")
 
     share_size = (
         int(

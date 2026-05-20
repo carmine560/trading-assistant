@@ -89,3 +89,16 @@ def test_calculate_share_size_from_inputs_rejects_non_positive_inputs(
         )
 
     assert str(e.value) == message
+
+
+def test_calculate_share_size_from_inputs_rejects_invalid_position():
+    with pytest.raises(ValueError) as e:
+        trade_service.calculate_share_size_from_inputs(
+            cash_balance=300_000,
+            utilization_ratio=0.5,
+            customer_margin_ratio=0.5,
+            price_limit=1130,
+            position="shrot",
+        )
+
+    assert str(e.value) == "Position must be 'long' or 'short'."
