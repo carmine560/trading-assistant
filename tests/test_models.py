@@ -15,6 +15,7 @@ def test_trade_exposes_wait_commands_with_optional_cleanup(
         lambda *_args, **_kwargs: None,
     )
 
+    assert trade.last_action_warning is None
     assert trade.instruction_items["optional_additional_nested_keys"] == {
         "wait_for_key",
         "wait_for_key_count_down",

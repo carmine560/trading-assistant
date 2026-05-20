@@ -1,11 +1,12 @@
 """Tests for OCR retry and failure handling."""
 
 import sys
+
+import pytest
+
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import SimpleNamespace
-
-import pytest
 
 from core_utilities.errors import TextRecognitionError
 

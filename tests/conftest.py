@@ -2,11 +2,11 @@
 
 import sys
 
+import pytest
+
 from configparser import ConfigParser
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-
-import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -102,6 +102,7 @@ def sample_trade(tmp_path):
         customer_margin_ratios=str(tmp_path / "customer_margin_ratios.csv"),
         market_holidays=str(tmp_path / "market_holidays.csv"),
         closing_prices=str(tmp_path / "closing_prices_"),
+        last_action_warning=None,
     )
 
 

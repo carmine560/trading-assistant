@@ -1,6 +1,7 @@
 """Tests for deterministic parsing and calculation helpers."""
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -83,39 +84,75 @@ def test_get_price_limit_falls_back_to_recognized_value(
     assert actions.get_price_limit(sample_trade, sample_config) == 4321
 
 
-def test_get_price_limit_raises_for_short_closing_price_row(
-    sample_trade, sample_config
+def test_get_price_limit_records_missing_file_warning_without_speech(
+    monkeypatch, sample_trade, sample_config
 ):
+    spoken = []
+    sample_trade.speech_manager = SimpleNamespace(
+        set_speech_text=spoken.append,
+    )
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        lambda *_args, **_kwargs: 4321,
+    )
+
+    assert actions.get_price_limit(sample_trade, sample_config) == 4321
+    assert spoken == []
+    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
+    assert "Unable to read closing prices file" in str(
+        sample_trade.last_action_warning
+    )
+    assert "closing_prices_1.csv" in str(sample_trade.last_action_warning)
+
+
+def test_get_price_limit_falls_back_to_ocr_for_short_closing_price_row(
+    monkeypatch, sample_trade, sample_config
+):
+    spoken = []
     path = Path(f"{sample_trade.closing_prices}1.csv")
     path.write_text("1234\n", encoding="utf-8")
-
-    with pytest.raises(ValueError) as e:
-        actions.get_price_limit(sample_trade, sample_config)
-
-    assert str(e.value) == actions.PRICE_LIMIT_ERROR
-    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
-    assert f"Unable to read closing prices file {path}" in str(
-        sample_trade.last_action_error
+    sample_trade.speech_manager = SimpleNamespace(
+        set_speech_text=spoken.append,
     )
-    assert "row 1 has 1 columns" in str(sample_trade.last_action_error)
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        lambda *_args, **_kwargs: 4321,
+    )
+
+    assert actions.get_price_limit(sample_trade, sample_config) == 4321
+    assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
+    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
+    assert f"Unable to read closing prices file {path}" in str(
+        sample_trade.last_action_warning
+    )
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_warning)
 
 
-def test_get_price_limit_raises_for_non_numeric_closing_price(
-    sample_trade, sample_config
+def test_get_price_limit_falls_back_to_ocr_for_non_numeric_closing_price(
+    monkeypatch, sample_trade, sample_config
 ):
+    spoken = []
     path = Path(f"{sample_trade.closing_prices}1.csv")
     path.write_text("1234,bad\n", encoding="utf-8")
+    sample_trade.speech_manager = SimpleNamespace(
+        set_speech_text=spoken.append,
+    )
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        lambda *_args, **_kwargs: 4321,
+    )
 
-    with pytest.raises(ValueError) as e:
-        actions.get_price_limit(sample_trade, sample_config)
-
-    assert str(e.value) == actions.PRICE_LIMIT_ERROR
-    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
+    assert actions.get_price_limit(sample_trade, sample_config) == 4321
+    assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
+    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
     assert f"Unable to read closing prices file {path}" in str(
-        sample_trade.last_action_error
+        sample_trade.last_action_warning
     )
     assert "row 1 has invalid closing price 'bad'" in str(
-        sample_trade.last_action_error
+        sample_trade.last_action_warning
     )
 
 
@@ -293,25 +330,36 @@ def test_calculate_share_size_returns_message_for_invalid_sizing_input(
     assert sample_trade.share_size == 0
 
 
-def test_calculate_share_size_rejects_invalid_closing_price_file(
+def test_calculate_share_size_uses_ocr_for_invalid_closing_price_file(
+    monkeypatch,
     sample_trade,
     sample_config,
 ):
+    spoken = []
     path = Path(f"{sample_trade.closing_prices}1.csv")
     Path(sample_trade.customer_margin_ratios).write_text(
         "1234,0.5\n", encoding="utf-8"
     )
     path.write_text("1234\n", encoding="utf-8")
+    sample_trade.speech_manager = SimpleNamespace(
+        set_speech_text=spoken.append,
+    )
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        lambda *_args, **_kwargs: 1130,
+    )
 
     assert actions.calculate_share_size(
         sample_trade, sample_config, "long"
-    ) == (False, actions.PRICE_LIMIT_ERROR)
-    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
+    ) == (True, None)
+    assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
+    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
     assert f"Unable to read closing prices file {path}" in str(
-        sample_trade.last_action_error
+        sample_trade.last_action_warning
     )
-    assert "row 1 has 1 columns" in str(sample_trade.last_action_error)
-    assert sample_trade.share_size == 0
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_warning)
+    assert sample_trade.share_size == 200
 
 
 def test_calculate_share_size_rejects_short_margin_ratio_row(

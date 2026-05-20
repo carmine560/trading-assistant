@@ -31,6 +31,7 @@ SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
 SAVE_MARKET_DATA_ERROR = "Unable to save market data."
 SHARE_SIZE_ERROR = "Unable to calculate share size."
 PRICE_LIMIT_ERROR = "Unable to get price limit."
+PRICE_LIMIT_FALLBACK_WARNING = "Closing prices file invalid."
 CLOSING_PRICES_FILE_ERROR = "Unable to read closing prices file"
 CUSTOMER_MARGIN_RATIOS_FILE_ERROR = (
     "Unable to read customer margin ratios file"
@@ -111,6 +112,7 @@ def execute_action(
             return False
         lock_acquired = True
         trade.last_action_error = None
+        trade.last_action_warning = None
 
     try:
         if should_initialize:
@@ -945,10 +947,17 @@ def get_price_limit(trade, config):
                         ) from e
                     break
     except errors.MarketDataError as e:
-        trade.last_action_error = e
-        raise ValueError(PRICE_LIMIT_ERROR) from e
-    except OSError:
-        pass
+        # The closing prices file is corrupted; notify the user and fall back
+        # to OCR.
+        trade.last_action_warning = e
+        _notify_price_limit_fallback(trade)
+    except OSError as e:
+        # The file is missing or unreadable, so fall back to OCR without
+        # notifying the user.
+        trade.last_action_warning = errors.MarketDataError(
+            f"{CLOSING_PRICES_FILE_ERROR} "
+            f"{trade.closing_prices}{trade.symbol[0]}.csv: {e}"
+        )
 
     if closing_price:
         return trade_service.calculate_price_limit_from_closing_price(
@@ -965,6 +974,13 @@ def get_price_limit(trade, config):
         config[trade.process].getboolean("is_dark_theme"),
         text_type="decimal_numbers",
     )
+
+
+def _notify_price_limit_fallback(trade):
+    """Notify the operator that OCR is replacing invalid closing-price data."""
+    speech_manager = getattr(trade, "speech_manager", None)
+    if speech_manager:
+        speech_manager.set_speech_text(PRICE_LIMIT_FALLBACK_WARNING)
 
 
 def calculate_share_size(trade, config, position):
