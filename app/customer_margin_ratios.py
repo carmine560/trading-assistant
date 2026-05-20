@@ -1,6 +1,8 @@
 """Customer margin ratio refresh and market-data freshness helpers."""
 
 import os
+import re
+from decimal import Decimal
 from io import BytesIO
 
 import pandas as pd
@@ -71,13 +73,27 @@ def save_customer_margin_ratios(trade, config):
         matched_df[section["regulation_header"]] = matched_df[
             section["regulation_header"]
         ].replace(f".*{section['suspended']}.*", "suspended", regex=True)
-        matched_df[section["regulation_header"]] = matched_df[
+        customer_margin_ratio_rows = matched_df[
             section["regulation_header"]
-        ].replace(
-            rf".*{section['customer_margin_ratio_string']}(\d+).*",
-            r"0.\1",
-            regex=True,
+        ].str.contains(section["customer_margin_ratio_string"])
+        customer_margin_ratios = matched_df.loc[
+            customer_margin_ratio_rows,
+            section["regulation_header"],
+        ].str.extract(
+            rf"{re.escape(section['customer_margin_ratio_string'])}(\d+)"
         )
+        if (
+            customer_margin_ratios[0].isna().any()
+            or (customer_margin_ratios[0].map(Decimal) <= 0).any()
+        ):
+            raise errors.ExternalServiceError(
+                "Unable to refresh customer margin ratios: "
+                "invalid customer margin ratio was found."
+            )
+        matched_df.loc[
+            customer_margin_ratio_rows,
+            section["regulation_header"],
+        ] = customer_margin_ratios[0].map(lambda v: str(Decimal(v) / 100))
         try:
             write_file_atomically(
                 trade.customer_margin_ratios,
