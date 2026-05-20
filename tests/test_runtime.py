@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 from app import action_errors, runtime
+from core_utilities import errors
 
 
 def test_run_executes_single_action_with_transient_listeners(monkeypatch):
@@ -18,7 +19,8 @@ def test_run_executes_single_action_with_transient_listeners(monkeypatch):
             set=lambda: calls.append("event.set")
         ),
         wait_listeners_thread=SimpleNamespace(
-            join=lambda: calls.append("thread.join")
+            join=lambda timeout=None: calls.append(("thread.join", timeout)),
+            is_alive=lambda: False,
         ),
     )
     config = {"Actions": {"open": [("speak_text", "ready")]}}
@@ -105,7 +107,10 @@ def test_run_executes_single_action_with_transient_listeners(monkeypatch):
     assert ("execute_action", [("speak_text", "ready")]) in calls
     assert "stop_listeners" in calls
     assert "event.set" in calls
-    assert "thread.join" in calls
+    assert (
+        "thread.join",
+        runtime.LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS,
+    ) in calls
 
 
 def test_run_raises_typed_error_for_missing_single_action(monkeypatch):
@@ -121,7 +126,8 @@ def test_run_raises_typed_error_for_missing_single_action(monkeypatch):
             set=lambda: calls.append("event.set")
         ),
         wait_listeners_thread=SimpleNamespace(
-            join=lambda: calls.append("thread.join")
+            join=lambda timeout=None: calls.append(("thread.join", timeout)),
+            is_alive=lambda: False,
         ),
     )
     config = {"Actions": {}}
@@ -192,7 +198,10 @@ def test_run_raises_typed_error_for_missing_single_action(monkeypatch):
     assert "execute_action" not in calls
     assert "stop_listeners" in calls
     assert "event.set" in calls
-    assert "thread.join" in calls
+    assert (
+        "thread.join",
+        runtime.LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS,
+    ) in calls
 
 
 def test_run_cleans_up_partial_transient_listener_startup(monkeypatch):
@@ -309,7 +318,8 @@ def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
             set=lambda: calls.append("event.set")
         ),
         wait_listeners_thread=SimpleNamespace(
-            join=lambda: calls.append("thread.join")
+            join=lambda timeout=None: calls.append(("thread.join", timeout)),
+            is_alive=lambda: False,
         ),
     )
     config = {"Actions": {"open": [("speak_text", "ready")]}}
@@ -388,7 +398,99 @@ def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
     assert "execute_action" in calls
     assert "stop_listeners" in calls
     assert "event.set" in calls
-    assert "thread.join" in calls
+    assert (
+        "thread.join",
+        runtime.LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS,
+    ) in calls
+
+
+def test_run_raises_when_transient_listener_wait_thread_hangs(monkeypatch):
+    calls = []
+    args = SimpleNamespace(r=False, s=False, l=False, a=["open"])
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+        mouse_listener="mouse",
+        keyboard_listener="keyboard",
+        speaking_process="speaker",
+        stop_listeners_event=SimpleNamespace(
+            set=lambda: calls.append("event.set")
+        ),
+        wait_listeners_thread=SimpleNamespace(
+            join=lambda timeout=None: calls.append(("thread.join", timeout)),
+            is_alive=lambda: True,
+        ),
+    )
+    config = {"Actions": {"open": [("speak_text", "ready")]}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return "speech_manager"
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "actions",
+        SimpleNamespace(
+            execute_action=(
+                lambda trade, config, gui_state, action, **kwargs: (
+                    calls.append(("execute_action", action))
+                )
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(
+            start_listeners=(
+                lambda trade, config, gui_state, base_manager, **kwargs: (
+                    calls.append(("start_listeners", kwargs))
+                )
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(
+            is_running=lambda process: False,
+            stop_listeners=lambda *args: calls.append("stop_listeners"),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except errors.ProcessStateError as e:
+        assert "Listener wait thread did not stop" in str(e)
+    else:
+        raise AssertionError("Expected listener wait timeout to raise.")
+
+    assert (
+        "thread.join",
+        runtime.LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS,
+    ) in calls
+    assert "event.set" in calls
 
 
 def test_run_captures_scheduler_thread_failure(monkeypatch):

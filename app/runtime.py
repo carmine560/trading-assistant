@@ -11,10 +11,11 @@ from app import (
     listeners,
     scheduler,
 )
-from core_utilities import process_utilities
+from core_utilities import errors, process_utilities
 from core_utilities.config_io import write_config
 from interaction_utilities import speech_synthesis
 
+LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS = 5
 RUN_SCHEDULER_ERROR = "Scheduler stopped."
 
 
@@ -61,7 +62,15 @@ def run(args, trade, config, gui_state):
                 if stop_event:
                     stop_event.set()
                 if wait_thread:
-                    wait_thread.join()
+                    wait_thread.join(
+                        timeout=LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS
+                    )
+                    if wait_thread.is_alive():
+                        raise errors.ProcessStateError(
+                            "Listener wait thread did not stop within "
+                            f"{LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS} "
+                            "seconds."
+                        )
             raise
     if args.s and is_running:
 
@@ -85,14 +94,6 @@ def run(args, trade, config, gui_state):
         threading.Thread(
             target=run_scheduler,
         ).start()
-
-
-def persist_config_on_exit(trade, config):
-    """Persist configuration on interpreter shutdown."""
-    # Ensure the config is written on normal interpreter shutdown, since
-    # IndicatorThread.stop() or IndicatorThread.on_closing() may not run if the
-    # main thread terminates abruptly.
-    write_config(config, trade.config_path, is_encrypted=True)
 
 
 def _start_speech_manager(trade):
@@ -161,4 +162,20 @@ def _execute_single_action(
                 if stop_event:
                     stop_event.set()
                 if wait_thread:
-                    wait_thread.join()
+                    wait_thread.join(
+                        timeout=LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS
+                    )
+                    if wait_thread.is_alive():
+                        raise errors.ProcessStateError(
+                            "Listener wait thread did not stop within "
+                            f"{LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS} "
+                            "seconds."
+                        )
+
+
+def persist_config_on_exit(trade, config):
+    """Persist configuration on interpreter shutdown."""
+    # Ensure the config is written on normal interpreter shutdown, since
+    # IndicatorThread.stop() or IndicatorThread.on_closing() may not run if the
+    # main thread terminates abruptly.
+    write_config(config, trade.config_path, is_encrypted=True)
