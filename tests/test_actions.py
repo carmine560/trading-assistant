@@ -413,6 +413,28 @@ def test_execute_action_suppresses_concurrent_direct_call(monkeypatch):
     trade.action_lock.release()
 
 
+def test_execute_action_can_skip_lock_acquisition(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    assert trade.action_lock.acquire(blocking=False)
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("speak_text", "ready")],
+        should_acquire_lock=False,
+        action_path=("schedule",),
+    )
+
+    assert spoken == ["ready"]
+    assert (trade.initialized, gui_state.initialized) == (1, 1)
+    trade.action_lock.release()
+
+
 def test_execute_action_runs_named_nested_action(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)

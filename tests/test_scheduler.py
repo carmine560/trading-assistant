@@ -75,4 +75,91 @@ def test_start_scheduler_registers_future_scheduled_action(monkeypatch):
         gui_state,
         [("speak_text", "ready")],
     )
-    assert scheduled[0][4] == {"action_path": ("open",)}
+    assert scheduled[0][4] == {
+        "action_path": ("open",),
+        "should_acquire_lock": False,
+        "should_initialize": False,
+    }
+
+
+def test_start_scheduler_locks_blocking_scheduled_action(monkeypatch):
+    scheduled = []
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+    )
+    config = {
+        "Schedules": {"morning": "('09:00:00', 'open')"},
+        "Actions": {"open": [("click", "1,2")]},
+    }
+
+    class FakeScheduler:
+        def __init__(self, _timefunc, _delayfunc):
+            self.queue = []
+
+        def enterabs(self, trigger, priority, action, argument, kwargs):
+            scheduled.append((trigger, priority, action, argument, kwargs))
+            return "schedule"
+
+    monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+
+    scheduler.start_scheduler(
+        trade,
+        config,
+        object(),
+        "HYPERSBI2",
+        object(),
+    )
+
+    assert scheduled[0][4] == {
+        "action_path": ("open",),
+        "should_acquire_lock": True,
+        "should_initialize": True,
+    }
+
+
+def test_start_scheduler_does_not_lock_nested_speech_action(monkeypatch):
+    scheduled = []
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+    )
+    action = [
+        (
+            "is_trading_day",
+            "True",
+            [("speak_minutes_since_hour",)],
+        )
+    ]
+    config = {
+        "Schedules": {"morning": "('09:00:00', 'announce')"},
+        "Actions": {"announce": action},
+    }
+
+    class FakeScheduler:
+        def __init__(self, _timefunc, _delayfunc):
+            self.queue = []
+
+        def enterabs(self, trigger, priority, action, argument, kwargs):
+            scheduled.append((trigger, priority, action, argument, kwargs))
+            return "schedule"
+
+    monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+
+    scheduler.start_scheduler(
+        trade,
+        config,
+        object(),
+        "HYPERSBI2",
+        object(),
+    )
+
+    assert scheduled[0][4] == {
+        "action_path": ("announce",),
+        "should_acquire_lock": False,
+        "should_initialize": False,
+    }

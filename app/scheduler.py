@@ -8,6 +8,14 @@ from core_utilities import process_utilities
 from core_utilities.config_validation import evaluate_value
 from interaction_utilities import speech_synthesis
 
+NON_BLOCKING_SCHEDULE_COMMANDS = {
+    "is_trading_day",
+    "speak_minutes_since_hour",
+    "speak_seconds_since_time",
+    "speak_seconds_until_time",
+    "speak_text",
+}
+
 
 def start_scheduler(trade, config, gui_state, process, base_manager):
     """Start a scheduler for executing actions at specified times."""
@@ -38,6 +46,9 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
                         f"Action '{action}' is not defined.",
                         action_name=action,
                     ) from e
+                is_blocking_schedule_action = _is_blocking_schedule_action(
+                    scheduled_action
+                )
                 schedule = scheduler.enterabs(
                     trigger,
                     1,
@@ -48,7 +59,11 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
                         gui_state,
                         scheduled_action,
                     ),
-                    kwargs={"action_path": (action,)},
+                    kwargs={
+                        "should_initialize": is_blocking_schedule_action,
+                        "should_acquire_lock": is_blocking_schedule_action,
+                        "action_path": (action,),
+                    },
                 )
                 schedules.append(schedule)
 
@@ -69,3 +84,26 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
             speech_synthesis.stop_speaking_process(
                 base_manager, trade.speech_manager, trade.speaking_process
             )
+
+
+def _is_blocking_schedule_action(action):
+    """Return True unless an action is confirmed as speech-only."""
+    if isinstance(action, str):
+        action = evaluate_value(action)
+
+    for instruction in action:
+        try:
+            command = instruction[0]
+            additional_argument = (
+                instruction[2] if len(instruction) > 2 else None
+            )
+        except (IndexError, TypeError):
+            return True
+
+        if command not in NON_BLOCKING_SCHEDULE_COMMANDS:
+            return True
+        if isinstance(additional_argument, list) and (
+            _is_blocking_schedule_action(additional_argument)
+        ):
+            return True
+    return False

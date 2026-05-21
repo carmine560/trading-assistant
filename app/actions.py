@@ -91,12 +91,13 @@ def execute_action(
     gui_state,
     action,
     should_initialize=True,
+    should_acquire_lock=True,
     action_path=None,
 ):
     """Execute a sequence of commands for a trade."""
     action_path = tuple(action_path or ("inline action",))
     lock_acquired = False
-    if should_initialize:
+    if should_acquire_lock:
         if not trade.action_lock.acquire(blocking=False):
             action_name = action_path[0]
             trade.last_action_error = action_errors.ActionConcurrencyError(
@@ -743,6 +744,7 @@ def _recursively_execute_action(
             gui_state,
             additional_argument,
             should_initialize=False,
+            should_acquire_lock=False,
             action_path=(*action_path, f"inline@{instruction_index}"),
         )
     if isinstance(additional_argument, str):
@@ -764,6 +766,7 @@ def _recursively_execute_action(
             gui_state,
             config[trade.actions_section][additional_argument],
             should_initialize=False,
+            should_acquire_lock=False,
             action_path=(*action_path, additional_argument),
         )
 
