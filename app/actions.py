@@ -3,6 +3,7 @@
 import csv
 import math
 import os
+import re
 import threading
 import time
 
@@ -28,15 +29,17 @@ SANS_INITIAL_SECURITIES_CODE_REGEX = (
     r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
 )
 SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
-SAVE_MARKET_DATA_ERROR = "Unable to save market data."
-SHARE_SIZE_ERROR = "Unable to calculate share size."
-PRICE_LIMIT_ERROR = "Unable to get price limit."
-PRICE_LIMIT_FALLBACK_WARNING = "Closing prices file invalid."
+ARCHIVE_MARKET_DATA_ERROR = "Unable to archive market data."
 CLOSING_PRICES_FILE_ERROR = "Unable to read closing prices file"
 CUSTOMER_MARGIN_RATIOS_FILE_ERROR = (
     "Unable to read customer margin ratios file"
 )
 CUSTOMER_MARGIN_RATIOS_FRESHNESS_CACHE_SECONDS = 30 * 60
+MARKET_DATA_FILE_ERROR = "Unable to read market data file"
+PRICE_LIMIT_ERROR = "Unable to get price limit."
+PRICE_LIMIT_FALLBACK_WARNING = "Closing prices file invalid."
+SAVE_MARKET_DATA_ERROR = "Unable to save market data."
+SHARE_SIZE_ERROR = "Unable to calculate share size."
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
@@ -496,7 +499,11 @@ def _handle_speak_command(
 
 def _handle_market_data_command(trade, config, command, argument):
     """Handle market data retrieval and persistence commands."""
-    if command == "copy_symbols_from_column":
+    if command == "archive_market_data":
+        if not archive_market_data(trade, config)[0]:
+            trade.speech_manager.set_speech_text(ARCHIVE_MARKET_DATA_ERROR)
+            return False
+    elif command == "copy_symbols_from_column":
         _copy_symbols_from_column(trade, config, argument)
     elif command == "save_market_data":
         if not save_market_data(trade, config)[0]:
@@ -525,6 +532,42 @@ def _copy_symbols_from_column(trade, config, argument):
     finally:
         if is_clipboard_open:
             win32clipboard.CloseClipboard()
+
+
+def archive_market_data(trade, config):
+    """Move existing market data files for today's default export names."""
+    section = config["Market Data"]
+    market_data_directory = section["market_data_directory"]
+    market_data_name_regex = re.compile(
+        config[trade.process]["market_data_name_regex"]
+    )
+    now = pd.Timestamp.now(tz=section["timezone"])
+    target_date_string = now.strftime("%Y%m%d")
+    archive_directory = os.path.join(
+        section["market_data_archive_directory"],
+        now.strftime("%Y%m%dT%H%M%S"),
+    )
+
+    try:
+        filenames = sorted(os.listdir(market_data_directory))
+        matched_filenames = []
+        for filename in filenames:
+            matched = market_data_name_regex.fullmatch(filename)
+            if matched and matched.group("date") == target_date_string:
+                matched_filenames.append(filename)
+
+        if not matched_filenames:
+            return (True, None)
+
+        os.makedirs(archive_directory)
+        for filename in matched_filenames:
+            os.replace(
+                os.path.join(market_data_directory, filename),
+                os.path.join(archive_directory, filename),
+            )
+        return (True, None)
+    except (IndexError, OSError) as e:
+        return (False, f"{ARCHIVE_MARKET_DATA_ERROR} {e}")
 
 
 def save_market_data(trade, config):
@@ -895,6 +938,7 @@ _COMMAND_DISPATCH = {
     "speak_show_text": _handle_speak_command,
     "speak_text": _handle_speak_command,
     # Market data retrieval and persistence commands
+    "archive_market_data": _handle_market_data_command,
     "copy_symbols_from_column": _handle_market_data_command,
     "save_market_data": _handle_market_data_command,
     # Trade state and accounting commands
@@ -928,38 +972,19 @@ def get_price_limit(trade, config):
     """Calculate the price limit for a trade."""
     closing_price = 0.0
     try:
-        with open(
-            f"{trade.closing_prices}{trade.symbol[0]}.csv",
-            encoding="utf-8",
-        ) as f:
-            reader = csv.reader(f)
-            for row_number, row in enumerate(reader, start=1):
-                if len(row) < 2:
-                    raise errors.MarketDataError(
-                        f"{CLOSING_PRICES_FILE_ERROR} {f.name}: row "
-                        f"{row_number} has {len(row)} columns."
-                    )
-                if row[0].strip() == trade.symbol:
-                    try:
-                        closing_price = float(row[1].strip())
-                    except ValueError as e:
-                        raise errors.MarketDataError(
-                            f"{CLOSING_PRICES_FILE_ERROR} {f.name}: "
-                            f"row {row_number} has invalid closing price "
-                            f"{row[1].strip()!r}."
-                        ) from e
-                    break
+        closing_price = _get_closing_price_from_hypersbi2_rankings(
+            trade,
+            config,
+        )
     except errors.MarketDataError as e:
-        # The closing prices file is corrupted; notify the user and fall back
-        # to OCR.
+        # Market data is corrupted; notify the user and fall back to OCR.
         trade.last_action_warning = e
         _notify_price_limit_fallback(trade)
     except OSError as e:
-        # The file is missing or unreadable, so fall back to OCR without
+        # Market data is missing or unreadable, so fall back to OCR without
         # notifying the user.
         trade.last_action_warning = errors.MarketDataError(
-            f"{CLOSING_PRICES_FILE_ERROR} "
-            f"{trade.closing_prices}{trade.symbol[0]}.csv: {e}"
+            f"{MARKET_DATA_FILE_ERROR}: {e}"
         )
 
     if closing_price:
@@ -977,6 +1002,73 @@ def get_price_limit(trade, config):
         config[trade.process].getboolean("is_dark_theme"),
         text_type="decimal_numbers",
     )
+
+
+def _get_closing_price_from_hypersbi2_rankings(trade, config):
+    """Return the previous closing price from Hyper SBI 2 rankings CSVs."""
+    section = config["Market Data"]
+    market_data_directory = section["market_data_directory"]
+    market_data_name_regex = re.compile(
+        config[trade.process]["market_data_name_regex"]
+    )
+    now = pd.Timestamp.now(tz=section["timezone"])
+    previous_trading_day = now - pd.Timedelta(days=1)
+    while not is_trading_day(
+        previous_trading_day,
+        trade.market_holidays,
+        config["Market Holidays"]["date_format"],
+    ):
+        previous_trading_day -= pd.Timedelta(days=1)
+    current_time = now.strftime("%H:%M:%S")
+    rankings_clearing_time = "07:59:00"
+    if current_time < rankings_clearing_time:
+        target_dates = (previous_trading_day, now)
+    elif current_time < section["closing_time"]:
+        target_dates = (previous_trading_day,)
+    else:
+        target_dates = (now,)
+
+    filenames = sorted(os.listdir(market_data_directory))
+
+    for target_date in target_dates:
+        target_date_string = target_date.strftime("%Y%m%d")
+        for filename in filenames:
+            matched = market_data_name_regex.fullmatch(filename)
+            if not matched:
+                continue
+            if matched.group("date") == target_date_string:
+                closing_price = _find_price_in_csv(
+                    os.path.join(market_data_directory, filename),
+                    trade.symbol,
+                    symbol_column=6,
+                    price_column=9,
+                )
+                if closing_price:
+                    return closing_price
+    return 0.0
+
+
+def _find_price_in_csv(path, symbol, symbol_column, price_column):
+    """Return a symbol's price from one CSV table."""
+    with open(path, encoding="utf-8") as f:
+        reader = csv.reader(f)
+        for row_number, row in enumerate(reader, start=1):
+            if len(row) <= max(symbol_column, price_column):
+                raise errors.MarketDataError(
+                    f"{MARKET_DATA_FILE_ERROR} {path}: row "
+                    f"{row_number} has {len(row)} columns."
+                )
+            if row[symbol_column].strip() == symbol:
+                current_price = row[price_column].strip().replace(",", "")
+                try:
+                    return float(current_price)
+                except ValueError as e:
+                    raise errors.MarketDataError(
+                        f"{MARKET_DATA_FILE_ERROR} {path}: row "
+                        f"{row_number} has invalid closing price "
+                        f"{row[price_column].strip()!r}."
+                    ) from e
+    return 0.0
 
 
 def _notify_price_limit_fallback(trade):

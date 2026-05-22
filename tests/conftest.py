@@ -92,6 +92,8 @@ _install_stub_modules()
 @pytest.fixture
 def sample_trade(tmp_path):
     """Provide a simple trade-like object backed by temporary files."""
+    market_holidays = tmp_path / "market_holidays.csv"
+    market_holidays.write_text("2026/01/01\n", encoding="utf-8")
     return SimpleNamespace(
         symbol="1234",
         cash_balance=300_000,
@@ -100,21 +102,31 @@ def sample_trade(tmp_path):
         geometries_section="HYPERSBI2 Geometries",
         customer_margin_ratios_section="SBI Customer Margin Ratios",
         customer_margin_ratios=str(tmp_path / "customer_margin_ratios.csv"),
-        market_holidays=str(tmp_path / "market_holidays.csv"),
+        market_holidays=str(market_holidays),
         closing_prices=str(tmp_path / "closing_prices_"),
         last_action_warning=None,
     )
 
 
 @pytest.fixture
-def sample_config():
+def sample_config(tmp_path):
     """Provide the minimal config sections used by the tests."""
-    config = ConfigParser()
+    config = ConfigParser(interpolation=None)
     config["HYPERSBI2"] = {
         "utilization_ratio": "0.5",
         "image_magnification": "1",
         "binarization_threshold": "128",
         "is_dark_theme": "false",
+        "market_data_name_regex": (
+            r"^ランキング_"
+            r"(値上がり率|値下がり率|値上がり幅|値下がり幅|出来高上位|"
+            r"出来高急増|売買代金上位|売買代金急増|株価往復|ティック回数|"
+            r"株価急騰率|株価急落率|寄前気配上昇率上位|"
+            r"寄前気配下落率上位|ギャップアップ率|ギャップダウン率|"
+            r"ストップ高|ストップ安|年初来高値更新銘柄|"
+            r"年初来安値更新銘柄)"
+            r"(?P<date>\d{8})\.csv$"
+        ),
     }
     config["HYPERSBI2 Geometries"] = {"price_limit_region": "0, 0, 10, 10"}
     config["SBI Customer Margin Ratios"] = {
@@ -122,7 +134,16 @@ def sample_config():
         "timezone": "Asia/Tokyo",
         "update_time": "20:00:00",
     }
-    config["Market Data"] = {"rankings": ""}
+    config["Market Holidays"] = {"date_format": "%Y/%m/%d"}
+    config["Market Data"] = {
+        "closing_time": "15:30:00",
+        "rankings": "",
+        "market_data_archive_directory": str(
+            tmp_path / "Archived Market Data"
+        ),
+        "market_data_directory": str(tmp_path),
+        "timezone": "Asia/Tokyo",
+    }
     return config
 
 

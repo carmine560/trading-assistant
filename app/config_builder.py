@@ -46,14 +46,22 @@ def configure(
         "timezone": "Asia/Tokyo",
         # Double backslashes are required because these values are stored as
         # Python string literals for evaluate_value(): securities_code_regex
-        # via interactive_windows and user-defined actions, and rankings via
-        # user-defined actions.
+        # via interactive_windows and user-defined actions, and market data
+        # via user-defined actions.
         "securities_code_regex": securities_code_regex.replace("\\", "\\\\"),
         "rankings": os.path.join(
             os.path.expanduser("~"),
             "Downloads",
             "rankings.csv",
         ).replace("\\", "\\\\"),
+        "market_data_directory": os.path.join(
+            os.path.expanduser("~"),
+            "Downloads",
+        ),
+        "market_data_archive_directory": os.path.join(
+            "${market_data_directory}",
+            "Archived Market Data",
+        ),
     }
     config[trade.geometries_section] = {
         "cash_balance_region": "0, 0, 0, 0, 0",
@@ -334,6 +342,15 @@ def _configure_hypersbi2(trade, config, file_utilities, data_utilities):
         "screencast_regex": (
             trade.process.title()
             + r" \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d+\.mp4"
+        ),
+        "market_data_name_regex": (
+            r"^ランキング_"
+            r"(値上がり率|値下がり率|値上がり幅|値下がり幅|出来高上位|"
+            r"出来高急増|売買代金上位|売買代金急増|株価往復|ティック回数|"
+            r"株価急騰率|株価急落率|寄前気配上昇率上位|寄前気配下落率上位|"
+            r"ギャップアップ率|ギャップダウン率|ストップ高|ストップ安|"
+            r"年初来高値更新銘柄|年初来安値更新銘柄)"
+            r"(?P<date>\d{8})\.csv$$"
         ),
     }
     config[trade.widgets_section] = {

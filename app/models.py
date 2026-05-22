@@ -110,6 +110,7 @@ class Trade(initializer.Initializer):
         self.instruction_items = {
             "all_keys": sorted(actions.ALL_KEYS),
             "no_value_keys": {
+                "archive_market_data",
                 "back_to",
                 "get_cash_balance",
                 "save_market_data",

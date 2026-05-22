@@ -91,19 +91,27 @@ python trading_assistant.py -SS
 
 If you use the `calculate_share_size` or `check_daily_loss_limit` commands in
 the “[Create or Modify Action](#create-or-modify-action)” section, configure
-the cash balance and (optional) price limit regions in Hyper SBI 2 so that
-Tesseract can recognize these prices. `trading_assistant.py` references a price
-limit only if the previous closing price does not exist in the market data
-saved using an action such as `save_market_data` (see the “[Save Market
-Data](https://github.com/carmine560/trading-assistant/wiki#save-market-data)”
-section of the wiki). Because a region may contain multiple prices, you must
-specify the index of the price you want to reference.
-
-> **Note**: Distinguishing between commas and decimal points can be
-> challenging. Use market data and avoid referencing the price limit.
+the cash balance region in Hyper SBI 2 so that Tesseract can recognize the
+prices. Also specify the index of the target price in the region.
 
 ``` powershell
 python trading_assistant.py -CB
+```
+
+The `calculate_share_size` command also uses the previous closing price. Export
+a Hyper SBI 2 ranking that includes the securities code you trade to
+`%USERPROFILE%\Downloads` as a CSV file. You can automate this with a custom
+action such as `save_market_data` (see the “[Save Market
+Data](https://github.com/carmine560/trading-assistant/wiki#save-market-data)”
+section of the wiki).
+
+`trading_assistant.py` uses the price limit only if the previous closing price
+is not available in the market data. Also configure the price limit region in
+Hyper SBI 2. However, Tesseract can misread commas and decimal points. For
+example, `1,234.5` can be read as `12345`. Use market data when possible and
+avoid relying on the price limit.
+
+``` powershell
 python trading_assistant.py -PL
 ```
 
@@ -237,13 +245,18 @@ $$seconds \geq 30$$.</td></tr>
 
 <table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 
+<tr><td><code>('archive_market_data',)</code></td>
+<td>Archive today’s existing market data files before exporting the current
+ranking to a CSV file.</td></tr>
+
 <tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
 <td>Recognize an alphanumeric column in the region, then copy securities codes
 to the clipboard. <strong>Note</strong>: Certain securities codes may fail to
 be recognized.</td></tr>
 
 <tr><td><code>('save_market_data',)</code></td>
-<td>Split the rankings CSV by the first digit of the securities code.</td></tr>
+<td><strong>Deprecated</strong>. Previously split the rankings CSV by the first
+digit of the securities code.</td></tr>
 
 </tbody></table>
 

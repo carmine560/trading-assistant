@@ -8,6 +8,8 @@ from collections import defaultdict
 
 from core_utilities.errors import MarketDataError
 
+MARKET_DATA_FILE_ERROR = "Unable to read market data file"
+
 
 def split_rankings_by_digit(rankings, closing_prices_prefix, code_regex):
     """Split the rankings CSV by the first digit of the securities code."""
@@ -45,7 +47,7 @@ def _read_rankings(rankings, code_regex):
                     float(current_price)
                 except ValueError as e:
                     raise MarketDataError(
-                        "Unable to read rankings file: row "
+                        f"{MARKET_DATA_FILE_ERROR}: row "
                         f"{row_number} has invalid closing price "
                         f"{row[9].strip()!r}."
                     ) from e
@@ -54,13 +56,13 @@ def _read_rankings(rankings, code_regex):
                 )
     except OSError as e:
         raise MarketDataError(
-            f"Unable to read rankings file: {rankings}"
+            f"{MARKET_DATA_FILE_ERROR}: {rankings}"
         ) from e
 
     if malformed_rows:
         row_number, column_count = malformed_rows[0]
         raise MarketDataError(
-            "Unable to read rankings file: malformed row "
+            f"{MARKET_DATA_FILE_ERROR}: malformed row "
             f"{row_number} has {column_count} columns."
         )
 

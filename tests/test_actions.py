@@ -955,6 +955,30 @@ def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
     assert spoken == [actions.SAVE_MARKET_DATA_ERROR]
 
 
+def test_archive_market_data_failure_speaks_error_and_stops(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "archive_market_data",
+        lambda *_args: (False, "Unable to archive market data. details"),
+    )
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [
+            ("archive_market_data", None),
+            ("speak_text", "should not run"),
+        ],
+    )
+    assert spoken == [actions.ARCHIVE_MARKET_DATA_ERROR]
+
+
 def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -1059,7 +1083,8 @@ def test_invalid_nested_action_argument_returns_false_without_printing(
     assert capsys.readouterr().out == ""
 
 
-def test_all_keys_includes_execute_action_and_save_market_data():
+def test_all_keys_includes_execute_action_and_market_data_commands():
+    assert "archive_market_data" in actions.ALL_KEYS
     assert "execute_action" in actions.ALL_KEYS
     assert "save_market_data" in actions.ALL_KEYS
 
