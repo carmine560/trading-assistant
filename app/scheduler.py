@@ -74,7 +74,9 @@ def _register_scheduled_actions(
             ) from e
 
         is_blocking_schedule_action = _is_blocking_schedule_action(
-            scheduled_action
+            scheduled_action,
+            actions_section,
+            (action,),
         )
         schedule = scheduler.enterabs(
             trigger,
@@ -142,12 +144,12 @@ def _run_scheduled_action(
         notifications.set_speech_text(trade, SCHEDULED_ACTION_ERROR)
 
 
-def _is_blocking_schedule_action(action):
+def _is_blocking_schedule_action(action, actions_section, action_path):
     """Return True unless an action is confirmed as speech-only."""
     if isinstance(action, str):
         action = evaluate_value(action)
 
-    for instruction in action:
+    for instruction_index, instruction in enumerate(action, start=1):
         try:
             command = instruction[0]
             additional_argument = (
@@ -159,7 +161,46 @@ def _is_blocking_schedule_action(action):
         if command not in NON_BLOCKING_SCHEDULE_COMMANDS:
             return True
         if isinstance(additional_argument, list) and (
-            _is_blocking_schedule_action(additional_argument)
+            _is_blocking_schedule_action(
+                additional_argument,
+                actions_section,
+                (*action_path, f"inline@{instruction_index}"),
+            )
         ):
             return True
+        if isinstance(additional_argument, str):
+            if additional_argument in action_path:
+                raise action_errors.ActionExecutionError(
+                    (
+                        "Action path "
+                        f"'{' -> '.join(action_path)}' failed at "
+                        f"instruction {instruction_index} ({command}): "
+                        f"nested action '{additional_argument}' creates "
+                        "a cycle."
+                    ),
+                    action_path=action_path,
+                    instruction_index=instruction_index,
+                    command=command,
+                )
+            try:
+                nested_action = actions_section[additional_argument]
+            except KeyError as e:
+                raise action_errors.ActionExecutionError(
+                    (
+                        "Action path "
+                        f"'{' -> '.join(action_path)}' failed at "
+                        f"instruction {instruction_index} ({command}): "
+                        f"nested action '{additional_argument}' is not "
+                        "defined."
+                    ),
+                    action_path=action_path,
+                    instruction_index=instruction_index,
+                    command=command,
+                ) from e
+            if _is_blocking_schedule_action(
+                nested_action,
+                actions_section,
+                (*action_path, additional_argument),
+            ):
+                return True
     return False

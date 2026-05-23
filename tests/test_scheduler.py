@@ -110,7 +110,9 @@ def test_start_scheduler_locks_blocking_scheduled_action(monkeypatch):
     assert scheduled[0][4] == {}
 
 
-def test_start_scheduler_does_not_lock_nested_speech_action(monkeypatch):
+def test_start_scheduler_does_not_lock_inline_nested_speech_action(
+    monkeypatch,
+):
     scheduled = []
     trade = SimpleNamespace(
         schedules_section="Schedules",
@@ -151,6 +153,147 @@ def test_start_scheduler_does_not_lock_nested_speech_action(monkeypatch):
     assert scheduled[0][2] is scheduler._run_scheduled_action
     assert scheduled[0][3][3:] == ("announce", action, False)
     assert scheduled[0][4] == {}
+
+
+def test_start_scheduler_locks_named_nested_blocking_action(monkeypatch):
+    scheduled = []
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+    )
+    action = [("is_trading_day", "True", "place_order")]
+    config = {
+        "Schedules": {"morning": "('09:00:00', 'conditional_order')"},
+        "Actions": {
+            "conditional_order": action,
+            "place_order": [("click", "1,2")],
+        },
+    }
+
+    class FakeScheduler:
+        def __init__(self, _timefunc, _delayfunc):
+            self.queue = []
+
+        def enterabs(self, trigger, priority, action, argument, kwargs):
+            scheduled.append((trigger, priority, action, argument, kwargs))
+            return "schedule"
+
+    monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+
+    scheduler.start_scheduler(
+        trade,
+        config,
+        object(),
+        "HYPERSBI2",
+        object(),
+    )
+
+    assert scheduled[0][2] is scheduler._run_scheduled_action
+    assert scheduled[0][3][3:] == ("conditional_order", action, True)
+    assert scheduled[0][4] == {}
+
+
+def test_start_scheduler_does_not_lock_named_nested_speech_action(monkeypatch):
+    scheduled = []
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+    )
+    action = [("is_trading_day", "True", "announce")]
+    config = {
+        "Schedules": {"morning": "('09:00:00', 'conditional_announce')"},
+        "Actions": {
+            "conditional_announce": action,
+            "announce": [("speak_text", "ready")],
+        },
+    }
+
+    class FakeScheduler:
+        def __init__(self, _timefunc, _delayfunc):
+            self.queue = []
+
+        def enterabs(self, trigger, priority, action, argument, kwargs):
+            scheduled.append((trigger, priority, action, argument, kwargs))
+            return "schedule"
+
+    monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+
+    scheduler.start_scheduler(
+        trade,
+        config,
+        object(),
+        "HYPERSBI2",
+        object(),
+    )
+
+    assert scheduled[0][2] is scheduler._run_scheduled_action
+    assert scheduled[0][3][3:] == ("conditional_announce", action, False)
+    assert scheduled[0][4] == {}
+
+
+def test_start_scheduler_rejects_missing_named_nested_action(monkeypatch):
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+    )
+    config = {
+        "Schedules": {"morning": "('09:00:00', 'conditional_order')"},
+        "Actions": {
+            "conditional_order": [("is_trading_day", "True", "place_order")],
+        },
+    }
+
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+
+    with pytest.raises(action_errors.ActionExecutionError) as e:
+        scheduler.start_scheduler(
+            trade,
+            config,
+            object(),
+            "HYPERSBI2",
+            object(),
+        )
+
+    assert "nested action 'place_order' is not defined" in str(e.value)
+    assert e.value.action_path == ("conditional_order",)
+    assert e.value.instruction_index == 1
+    assert e.value.command == "is_trading_day"
+
+
+def test_start_scheduler_rejects_cyclic_named_nested_action(monkeypatch):
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+    )
+    config = {
+        "Schedules": {"morning": "('09:00:00', 'conditional_order')"},
+        "Actions": {
+            "conditional_order": [("is_trading_day", "True", "place_order")],
+            "place_order": [("is_trading_day", "True", "conditional_order")],
+        },
+    }
+
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+
+    with pytest.raises(action_errors.ActionExecutionError) as e:
+        scheduler.start_scheduler(
+            trade,
+            config,
+            object(),
+            "HYPERSBI2",
+            object(),
+        )
+
+    assert "nested action 'conditional_order' creates a cycle" in str(e.value)
+    assert e.value.action_path == ("conditional_order", "place_order")
+    assert e.value.instruction_index == 1
+    assert e.value.command == "is_trading_day"
 
 
 def test_start_scheduler_continues_after_scheduled_action_failure(monkeypatch):
