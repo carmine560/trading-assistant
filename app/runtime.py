@@ -9,6 +9,7 @@ from app import (
     actions,
     customer_margin_ratios,
     listeners,
+    notifications,
     scheduler,
 )
 from core_utilities import errors, process_utilities
@@ -85,10 +86,10 @@ def run(args, trade, config, gui_state):
                 )
             except Exception as e:
                 trade.scheduler_error = e
-                speech_manager = getattr(trade, "speech_manager", None)
-                if speech_manager:
-                    speech_manager.set_speech_text(RUN_SCHEDULER_ERROR)
-                else:
+                if not notifications.set_speech_text(
+                    trade,
+                    RUN_SCHEDULER_ERROR,
+                ):
                     print(f"Scheduler stopped: {e}")
 
         threading.Thread(

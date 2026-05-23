@@ -17,6 +17,7 @@ from app import (
     action_errors,
     customer_margin_ratios,
     market_data,
+    notifications,
     trade_service,
     ui,
 )
@@ -78,14 +79,13 @@ def _execute_action_thread(trade, config, gui_state, action, action_name):
         )
     except errors.CoreUtilitiesError as e:
         trade.last_action_error = e
-        speech_manager = getattr(trade, "speech_manager", None)
-        if speech_manager:
-            speech_manager.set_speech_text("Action failed.")
+        notifications.set_speech_text(trade, "Action failed.")
     except Exception as e:
         trade.last_action_error = e
-        speech_manager = getattr(trade, "speech_manager", None)
-        if speech_manager:
-            speech_manager.set_speech_text("Action failed unexpectedly.")
+        notifications.set_speech_text(
+            trade,
+            "Action failed unexpectedly.",
+        )
 
 
 def execute_action(
@@ -110,9 +110,7 @@ def execute_action(
                 ),
                 action_name=action_name,
             )
-            speech_manager = getattr(trade, "speech_manager", None)
-            if speech_manager:
-                speech_manager.set_speech_text("Action busy.")
+            notifications.set_speech_text(trade, "Action busy.")
             return False
         lock_acquired = True
         trade.last_action_error = None
@@ -980,7 +978,10 @@ def get_price_limit(trade, config):
         except errors.MarketDataError as e:
             # Market data is corrupted; notify the user and fall back to OCR.
             trade.last_action_warning = e
-            _notify_price_limit_fallback(trade)
+            notifications.set_speech_text(
+                trade,
+                PRICE_LIMIT_FALLBACK_WARNING,
+            )
         except OSError as e:
             # Market data is missing or unreadable, so fall back to OCR without
             # notifying the user.
@@ -1003,13 +1004,6 @@ def get_price_limit(trade, config):
         config[trade.process].getboolean("is_dark_theme"),
         text_type="decimal_numbers",
     )
-
-
-def _notify_price_limit_fallback(trade):
-    """Notify the operator that OCR is replacing invalid closing-price data."""
-    speech_manager = getattr(trade, "speech_manager", None)
-    if speech_manager:
-        speech_manager.set_speech_text(PRICE_LIMIT_FALLBACK_WARNING)
 
 
 def _get_closing_price_from_hypersbi2_rankings(trade, config):

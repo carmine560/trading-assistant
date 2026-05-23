@@ -3,7 +3,7 @@
 import sched
 import time
 
-from app import action_errors, actions, listeners
+from app import action_errors, actions, listeners, notifications
 from core_utilities import process_utilities
 from core_utilities.config_validation import evaluate_value
 from interaction_utilities import speech_synthesis
@@ -115,9 +115,7 @@ def _run_scheduled_action(
         )
     except Exception as e:
         trade.scheduler_error = e
-        speech_manager = getattr(trade, "speech_manager", None)
-        if speech_manager:
-            speech_manager.set_speech_text(SCHEDULED_ACTION_ERROR)
+        notifications.set_speech_text(trade, SCHEDULED_ACTION_ERROR)
 
 
 def _run_scheduler_until_empty(scheduler, schedules, process):
