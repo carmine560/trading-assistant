@@ -47,39 +47,6 @@ def test_is_xy_accepts_two_integers_with_whitespace():
     assert not config_workflow.is_xy("10.5,25")
 
 
-def test_save_market_data_splits_valid_symbols_and_strips_commas(
-    sample_trade, sample_config, rankings_csv
-):
-    sample_config["Market Data"]["rankings"] = str(rankings_csv)
-
-    assert actions.save_market_data(sample_trade, sample_config) == (
-        True,
-        None,
-    )
-    assert not rankings_csv.exists()
-
-    closing_prices_1 = Path(f"{sample_trade.closing_prices}1.csv")
-    closing_prices_9 = Path(f"{sample_trade.closing_prices}9.csv")
-
-    assert closing_prices_1.read_text(encoding="utf-8").strip() == "1234,1500"
-    assert closing_prices_9.read_text(encoding="utf-8").strip() == "9876,2500"
-
-
-def test_save_market_data_returns_false_for_missing_rankings_file(
-    sample_trade, sample_config, tmp_path
-):
-    sample_config["Market Data"]["rankings"] = str(tmp_path / "missing.csv")
-
-    is_successful, text = actions.save_market_data(
-        sample_trade,
-        sample_config,
-    )
-    assert not is_successful
-    assert text.startswith(actions.SAVE_MARKET_DATA_ERROR)
-    assert "Unable to read market data file" in text
-    assert "missing.csv" in text
-
-
 def test_archive_market_data_moves_current_default_named_files(
     monkeypatch,
     sample_trade,

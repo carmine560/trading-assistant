@@ -44,16 +44,10 @@ def configure(
         "last_order_time": "15:25:00",
         "closing_time": "15:30:00",
         "timezone": "Asia/Tokyo",
-        # Double backslashes are required because these values are stored as
-        # Python string literals for evaluate_value(): securities_code_regex
-        # via interactive_windows and user-defined actions, and market data
-        # via user-defined actions.
+        # Double backslashes are required because this value is stored as a
+        # Python string literal for evaluate_value(): securities_code_regex via
+        # interactive_windows and user-defined actions.
         "securities_code_regex": securities_code_regex.replace("\\", "\\\\"),
-        "rankings": os.path.join(
-            os.path.expanduser("~"),
-            "Downloads",
-            "rankings.csv",
-        ).replace("\\", "\\\\"),
         "market_data_directory": os.path.join(
             os.path.expanduser("~"),
             "Downloads",

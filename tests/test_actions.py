@@ -144,7 +144,6 @@ def _patch_action_modules(monkeypatch):
             write=lambda *_args, **_kwargs: None,
         ),
     )
-    monkeypatch.setattr(actions, "save_market_data", lambda *_args: True)
     monkeypatch.setattr(
         actions,
         "text_recognition",
@@ -933,30 +932,6 @@ def test_copy_symbols_from_column_preserves_clipboard_on_ocr_error(
     assert calls == []
 
 
-def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
-    spoken = []
-    trade = _build_trade(spoken)
-    gui_state = _build_gui_state()
-    config = _build_config()
-    _patch_action_modules(monkeypatch)
-    monkeypatch.setattr(
-        actions,
-        "save_market_data",
-        lambda *_args: (False, "Unable to save market data. details"),
-    )
-
-    assert not actions.execute_action(
-        trade,
-        config,
-        gui_state,
-        [
-            ("save_market_data", None),
-            ("speak_text", "should not run"),
-        ],
-    )
-    assert spoken == [actions.SAVE_MARKET_DATA_ERROR]
-
-
 def test_archive_market_data_failure_speaks_error_and_stops(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -1088,7 +1063,6 @@ def test_invalid_nested_action_argument_returns_false_without_printing(
 def test_all_keys_includes_execute_action_and_market_data_commands():
     assert "archive_market_data" in actions.ALL_KEYS
     assert "execute_action" in actions.ALL_KEYS
-    assert "save_market_data" in actions.ALL_KEYS
 
 
 def test_all_keys_are_sorted_command_dispatch_keys():

@@ -254,10 +254,6 @@ ranking to a CSV file.</td></tr>
 to the clipboard. <strong>Note</strong>: Certain securities codes may fail to
 be recognized.</td></tr>
 
-<tr><td><code>('save_market_data',)</code></td>
-<td><strong>Deprecated</strong>. Previously split the rankings CSV by the first
-digit of the securities code.</td></tr>
-
 </tbody></table>
 
 #### Trade State and Accounting Commands

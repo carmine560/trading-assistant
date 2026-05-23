@@ -2,11 +2,11 @@
 
 import sys
 
-import pytest
-
 from configparser import ConfigParser
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+
+import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -137,7 +137,6 @@ def sample_config(tmp_path):
     config["Market Holidays"] = {"date_format": "%Y/%m/%d"}
     config["Market Data"] = {
         "closing_time": "15:30:00",
-        "rankings": "",
         "market_data_archive_directory": str(
             tmp_path / "Archived Market Data"
         ),

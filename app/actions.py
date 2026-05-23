@@ -16,7 +16,6 @@ from pynput import keyboard
 from app import (
     action_errors,
     customer_margin_ratios,
-    market_data,
     notifications,
     trade_service,
     ui,
@@ -26,12 +25,7 @@ from core_utilities.config_io import write_config
 from core_utilities.config_validation import evaluate_value
 from interaction_utilities import gui_interactions, text_recognition
 
-SANS_INITIAL_SECURITIES_CODE_REGEX = (
-    r"[\dACDFGHJKLMNPRSTUWXY]\d[\dACDFGHJKLMNPRSTUWXY]5?"
-)
-SECURITIES_CODE_REGEX = "[1-9]" + SANS_INITIAL_SECURITIES_CODE_REGEX
 ARCHIVE_MARKET_DATA_ERROR = "Unable to archive market data."
-CLOSING_PRICES_FILE_ERROR = "Unable to read closing prices file"
 CUSTOMER_MARGIN_RATIOS_FILE_ERROR = (
     "Unable to read customer margin ratios file"
 )
@@ -39,7 +33,6 @@ CUSTOMER_MARGIN_RATIOS_FRESHNESS_CACHE_SECONDS = 30 * 60
 MARKET_DATA_FILE_ERROR = "Unable to read market data file"
 PRICE_LIMIT_ERROR = "Unable to get price limit."
 PRICE_LIMIT_FALLBACK_WARNING = "Closing prices file invalid."
-SAVE_MARKET_DATA_ERROR = "Unable to save market data."
 SHARE_SIZE_ERROR = "Unable to calculate share size."
 
 
@@ -503,10 +496,6 @@ def _handle_market_data_command(trade, config, command, argument):
             return False
     elif command == "copy_symbols_from_column":
         _copy_symbols_from_column(trade, config, argument)
-    elif command == "save_market_data":
-        if not save_market_data(trade, config)[0]:
-            trade.speech_manager.set_speech_text(SAVE_MARKET_DATA_ERROR)
-            return False
 
     return True
 
@@ -570,20 +559,6 @@ def archive_market_data(trade, config):
         return (True, None)
     except (IndexError, OSError) as e:
         return (False, f"{ARCHIVE_MARKET_DATA_ERROR} {e}")
-
-
-def save_market_data(trade, config):
-    """Split the rankings CSV by the first digit of the securities code."""
-    rankings = config["Market Data"]["rankings"].replace("\\\\", "\\")
-    try:
-        market_data.split_rankings_by_digit(
-            rankings=rankings,
-            closing_prices_prefix=trade.closing_prices,
-            code_regex=SECURITIES_CODE_REGEX,
-        )
-        return (True, None)
-    except errors.MarketDataError as e:
-        return (False, f"{SAVE_MARKET_DATA_ERROR} {e}")
 
 
 def _handle_trade_state_command(
@@ -942,7 +917,6 @@ _COMMAND_DISPATCH = {
     # Market data retrieval and persistence commands
     "archive_market_data": _handle_market_data_command,
     "copy_symbols_from_column": _handle_market_data_command,
-    "save_market_data": _handle_market_data_command,
     # Trade state and accounting commands
     "calculate_share_size": _handle_trade_state_command,
     "check_daily_loss_limit": _handle_trade_state_command,

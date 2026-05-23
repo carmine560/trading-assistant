@@ -113,7 +113,6 @@ class Trade(initializer.Initializer):
                 "archive_market_data",
                 "back_to",
                 "get_cash_balance",
-                "save_market_data",
                 "show_hide_indicator",
                 "write_share_size",
             },
