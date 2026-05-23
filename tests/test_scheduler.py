@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from app import scheduler
+from app import action_errors, scheduler
 from app.action_errors import ActionLookupError
 
 
@@ -238,4 +238,94 @@ def test_start_scheduler_continues_after_scheduled_action_failure(monkeypatch):
     ]
     assert isinstance(trade.scheduler_error, RuntimeError)
     assert str(trade.scheduler_error) == "first failed"
+    assert spoken == [scheduler.SCHEDULED_ACTION_ERROR]
+
+
+def test_start_scheduler_reports_false_scheduled_action(monkeypatch):
+    calls = []
+    spoken = []
+    previous_error = RuntimeError("guard failed")
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+        speech_manager=SimpleNamespace(set_speech_text=spoken.append),
+        last_action_error=previous_error,
+    )
+    first_action = [("speak_text", "first")]
+    second_action = [("speak_text", "second")]
+    config = {
+        "Schedules": {
+            "first": "('09:00:00', 'first_action')",
+            "second": "('09:00:01', 'second_action')",
+        },
+        "Actions": {
+            "first_action": first_action,
+            "second_action": second_action,
+        },
+    }
+
+    class FakeScheduler:
+        def __init__(self, _timefunc, _delayfunc):
+            self.queue = []
+
+        def enterabs(self, trigger, priority, action, argument, kwargs):
+            event = SimpleNamespace(
+                time=trigger,
+                priority=priority,
+                action=action,
+                argument=argument,
+                kwargs=kwargs,
+            )
+            self.queue.append(event)
+            return event
+
+        def run(self, _blocking):
+            event = self.queue.pop(0)
+            event.action(*event.argument, **event.kwargs)
+
+    def execute_action(*args, **kwargs):
+        calls.append((args[3], kwargs))
+        return args[3] != first_action
+
+    monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+    monkeypatch.setattr(scheduler.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(
+        scheduler.process_utilities,
+        "is_running",
+        lambda _process: True,
+    )
+    monkeypatch.setattr(scheduler.actions, "execute_action", execute_action)
+
+    scheduler.start_scheduler(
+        trade,
+        config,
+        object(),
+        "HYPERSBI2",
+        object(),
+    )
+
+    assert calls == [
+        (
+            first_action,
+            {
+                "action_path": ("first_action",),
+                "should_acquire_lock": False,
+                "should_initialize": False,
+            },
+        ),
+        (
+            second_action,
+            {
+                "action_path": ("second_action",),
+                "should_acquire_lock": False,
+                "should_initialize": False,
+            },
+        ),
+    ]
+    assert isinstance(trade.scheduler_error, action_errors.ActionFailureError)
+    assert str(trade.scheduler_error) == "Action 'first_action' failed."
+    assert trade.scheduler_error.__cause__ is previous_error
+    assert trade.last_action_error is previous_error
     assert spoken == [scheduler.SCHEDULED_ACTION_ERROR]

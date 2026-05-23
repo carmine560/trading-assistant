@@ -94,30 +94,6 @@ def _register_scheduled_actions(
     return schedules
 
 
-def _run_scheduled_action(
-    trade,
-    config,
-    gui_state,
-    action_name,
-    scheduled_action,
-    is_blocking_schedule_action,
-):
-    """Run one scheduled action and report failures without stopping."""
-    try:
-        actions.execute_action(
-            trade,
-            config,
-            gui_state,
-            scheduled_action,
-            should_initialize=is_blocking_schedule_action,
-            should_acquire_lock=is_blocking_schedule_action,
-            action_path=(action_name,),
-        )
-    except Exception as e:
-        trade.scheduler_error = e
-        notifications.set_speech_text(trade, SCHEDULED_ACTION_ERROR)
-
-
 def _run_scheduler_until_empty(scheduler, schedules, process):
     """Run pending scheduled events while the target process is alive."""
     while scheduler.queue:
@@ -132,6 +108,38 @@ def _run_scheduler_until_empty(scheduler, schedules, process):
             for schedule in schedules:
                 if schedule in scheduler.queue:
                     scheduler.cancel(schedule)
+
+
+def _run_scheduled_action(
+    trade,
+    config,
+    gui_state,
+    action_name,
+    scheduled_action,
+    is_blocking_schedule_action,
+):
+    """Run one scheduled action and report failures without stopping."""
+    try:
+        if not actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            scheduled_action,
+            should_initialize=is_blocking_schedule_action,
+            should_acquire_lock=is_blocking_schedule_action,
+            action_path=(action_name,),
+        ):
+            error = action_errors.ActionFailureError(
+                f"Action '{action_name}' failed.",
+                action_name=action_name,
+            )
+            previous_error = getattr(trade, "last_action_error", None)
+            if previous_error is None:
+                trade.last_action_error = error
+            raise error from previous_error
+    except Exception as e:
+        trade.scheduler_error = e
+        notifications.set_speech_text(trade, SCHEDULED_ACTION_ERROR)
 
 
 def _is_blocking_schedule_action(action):
