@@ -106,13 +106,53 @@ def test_archive_market_data_moves_current_default_named_files(
     archived_file = (
         tmp_path
         / "Archived Market Data"
-        / "20260522T173900"
+        / "20260522T173900.000"
         / current_file.name
     )
     assert archived_file.read_text(encoding="utf-8") == "current\n"
     assert not current_file.exists()
     assert previous_file.read_text(encoding="utf-8") == "previous\n"
     assert unrelated_file.read_text(encoding="utf-8") == "unrelated\n"
+
+
+def test_archive_market_data_uses_unique_same_second_directories(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+    tmp_path,
+):
+    timestamps = iter(
+        (
+            actions.pd.Timestamp("2026-05-22 17:39:00.000"),
+            actions.pd.Timestamp("2026-05-22 17:39:00.123"),
+        )
+    )
+    monkeypatch.setattr(
+        actions.pd.Timestamp,
+        "now",
+        lambda **_kwargs: next(timestamps),
+    )
+    current_file = tmp_path / "ランキング_ティック回数20260522.csv"
+
+    current_file.write_text("first\n", encoding="utf-8")
+    assert actions.archive_market_data(sample_trade, sample_config) == (
+        True,
+        None,
+    )
+
+    current_file.write_text("second\n", encoding="utf-8")
+    assert actions.archive_market_data(sample_trade, sample_config) == (
+        True,
+        None,
+    )
+
+    archive_root = tmp_path / "Archived Market Data"
+    assert (
+        archive_root / "20260522T173900.000" / current_file.name
+    ).read_text(encoding="utf-8") == "first\n"
+    assert (
+        archive_root / "20260522T173900.123" / current_file.name
+    ).read_text(encoding="utf-8") == "second\n"
 
 
 def test_archive_market_data_succeeds_without_matching_files(

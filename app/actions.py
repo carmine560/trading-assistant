@@ -542,10 +542,6 @@ def archive_market_data(trade, config):
     )
     now = pd.Timestamp.now(tz=section["timezone"])
     target_date_string = now.strftime("%Y%m%d")
-    archive_directory = os.path.join(
-        section["market_data_archive_directory"],
-        now.strftime("%Y%m%dT%H%M%S"),
-    )
 
     try:
         filenames = sorted(os.listdir(market_data_directory))
@@ -558,6 +554,13 @@ def archive_market_data(trade, config):
         if not matched_filenames:
             return (True, None)
 
+        archive_directory = os.path.join(
+            section["market_data_archive_directory"],
+            (
+                f"{now.strftime('%Y%m%dT%H%M%S')}."
+                f"{now.microsecond // 1000:03d}"
+            ),
+        )
         os.makedirs(archive_directory)
         for filename in matched_filenames:
             os.replace(
