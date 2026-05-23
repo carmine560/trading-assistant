@@ -971,21 +971,22 @@ def is_trading_day(date, market_holidays, date_format):
 def get_price_limit(trade, config):
     """Calculate the price limit for a trade."""
     closing_price = 0.0
-    try:
-        closing_price = _get_closing_price_from_hypersbi2_rankings(
-            trade,
-            config,
-        )
-    except errors.MarketDataError as e:
-        # Market data is corrupted; notify the user and fall back to OCR.
-        trade.last_action_warning = e
-        _notify_price_limit_fallback(trade)
-    except OSError as e:
-        # Market data is missing or unreadable, so fall back to OCR without
-        # notifying the user.
-        trade.last_action_warning = errors.MarketDataError(
-            f"{MARKET_DATA_FILE_ERROR}: {e}"
-        )
+    if trade.process == "HYPERSBI2":
+        try:
+            closing_price = _get_closing_price_from_hypersbi2_rankings(
+                trade,
+                config,
+            )
+        except errors.MarketDataError as e:
+            # Market data is corrupted; notify the user and fall back to OCR.
+            trade.last_action_warning = e
+            _notify_price_limit_fallback(trade)
+        except OSError as e:
+            # Market data is missing or unreadable, so fall back to OCR without
+            # notifying the user.
+            trade.last_action_warning = errors.MarketDataError(
+                f"{MARKET_DATA_FILE_ERROR}: {e}"
+            )
 
     if closing_price:
         return trade_service.calculate_price_limit_from_closing_price(
@@ -1002,6 +1003,13 @@ def get_price_limit(trade, config):
         config[trade.process].getboolean("is_dark_theme"),
         text_type="decimal_numbers",
     )
+
+
+def _notify_price_limit_fallback(trade):
+    """Notify the operator that OCR is replacing invalid closing-price data."""
+    speech_manager = getattr(trade, "speech_manager", None)
+    if speech_manager:
+        speech_manager.set_speech_text(PRICE_LIMIT_FALLBACK_WARNING)
 
 
 def _get_closing_price_from_hypersbi2_rankings(trade, config):
@@ -1068,13 +1076,6 @@ def _find_price_in_csv(path, symbol, symbol_column, price_column):
                         f"{row[price_column].strip()!r}."
                     ) from e
     return 0.0
-
-
-def _notify_price_limit_fallback(trade):
-    """Notify the operator that OCR is replacing invalid closing-price data."""
-    speech_manager = getattr(trade, "speech_manager", None)
-    if speech_manager:
-        speech_manager.set_speech_text(PRICE_LIMIT_FALLBACK_WARNING)
 
 
 def calculate_share_size(trade, config, position):

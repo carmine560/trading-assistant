@@ -163,6 +163,41 @@ def test_get_price_limit_falls_back_to_recognized_value(
     assert actions.get_price_limit(sample_trade, sample_config) == 4321
 
 
+def test_get_price_limit_skips_rankings_for_non_hypersbi2_process(
+    monkeypatch, sample_trade, sample_config
+):
+    sample_trade.process = "OTHER"
+    sample_trade.geometries_section = "OTHER Geometries"
+    sample_config["OTHER"] = {
+        "image_magnification": "1",
+        "binarization_threshold": "128",
+        "is_dark_theme": "false",
+    }
+    sample_config["OTHER Geometries"] = {"price_limit_region": "0, 0, 10, 10"}
+
+    def fail_rankings_lookup(*_args, **_kwargs):
+        raise AssertionError("Rankings lookup should be Hyper SBI 2 only.")
+
+    def fake_recognize_text(*args, **kwargs):
+        assert args[:4] == (0, 0, 10, 10)
+        assert args[4:] == (1, 128, False)
+        assert kwargs == {"text_type": "decimal_numbers"}
+        return 4321
+
+    monkeypatch.setattr(
+        actions,
+        "_get_closing_price_from_hypersbi2_rankings",
+        fail_rankings_lookup,
+    )
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        fake_recognize_text,
+    )
+
+    assert actions.get_price_limit(sample_trade, sample_config) == 4321
+
+
 def test_get_price_limit_records_missing_file_warning_without_speech(
     monkeypatch, sample_trade, sample_config, tmp_path
 ):
