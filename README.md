@@ -92,7 +92,7 @@ python trading_assistant.py -SS
 If you use the `calculate_share_size` or `check_daily_loss_limit` commands in
 the “[Create or Modify Action](#create-or-modify-action)” section, configure
 the cash balance region in Hyper SBI 2 so that Tesseract can recognize the
-prices. Also specify the index of the target price in the region.
+prices and specify the index of the target price within that region.
 
 ``` powershell
 python trading_assistant.py -CB
@@ -106,10 +106,10 @@ Data](https://github.com/carmine560/trading-assistant/wiki#save-market-data)”
 section of the wiki).
 
 `trading_assistant.py` uses the price limit only if the previous closing price
-is not available in the market data. Also configure the price limit region in
+is not available in the market data. If so, configure the price limit region in
 Hyper SBI 2. However, Tesseract can misread commas and decimal points. For
-example, `1,234.5` can be read as `12345`. Use market data when possible and
-avoid relying on the price limit.
+example, `1,234.5` can be read as `12345`. Use the market data when possible
+and avoid relying on the price limit.
 
 ``` powershell
 python trading_assistant.py -PL
