@@ -1020,8 +1020,7 @@ def _get_closing_price_from_hypersbi2_rankings(trade, config):
     ):
         previous_trading_day -= pd.Timedelta(days=1)
     current_time = now.strftime("%H:%M:%S")
-    rankings_clearing_time = "07:59:00"
-    if current_time < rankings_clearing_time:
+    if current_time < "07:59:00":  # Rankings clearing time
         target_dates = (previous_trading_day, now)
     elif current_time < section["closing_time"]:
         target_dates = (previous_trading_day,)

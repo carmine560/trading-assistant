@@ -96,16 +96,6 @@ def run(args, trade, config, gui_state):
         ).start()
 
 
-def _start_speech_manager(trade):
-    """Create and start the speech manager used by runtime workflows."""
-    # Use BaseManager to share SpeechManager across processes.
-    BaseManager.register("SpeechManager", speech_synthesis.SpeechManager)
-    base_manager = BaseManager()
-    base_manager.start()
-    trade.speech_manager = base_manager.SpeechManager()
-    return base_manager
-
-
 def _execute_single_action(
     args,
     trade,
@@ -135,13 +125,21 @@ def _execute_single_action(
                 action_name=action_name,
             ) from e
 
-        actions.execute_action(
+        if not actions.execute_action(
             trade,
             config,
             gui_state,
             action,
             action_path=(action_name,),
-        )
+        ):
+            error = action_errors.ActionFailureError(
+                f"Action '{action_name}' failed.",
+                action_name=action_name,
+            )
+            previous_error = getattr(trade, "last_action_error", None)
+            if previous_error is None:
+                trade.last_action_error = error
+            raise error from previous_error
     finally:
         if should_start_transient_listeners:
             speech_manager = getattr(trade, "speech_manager", None)
@@ -171,6 +169,16 @@ def _execute_single_action(
                             f"{LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS} "
                             "seconds."
                         )
+
+
+def _start_speech_manager(trade):
+    """Create and start the speech manager used by runtime workflows."""
+    # Use BaseManager to share SpeechManager across processes.
+    BaseManager.register("SpeechManager", speech_synthesis.SpeechManager)
+    base_manager = BaseManager()
+    base_manager.start()
+    trade.speech_manager = base_manager.SpeechManager()
+    return base_manager
 
 
 def persist_config_on_exit(trade, config):

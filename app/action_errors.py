@@ -37,3 +37,12 @@ class ActionExecutionError(CoreUtilitiesError):
         self.action_path = tuple(action_path)
         self.instruction_index = instruction_index
         self.command = command
+
+
+class ActionFailureError(CoreUtilitiesError):
+    """Raised when a requested action stops without completing."""
+
+    def __init__(self, message, *, action_name):
+        """Store failed action context for callers and diagnostics."""
+        super().__init__(message)
+        self.action_name = action_name
