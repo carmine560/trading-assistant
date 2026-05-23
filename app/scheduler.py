@@ -15,6 +15,7 @@ NON_BLOCKING_SCHEDULE_COMMANDS = {
     "speak_seconds_until_time",
     "speak_text",
 }
+SCHEDULED_ACTION_ERROR = "Scheduled action failed."
 
 
 def start_scheduler(trade, config, gui_state, process, base_manager):
@@ -28,62 +29,111 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
 
     try:
         scheduler = sched.scheduler(time.time, time.sleep)
-        schedules = []
-
-        section = config[trade.schedules_section]
-        for option in section:
-            trigger, action = evaluate_value(section[option])
-            trigger = time.strptime(
-                time.strftime("%Y-%m-%d ") + trigger,
-                "%Y-%m-%d %H:%M:%S",
-            )
-            trigger = time.mktime(trigger)
-            if time.time() < trigger:
-                try:
-                    scheduled_action = config[trade.actions_section][action]
-                except KeyError as e:
-                    raise action_errors.ActionLookupError(
-                        f"Action '{action}' is not defined.",
-                        action_name=action,
-                    ) from e
-                is_blocking_schedule_action = _is_blocking_schedule_action(
-                    scheduled_action
-                )
-                schedule = scheduler.enterabs(
-                    trigger,
-                    1,
-                    actions.execute_action,
-                    argument=(
-                        trade,
-                        config,
-                        gui_state,
-                        scheduled_action,
-                    ),
-                    kwargs={
-                        "should_initialize": is_blocking_schedule_action,
-                        "should_acquire_lock": is_blocking_schedule_action,
-                        "action_path": (action,),
-                    },
-                )
-                schedules.append(schedule)
-
-        while scheduler.queue:
-            if process_utilities.is_running(process):
-                scheduler.run(False)
-                time.sleep(
-                    max(0.0, min(scheduler.queue[0].time - time.time(), 1.0))
-                    if scheduler.queue
-                    else 1.0
-                )
-            else:
-                for schedule in schedules:
-                    if schedule in scheduler.queue:
-                        scheduler.cancel(schedule)
+        schedules = _register_scheduled_actions(
+            scheduler,
+            config[trade.schedules_section],
+            config[trade.actions_section],
+            trade,
+            config,
+            gui_state,
+        )
+        _run_scheduler_until_empty(scheduler, schedules, process)
     finally:
         if should_stop_speaking_process:
             speech_synthesis.stop_speaking_process(
                 base_manager, trade.speech_manager, trade.speaking_process
             )
+
+
+def _register_scheduled_actions(
+    scheduler,
+    section,
+    actions_section,
+    trade,
+    config,
+    gui_state,
+):
+    """Register future configured actions and return their schedule handles."""
+    schedules = []
+    for option in section:
+        trigger, action = evaluate_value(section[option])
+        trigger = time.strptime(
+            time.strftime("%Y-%m-%d ") + trigger,
+            "%Y-%m-%d %H:%M:%S",
+        )
+        trigger = time.mktime(trigger)
+        if time.time() >= trigger:
+            continue
+
+        try:
+            scheduled_action = actions_section[action]
+        except KeyError as e:
+            raise action_errors.ActionLookupError(
+                f"Action '{action}' is not defined.",
+                action_name=action,
+            ) from e
+
+        is_blocking_schedule_action = _is_blocking_schedule_action(
+            scheduled_action
+        )
+        schedule = scheduler.enterabs(
+            trigger,
+            1,
+            _run_scheduled_action,
+            argument=(
+                trade,
+                config,
+                gui_state,
+                action,
+                scheduled_action,
+                is_blocking_schedule_action,
+            ),
+            kwargs={},
+        )
+        schedules.append(schedule)
+    return schedules
+
+
+def _run_scheduled_action(
+    trade,
+    config,
+    gui_state,
+    action_name,
+    scheduled_action,
+    is_blocking_schedule_action,
+):
+    """Run one scheduled action and report failures without stopping."""
+    try:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            scheduled_action,
+            should_initialize=is_blocking_schedule_action,
+            should_acquire_lock=is_blocking_schedule_action,
+            action_path=(action_name,),
+        )
+    except Exception as e:
+        trade.scheduler_error = e
+        speech_manager = getattr(trade, "speech_manager", None)
+        if speech_manager:
+            speech_manager.set_speech_text(SCHEDULED_ACTION_ERROR)
+
+
+def _run_scheduler_until_empty(scheduler, schedules, process):
+    """Run pending scheduled events while the target process is alive."""
+    while scheduler.queue:
+        if process_utilities.is_running(process):
+            scheduler.run(False)
+            time.sleep(
+                max(0.0, min(scheduler.queue[0].time - time.time(), 1.0))
+                if scheduler.queue
+                else 1.0
+            )
+        else:
+            for schedule in schedules:
+                if schedule in scheduler.queue:
+                    scheduler.cancel(schedule)
 
 
 def _is_blocking_schedule_action(action):
