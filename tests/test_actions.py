@@ -1,10 +1,10 @@
 """Tests for extracted action execution helpers."""
 
 import threading
-import pytest
-
 from configparser import ConfigParser
 from types import SimpleNamespace
+
+import pytest
 
 from app import actions
 from app.action_errors import ActionExecutionError, ActionLookupError
@@ -904,7 +904,9 @@ def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
     assert calls == ["open", "empty", ("set", "1234 5678"), "close"]
 
 
-def test_copy_symbols_from_column_closes_clipboard_on_error(monkeypatch):
+def test_copy_symbols_from_column_preserves_clipboard_on_ocr_error(
+    monkeypatch,
+):
     spoken = []
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
@@ -928,7 +930,7 @@ def test_copy_symbols_from_column_closes_clipboard_on_error(monkeypatch):
             gui_state,
             [("copy_symbols_from_column", "0, 0, 10, 10, 0")],
         )
-    assert calls == ["open", "empty", "close"]
+    assert calls == []
 
 
 def test_save_market_data_failure_speaks_error_and_stops(monkeypatch):
