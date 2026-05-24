@@ -6,8 +6,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from app import actions
 from app.action_errors import ActionExecutionError, ActionLookupError
+from app import actions
 
 
 def _build_trade(spoken):
@@ -616,6 +616,81 @@ def test_execute_action_reports_named_nested_action_path(monkeypatch):
         )
 
     _assert_action_error(e, ("action_3", "action_2"), 1, "unknown_command")
+
+
+def test_execute_action_rejects_cyclic_named_nested_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Actions"]["action_1"] = str([("execute_action", "action_2")])
+    config["Actions"]["action_2"] = str([("execute_action", "action_1")])
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            config["Actions"]["action_1"],
+            action_path=("action_1",),
+        )
+
+    assert "nested action 'action_1' creates a cycle" in str(e.value)
+    _assert_action_error(e, ("action_1", "action_2"), 1, "execute_action")
+    assert spoken == []
+
+
+def test_start_execute_action_thread_records_cyclic_nested_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Actions"]["action_1"] = str([("execute_action", "action_2")])
+    config["Actions"]["action_2"] = str([("execute_action", "action_1")])
+    _patch_action_modules(monkeypatch)
+    calls = []
+
+    class FakeThread:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+            calls.append(("thread", kwargs["target"], kwargs["args"]))
+
+        def start(self):
+            calls.append("start")
+            self.kwargs["target"](*self.kwargs["args"])
+
+    monkeypatch.setattr(actions.threading, "Thread", FakeThread)
+
+    thread = actions.start_execute_action_thread(
+        trade,
+        config,
+        gui_state,
+        "action_1",
+    )
+
+    assert isinstance(thread, FakeThread)
+    assert calls == [
+        (
+            "thread",
+            actions._execute_action_thread,
+            (
+                trade,
+                config,
+                gui_state,
+                "[('execute_action', 'action_2')]",
+                "action_1",
+            ),
+        ),
+        "start",
+    ]
+    error = trade.last_action_error
+    assert isinstance(error, ActionExecutionError)
+    assert "nested action 'action_1' creates a cycle" in str(error)
+    assert error.action_path == ("action_1", "action_2")
+    assert error.instruction_index == 1
+    assert error.command == "execute_action"
+    assert spoken == ["Action failed."]
 
 
 def test_wait_for_key_cancellation_runs_cleanup_action(monkeypatch):
