@@ -497,6 +497,34 @@ def test_calculate_share_size_uses_ocr_for_invalid_rankings_file(
     assert sample_trade.share_size == 200
 
 
+def test_calculate_share_size_handles_price_limit_ocr_failure(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+):
+    Path(sample_trade.customer_margin_ratios).write_text(
+        "1234,0.5\n", encoding="utf-8"
+    )
+    ocr_error = errors.TextRecognitionError(
+        "OCR failed",
+        attempts=50,
+        last_output="",
+        region=(0, 0, 10, 10),
+        text_type="decimal_numbers",
+    )
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ocr_error),
+    )
+
+    assert actions.calculate_share_size(
+        sample_trade, sample_config, "long"
+    ) == (False, actions.PRICE_LIMIT_ERROR)
+    assert sample_trade.last_action_error is ocr_error
+    assert sample_trade.share_size == 0
+
+
 def test_calculate_share_size_rejects_short_margin_ratio_row(
     sample_trade, sample_config
 ):

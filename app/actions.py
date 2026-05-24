@@ -1109,6 +1109,9 @@ def calculate_share_size(trade, config, position):
                 price_limit=get_price_limit(trade, config),
                 position=position,
             )
+        except errors.TextRecognitionError as e:
+            trade.last_action_error = e
+            return (False, PRICE_LIMIT_ERROR)
         except ValueError as e:
             if str(e) == PRICE_LIMIT_ERROR:
                 return (False, PRICE_LIMIT_ERROR)
