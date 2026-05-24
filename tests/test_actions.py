@@ -174,13 +174,6 @@ def _patch_action_modules(monkeypatch):
     return sleep_calls
 
 
-def _assert_action_error(e, action_path, instruction_index, command):
-    """Assert the common context carried by action execution errors."""
-    assert e.value.action_path == action_path
-    assert e.value.instruction_index == instruction_index
-    assert e.value.command == command
-
-
 def _patch_clipboard(monkeypatch):
     """Patch clipboard calls and return the call log."""
     calls = []
@@ -195,6 +188,13 @@ def _patch_clipboard(monkeypatch):
         ),
     )
     return calls
+
+
+def _assert_action_error(e, action_path, instruction_index, command):
+    """Assert the common context carried by action execution errors."""
+    assert e.value.action_path == action_path
+    assert e.value.instruction_index == instruction_index
+    assert e.value.command == command
 
 
 def test_start_execute_action_thread_raises_for_missing_action(monkeypatch):
@@ -853,6 +853,7 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
 
     def fake_recognize_text(*_args, **kwargs):
         should_continue_reference = kwargs["should_continue_reference"]
+        assert kwargs["max_attempts"] is None
         assert should_continue_reference()
         trade.should_continue = False
         return None

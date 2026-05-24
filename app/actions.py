@@ -408,6 +408,7 @@ def _handle_wait_command(
                 int(config[trade.process]["binarization_threshold"]),
                 config[trade.process].getboolean("is_dark_theme"),
                 should_continue_reference=lambda: trade.should_continue,
+                max_attempts=None,
             )
         finally:
             trade.keyboard_listener_state = 0
