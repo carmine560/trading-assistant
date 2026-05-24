@@ -117,6 +117,18 @@ def execute_action(
         if isinstance(action, str):
             action = evaluate_value(action)
 
+        if not isinstance(action, list):
+            raise action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed: "
+                    f"malformed action {action!r}."
+                ),
+                action_path=action_path,
+                instruction_index=None,
+                command=None,
+            )
+
         for instruction_index, instruction in enumerate(action, start=1):
             command, argument, additional_argument = _unpack_instruction(
                 instruction,

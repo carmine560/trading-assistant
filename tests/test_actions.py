@@ -6,8 +6,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.action_errors import ActionExecutionError, ActionLookupError
 from app import actions
+from app.action_errors import ActionExecutionError, ActionLookupError
 
 
 def _build_trade(spoken):
@@ -553,6 +553,35 @@ def test_execute_action_raises_for_malformed_instruction(
     assert spoken == []
 
 
+@pytest.mark.parametrize(
+    "action",
+    [
+        "not a Python literal",
+        "None",
+        "123",
+    ],
+)
+def test_execute_action_raises_for_malformed_action(monkeypatch, action):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            action,
+            action_path=("action_1",),
+        )
+
+    assert "malformed action" in str(e.value)
+    _assert_action_error(e, ("action_1",), None, None)
+    assert spoken == []
+
+
 def test_execute_action_reports_inline_nested_action_path(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -616,6 +645,27 @@ def test_execute_action_reports_named_nested_action_path(monkeypatch):
         )
 
     _assert_action_error(e, ("action_3", "action_2"), 1, "unknown_command")
+
+
+def test_execute_action_reports_malformed_named_nested_action(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Actions"]["action_2"] = "not a Python literal"
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("execute_action", "action_2")],
+            action_path=("action_3",),
+        )
+
+    assert "malformed action" in str(e.value)
+    _assert_action_error(e, ("action_3", "action_2"), None, None)
 
 
 def test_execute_action_rejects_cyclic_named_nested_action(monkeypatch):
