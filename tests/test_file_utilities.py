@@ -48,6 +48,22 @@ def test_move_to_trash_raises_typed_error_for_subprocess_failure(monkeypatch):
         file_utilities.move_to_trash("example.txt")
 
 
+def test_create_bash_launcher_raises_when_venv_is_unavailable(tmp_path):
+    with pytest.raises(UtilityOperationError) as e:
+        file_utilities.create_bash_launcher(str(tmp_path / "script.py"))
+
+    assert "Unable to create Bash launcher" in str(e.value)
+    assert str(tmp_path) in str(e.value)
+
+
+def test_create_powershell_launcher_raises_when_venv_is_unavailable(tmp_path):
+    with pytest.raises(UtilityOperationError) as e:
+        file_utilities.create_powershell_launcher(str(tmp_path / "script.py"))
+
+    assert "Unable to create PowerShell launcher" in str(e.value)
+    assert str(tmp_path) in str(e.value)
+
+
 def test_write_chapter_ignores_invalid_offset_without_printing(
     monkeypatch, tmp_path, capsys
 ):
