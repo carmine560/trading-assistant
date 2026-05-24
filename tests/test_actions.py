@@ -27,6 +27,7 @@ def _build_trade(spoken):
         should_continue=True,
         action_lock=threading.Lock(),
         last_action_error=None,
+        last_action_canceled=False,
         share_size=0,
         cash_balance=0,
         symbol="1234",
@@ -425,7 +426,7 @@ def test_execute_action_can_skip_lock_acquisition(monkeypatch):
         config,
         gui_state,
         [("speak_text", "ready")],
-        should_acquire_lock=False,
+        is_top_level_action=False,
         action_path=("schedule",),
     )
 
@@ -764,6 +765,7 @@ def test_wait_for_key_cancellation_runs_cleanup_action(monkeypatch):
     )
     assert trade.keyboard_listener_state == 0
     assert trade.key_to_check is None
+    assert trade.last_action_canceled
     assert spoken == ["cleanup", "Canceled."]
 
 
@@ -818,6 +820,7 @@ def test_wait_for_key_count_down_cancellation_speaks_countdown(monkeypatch):
     )
     assert trade.keyboard_listener_state == 0
     assert trade.key_to_check is None
+    assert trade.last_action_canceled
     assert spoken == ["30 seconds.", "cleanup", "Canceled."]
 
 

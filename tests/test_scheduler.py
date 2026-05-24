@@ -366,7 +366,7 @@ def test_start_scheduler_continues_after_scheduled_action_failure(monkeypatch):
             first_action,
             {
                 "action_path": ("first_action",),
-                "should_acquire_lock": False,
+                "is_top_level_action": False,
                 "should_initialize": False,
             },
         ),
@@ -374,7 +374,7 @@ def test_start_scheduler_continues_after_scheduled_action_failure(monkeypatch):
             second_action,
             {
                 "action_path": ("second_action",),
-                "should_acquire_lock": False,
+                "is_top_level_action": False,
                 "should_initialize": False,
             },
         ),
@@ -454,7 +454,7 @@ def test_start_scheduler_reports_false_scheduled_action(monkeypatch):
             first_action,
             {
                 "action_path": ("first_action",),
-                "should_acquire_lock": False,
+                "is_top_level_action": False,
                 "should_initialize": False,
             },
         ),
@@ -462,7 +462,7 @@ def test_start_scheduler_reports_false_scheduled_action(monkeypatch):
             second_action,
             {
                 "action_path": ("second_action",),
-                "should_acquire_lock": False,
+                "is_top_level_action": False,
                 "should_initialize": False,
             },
         ),

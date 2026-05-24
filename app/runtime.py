@@ -133,6 +133,8 @@ def _execute_single_action(
             action,
             action_path=(action_name,),
         ):
+            if getattr(trade, "last_action_canceled", False):
+                return
             error = action_errors.ActionFailureError(
                 f"Action '{action_name}' failed.",
                 action_name=action_name,

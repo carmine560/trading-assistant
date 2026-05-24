@@ -128,7 +128,7 @@ def _run_scheduled_action(
             gui_state,
             scheduled_action,
             should_initialize=is_blocking_schedule_action,
-            should_acquire_lock=is_blocking_schedule_action,
+            is_top_level_action=is_blocking_schedule_action,
             action_path=(action_name,),
         ):
             error = action_errors.ActionFailureError(

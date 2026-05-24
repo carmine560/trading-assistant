@@ -96,6 +96,7 @@ class Trade(initializer.Initializer):
         self.action_lock = threading.Lock()
         self.last_action_error = None
         self.last_action_warning = None
+        self.last_action_canceled = False
         self._pressed_modifiers = set()
         self._last_action_time = 0
         self.key_to_check = None
