@@ -29,7 +29,7 @@ def run(args, trade, config, gui_state):
 
     is_running = process_utilities.is_running(trade.process)
     base_manager = None
-    if args.s or args.l or args.a:
+    if args.a or ((args.s or args.l) and is_running):
         base_manager = _start_speech_manager(trade)
 
     if args.a:

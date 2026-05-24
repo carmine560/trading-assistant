@@ -740,6 +740,64 @@ def test_run_captures_scheduler_thread_failure(monkeypatch):
     assert "thread.start" in calls
 
 
+def test_run_does_not_start_speech_manager_for_scheduler_when_process_stopped(
+    monkeypatch,
+):
+    calls = []
+    args = SimpleNamespace(r=False, s=True, l=False, a=None)
+    trade = SimpleNamespace(process="HYPERSBI2")
+    config = {}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, *_args):
+            calls.append("manager.register")
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return "speech_manager"
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(is_running=lambda process: False),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "scheduler",
+        SimpleNamespace(
+            start_scheduler=lambda *_args: calls.append("start_scheduler")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "threading",
+        SimpleNamespace(
+            Thread=lambda *args, **kwargs: SimpleNamespace(
+                start=lambda: calls.append("thread.start")
+            )
+        ),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    runtime.run(args, trade, config, gui_state)
+
+    assert "manager.start" not in calls
+    assert "manager.SpeechManager" not in calls
+    assert "thread.start" not in calls
+    assert "start_scheduler" not in calls
+
+
 def test_run_cleans_up_partial_persistent_listener_startup(monkeypatch):
     calls = []
     args = SimpleNamespace(r=False, s=False, l=True, a=None)
@@ -834,3 +892,51 @@ def test_run_cleans_up_partial_persistent_listener_startup(monkeypatch):
     assert stop_call[1][2].__class__ is FakeManager
     assert stop_call[1][3] == "speech_manager"
     assert stop_call[1][4] is None
+
+
+def test_run_does_not_start_speech_manager_for_listeners_when_process_stopped(
+    monkeypatch,
+):
+    calls = []
+    args = SimpleNamespace(r=False, s=False, l=True, a=None)
+    trade = SimpleNamespace(process="HYPERSBI2")
+    config = {}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, *_args):
+            calls.append("manager.register")
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return "speech_manager"
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(
+            start_listeners=lambda *_args: calls.append("start_listeners")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(is_running=lambda process: False),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    runtime.run(args, trade, config, gui_state)
+
+    assert "manager.start" not in calls
+    assert "manager.SpeechManager" not in calls
+    assert "start_listeners" not in calls
