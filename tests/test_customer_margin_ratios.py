@@ -9,9 +9,9 @@ from types import SimpleNamespace
 import pandas as pd
 import pytest
 
+from app import customer_margin_ratios
 from core_utilities import config_io
 from core_utilities.errors import ExternalServiceError, MarketDataError
-from app import customer_margin_ratios
 
 
 def _build_market_holidays_config():
@@ -284,6 +284,65 @@ def test_save_customer_margin_ratios_does_not_double_carriage_returns(
     assert b"\r\r\n" not in csv_bytes
     assert csv_bytes.replace(b"\r\n", b"\n") == (
         b"1234,0.05\n2345,0.3\n3456,1\n5678,suspended\n"
+    )
+
+
+def test_save_customer_margin_ratios_ignores_blank_regulations(
+    monkeypatch, tmp_path
+):
+    trade = SimpleNamespace(
+        customer_margin_ratios_section="SBI Customer Margin Ratios",
+        customer_margin_ratios=str(tmp_path / "customer_margin_ratios.csv"),
+        market_holidays=str(tmp_path / "market_holidays.csv"),
+    )
+    config = ConfigParser()
+    config["SBI Customer Margin Ratios"] = {
+        "update_time": "15:30:00",
+        "timezone": "Asia/Tokyo",
+        "url": "https://example.invalid/ratios",
+        "regulation_header": "Regulation",
+        "headers": "('Symbol', 'Regulation')",
+        "symbol_header": "Symbol",
+        "suspended": "Suspended",
+        "customer_margin_ratio_string": "Ratio ",
+    }
+
+    monkeypatch.setattr(
+        customer_margin_ratios,
+        "get_latest",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.requests,
+        "get",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            content=b"<html></html>",
+            raise_for_status=lambda: None,
+        ),
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.pd,
+        "read_html",
+        lambda *_args, **_kwargs: [
+            pd.DataFrame(
+                [
+                    ["1234", None],
+                    ["2345", "Ratio 30"],
+                    ["3456", ""],
+                    ["5678", "Suspended"],
+                ],
+                columns=["Symbol", "Regulation"],
+            )
+        ],
+    )
+
+    customer_margin_ratios.save_customer_margin_ratios(trade, config)
+
+    assert (
+        Path(trade.customer_margin_ratios)
+        .read_text(encoding="utf-8")
+        .replace("\r\n", "\n")
+        == "2345,0.3\n5678,suspended\n"
     )
 
 

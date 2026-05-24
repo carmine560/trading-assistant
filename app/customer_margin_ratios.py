@@ -67,7 +67,8 @@ def save_customer_margin_ratios(trade, config):
         matched_df = matched_df[
             matched_df[section["regulation_header"]].str.contains(
                 f"{section['suspended']}|"
-                f"{section['customer_margin_ratio_string']}"
+                f"{section['customer_margin_ratio_string']}",
+                na=False,
             )
         ]
         matched_df[section["regulation_header"]] = matched_df[
