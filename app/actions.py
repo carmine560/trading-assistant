@@ -589,41 +589,51 @@ def _handle_trade_state_command(
             trade.speech_manager.set_speech_text(text)
             return False
     elif command == "check_daily_loss_limit":
-        daily_loss_limit = (
-            trade.cash_balance
-            * float(config[trade.process]["utilization_ratio"])
-            * float(config[trade.process]["daily_loss_limit_ratio"])
-        )
-        initial_cash_balance = int(
-            config[trade.variables_section]["initial_cash_balance"]
-        )
-        if initial_cash_balance == 0:
-            config[trade.variables_section]["initial_cash_balance"] = str(
+        should_stop = False
+        with trade.config_lock:
+            daily_loss_limit = (
                 trade.cash_balance
+                * float(config[trade.process]["utilization_ratio"])
+                * float(config[trade.process]["daily_loss_limit_ratio"])
             )
-            write_config(config, trade.config_path, is_encrypted=True)
-        else:
-            daily_profit = trade.cash_balance - initial_cash_balance
-            if daily_profit < daily_loss_limit:
-                trade.speech_manager.set_speech_text(argument)
-                return False
+            initial_cash_balance = int(
+                config[trade.variables_section]["initial_cash_balance"]
+            )
+            if initial_cash_balance == 0:
+                config[trade.variables_section]["initial_cash_balance"] = str(
+                    trade.cash_balance
+                )
+                write_config(config, trade.config_path, is_encrypted=True)
+            else:
+                daily_profit = trade.cash_balance - initial_cash_balance
+                should_stop = daily_profit < daily_loss_limit
+        if should_stop:
+            trade.speech_manager.set_speech_text(argument)
+            return False
     elif command == "check_maximum_daily_number_of_trades":
-        if (
-            0
-            < int(config[trade.process]["maximum_daily_number_of_trades"])
-            <= int(config[trade.variables_section]["current_number_of_trades"])
-        ):
+        with trade.config_lock:
+            is_trade_limit_reached = (
+                0
+                < int(config[trade.process]["maximum_daily_number_of_trades"])
+                <= int(
+                    config[trade.variables_section]["current_number_of_trades"]
+                )
+            )
+        if is_trade_limit_reached:
             trade.speech_manager.set_speech_text(argument)
             return False
     elif command == "count_trades":
-        current_number_of_trades = (
-            int(config[trade.variables_section]["current_number_of_trades"])
-            + 1
-        )
-        config[trade.variables_section]["current_number_of_trades"] = str(
-            current_number_of_trades
-        )
-        write_config(config, trade.config_path, is_encrypted=True)
+        with trade.config_lock:
+            current_number_of_trades = (
+                int(
+                    config[trade.variables_section]["current_number_of_trades"]
+                )
+                + 1
+            )
+            config[trade.variables_section]["current_number_of_trades"] = str(
+                current_number_of_trades
+            )
+            write_config(config, trade.config_path, is_encrypted=True)
         file_utilities.write_chapter(
             file_utilities.get_latest_file(
                 config[trade.process]["screencast_directory"],

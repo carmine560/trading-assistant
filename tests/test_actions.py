@@ -26,10 +26,12 @@ def _build_trade(spoken):
         key_to_check=None,
         should_continue=True,
         action_lock=threading.Lock(),
+        config_lock=threading.RLock(),
         last_action_error=None,
         last_action_canceled=False,
         share_size=0,
         cash_balance=0,
+        config_path="config.ini",
         symbol="1234",
     )
     trade.initialized = 0
@@ -1128,6 +1130,75 @@ def test_daily_loss_limit_failure_speaks_error_and_stops(monkeypatch):
         ],
     )
     assert spoken == ["Daily loss limit reached."]
+
+
+def test_daily_loss_initialization_writes_config_under_lock(monkeypatch):
+    class RecordingLock:
+        def __init__(self):
+            self.is_held = False
+
+        def __enter__(self):
+            self.is_held = True
+
+        def __exit__(self, *_args):
+            self.is_held = False
+
+    spoken = []
+    trade = _build_trade(spoken)
+    trade.cash_balance = 100000
+    trade.config_lock = RecordingLock()
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    writes = []
+
+    def fake_write_config(*_args, **_kwargs):
+        assert trade.config_lock.is_held
+        writes.append(config["Variables"]["initial_cash_balance"])
+
+    monkeypatch.setattr(actions, "write_config", fake_write_config)
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("check_daily_loss_limit", "Daily loss limit reached.")],
+    )
+    assert writes == ["100000"]
+
+
+def test_count_trades_writes_config_under_lock(monkeypatch):
+    class RecordingLock:
+        def __init__(self):
+            self.is_held = False
+
+        def __enter__(self):
+            self.is_held = True
+
+        def __exit__(self, *_args):
+            self.is_held = False
+
+    spoken = []
+    trade = _build_trade(spoken)
+    trade.config_lock = RecordingLock()
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    writes = []
+
+    def fake_write_config(*_args, **_kwargs):
+        assert trade.config_lock.is_held
+        writes.append(config["Variables"]["current_number_of_trades"])
+
+    monkeypatch.setattr(actions, "write_config", fake_write_config)
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("count_trades", "1.0")],
+    )
+    assert writes == ["1"]
 
 
 def test_maximum_daily_number_of_trades_speaks_error_and_stops(monkeypatch):

@@ -6,6 +6,35 @@ from app import action_errors, runtime
 from core_utilities import errors
 
 
+def test_persist_config_on_exit_writes_config_under_lock(monkeypatch):
+    class RecordingLock:
+        def __init__(self):
+            self.is_held = False
+
+        def __enter__(self):
+            self.is_held = True
+
+        def __exit__(self, *_args):
+            self.is_held = False
+
+    lock = RecordingLock()
+    trade = SimpleNamespace(config_lock=lock, config_path="config.ini")
+    config = object()
+    calls = []
+
+    def fake_write_config(*args, **kwargs):
+        assert lock.is_held
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(runtime, "write_config", fake_write_config)
+
+    runtime.persist_config_on_exit(trade, config)
+
+    assert calls == [
+        ((config, "config.ini"), {"is_encrypted": True}),
+    ]
+
+
 def test_run_executes_single_action_with_transient_listeners(monkeypatch):
     calls = []
     args = SimpleNamespace(r=False, s=False, l=False, a=["open"])

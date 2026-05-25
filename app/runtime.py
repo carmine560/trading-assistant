@@ -189,4 +189,5 @@ def persist_config_on_exit(trade, config):
     # Ensure the config is written on normal interpreter shutdown, since
     # IndicatorThread.stop() or IndicatorThread.on_closing() may not run if the
     # main thread terminates abruptly.
-    write_config(config, trade.config_path, is_encrypted=True)
+    with trade.config_lock:
+        write_config(config, trade.config_path, is_encrypted=True)

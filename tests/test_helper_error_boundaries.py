@@ -1,6 +1,7 @@
 """Tests for helper-level exception boundaries."""
 
 import sys
+import threading
 
 import pytest
 
@@ -611,6 +612,7 @@ def test_indicator_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
         process="HYPERSBI2",
         variables_section="Variables",
         widgets_section="Widgets",
+        config_lock=threading.RLock(),
     )
     config = ConfigParser(interpolation=None)
     config["HYPERSBI2"] = {
@@ -631,6 +633,49 @@ def test_indicator_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
     assert thread.error is None
     assert "update" in calls
     assert "destroy" in calls
+
+
+def test_indicator_utilization_change_writes_config_under_lock():
+    class RecordingLock:
+        def __init__(self):
+            self.is_held = False
+
+        def __enter__(self):
+            self.is_held = True
+
+        def __exit__(self, *_args):
+            self.is_held = False
+
+    class ConfigSection(dict):
+        def __init__(self, lock, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.lock = lock
+
+        def __setitem__(self, key, value):
+            assert self.lock.is_held
+            super().__setitem__(key, value)
+
+    class StringValue:
+        def __init__(self, value):
+            self.value = value
+
+        def get(self):
+            return self.value
+
+        def set(self, value):
+            self.value = value
+
+    lock = RecordingLock()
+    trade = SimpleNamespace(process="HYPERSBI2", config_lock=lock)
+    config = {
+        "HYPERSBI2": ConfigSection(lock, {"utilization_ratio": "0.5"}),
+    }
+    thread = ui.IndicatorThread(trade, config)
+    thread._utilization_ratio_string = StringValue("0.75")
+
+    thread._on_utilization_ratio_change()
+
+    assert config["HYPERSBI2"]["utilization_ratio"] == "0.75"
 
 
 def test_message_thread_captures_tk_error(monkeypatch):

@@ -94,6 +94,7 @@ class Trade(initializer.Initializer):
         self.keyboard_listener = None
         self.keyboard_listener_state = 0
         self.action_lock = threading.Lock()
+        self.config_lock = threading.RLock()
         self.last_action_error = None
         self.last_action_warning = None
         self.last_action_canceled = False

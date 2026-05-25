@@ -103,9 +103,11 @@ class IndicatorThread(threading.Thread):
             IndicatorTooltip(current_number_of_trades_label, text)
 
             self._utilization_ratio_string = tk.StringVar()
-            self._utilization_ratio_string.set(
-                self.config[self.trade.process]["utilization_ratio"]
-            )
+            with self.trade.config_lock:
+                utilization_ratio = self.config[self.trade.process][
+                    "utilization_ratio"
+                ]
+            self._utilization_ratio_string.set(utilization_ratio)
             utilization_ratio_spinbox = tk.Spinbox(
                 status_bar_frame,
                 bd=0,
@@ -145,9 +147,10 @@ class IndicatorThread(threading.Thread):
                     if is_clock_label_enabled:
                         clock_label.config(text=time.strftime("%H:%M:%S"))
 
-                    current_number_of_trades = self.config[
-                        self.trade.variables_section
-                    ]["current_number_of_trades"]
+                    with self.trade.config_lock:
+                        current_number_of_trades = self.config[
+                            self.trade.variables_section
+                        ]["current_number_of_trades"]
                     if maximum_daily_number_of_trades:
                         current_number_of_trades_label.config(
                             text=(
@@ -232,9 +235,10 @@ class IndicatorThread(threading.Thread):
             float_value = float(value)
             float_value = max(RATIO_EPSILON, min(1.0, float_value))
             self._utilization_ratio_string.set(f"{float_value:.2f}")
-            self.config[self.trade.process][
-                "utilization_ratio"
-            ] = self._utilization_ratio_string.get()
+            with self.trade.config_lock:
+                self.config[self.trade.process][
+                    "utilization_ratio"
+                ] = self._utilization_ratio_string.get()
         except ValueError:
             pass
 
