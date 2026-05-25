@@ -2,6 +2,8 @@
 
 import sched
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from app import action_errors, actions, listeners, notifications
 from core_utilities import process_utilities
@@ -55,13 +57,16 @@ def _register_scheduled_actions(
 ):
     """Register future configured actions and return their schedule handles."""
     schedules = []
+    timezone = ZoneInfo(config["Market Data"]["timezone"])
+    now = datetime.now(timezone)
     for option in section:
         trigger, action = evaluate_value(section[option])
-        trigger = time.strptime(
-            time.strftime("%Y-%m-%d ") + trigger,
-            "%Y-%m-%d %H:%M:%S",
-        )
-        trigger = time.mktime(trigger)
+        trigger_time = datetime.strptime(trigger, "%H:%M:%S").time()
+        trigger = datetime.combine(
+            now.date(),
+            trigger_time,
+            tzinfo=timezone,
+        ).timestamp()
         if time.time() >= trigger:
             continue
 

@@ -1,5 +1,6 @@
 """Tests for scheduled action registration."""
 
+from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
@@ -15,6 +16,7 @@ def test_start_scheduler_raises_typed_error_for_missing_action(monkeypatch):
         speaking_process="speaker",
     )
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {"morning": "('09:00:00', 'missing')"},
         "Actions": {},
     }
@@ -42,6 +44,7 @@ def test_start_scheduler_registers_future_scheduled_action(monkeypatch):
         speaking_process="speaker",
     )
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {"morning": "('09:00:00', 'open')"},
         "Actions": {"open": [("speak_text", "ready")]},
     }
@@ -74,6 +77,64 @@ def test_start_scheduler_registers_future_scheduled_action(monkeypatch):
     assert scheduled[0][4] == {}
 
 
+def test_start_scheduler_uses_configured_timezone_for_trigger(monkeypatch):
+    scheduled = []
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+    )
+    config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
+        "Schedules": {"morning": "('09:00:00', 'open')"},
+        "Actions": {"open": [("speak_text", "ready")]},
+    }
+
+    class FakeDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 5, 25, 8, 30, tzinfo=tz)
+
+    class FakeScheduler:
+        def __init__(self, _timefunc, _delayfunc):
+            self.queue = []
+
+        def enterabs(self, trigger, priority, action, argument, kwargs):
+            scheduled.append((trigger, priority, action, argument, kwargs))
+            return "schedule"
+
+    current_epoch = datetime(
+        2026,
+        5,
+        24,
+        23,
+        30,
+        tzinfo=scheduler.ZoneInfo("UTC"),
+    ).timestamp()
+    expected_trigger = datetime(
+        2026,
+        5,
+        25,
+        9,
+        0,
+        tzinfo=scheduler.ZoneInfo("Asia/Tokyo"),
+    ).timestamp()
+
+    monkeypatch.setattr(scheduler, "datetime", FakeDateTime)
+    monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
+    monkeypatch.setattr(scheduler.time, "time", lambda: current_epoch)
+
+    scheduler.start_scheduler(
+        trade,
+        config,
+        object(),
+        "HYPERSBI2",
+        object(),
+    )
+
+    assert scheduled[0][0] == expected_trigger
+
+
 def test_start_scheduler_locks_blocking_scheduled_action(monkeypatch):
     scheduled = []
     trade = SimpleNamespace(
@@ -82,6 +143,7 @@ def test_start_scheduler_locks_blocking_scheduled_action(monkeypatch):
         speaking_process="speaker",
     )
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {"morning": "('09:00:00', 'open')"},
         "Actions": {"open": [("click", "1,2")]},
     }
@@ -127,6 +189,7 @@ def test_start_scheduler_does_not_lock_inline_nested_speech_action(
         )
     ]
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {"morning": "('09:00:00', 'announce')"},
         "Actions": {"announce": action},
     }
@@ -164,6 +227,7 @@ def test_start_scheduler_locks_named_nested_blocking_action(monkeypatch):
     )
     action = [("is_trading_day", "True", "place_order")]
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {"morning": "('09:00:00', 'conditional_order')"},
         "Actions": {
             "conditional_order": action,
@@ -204,6 +268,7 @@ def test_start_scheduler_does_not_lock_named_nested_speech_action(monkeypatch):
     )
     action = [("is_trading_day", "True", "announce")]
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {"morning": "('09:00:00', 'conditional_announce')"},
         "Actions": {
             "conditional_announce": action,
@@ -242,6 +307,7 @@ def test_start_scheduler_rejects_missing_named_nested_action(monkeypatch):
         speaking_process="speaker",
     )
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {"morning": "('09:00:00', 'conditional_order')"},
         "Actions": {
             "conditional_order": [("is_trading_day", "True", "place_order")],
@@ -272,6 +338,7 @@ def test_start_scheduler_rejects_cyclic_named_nested_action(monkeypatch):
         speaking_process="speaker",
     )
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {"morning": "('09:00:00', 'conditional_order')"},
         "Actions": {
             "conditional_order": [("is_trading_day", "True", "place_order")],
@@ -308,6 +375,7 @@ def test_start_scheduler_continues_after_scheduled_action_failure(monkeypatch):
     first_action = [("speak_text", "first")]
     second_action = [("speak_text", "second")]
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {
             "first": "('09:00:00', 'first_action')",
             "second": "('09:00:01', 'second_action')",
@@ -398,6 +466,7 @@ def test_start_scheduler_reports_false_scheduled_action(monkeypatch):
     first_action = [("speak_text", "first")]
     second_action = [("speak_text", "second")]
     config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
         "Schedules": {
             "first": "('09:00:00', 'first_action')",
             "second": "('09:00:01', 'second_action')",
