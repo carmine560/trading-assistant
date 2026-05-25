@@ -67,12 +67,22 @@ def create_startup_script(trade, config, script_path, file_utilities):
         f"if (Get-Process '{process_name}' "
         "-ErrorAction SilentlyContinue) {\n"
     )
-    lines.append(f"    Stop-Process -Name '{process_name}'\n")
+    lines.append(
+        f"    Stop-Process -Name '{process_name}' "
+        "-Force -ErrorAction Stop\n"
+    )
+    lines.append("    $deadline = (Get-Date).AddSeconds(15)\n")
     lines.append(
         f"    while (Get-Process '{process_name}' "
         "-ErrorAction SilentlyContinue) {\n"
     )
-    lines.append("        Start-Sleep -Seconds 0.1\n")
+    lines.append("        if ((Get-Date) -ge $deadline) {\n")
+    lines.append(
+        '            throw "Timed out waiting for '
+        f"'{process_name}' to stop.\"\n"
+    )
+    lines.append("        }\n")
+    lines.append("        Start-Sleep -Milliseconds 100\n")
     lines.append("    }\n")
     lines.append("    Start-Sleep -Seconds 1.0\n")
     lines.append(start_process)
