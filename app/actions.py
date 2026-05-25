@@ -557,19 +557,46 @@ def archive_market_data(trade, config):
         if not matched_filenames:
             return (True, None)
 
-        archive_directory = os.path.join(
-            section["market_data_archive_directory"],
-            (
-                f"{now.strftime('%Y%m%dT%H%M%S')}."
-                f"{now.microsecond // 1000:03d}"
-            ),
+        market_data_archive_directory = section[
+            "market_data_archive_directory"
+        ]
+        archive_batch_name = (
+            f"{now.strftime('%Y%m%dT%H%M%S')}."
+            f"{now.microsecond // 1000:03d}"
         )
-        os.makedirs(archive_directory)
-        for filename in matched_filenames:
+        archive_batch_directory = os.path.join(
+            market_data_archive_directory,
+            archive_batch_name,
+        )
+        temporary_archive_batch_directory = os.path.join(
+            market_data_archive_directory,
+            f".{archive_batch_name}.tmp",
+        )
+        completed_moves = []
+
+        os.makedirs(temporary_archive_batch_directory)
+        try:
+            for filename in matched_filenames:
+                source_path = os.path.join(market_data_directory, filename)
+                archive_path = os.path.join(
+                    temporary_archive_batch_directory,
+                    filename,
+                )
+                os.replace(source_path, archive_path)
+                completed_moves.append((source_path, archive_path))
             os.replace(
-                os.path.join(market_data_directory, filename),
-                os.path.join(archive_directory, filename),
+                temporary_archive_batch_directory,
+                archive_batch_directory,
             )
+        except OSError:
+            for source_path, archive_path in reversed(completed_moves):
+                if os.path.exists(archive_path):
+                    os.replace(archive_path, source_path)
+            try:
+                os.rmdir(temporary_archive_batch_directory)
+            except OSError:
+                pass
+            raise
         return (True, None)
     except (IndexError, OSError) as e:
         return (False, f"{ARCHIVE_MARKET_DATA_ERROR} {e}")

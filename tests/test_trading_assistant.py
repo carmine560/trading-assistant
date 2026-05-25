@@ -113,12 +113,16 @@ def test_archive_market_data_uses_unique_same_second_directories(
         None,
     )
 
-    archive_root = tmp_path / "Archived Market Data"
+    market_data_archive_directory = tmp_path / "Archived Market Data"
     assert (
-        archive_root / "20260522T173900.000" / current_file.name
+        market_data_archive_directory
+        / "20260522T173900.000"
+        / current_file.name
     ).read_text(encoding="utf-8") == "first\n"
     assert (
-        archive_root / "20260522T173900.123" / current_file.name
+        market_data_archive_directory
+        / "20260522T173900.123"
+        / current_file.name
     ).read_text(encoding="utf-8") == "second\n"
 
 
@@ -142,6 +146,88 @@ def test_archive_market_data_succeeds_without_matching_files(
     )
     assert previous_file.read_text(encoding="utf-8") == "previous\n"
     assert not (tmp_path / "Archived Market Data").exists()
+
+
+def test_archive_market_data_rolls_back_completed_moves_on_failure(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+    tmp_path,
+):
+    monkeypatch.setattr(
+        actions.pd.Timestamp,
+        "now",
+        lambda **_kwargs: actions.pd.Timestamp("2026-05-22 17:39:00"),
+    )
+    first_file = tmp_path / "ランキング_値上がり率20260522.csv"
+    second_file = tmp_path / "ランキング_ティック回数20260522.csv"
+    first_file.write_text("first\n", encoding="utf-8")
+    second_file.write_text("second\n", encoding="utf-8")
+    real_replace = actions.os.replace
+
+    def fail_second_source_move(source, destination):
+        if source == str(second_file):
+            raise OSError("move failed")
+        real_replace(source, destination)
+
+    monkeypatch.setattr(actions.os, "replace", fail_second_source_move)
+
+    is_successful, message = actions.archive_market_data(
+        sample_trade,
+        sample_config,
+    )
+
+    assert not is_successful
+    assert actions.ARCHIVE_MARKET_DATA_ERROR in message
+    assert first_file.read_text(encoding="utf-8") == "first\n"
+    assert second_file.read_text(encoding="utf-8") == "second\n"
+    market_data_archive_directory = tmp_path / "Archived Market Data"
+    assert not (market_data_archive_directory / "20260522T173900.000").exists()
+    assert not (
+        market_data_archive_directory / ".20260522T173900.000.tmp"
+    ).exists()
+
+
+def test_archive_market_data_rolls_back_when_final_rename_fails(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+    tmp_path,
+):
+    monkeypatch.setattr(
+        actions.pd.Timestamp,
+        "now",
+        lambda **_kwargs: actions.pd.Timestamp("2026-05-22 17:39:00"),
+    )
+    current_file = tmp_path / "ランキング_ティック回数20260522.csv"
+    current_file.write_text("current\n", encoding="utf-8")
+    market_data_archive_directory = tmp_path / "Archived Market Data"
+    temporary_archive_batch_directory = (
+        market_data_archive_directory / ".20260522T173900.000.tmp"
+    )
+    archive_batch_directory = (
+        market_data_archive_directory / "20260522T173900.000"
+    )
+    real_replace = actions.os.replace
+
+    def fail_final_rename(source, destination):
+        if source == str(temporary_archive_batch_directory):
+            assert destination == str(archive_batch_directory)
+            raise OSError("rename failed")
+        real_replace(source, destination)
+
+    monkeypatch.setattr(actions.os, "replace", fail_final_rename)
+
+    is_successful, message = actions.archive_market_data(
+        sample_trade,
+        sample_config,
+    )
+
+    assert not is_successful
+    assert actions.ARCHIVE_MARKET_DATA_ERROR in message
+    assert current_file.read_text(encoding="utf-8") == "current\n"
+    assert not archive_batch_directory.exists()
+    assert not temporary_archive_batch_directory.exists()
 
 
 def test_get_price_limit_uses_rankings_price(
