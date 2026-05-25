@@ -48,6 +48,55 @@ def test_move_to_trash_raises_typed_error_for_subprocess_failure(monkeypatch):
         file_utilities.move_to_trash("example.txt")
 
 
+def test_windows_to_wsl_path_passes_raw_path_to_wslpath(monkeypatch):
+    path = r"C:\Users\carmine\My Project"
+    calls = []
+
+    def fake_run(args, **kwargs):
+        calls.append((args, kwargs))
+        return subprocess.CompletedProcess(
+            args,
+            0,
+            stdout="/mnt/c/Users/carmine/My Project\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(file_utilities.shutil, "which", lambda *_args: "wsl")
+    monkeypatch.setattr(file_utilities.subprocess, "run", fake_run)
+
+    assert (
+        file_utilities.windows_to_wsl_path(path)
+        == "/mnt/c/Users/carmine/My Project"
+    )
+    assert calls == [
+        (
+            ["wsl", "--exec", "wslpath", path],
+            {"capture_output": True, "text": True},
+        )
+    ]
+
+
+def test_windows_to_wsl_path_raises_on_conversion_failure(monkeypatch):
+    path = r"C:\Users\carmine\Missing Project"
+
+    def fake_run(args, **_kwargs):
+        return subprocess.CompletedProcess(
+            args,
+            1,
+            stdout="",
+            stderr="wslpath: failed to translate path\n",
+        )
+
+    monkeypatch.setattr(file_utilities.shutil, "which", lambda *_args: "wsl")
+    monkeypatch.setattr(file_utilities.subprocess, "run", fake_run)
+
+    with pytest.raises(UtilityOperationError) as e:
+        file_utilities.windows_to_wsl_path(path)
+
+    assert "Unable to convert Windows path to WSL path" in str(e.value)
+    assert "wslpath: failed to translate path" in str(e.value)
+
+
 def test_create_bash_launcher_raises_when_venv_is_unavailable(tmp_path):
     with pytest.raises(UtilityOperationError) as e:
         file_utilities.create_bash_launcher(str(tmp_path / "script.py"))
