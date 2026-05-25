@@ -1,6 +1,7 @@
 """Interactive trading assistant configuration workflows and helpers."""
 
 import os
+import subprocess
 import sys
 
 from app import startup_script
@@ -289,17 +290,35 @@ def _create_action_shortcut(
     activate_path, interpreter = file_utilities.select_venv(
         os.path.dirname(script_path), activate="Activate.ps1"
     )
+    if powershell:
+        command_parts = []
+        if activate_path:
+            quoted_activate_path = "'" + activate_path.replace("'", "''") + "'"
+            command_parts.append(". " + quoted_activate_path)
+        quoted_interpreter = (
+            "'" + (interpreter or "python.exe").replace("'", "''") + "'"
+        )
+        quoted_script_path = "'" + script_path.replace("'", "''") + "'"
+        quoted_action_name = "'" + action_name.replace("'", "''") + "'"
+        command_parts.append(
+            f"& {quoted_interpreter} {quoted_script_path} "
+            f"'-a' {quoted_action_name}"
+        )
+        target_path = powershell
+        # Build a Windows command line so PowerShell receives the full -Command
+        # string intact.
+        arguments = subprocess.list2cmdline(
+            ["-Command", "; ".join(command_parts)]
+        )
+    else:
+        target_path = "py.exe"
+        arguments = subprocess.list2cmdline([script_path, "-a", action_name])
     # To pin the shortcut to the Taskbar, specify an executable file as the
     # target_path argument.
     file_utilities.create_shortcut(
         action_name,
-        powershell if powershell else "py.exe",
-        (
-            f'-Command ". {activate_path};'
-            f' {interpreter} {script_path} -a {action_name}"'
-            if activate_path
-            else f"{script_path} -a {action_name}"
-        ),
+        target_path,
+        arguments,
         program_group_base=config[trade.process]["title"],
         icon_location=file_utilities.create_icon(
             action_name, icon_directory=trade.resource_directory

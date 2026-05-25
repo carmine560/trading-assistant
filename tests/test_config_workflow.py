@@ -1,6 +1,7 @@
 """Tests for extracted configuration workflow helpers."""
 
 from configparser import ConfigParser
+import subprocess
 from types import SimpleNamespace
 
 from app import config_workflow
@@ -69,3 +70,54 @@ def test_configure_exit_uses_trade_geometry_section_for_presets(monkeypatch):
         "${MYPROC Geometries:main}",
         "${MYPROC Geometries:offset}",
     ]
+
+
+def test_create_action_shortcut_quotes_powershell_command_arguments():
+    captured = {}
+    script_path = "C:/Users/Test User/Trading's Bot/trading_assistant.py"
+    action_name = "Bob's Action"
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        resource_directory="C:/Users/Test User/Trading's Bot/resources",
+    )
+    config = {"HYPERSBI2": {"title": "Hyper SBI 2 Assistant"}}
+
+    def create_shortcut(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    file_utilities = SimpleNamespace(
+        select_executable=lambda _executables: (
+            "C:/Program Files/PowerShell/7/pwsh.exe"
+        ),
+        select_venv=lambda *_args, **_kwargs: (
+            "C:/Users/Test User/Trading's Bot/.venv/Scripts/Activate.ps1",
+            "python.exe",
+        ),
+        create_icon=lambda *_args, **_kwargs: "C:/icons/Bob's Action.ico",
+        create_shortcut=create_shortcut,
+    )
+
+    config_workflow._create_action_shortcut(
+        trade,
+        config,
+        action_name,
+        file_utilities,
+        script_path,
+    )
+
+    expected_command = (
+        ". 'C:/Users/Test User/Trading''s Bot/.venv/Scripts/Activate.ps1'; "
+        "& 'python.exe' "
+        "'C:/Users/Test User/Trading''s Bot/trading_assistant.py' "
+        "'-a' 'Bob''s Action'"
+    )
+    assert captured["args"] == (
+        action_name,
+        "C:/Program Files/PowerShell/7/pwsh.exe",
+        subprocess.list2cmdline(["-Command", expected_command]),
+    )
+    assert captured["kwargs"] == {
+        "program_group_base": "Hyper SBI 2 Assistant",
+        "icon_location": "C:/icons/Bob's Action.ico",
+    }
