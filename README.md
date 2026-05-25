@@ -45,7 +45,7 @@ Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
     [GnuPG](https://gnupg.org/index.html) to encrypt and decrypt the
     configuration file
 
-Install each package as needed. For example:
+Install the required packages as follows:
 
 ``` powershell
 winget install UB-Mannheim.TesseractOCR
@@ -56,13 +56,13 @@ cd trading-assistant
 # '--recurse-submodules'.
 python -m venv .venv
 . .venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt -U
+python -m pip install -r requirements.txt -c constraints.txt
 ```
 
 ## Run Tests (Optional)
 
 ``` powershell
-python -m pip install -r requirements-dev.txt -U
+python -m pip install -r requirements-dev.txt -c constraints.txt
 pytest
 ```
 
