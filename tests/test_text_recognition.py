@@ -123,3 +123,58 @@ def test_recognize_text_returns_none_when_canceled(monkeypatch):
         is None
     )
     assert not grab_called
+
+
+def test_recognize_text_raises_typed_failure_for_out_of_range_index(
+    monkeypatch,
+):
+    module = _load_text_recognition_module()
+
+    image = SimpleNamespace(
+        resize=lambda *_args, **_kwargs: image,
+        point=lambda *_args, **_kwargs: image,
+    )
+    monkeypatch.setattr(module.ImageGrab, "grab", lambda **_kwargs: image)
+    monkeypatch.setattr(
+        module.pytesseract,
+        "image_to_string",
+        lambda *_args, **_kwargs: "1234",
+    )
+
+    with pytest.raises(TextRecognitionError) as e:
+        module.recognize_text(10, 20, 30, 40, 1, 1, 128, False)
+
+    error = e.value
+    assert error.attempts == 1
+    assert error.last_output == "1234"
+    assert error.region == (10, 20, 30, 40)
+    assert error.text_type == "integers"
+    assert "requested index 1" in str(error)
+    assert "Parsed values: [1234.0]" in str(error)
+
+
+def test_recognize_text_raises_typed_failure_for_non_integer_index(
+    monkeypatch,
+):
+    module = _load_text_recognition_module()
+
+    image = SimpleNamespace(
+        resize=lambda *_args, **_kwargs: image,
+        point=lambda *_args, **_kwargs: image,
+    )
+    monkeypatch.setattr(module.ImageGrab, "grab", lambda **_kwargs: image)
+    monkeypatch.setattr(
+        module.pytesseract,
+        "image_to_string",
+        lambda *_args, **_kwargs: "1234",
+    )
+
+    with pytest.raises(TextRecognitionError) as e:
+        module.recognize_text(10, 20, 30, 40, "bad", 1, 128, False)
+
+    error = e.value
+    assert error.attempts == 1
+    assert error.last_output == "1234"
+    assert error.region == (10, 20, 30, 40)
+    assert error.text_type == "integers"
+    assert "requested index 'bad'" in str(error)
