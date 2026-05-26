@@ -779,14 +779,14 @@ def test_wait_for_key_cancellation_runs_cleanup_action(monkeypatch):
     assert spoken == ["cleanup", "Canceled."]
 
 
-def test_wait_for_key_invalid_key_resets_listener_state(monkeypatch):
+def test_wait_for_key_invalid_key_raises_action_error(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
     _patch_action_modules(monkeypatch)
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ActionExecutionError) as e:
         actions.execute_action(
             trade,
             config,
@@ -794,8 +794,167 @@ def test_wait_for_key_invalid_key_resets_listener_state(monkeypatch):
             [("wait_for_key", "missing")],
         )
 
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "wait_for_key")
     assert trade.keyboard_listener_state == 0
     assert trade.key_to_check is None
+    assert spoken == []
+
+
+@pytest.mark.parametrize(
+    ("command", "instruction"),
+    [
+        ("click", ("click", "10, bad")),
+        ("drag_to", ("drag_to", "10, bad")),
+        ("move_to", ("move_to", "10, bad")),
+        ("right_click", ("right_click", "10, bad")),
+        ("press_key", ("press_key", "enter, bad")),
+        ("sleep", ("sleep", "bad")),
+    ],
+)
+def test_invalid_gui_arguments_raise_before_side_effects(
+    monkeypatch,
+    command,
+    instruction,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    sleep_calls = _patch_action_modules(monkeypatch)
+
+    def fail(*_args, **_kwargs):
+        pytest.fail("side effect should not run")
+
+    monkeypatch.setattr(
+        actions,
+        "pyautogui",
+        SimpleNamespace(
+            click=fail,
+            dragTo=fail,
+            hotkey=fail,
+            moveTo=fail,
+            press=fail,
+            rightClick=fail,
+            write=fail,
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(trade, config, gui_state, [instruction])
+
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, command)
+    assert sleep_calls == []
+    assert spoken == []
+
+
+def test_invalid_widget_region_raises_before_click_widget(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(
+            click_widget=lambda *_args, **_kwargs: pytest.fail(
+                "click_widget should not run"
+            )
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("click_widget", "button.png", "0, 0, bad, 10")],
+        )
+
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "click_widget")
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
+
+
+@pytest.mark.parametrize(
+    ("command", "instruction"),
+    [
+        ("wait_for_price", ("wait_for_price", "0, 0, bad, 10, 0")),
+        (
+            "copy_symbols_from_column",
+            ("copy_symbols_from_column", "0, 0, bad, 10, 0"),
+        ),
+    ],
+)
+def test_invalid_ocr_region_raises_before_recognition(
+    monkeypatch,
+    command,
+    instruction,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(
+            recognize_text=lambda *_args, **_kwargs: pytest.fail(
+                "recognize_text should not run"
+            )
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(trade, config, gui_state, [instruction])
+
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, command)
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
+
+
+def test_invalid_show_window_count_raises_before_window_call(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(
+            _show_window_state={"count": 0, "max_count": 0},
+            enumerate_windows=lambda *_args: pytest.fail(
+                "enumerate_windows should not run"
+            ),
+            show_window=lambda *_args: None,
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("show_window", "Order", "bad")],
+        )
+
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "show_window")
+    assert actions.gui_interactions._show_window_state == {
+        "count": 0,
+        "max_count": 0,
+    }
     assert spoken == []
 
 

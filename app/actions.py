@@ -143,6 +143,13 @@ def execute_action(
                     instruction_index,
                     command,
                 )
+            argument, additional_argument = _normalize_instruction_arguments(
+                command,
+                argument,
+                additional_argument,
+                action_path,
+                instruction_index,
+            )
             if not _execute_instruction(
                 trade,
                 config,
@@ -203,6 +210,223 @@ def _raise_unknown_command_error(action_path, instruction_index, command):
         action_path=action_path,
         instruction_index=instruction_index,
         command=command,
+    )
+
+
+def _raise_invalid_argument_error(
+    action_path,
+    instruction_index,
+    command,
+    details,
+):
+    """Raise a contextual error for malformed command arguments."""
+    raise action_errors.ActionExecutionError(
+        (
+            "Action path "
+            f"'{_format_action_path(action_path)}' failed at "
+            f"instruction {instruction_index} ({command}): "
+            f"invalid argument: {details}."
+        ),
+        action_path=action_path,
+        instruction_index=instruction_index,
+        command=command,
+    )
+
+
+def _parse_integer_tuple(
+    value,
+    expected_count,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Parse a comma-separated integer tuple for action geometry arguments."""
+    try:
+        parsed = tuple(int(part.strip()) for part in value.split(","))
+    except (AttributeError, ValueError):
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            f"expected {expected_count} comma-separated integers",
+        )
+    if len(parsed) != expected_count:
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            f"expected {expected_count} comma-separated integers",
+        )
+    return parsed
+
+
+def _normalize_point_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize one X, Y command argument."""
+    argument = _parse_integer_tuple(
+        argument,
+        2,
+        action_path,
+        instruction_index,
+        command,
+    )
+    return argument, additional_argument
+
+
+def _normalize_click_widget_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize the click_widget image name and region arguments."""
+    additional_argument = _parse_integer_tuple(
+        additional_argument,
+        4,
+        action_path,
+        instruction_index,
+        command,
+    )
+    return argument, additional_argument
+
+
+def _normalize_ocr_region_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize one X, Y, WIDTH, HEIGHT, INDEX OCR region argument."""
+    argument = _parse_integer_tuple(
+        argument,
+        5,
+        action_path,
+        instruction_index,
+        command,
+    )
+    return argument, additional_argument
+
+
+def _normalize_press_key_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize press_key's KEY[, PRESSES] argument."""
+    try:
+        key_parts = tuple(part.strip() for part in argument.split(","))
+    except AttributeError:
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            "expected KEY[, PRESSES]",
+        )
+    if not key_parts or not key_parts[0] or len(key_parts) > 2:
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            "expected KEY[, PRESSES]",
+        )
+    try:
+        presses = int(key_parts[1]) if len(key_parts) > 1 else 1
+    except ValueError:
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            "expected integer key press count",
+        )
+    return (key_parts[0], presses), additional_argument
+
+
+def _normalize_float_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize one numeric command argument."""
+    try:
+        argument = float(argument)
+    except (TypeError, ValueError):
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            "expected a number",
+        )
+    return argument, additional_argument
+
+
+def _normalize_show_window_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize show_window's optional maximum window count."""
+    try:
+        additional_argument = int(additional_argument or 1)
+    except (TypeError, ValueError):
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            "expected integer maximum window count",
+        )
+    return argument, additional_argument
+
+
+def _normalize_wait_for_key_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize wait_for_key's single character or special key argument."""
+    try:
+        argument = argument if len(argument) == 1 else keyboard.Key[argument]
+    except (KeyError, TypeError):
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            "expected a single character or keyboard key name",
+        )
+    return argument, additional_argument
+
+
+def _normalize_instruction_arguments(
+    command,
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+):
+    """Validate and normalize action command arguments before side effects."""
+    normalizer = _ARGUMENT_NORMALIZERS.get(command)
+    if normalizer is None:
+        return argument, additional_argument
+    return normalizer(
+        argument,
+        additional_argument,
+        action_path,
+        instruction_index,
+        command,
     )
 
 
@@ -320,7 +544,7 @@ def _handle_gui_command(
         pyautogui.moveTo(gui_state.previous_position)
     elif command == "click":
         (pyautogui.rightClick if gui_state.swapped else pyautogui.click)(
-            *map(int, argument.split(","))
+            *argument
         )
     elif command == "click_widget":
         trade.keyboard_listener_state = 1
@@ -330,7 +554,7 @@ def _handle_gui_command(
             gui_interactions.click_widget(
                 gui_state,
                 os.path.join(trade.resource_directory, argument),
-                *map(int, additional_argument.split(",")),
+                *additional_argument,
                 should_continue_reference=lambda: trade.should_continue,
             )
         finally:
@@ -340,18 +564,16 @@ def _handle_gui_command(
             trade.speech_manager.set_speech_text("Canceled.")
             return False
     elif command == "drag_to":
-        pyautogui.dragTo(*map(int, argument.split(",")))
+        pyautogui.dragTo(*argument)
     elif command == "move_to":
-        pyautogui.moveTo(*map(int, argument.split(",")))
+        pyautogui.moveTo(*argument)
     elif command == "press_hotkeys":
         pyautogui.hotkey(*tuple(map(str.strip, argument.split(","))))
     elif command == "press_key":
-        argument = tuple(map(str.strip, argument.split(",")))
-        presses = int(argument[1]) if len(argument) > 1 else 1
-        pyautogui.press(argument[0], presses=presses)
+        pyautogui.press(argument[0], presses=argument[1])
     elif command == "right_click":
         pyautogui.click(
-            *map(int, argument.split(",")),
+            *argument,
             button="left" if gui_state.swapped else "right",
         )
     elif command == "write_string":
@@ -394,9 +616,7 @@ def _handle_window_command(
         )
     elif command == "show_window":
         gui_interactions._show_window_state["count"] = 0
-        gui_interactions._show_window_state["max_count"] = int(
-            additional_argument or 1
-        )
+        gui_interactions._show_window_state["max_count"] = additional_argument
         gui_interactions.enumerate_windows(
             gui_interactions.show_window, argument
         )
@@ -416,7 +636,7 @@ def _handle_wait_command(
 ):
     """Handle blocking and wait-related commands."""
     if command == "sleep":
-        time.sleep(float(argument))
+        time.sleep(argument)
     elif command == "wait_for_key":
         if not _wait_for_key(
             trade,
@@ -446,7 +666,7 @@ def _handle_wait_command(
         trade.should_continue = True
         try:
             text_recognition.recognize_text(
-                *map(int, argument.split(",")),
+                *argument,
                 int(config[trade.process]["image_magnification"]),
                 int(config[trade.process]["binarization_threshold"]),
                 config[trade.process].getboolean("is_dark_theme"),
@@ -506,7 +726,7 @@ def _handle_speak_command(
         )
     elif command == "speak_cpu_utilization":
         trade.speech_manager.set_speech_text(
-            f"{round(psutil.cpu_percent(interval=float(argument)))}%."
+            f"{round(psutil.cpu_percent(interval=argument))}%."
         )
     elif command == "speak_minutes_since_hour":
         if argument:
@@ -567,7 +787,7 @@ def _handle_market_data_command(trade, config, command, argument):
 def _copy_symbols_from_column(trade, config, argument):
     """Recognize symbols from a column region and copy them to clipboard."""
     symbols = text_recognition.recognize_text(
-        *map(int, argument.split(",")),
+        *argument,
         None,
         int(config[trade.process]["image_magnification"]),
         int(config[trade.process]["binarization_threshold"]),
@@ -918,9 +1138,7 @@ def _wait_for_key(
 ):
     """Wait for a key press with optional countdown."""
     try:
-        trade.key_to_check = (
-            argument if len(argument) == 1 else keyboard.Key[argument]
-        )
+        trade.key_to_check = argument
         trade.keyboard_listener_state = 1
         countdown_seconds = [
             int(seconds.strip())
@@ -1047,6 +1265,21 @@ _COMMAND_DISPATCH = {
     "is_trading_day": _handle_control_flow_command,
     # Execution and delegation commands
     "execute_action": _handle_execution_command,
+}
+_ARGUMENT_NORMALIZERS = {
+    "click": _normalize_point_argument,
+    "drag_to": _normalize_point_argument,
+    "move_to": _normalize_point_argument,
+    "right_click": _normalize_point_argument,
+    "click_widget": _normalize_click_widget_argument,
+    "copy_symbols_from_column": _normalize_ocr_region_argument,
+    "press_key": _normalize_press_key_argument,
+    "sleep": _normalize_float_argument,
+    "speak_cpu_utilization": _normalize_float_argument,
+    "show_window": _normalize_show_window_argument,
+    "wait_for_key": _normalize_wait_for_key_argument,
+    "wait_for_key_count_down": _normalize_wait_for_key_argument,
+    "wait_for_price": _normalize_ocr_region_argument,
 }
 ALL_KEYS = tuple(sorted(_COMMAND_DISPATCH))
 
