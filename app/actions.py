@@ -114,6 +114,7 @@ def execute_action(
     try:
         if should_initialize:
             trade.initialize_attributes()
+            trade.has_cash_balance = False
             gui_state.initialize_attributes()
 
         if isinstance(action, str):
@@ -507,7 +508,12 @@ def _execute_instruction(
         )
     if handler is _handle_market_data_command:
         return handler(trade, config, command, argument)
-    if handler is _handle_trade_state_command:
+    if handler in (
+        _handle_share_size_command,
+        _handle_risk_guard_command,
+        _handle_trade_accounting_command,
+        _handle_trade_input_command,
+    ):
         return handler(trade, config, command, argument, additional_argument)
     if handler is _handle_control_flow_command:
         return handler(
@@ -872,20 +878,35 @@ def archive_market_data(trade, config):
         return (False, f"{ARCHIVE_MARKET_DATA_ERROR} {e}")
 
 
-def _handle_trade_state_command(
+def _handle_share_size_command(
     trade,
     config,
     command,
     argument,
     additional_argument,
 ):
-    """Handle trade state and accounting commands."""
+    """Handle share-size calculation commands."""
     if command == "calculate_share_size":
         is_successful, text = calculate_share_size(trade, config, argument)
         if not is_successful and text:
             trade.speech_manager.set_speech_text(text)
             return False
-    elif command == "check_daily_loss_limit":
+
+    return True
+
+
+def _handle_risk_guard_command(
+    trade,
+    config,
+    command,
+    argument,
+    additional_argument,
+):
+    """Handle trade risk guard commands."""
+    if command == "check_daily_loss_limit":
+        if not getattr(trade, "has_cash_balance", False):
+            trade.speech_manager.set_speech_text("Cash balance not provided.")
+            return False
         should_stop = False
         with trade.config_lock:
             daily_loss_limit = (
@@ -919,7 +940,19 @@ def _handle_trade_state_command(
         if is_trade_limit_reached:
             trade.speech_manager.set_speech_text(argument)
             return False
-    elif command == "count_trades":
+
+    return True
+
+
+def _handle_trade_accounting_command(
+    trade,
+    config,
+    command,
+    argument,
+    additional_argument,
+):
+    """Handle trade count and chapter accounting commands."""
+    if command == "count_trades":
         with trade.config_lock:
             current_number_of_trades = (
                 int(
@@ -944,7 +977,28 @@ def _handle_trade_state_command(
             previous_title="Pre-trading",
             offset=argument,
         )
-    elif command == "get_cash_balance":
+    elif command == "write_chapter":
+        file_utilities.write_chapter(
+            file_utilities.get_latest_file(
+                config[trade.process]["screencast_directory"],
+                config[trade.process]["screencast_regex"],
+            ),
+            argument,
+            previous_title=additional_argument,
+        )
+
+    return True
+
+
+def _handle_trade_input_command(
+    trade,
+    config,
+    command,
+    argument,
+    additional_argument,
+):
+    """Handle trade input and output commands."""
+    if command == "get_cash_balance":
         trade.cash_balance = int(
             text_recognition.recognize_text(
                 *map(
@@ -958,17 +1012,9 @@ def _handle_trade_state_command(
                 config[trade.process].getboolean("is_dark_theme"),
             )
         )
+        trade.has_cash_balance = True
     elif command == "get_symbol":
         gui_interactions.enumerate_windows(trade.get_symbol, argument)
-    elif command == "write_chapter":
-        file_utilities.write_chapter(
-            file_utilities.get_latest_file(
-                config[trade.process]["screencast_directory"],
-                config[trade.process]["screencast_regex"],
-            ),
-            argument,
-            previous_title=additional_argument,
-        )
     elif command == "write_share_size":
         pyautogui.write(str(trade.share_size))
 
@@ -1217,7 +1263,7 @@ def _handle_cancellation_exit(
 
 
 _COMMAND_DISPATCH = {
-    # GUI interaction commands
+    # GUI Interaction Commands
     "back_to": _handle_gui_command,
     "click": _handle_gui_command,
     "click_widget": _handle_gui_command,
@@ -1227,18 +1273,18 @@ _COMMAND_DISPATCH = {
     "press_key": _handle_gui_command,
     "right_click": _handle_gui_command,
     "write_string": _handle_gui_command,
-    # Window and indicator visibility commands
+    # Window and Indicator Visibility Commands
     "hide_window": _handle_window_command,
     "show_hide_indicator": _handle_window_command,
     "show_hide_window": _handle_window_command,
     "show_window": _handle_window_command,
-    # Blocking and wait-related commands
+    # Blocking and Wait-Related Commands
     "sleep": _handle_wait_command,
     "wait_for_key": _handle_wait_command,
     "wait_for_key_count_down": _handle_wait_command,
     "wait_for_price": _handle_wait_command,
     "wait_for_window": _handle_wait_command,
-    # Speech and user notification commands
+    # Speech and User Notification Commands
     "speak_config": _handle_speak_command,
     "speak_cpu_utilization": _handle_speak_command,
     "speak_minutes_since_hour": _handle_speak_command,
@@ -1246,24 +1292,24 @@ _COMMAND_DISPATCH = {
     "speak_seconds_until_time": _handle_speak_command,
     "speak_show_text": _handle_speak_command,
     "speak_text": _handle_speak_command,
-    # Market data retrieval and persistence commands
+    # Market Data Retrieval and Persistence Commands
     "archive_market_data": _handle_market_data_command,
     "copy_symbols_from_column": _handle_market_data_command,
-    # Trade state and accounting commands
-    "calculate_share_size": _handle_trade_state_command,
-    "check_daily_loss_limit": _handle_trade_state_command,
-    "check_maximum_daily_number_of_trades": _handle_trade_state_command,
-    "count_trades": _handle_trade_state_command,
-    "get_cash_balance": _handle_trade_state_command,
-    "get_symbol": _handle_trade_state_command,
-    "write_chapter": _handle_trade_state_command,
-    "write_share_size": _handle_trade_state_command,
-    # Conditional control-flow commands
+    # Trade State and Accounting Commands
+    "calculate_share_size": _handle_share_size_command,
+    "check_daily_loss_limit": _handle_risk_guard_command,
+    "check_maximum_daily_number_of_trades": _handle_risk_guard_command,
+    "count_trades": _handle_trade_accounting_command,
+    "get_cash_balance": _handle_trade_input_command,
+    "get_symbol": _handle_trade_input_command,
+    "write_chapter": _handle_trade_accounting_command,
+    "write_share_size": _handle_trade_input_command,
+    # Conditional Control-Flow Commands
     "is_now_after": _handle_control_flow_command,
     "is_now_before": _handle_control_flow_command,
     "is_recording": _handle_control_flow_command,
     "is_trading_day": _handle_control_flow_command,
-    # Execution and delegation commands
+    # Execution and Delegation Commands
     "execute_action": _handle_execution_command,
 }
 _ARGUMENT_NORMALIZERS = {

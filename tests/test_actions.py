@@ -1281,6 +1281,32 @@ def test_calculate_share_size_failure_speaks_error_and_stops(monkeypatch):
 def test_daily_loss_limit_failure_speaks_error_and_stops(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Variables"]["initial_cash_balance"] = "100000"
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=lambda *_args, **_kwargs: 98000),
+    )
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [
+            ("get_cash_balance",),
+            ("check_daily_loss_limit", "Daily loss limit reached."),
+            ("speak_text", "should not run"),
+        ],
+    )
+    assert spoken == ["Daily loss limit reached."]
+
+
+def test_daily_loss_limit_requires_cash_balance(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
     trade.cash_balance = 98000
     gui_state = _build_gui_state()
     config = _build_config()
@@ -1296,7 +1322,7 @@ def test_daily_loss_limit_failure_speaks_error_and_stops(monkeypatch):
             ("speak_text", "should not run"),
         ],
     )
-    assert spoken == ["Daily loss limit reached."]
+    assert spoken == ["Cash balance not provided."]
 
 
 def test_daily_loss_initialization_writes_config_under_lock(monkeypatch):
@@ -1312,11 +1338,15 @@ def test_daily_loss_initialization_writes_config_under_lock(monkeypatch):
 
     spoken = []
     trade = _build_trade(spoken)
-    trade.cash_balance = 100000
     trade.config_lock = RecordingLock()
     gui_state = _build_gui_state()
     config = _build_config()
     _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=lambda *_args, **_kwargs: 100000),
+    )
     writes = []
 
     def fake_write_config(*_args, **_kwargs):
@@ -1329,7 +1359,10 @@ def test_daily_loss_initialization_writes_config_under_lock(monkeypatch):
         trade,
         config,
         gui_state,
-        [("check_daily_loss_limit", "Daily loss limit reached.")],
+        [
+            ("get_cash_balance",),
+            ("check_daily_loss_limit", "Daily loss limit reached."),
+        ],
     )
     assert writes == ["100000"]
 
@@ -1389,6 +1422,29 @@ def test_maximum_daily_number_of_trades_speaks_error_and_stops(monkeypatch):
         ],
     )
     assert spoken == ["Trade count limit reached."]
+
+
+def test_maximum_daily_number_of_trades_uses_persisted_count(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Variables"]["current_number_of_trades"] = "4"
+    _patch_action_modules(monkeypatch)
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [
+            (
+                "check_maximum_daily_number_of_trades",
+                "Trade count limit reached.",
+            ),
+            ("speak_text", "should not run"),
+        ],
+    )
+    assert spoken == ["should not run"]
 
 
 def test_show_hide_indicator_returns_false_without_widgets_section(

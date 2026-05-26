@@ -266,20 +266,22 @@ be recognized.</td></tr>
 command.</td></tr>
 
 <tr><td><code>('check_daily_loss_limit', 'ALERT_TEXT')</code></td>
-<td>Check if the loss has reached the daily loss limit. If it has, speak the
-alert text and exit. You must call the <code>get_cash_balance</code> command
-below before using this command. The <code>-DLL</code> option configures the
-non-percent, negative daily loss limit ratio (from -1.0 to 0.0), and the daily
-loss limit is: $$cash\ balance \times utilization\ ratio \times daily\ loss\
-limit\ ratio$$. <strong>Note</strong>: Trading fees, not considered here, may
-cause further cash balance reduction.</td></tr>
+<td>Check whether the loss has reached the daily loss limit. If it has, speak
+the alert text and exit. You must call the <code>get_cash_balance</code>
+command below before using this command. The <code>-DLL</code> option
+configures the non-percent, negative daily loss limit ratio (from -1.0 to 0.0),
+and the daily loss limit is: $$cash\ balance \times utilization\ ratio \times
+daily\ loss\ limit\ ratio$$. <strong>Note</strong>: Trading fees, not
+considered here, may cause further cash balance reduction.</td></tr>
 
 <tr><td><code>('check_maximum_daily_number_of_trades', 'ALERT_TEXT')</code></td>
-<td>Check if the current number of trades for the day exceeds the maximum daily
-number of trades. If it does, speak the alert text and exit. You must call the
-<code>count_trades</code> command below before using this command. The
+<td>Check whether the current number of trades for the day exceeds the maximum
+daily number of trades before placing a new trade. If it does, speak the alert
+text and exit. It checks the persisted <code>current_number_of_trades</code>
+value for the current day. Call the <code>count_trades</code> command below
+after a trade has been executed so future checks include it. The
 <code>-MDN</code> option configures the maximum daily number of trades. A zero
-value for it indicates unlimited trades.</td></tr>
+value indicates unlimited trades.</td></tr>
 
 <tr><td><code>('count_trades',[ 'CHAPTER_OFFSET'])</code></td>
 <td>Count the number of trades for the day. Additionally, write a chapter

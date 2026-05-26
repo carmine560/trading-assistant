@@ -166,6 +166,7 @@ class Trade(initializer.Initializer):
         """Reset the symbol, cash balance, and share size to initial states."""
         self.symbol = ""
         self.cash_balance = 0
+        self.has_cash_balance = False
         self.share_size = 0
 
     def get_symbol(self, hwnd, title_regex):
