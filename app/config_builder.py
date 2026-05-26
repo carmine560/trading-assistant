@@ -3,7 +3,8 @@
 import configparser
 import os
 import re
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from core_utilities.config_io import read_config
 from core_utilities.errors import ConfigBuildError
@@ -189,7 +190,9 @@ def configure(
     if can_override:
         read_config_fn(config, trade.config_path, is_encrypted=True)
 
-    current_date = date.today()
+    current_date = datetime.now(
+        ZoneInfo(config["Market Data"]["timezone"])
+    ).date()
     if (
         date.fromisoformat(config[trade.variables_section]["current_date"])
         != current_date

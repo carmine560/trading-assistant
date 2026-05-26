@@ -108,7 +108,7 @@ section of the wiki).
 `trading_assistant.py` uses the price limit in Hyper SBI 2 only if the previous
 closing price is not available in the market data. If so, configure the price
 limit region. However, Tesseract can misread commas and decimal points. For
-example, `1,234.5` can be read as `1,234,5`. Use the market data when possible
+example, `1,234.5` can be read as `12345`. Use the market data when possible
 and avoid relying on the price limit.
 
 ``` powershell
