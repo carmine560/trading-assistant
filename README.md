@@ -77,8 +77,8 @@ Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.h
 page using the `-r` option beforehand. The following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\hypersbi2_assistant.ps1` startup
 script, which can process the above options and start Hyper SBI 2. This script
-forcibly stops and restarts Hyper SBI 2 if it is already running, potentially
-discarding unsaved state.
+forcibly stops and restarts Hyper SBI 2 if it is already running, discarding
+unsaved state.
 
 > **Note**: This option adds virtual environment activation to the startup
 > script if the `.venv\Scripts\Activate.ps1` script exists.
@@ -100,15 +100,15 @@ python trading_assistant.py -CB
 
 The `calculate_share_size` command also uses the previous closing price. Export
 a Hyper SBI 2 ranking that includes the securities code you trade to
-`%USERPROFILE%\Downloads` as a CSV file. You can automate this with a custom
+`%USERPROFILE%\Downloads` as a CSV file. You can automate this using a custom
 action such as `save_market_data` (see the “[Save Market
 Data](https://github.com/carmine560/trading-assistant/wiki#save-market-data)”
 section of the wiki).
 
-`trading_assistant.py` uses the price limit only if the previous closing price
-is not available in the market data. If so, configure the price limit region in
-Hyper SBI 2. However, Tesseract can misread commas and decimal points. For
-example, `1,234.5` can be read as `12345`. Use the market data when possible
+`trading_assistant.py` uses the price limit in Hyper SBI 2 only if the previous
+closing price is not available in the market data. If so, configure the price
+limit region. However, Tesseract can misread commas and decimal points. For
+example, `1,234.5` can be read as `1,234,5`. Use the market data when possible
 and avoid relying on the price limit.
 
 ``` powershell
