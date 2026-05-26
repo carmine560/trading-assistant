@@ -82,6 +82,14 @@ def _build_config():
 def _patch_action_modules(monkeypatch):
     """Patch direct module collaborators used by the action executor."""
     sleep_calls = []
+    startup_event = threading.Event()
+    startup_event.set()
+    fake_ui_thread = SimpleNamespace(
+        error=None,
+        startup_event=startup_event,
+        start=lambda: None,
+        stop=lambda: None,
+    )
     monkeypatch.setattr(actions.time, "sleep", sleep_calls.append)
     monkeypatch.setattr(
         actions,
@@ -156,8 +164,8 @@ def _patch_action_modules(monkeypatch):
         actions,
         "ui",
         SimpleNamespace(
-            IndicatorThread=lambda *_args: SimpleNamespace(start=lambda: None),
-            MessageThread=lambda *_args: SimpleNamespace(start=lambda: None),
+            IndicatorThread=lambda *_args: fake_ui_thread,
+            MessageThread=lambda *_args: fake_ui_thread,
         ),
     )
     monkeypatch.setattr(
@@ -1239,6 +1247,74 @@ def test_show_hide_indicator_returns_false_without_widgets_section(
         gui_state,
         [("show_hide_indicator",)],
     )
+
+
+def test_show_hide_indicator_raises_for_startup_error(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["HYPERSBI2 Widgets"] = {}
+    _patch_action_modules(monkeypatch)
+
+    startup_event = threading.Event()
+    startup_event.set()
+    startup_error = RuntimeError("indicator failed")
+    indicator_thread = SimpleNamespace(
+        error=startup_error,
+        startup_event=startup_event,
+        start=lambda: None,
+    )
+    monkeypatch.setattr(
+        actions.ui,
+        "IndicatorThread",
+        lambda *_args: indicator_thread,
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("show_hide_indicator",)],
+        )
+
+    assert "indicator failed" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "show_hide_indicator")
+    assert trade.indicator_thread is indicator_thread
+
+
+def test_speak_show_text_raises_for_message_startup_error(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    startup_event = threading.Event()
+    startup_event.set()
+    message_thread = SimpleNamespace(
+        error=RuntimeError("message failed"),
+        startup_event=startup_event,
+        start=lambda: None,
+    )
+    monkeypatch.setattr(
+        actions.ui,
+        "MessageThread",
+        lambda *_args: message_thread,
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("speak_show_text", "hello")],
+        )
+
+    assert "message failed" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "speak_show_text")
+    assert spoken == ["hello"]
 
 
 def test_invalid_nested_action_argument_returns_false_without_printing(

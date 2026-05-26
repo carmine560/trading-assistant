@@ -510,6 +510,7 @@ def test_indicator_thread_captures_tk_error(monkeypatch):
     assert isinstance(thread.error, ui.TclError)
     assert "tk failed" in str(thread.error)
     assert thread.root is None
+    assert thread.startup_event.is_set()
 
 
 def test_indicator_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
@@ -633,6 +634,7 @@ def test_indicator_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
     assert thread.error is None
     assert "update" in calls
     assert "destroy" in calls
+    assert thread.startup_event.is_set()
 
 
 def test_indicator_utilization_change_writes_config_under_lock():
@@ -694,6 +696,7 @@ def test_message_thread_captures_tk_error(monkeypatch):
     assert isinstance(thread.error, ui.TclError)
     assert "tk failed" in str(thread.error)
     assert thread.root is None
+    assert thread.startup_event.is_set()
 
 
 def test_message_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
@@ -765,3 +768,4 @@ def test_message_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
     assert thread.error is None
     assert "mainloop" in calls
     assert "destroy" in calls
+    assert thread.startup_event.is_set()

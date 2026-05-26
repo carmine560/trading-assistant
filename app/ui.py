@@ -22,6 +22,7 @@ class IndicatorThread(threading.Thread):
         self.config = config
         self.root = None
         self.error = None
+        self.startup_event = threading.Event()
         self.stop_event = threading.Event()
         self._utilization_ratio_string = None
 
@@ -142,6 +143,7 @@ class IndicatorThread(threading.Thread):
             )
             IndicatorTooltip(utilization_ratio_spinbox, "Utilization ratio")
 
+            self.startup_event.set()
             while not self.stop_event.is_set():
                 try:
                     if is_clock_label_enabled:
@@ -169,12 +171,14 @@ class IndicatorThread(threading.Thread):
                 time.sleep(0.01)
         except (TclError, WidgetPositionError) as e:
             self.error = e
+            self.startup_event.set()
         finally:
             if self.root:
                 try:
                     self.root.destroy()
                 except TclError:
                     pass
+            self.startup_event.set()
 
     def stop(self):
         """Set the stop event to signal the thread to stop."""
@@ -301,6 +305,7 @@ class MessageThread(threading.Thread):
         self.text = text
         self.root = None
         self.error = None
+        self.startup_event = threading.Event()
 
     def run(self):
         """Run the thread, creating and displaying a message window."""
@@ -340,12 +345,15 @@ class MessageThread(threading.Thread):
                 f"+{int(0.5 * (work_bottom - self.root.winfo_height()))}"
             )
             self.root.deiconify()
+            self.startup_event.set()
             self.root.mainloop()
         except (TclError, WidgetPositionError) as e:
             self.error = e
+            self.startup_event.set()
         finally:
             if self.root:
                 try:
                     self.root.destroy()
                 except TclError:
                     pass
+            self.startup_event.set()

@@ -34,6 +34,7 @@ MARKET_DATA_FILE_ERROR = "Unable to read market data file"
 PRICE_LIMIT_ERROR = "Unable to get price limit."
 PRICE_LIMIT_FALLBACK_WARNING = "Closing prices file invalid."
 SHARE_SIZE_ERROR = "Unable to calculate share size."
+UI_THREAD_STARTUP_TIMEOUT_SECONDS = 1
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
@@ -210,6 +211,24 @@ def _format_action_path(action_path):
     return " -> ".join(action_path)
 
 
+def _start_ui_thread(thread, action_path, instruction_index, command):
+    """Start a UI thread and raise contextual errors on startup failure."""
+    thread.start()
+    thread.startup_event.wait(UI_THREAD_STARTUP_TIMEOUT_SECONDS)
+    if thread.error:
+        raise action_errors.ActionExecutionError(
+            (
+                "Action path "
+                f"'{_format_action_path(action_path)}' failed at "
+                f"instruction {instruction_index} ({command}): "
+                f"{thread.error}"
+            ),
+            action_path=action_path,
+            instruction_index=instruction_index,
+            command=command,
+        )
+
+
 def _execute_instruction(
     trade,
     config,
@@ -232,7 +251,15 @@ def _execute_instruction(
             additional_argument,
         )
     if handler is _handle_window_command:
-        return handler(trade, config, command, argument, additional_argument)
+        return handler(
+            trade,
+            config,
+            command,
+            argument,
+            additional_argument,
+            action_path,
+            instruction_index,
+        )
     if handler is _handle_wait_command:
         return handler(
             trade,
@@ -245,7 +272,15 @@ def _execute_instruction(
             instruction_index,
         )
     if handler is _handle_speak_command:
-        return handler(trade, config, command, argument, additional_argument)
+        return handler(
+            trade,
+            config,
+            command,
+            argument,
+            additional_argument,
+            action_path,
+            instruction_index,
+        )
     if handler is _handle_market_data_command:
         return handler(trade, config, command, argument)
     if handler is _handle_trade_state_command:
@@ -331,6 +366,8 @@ def _handle_window_command(
     command,
     argument,
     additional_argument,
+    action_path,
+    instruction_index,
 ):
     """Handle window and indicator visibility commands."""
     if command == "hide_window":
@@ -343,7 +380,12 @@ def _handle_window_command(
             trade.indicator_thread = None
         elif trade.widgets_section in config:
             trade.indicator_thread = ui.IndicatorThread(trade, config)
-            trade.indicator_thread.start()
+            _start_ui_thread(
+                trade.indicator_thread,
+                action_path,
+                instruction_index,
+                command,
+            )
         else:
             return False
     elif command == "show_hide_window":
@@ -454,6 +496,8 @@ def _handle_speak_command(
     command,
     argument,
     additional_argument,
+    action_path,
+    instruction_index,
 ):
     """Handle speech and user notification commands."""
     if command == "speak_config":
@@ -495,7 +539,13 @@ def _handle_speak_command(
         trade.speech_manager.set_speech_text(f"{seconds_until} seconds.")
     elif command == "speak_show_text":
         trade.speech_manager.set_speech_text(argument)
-        ui.MessageThread(trade, config, argument).start()
+        message_thread = ui.MessageThread(trade, config, argument)
+        _start_ui_thread(
+            message_thread,
+            action_path,
+            instruction_index,
+            command,
+        )
     elif command == "speak_text":
         trade.speech_manager.set_speech_text(argument)
 
