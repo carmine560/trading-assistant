@@ -887,7 +887,7 @@ def test_invalid_widget_region_raises_before_click_widget(monkeypatch):
         ("wait_for_price", ("wait_for_price", "0, 0, bad, 10, 0")),
         (
             "copy_symbols_from_column",
-            ("copy_symbols_from_column", "0, 0, bad, 10, 0"),
+            ("copy_symbols_from_column", "0, 0, bad, 10"),
         ),
     ],
 )
@@ -1184,21 +1184,34 @@ def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
     config = _build_config()
     _patch_action_modules(monkeypatch)
     calls = _patch_clipboard(monkeypatch)
+
+    def recognize_symbols(*args, **kwargs):
+        calls.append(("recognize", args, kwargs))
+        return ["1234", "5678"]
+
     monkeypatch.setattr(
         actions,
         "text_recognition",
-        SimpleNamespace(
-            recognize_text=lambda *_args, **_kwargs: ["1234", "5678"]
-        ),
+        SimpleNamespace(recognize_text=recognize_symbols),
     )
 
     assert actions.execute_action(
         trade,
         config,
         gui_state,
-        [("copy_symbols_from_column", "0, 0, 10, 10, 0")],
+        [("copy_symbols_from_column", "0, 0, 10, 10")],
     )
-    assert calls == ["open", "empty", ("set", "1234 5678"), "close"]
+    assert calls == [
+        (
+            "recognize",
+            (0, 0, 10, 10, None, 1, 128, False),
+            {"text_type": "securities_code_column"},
+        ),
+        "open",
+        "empty",
+        ("set", "1234 5678"),
+        "close",
+    ]
 
 
 def test_copy_symbols_from_column_preserves_clipboard_on_ocr_error(
@@ -1225,7 +1238,7 @@ def test_copy_symbols_from_column_preserves_clipboard_on_ocr_error(
             trade,
             config,
             gui_state,
-            [("copy_symbols_from_column", "0, 0, 10, 10, 0")],
+            [("copy_symbols_from_column", "0, 0, 10, 10")],
         )
     assert calls == []
 

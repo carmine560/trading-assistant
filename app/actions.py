@@ -315,6 +315,24 @@ def _normalize_ocr_region_argument(
     return argument, additional_argument
 
 
+def _normalize_ocr_column_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize one X, Y, WIDTH, HEIGHT OCR column argument."""
+    argument = _parse_integer_tuple(
+        argument,
+        4,
+        action_path,
+        instruction_index,
+        command,
+    )
+    return argument, additional_argument
+
+
 def _normalize_press_key_argument(
     argument,
     additional_argument,
@@ -1318,7 +1336,7 @@ _ARGUMENT_NORMALIZERS = {
     "move_to": _normalize_point_argument,
     "right_click": _normalize_point_argument,
     "click_widget": _normalize_click_widget_argument,
-    "copy_symbols_from_column": _normalize_ocr_region_argument,
+    "copy_symbols_from_column": _normalize_ocr_column_argument,
     "press_key": _normalize_press_key_argument,
     "sleep": _normalize_float_argument,
     "speak_cpu_utilization": _normalize_float_argument,
