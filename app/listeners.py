@@ -4,8 +4,11 @@ import threading
 
 from pynput import keyboard, mouse
 
+from app import notifications
 from core_utilities import process_utilities
 from interaction_utilities import speech_synthesis
+
+LISTENER_MONITOR_ERROR = "Listener monitor failed."
 
 
 def start_listeners(
@@ -32,9 +35,11 @@ def start_listeners(
     trade.speaking_process = start_speaking_process(trade, config)
 
     trade.stop_listeners_event = threading.Event()
+    trade.last_listener_error = None
     trade.wait_listeners_thread = threading.Thread(
-        target=process_utilities.wait_listeners,
+        target=_wait_listeners,
         args=(
+            trade,
             trade.stop_listeners_event,
             trade.process,
             trade.mouse_listener,
@@ -49,6 +54,43 @@ def start_listeners(
         },
     )
     trade.wait_listeners_thread.start()
+
+
+def _wait_listeners(
+    trade,
+    stop_listeners_event,
+    process,
+    mouse_listener,
+    keyboard_listener,
+    base_manager,
+    speech_manager,
+    speaking_process,
+    indicator_thread=None,
+    is_persistent=False,
+):
+    """Wait for listeners and record monitor-thread failures."""
+    try:
+        process_utilities.wait_listeners(
+            stop_listeners_event,
+            process,
+            mouse_listener,
+            keyboard_listener,
+            base_manager,
+            speech_manager,
+            speaking_process,
+            indicator_thread=indicator_thread,
+            is_persistent=is_persistent,
+        )
+    except Exception as e:
+        trade.last_listener_error = e
+        try:
+            notified = notifications.set_speech_text(
+                trade, LISTENER_MONITOR_ERROR
+            )
+        except Exception:
+            notified = False
+        if not notified:
+            print(f"{LISTENER_MONITOR_ERROR} {e}")
 
 
 def start_speaking_process(trade, config):
