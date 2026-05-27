@@ -679,6 +679,73 @@ def test_execute_action_reports_malformed_named_nested_action(monkeypatch):
     _assert_action_error(e, ("action_3", "action_2"), None, None)
 
 
+def test_preflight_rejects_later_invalid_instruction_before_click(
+    monkeypatch,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    clicks = []
+    monkeypatch.setattr(
+        actions.pyautogui,
+        "click",
+        lambda *_args, **_kwargs: clicks.append("click"),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [
+                ("click", "10, 20"),
+                ("copy_symbols_from_column", "0, 0, bad, 10"),
+            ],
+        )
+
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action",), 2, "copy_symbols_from_column")
+    assert clicks == []
+    assert spoken == []
+    assert (trade.initialized, gui_state.initialized) == (0, 0)
+
+
+def test_preflight_rejects_invalid_named_nested_action_before_click(
+    monkeypatch,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Actions"]["nested"] = str([("wait_for_price", "0, 0, bad, 10, 0")])
+    _patch_action_modules(monkeypatch)
+    clicks = []
+    monkeypatch.setattr(
+        actions.pyautogui,
+        "click",
+        lambda *_args, **_kwargs: clicks.append("click"),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [
+                ("click", "10, 20"),
+                ("execute_action", "nested"),
+            ],
+        )
+
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action", "nested"), 1, "wait_for_price")
+    assert clicks == []
+    assert spoken == []
+    assert (trade.initialized, gui_state.initialized) == (0, 0)
+
+
 def test_execute_action_rejects_cyclic_named_nested_action(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
@@ -1545,7 +1612,7 @@ def test_speak_show_text_raises_for_message_startup_error(monkeypatch):
     assert spoken == ["hello"]
 
 
-def test_invalid_nested_action_argument_returns_false_without_printing(
+def test_invalid_nested_action_argument_raises_before_side_effects(
     monkeypatch,
     capsys,
 ):
@@ -1555,13 +1622,49 @@ def test_invalid_nested_action_argument_returns_false_without_printing(
     config = _build_config()
     _patch_action_modules(monkeypatch)
 
-    assert not actions.execute_action(
-        trade,
-        config,
-        gui_state,
-        [("is_now_after", "00:00:00", 123)],
-    )
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("is_now_after", "00:00:00", 123)],
+        )
+
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "is_now_after")
     assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize(
+    ("command", "instruction"),
+    [
+        ("execute_action", ("execute_action",)),
+        ("is_now_after", ("is_now_after", "00:00:00")),
+    ],
+)
+def test_missing_required_nested_action_raises_before_side_effects(
+    monkeypatch,
+    command,
+    instruction,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [instruction],
+        )
+
+    assert "invalid argument" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, command)
+    assert spoken == []
+    assert (trade.initialized, gui_state.initialized) == (0, 0)
 
 
 def test_all_keys_includes_execute_action_and_market_data_commands():

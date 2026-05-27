@@ -112,25 +112,13 @@ def execute_action(
         trade.last_action_canceled = False
 
     try:
+        action = _evaluate_action(action, action_path)
+        _preflight_action(trade, config, action, action_path)
+
         if should_initialize:
             trade.initialize_attributes()
             trade.has_cash_balance = False
             gui_state.initialize_attributes()
-
-        if isinstance(action, str):
-            action = evaluate_value(action)
-
-        if not isinstance(action, list):
-            raise action_errors.ActionExecutionError(
-                (
-                    "Action path "
-                    f"'{_format_action_path(action_path)}' failed: "
-                    f"malformed action {action!r}."
-                ),
-                action_path=action_path,
-                instruction_index=None,
-                command=None,
-            )
 
         for instruction_index, instruction in enumerate(action, start=1):
             command, argument, additional_argument = _unpack_instruction(
@@ -167,6 +155,140 @@ def execute_action(
     finally:
         if lock_acquired:
             trade.action_lock.release()
+
+
+def _preflight_action(trade, config, action, action_path):
+    """Validate configured action structure before executing side effects."""
+    for instruction_index, instruction in enumerate(action, start=1):
+        command, argument, additional_argument = _unpack_instruction(
+            instruction,
+            action_path,
+            instruction_index,
+        )
+        if command not in ALL_KEYS:
+            _raise_unknown_command_error(
+                action_path,
+                instruction_index,
+                command,
+            )
+        argument, additional_argument = _normalize_instruction_arguments(
+            command,
+            argument,
+            additional_argument,
+            action_path,
+            instruction_index,
+        )
+
+        if command == "execute_action":
+            nested_action = argument
+            is_nested_action_required = True
+        elif command in (
+            "is_now_after",
+            "is_now_before",
+            "is_recording",
+            "is_trading_day",
+        ):
+            nested_action = additional_argument
+            is_nested_action_required = True
+        elif command in (
+            "wait_for_key",
+            "wait_for_key_count_down",
+            "wait_for_price",
+            "wait_for_window",
+        ):
+            nested_action = additional_argument
+            is_nested_action_required = False
+        else:
+            nested_action = None
+            is_nested_action_required = False
+
+        if nested_action is None:
+            if is_nested_action_required:
+                _raise_invalid_argument_error(
+                    action_path,
+                    instruction_index,
+                    command,
+                    "expected nested action list or action name",
+                )
+            else:
+                continue
+
+        if isinstance(nested_action, list):
+            _preflight_action(
+                trade,
+                config,
+                nested_action,
+                (*action_path, f"inline@{instruction_index}"),
+            )
+            continue
+
+        if not isinstance(nested_action, str):
+            _raise_invalid_argument_error(
+                action_path,
+                instruction_index,
+                command,
+                "expected nested action list or action name",
+            )
+
+        # A nested action must not appear in its ancestry, or the action graph
+        # would cycle (for example, A -> B -> A).
+        if nested_action in action_path:
+            raise action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index} (execute_action): "
+                    f"nested action '{nested_action}' creates a cycle."
+                ),
+                action_path=action_path,
+                instruction_index=instruction_index,
+                command="execute_action",
+            )
+        if nested_action not in config[trade.actions_section]:
+            raise action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index} (execute_action): "
+                    f"nested action '{nested_action}' is not defined."
+                ),
+                action_path=action_path,
+                instruction_index=instruction_index,
+                command="execute_action",
+            )
+
+        named_action_path = (*action_path, nested_action)
+        named_action = _evaluate_action(
+            config[trade.actions_section][nested_action],
+            named_action_path,
+        )
+
+        _preflight_action(
+            trade,
+            config,
+            named_action,
+            named_action_path,
+        )
+
+
+def _evaluate_action(action, action_path):
+    """Evaluate and validate one configured action."""
+    if isinstance(action, str):
+        action = evaluate_value(action)
+
+    if not isinstance(action, list):
+        raise action_errors.ActionExecutionError(
+            (
+                "Action path "
+                f"'{_format_action_path(action_path)}' failed: "
+                f"malformed action {action!r}."
+            ),
+            action_path=action_path,
+            instruction_index=None,
+            command=None,
+        )
+
+    return action
 
 
 def _unpack_instruction(instruction, action_path, instruction_index):
