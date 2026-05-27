@@ -333,6 +333,7 @@ def _configure_hypersbi2(trade, config, file_utilities, data_utilities):
         "image_magnification": "2",
         "binarization_threshold": "128",
         "is_dark_theme": "True",
+        "is_price_limit_ocr_fallback_enabled": "False",
         "screencast_directory": os.path.join(
             os.path.expanduser("~"), "Videos", trade.process.title()
         ),

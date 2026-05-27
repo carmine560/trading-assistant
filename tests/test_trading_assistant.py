@@ -238,9 +238,11 @@ def test_get_price_limit_uses_rankings_price(
     assert actions.get_price_limit(sample_trade, sample_config) == 1130.0
 
 
-def test_get_price_limit_falls_back_to_recognized_value(
+def test_get_price_limit_falls_back_to_recognized_value_when_enabled(
     monkeypatch, sample_trade, sample_config
 ):
+    sample_config["HYPERSBI2"]["is_price_limit_ocr_fallback_enabled"] = "true"
+
     def fake_recognize_text(*args, **kwargs):
         assert args[:4] == (0, 0, 10, 10)
         assert args[4:] == (1, 128, False)
@@ -256,6 +258,28 @@ def test_get_price_limit_falls_back_to_recognized_value(
     assert actions.get_price_limit(sample_trade, sample_config) == 4321
 
 
+def test_get_price_limit_rejects_missing_market_data_by_default(
+    monkeypatch, sample_trade, sample_config, tmp_path
+):
+    sample_config["Market Data"]["market_data_directory"] = str(
+        tmp_path / "missing"
+    )
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        lambda *_args, **_kwargs: pytest.fail("OCR should not run"),
+    )
+
+    with pytest.raises(ValueError, match=actions.PRICE_LIMIT_ERROR):
+        actions.get_price_limit(sample_trade, sample_config)
+
+    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
+    assert "Unable to read market data file" in str(
+        sample_trade.last_action_warning
+    )
+    assert "missing" in str(sample_trade.last_action_warning)
+
+
 def test_get_price_limit_skips_rankings_for_non_hypersbi2_process(
     monkeypatch, sample_trade, sample_config
 ):
@@ -265,6 +289,7 @@ def test_get_price_limit_skips_rankings_for_non_hypersbi2_process(
         "image_magnification": "1",
         "binarization_threshold": "128",
         "is_dark_theme": "false",
+        "is_price_limit_ocr_fallback_enabled": "true",
     }
     sample_config["OTHER Geometries"] = {"price_limit_region": "0, 0, 10, 10"}
 
@@ -295,6 +320,7 @@ def test_get_price_limit_records_missing_file_warning_without_speech(
     monkeypatch, sample_trade, sample_config, tmp_path
 ):
     spoken = []
+    sample_config["HYPERSBI2"]["is_price_limit_ocr_fallback_enabled"] = "true"
     sample_config["Market Data"]["market_data_directory"] = str(
         tmp_path / "missing"
     )
@@ -316,7 +342,7 @@ def test_get_price_limit_records_missing_file_warning_without_speech(
     assert "missing" in str(sample_trade.last_action_warning)
 
 
-def test_get_price_limit_falls_back_to_ocr_for_short_rankings_row(
+def test_get_price_limit_rejects_short_rankings_row_by_default(
     monkeypatch, sample_trade, sample_config, tmp_path
 ):
     spoken = []
@@ -333,10 +359,11 @@ def test_get_price_limit_falls_back_to_ocr_for_short_rankings_row(
     monkeypatch.setattr(
         actions.text_recognition,
         "recognize_text",
-        lambda *_args, **_kwargs: 4321,
+        lambda *_args, **_kwargs: pytest.fail("OCR should not run"),
     )
 
-    assert actions.get_price_limit(sample_trade, sample_config) == 4321
+    with pytest.raises(ValueError, match=actions.PRICE_LIMIT_ERROR):
+        actions.get_price_limit(sample_trade, sample_config)
     assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
     assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
     assert f"Unable to read market data file {path}" in str(
@@ -349,6 +376,7 @@ def test_get_price_limit_falls_back_to_ocr_for_non_numeric_rankings_price(
     monkeypatch, sample_trade, sample_config, tmp_path
 ):
     spoken = []
+    sample_config["HYPERSBI2"]["is_price_limit_ocr_fallback_enabled"] = "true"
     path = _write_rankings_price(
         monkeypatch,
         sample_config,
@@ -545,13 +573,52 @@ def test_calculate_share_size_returns_message_for_invalid_sizing_input(
     assert sample_trade.share_size == 0
 
 
-def test_calculate_share_size_uses_ocr_for_invalid_rankings_file(
+def test_calculate_share_size_rejects_invalid_rankings_file_by_default(
     monkeypatch,
     sample_trade,
     sample_config,
     tmp_path,
 ):
     spoken = []
+    monkeypatch.setattr(
+        actions.pd.Timestamp,
+        "now",
+        lambda **_kwargs: actions.pd.Timestamp("2026-05-21 07:58:59"),
+    )
+    path = tmp_path / "ランキング_ティック回数20260521.csv"
+    Path(sample_trade.customer_margin_ratios).write_text(
+        "1234,0.5\n", encoding="utf-8"
+    )
+    path.write_text("1234\n", encoding="utf-8")
+    sample_trade.speech_manager = SimpleNamespace(
+        set_speech_text=spoken.append,
+    )
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        lambda *_args, **_kwargs: pytest.fail("OCR should not run"),
+    )
+
+    assert actions.calculate_share_size(
+        sample_trade, sample_config, "long"
+    ) == (False, actions.PRICE_LIMIT_ERROR)
+    assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
+    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
+    assert f"Unable to read market data file {path}" in str(
+        sample_trade.last_action_warning
+    )
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_warning)
+    assert sample_trade.share_size == 0
+
+
+def test_calculate_share_size_uses_ocr_for_invalid_rankings_file_when_enabled(
+    monkeypatch,
+    sample_trade,
+    sample_config,
+    tmp_path,
+):
+    spoken = []
+    sample_config["HYPERSBI2"]["is_price_limit_ocr_fallback_enabled"] = "true"
     monkeypatch.setattr(
         actions.pd.Timestamp,
         "now",
@@ -591,6 +658,7 @@ def test_calculate_share_size_handles_price_limit_ocr_failure(
     Path(sample_trade.customer_margin_ratios).write_text(
         "1234,0.5\n", encoding="utf-8"
     )
+    sample_config["HYPERSBI2"]["is_price_limit_ocr_fallback_enabled"] = "true"
     ocr_error = errors.TextRecognitionError(
         "OCR failed",
         attempts=50,

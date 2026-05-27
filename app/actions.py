@@ -1332,15 +1332,15 @@ _COMMAND_DISPATCH = {
 }
 _ARGUMENT_NORMALIZERS = {
     "click": _normalize_point_argument,
-    "drag_to": _normalize_point_argument,
-    "move_to": _normalize_point_argument,
-    "right_click": _normalize_point_argument,
     "click_widget": _normalize_click_widget_argument,
     "copy_symbols_from_column": _normalize_ocr_column_argument,
+    "drag_to": _normalize_point_argument,
+    "move_to": _normalize_point_argument,
     "press_key": _normalize_press_key_argument,
+    "right_click": _normalize_point_argument,
+    "show_window": _normalize_show_window_argument,
     "sleep": _normalize_float_argument,
     "speak_cpu_utilization": _normalize_float_argument,
-    "show_window": _normalize_show_window_argument,
     "wait_for_key": _normalize_wait_for_key_argument,
     "wait_for_key_count_down": _normalize_wait_for_key_argument,
     "wait_for_price": _normalize_ocr_region_argument,
@@ -1365,15 +1365,16 @@ def get_price_limit(trade, config):
                 config,
             )
         except errors.MarketDataError as e:
-            # Market data is corrupted; notify the user and fall back to OCR.
+            # Market data is corrupted; notify the user before continuing to
+            # either fail closed or use the explicit OCR fallback.
             trade.last_action_warning = e
             notifications.set_speech_text(
                 trade,
                 PRICE_LIMIT_FALLBACK_WARNING,
             )
         except OSError as e:
-            # Market data is missing or unreadable, so fall back to OCR without
-            # notifying the user.
+            # Market data may simply be unavailable, so record diagnostics
+            # without speaking on every order.
             trade.last_action_warning = errors.MarketDataError(
                 f"{MARKET_DATA_FILE_ERROR}: {e}"
             )
@@ -1382,6 +1383,11 @@ def get_price_limit(trade, config):
         return trade_service.calculate_price_limit_from_closing_price(
             closing_price
         )
+
+    if not config[trade.process].getboolean(
+        "is_price_limit_ocr_fallback_enabled", fallback=False
+    ):
+        raise ValueError(PRICE_LIMIT_ERROR)
 
     return text_recognition.recognize_text(
         *map(

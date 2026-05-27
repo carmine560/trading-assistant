@@ -117,6 +117,7 @@ def sample_config(tmp_path):
         "image_magnification": "1",
         "binarization_threshold": "128",
         "is_dark_theme": "false",
+        "is_price_limit_ocr_fallback_enabled": "false",
         "market_data_name_regex": (
             r"^ランキング_"
             r"(値上がり率|値下がり率|値上がり幅|値下がり幅|出来高上位|"
