@@ -977,8 +977,8 @@ def _copy_symbols_from_column(trade, config, argument):
         config[trade.process].getboolean("is_dark_theme"),
         text_type="securities_code_column",
     )
-    # Wrap the stored pattern in quotes so ast.literal_eval() decodes \\d to
-    # \d.
+    # ast.literal_eval() needs a complete Python string literal to decode \\d
+    # as \d, such as "\\d".
     securities_code_regex = re.compile(
         evaluate_value(f'"{config["Market Data"]["securities_code_regex"]}"')
     )
