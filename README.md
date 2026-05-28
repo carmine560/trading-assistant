@@ -13,10 +13,10 @@ consisting of a sequence of commands, this script can:
   * Trigger actions using the mouse and keyboard
   * Schedule actions
 
-> **Disclaimer**: `trading_assistant.py` does not analyze or make decisions for
-> you. If you operate under incorrect assumptions, the potential for loss may
-> increase because of the script’s fast and frequent order placement. You
-> assume full responsibility for all trading decisions and outcomes.
+> **Disclaimer**: This script does not analyze or make decisions for you. If
+> you operate under incorrect assumptions, the potential for loss may increase
+> because of the script’s fast and frequent order placement. You assume full
+> responsibility for all trading decisions and outcomes.
 
 ## Prerequisites
 
