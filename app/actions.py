@@ -977,13 +977,43 @@ def _copy_symbols_from_column(trade, config, argument):
         config[trade.process].getboolean("is_dark_theme"),
         text_type="securities_code_column",
     )
+    # Wrap the stored pattern in quotes so ast.literal_eval() decodes \\d to
+    # \d.
+    securities_code_regex = re.compile(
+        evaluate_value(f'"{config["Market Data"]["securities_code_regex"]}"')
+    )
+    valid_symbols = []
+    invalid_symbols = []
+    for row, symbol in enumerate(symbols, start=1):
+        stripped_symbol = symbol.strip()
+        if not stripped_symbol:
+            continue
+        if securities_code_regex.fullmatch(stripped_symbol):
+            valid_symbols.append(stripped_symbol)
+        else:
+            invalid_symbols.append((row, stripped_symbol))
+    if invalid_symbols or not valid_symbols:
+        if invalid_symbols:
+            invalid_rows = ", ".join(
+                f"row {row}: {symbol!r}" for row, symbol in invalid_symbols
+            )
+            message = f"OCR produced invalid securities codes: {invalid_rows}."
+        else:
+            message = "OCR produced no valid securities codes."
+        raise errors.TextRecognitionError(
+            message,
+            attempts=1,
+            last_output="\n".join(symbols),
+            region=tuple(argument[:4]),
+            text_type="securities_code_column",
+        )
 
     is_clipboard_open = False
     try:
         win32clipboard.OpenClipboard()
         is_clipboard_open = True
         win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(" ".join(symbols))
+        win32clipboard.SetClipboardText(" ".join(valid_symbols))
     finally:
         if is_clipboard_open:
             win32clipboard.CloseClipboard()

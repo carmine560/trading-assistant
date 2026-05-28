@@ -74,7 +74,10 @@ def _build_config():
         "initial_cash_balance": "0",
         "current_number_of_trades": "0",
     }
-    config["Market Data"] = {"timezone": "Asia/Tokyo"}
+    config["Market Data"] = {
+        "timezone": "Asia/Tokyo",
+        "securities_code_regex": r"[1-9][\\dACDFGHJKLMNPRSTUWXY]\\d[\\dACDFGHJKLMNPRSTUWXY]5?",
+    }
     config["Market Holidays"] = {"date_format": "%Y/%m/%d"}
     config["Actions"] = {}
     return config
@@ -1359,7 +1362,7 @@ def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
 
     def recognize_symbols(*args, **kwargs):
         calls.append(("recognize", args, kwargs))
-        return ["1234", "5678"]
+        return [" 1234", "", "5678 "]
 
     monkeypatch.setattr(
         actions,
@@ -1384,6 +1387,34 @@ def test_copy_symbols_from_column_closes_clipboard(monkeypatch):
         ("set", "1234 5678"),
         "close",
     ]
+
+
+def test_copy_symbols_from_column_rejects_invalid_ocr_symbol(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    calls = _patch_clipboard(monkeypatch)
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(
+            recognize_text=lambda *_args, **_kwargs: ["1234", "12O4"]
+        ),
+    )
+
+    with pytest.raises(errors.TextRecognitionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("copy_symbols_from_column", "0, 0, 10, 10")],
+        )
+
+    assert "row 2: '12O4'" in str(e.value)
+    assert calls == []
 
 
 def test_copy_symbols_from_column_preserves_clipboard_on_ocr_error(
