@@ -592,6 +592,121 @@ def test_run_cleans_up_partial_transient_listener_startup(monkeypatch):
     assert stop_call[1][4] is None
 
 
+def test_run_stops_before_action_when_transient_listener_monitor_fails(
+    monkeypatch,
+):
+    calls = []
+    failure = RuntimeError("listener monitor boom")
+    args = SimpleNamespace(r=False, s=False, l=False, a=["open"])
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+        mouse_listener=None,
+        keyboard_listener=None,
+        speaking_process=None,
+        stop_listeners_event=None,
+        wait_listeners_thread=None,
+        last_listener_error=None,
+    )
+    config = {"Actions": {"open": [("speak_text", "ready")]}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return "speech_manager"
+
+        def shutdown(self):
+            calls.append("manager.shutdown")
+
+    def start_failing_monitor(
+        trade, config, gui_state, base_manager, **kwargs
+    ):
+        trade.mouse_listener = "mouse"
+        trade.keyboard_listener = "keyboard"
+        trade.speaking_process = None
+        trade.stop_listeners_event = SimpleNamespace(
+            set=lambda: calls.append("event.set")
+        )
+        trade.wait_listeners_thread = SimpleNamespace(
+            join=lambda timeout=None: calls.append(("thread.join", timeout)),
+            is_alive=lambda: False,
+        )
+        trade.last_listener_error = failure
+        calls.append(("start_listeners", kwargs))
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "actions",
+        SimpleNamespace(
+            execute_action=lambda *_args, **_kwargs: calls.append(
+                "execute_action"
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(start_listeners=start_failing_monitor),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(
+            is_running=lambda process: False,
+            stop_listeners=lambda *args: calls.append(
+                ("stop_listeners", args)
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except errors.ProcessStateError as e:
+        assert str(e) == "Listener monitor failed."
+        assert e.__cause__ is failure
+    else:
+        raise AssertionError("Expected listener monitor failure to raise.")
+
+    assert ("start_listeners", {"is_persistent": True}) in calls
+    assert "execute_action" not in calls
+    assert "manager.shutdown" in calls
+    assert "event.set" in calls
+    assert (
+        "thread.join",
+        runtime.LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS,
+    ) in calls
+    stop_call = next(
+        call
+        for call in calls
+        if isinstance(call, tuple) and call[0] == "stop_listeners"
+    )
+    assert stop_call[1][0] == "mouse"
+    assert stop_call[1][1] == "keyboard"
+    assert stop_call[1][2].__class__ is FakeManager
+    assert stop_call[1][3] == "speech_manager"
+    assert stop_call[1][4] is None
+
+
 def test_run_cleans_up_transient_listeners_when_action_raises(monkeypatch):
     calls = []
     args = SimpleNamespace(r=False, s=False, l=False, a=["open"])
@@ -993,6 +1108,114 @@ def test_run_cleans_up_partial_persistent_listener_startup(monkeypatch):
     assert "manager.shutdown" in calls
     assert "event.set" not in calls
     assert "thread.join" not in calls
+    stop_call = next(
+        call
+        for call in calls
+        if isinstance(call, tuple) and call[0] == "stop_listeners"
+    )
+    assert stop_call[1][0] == "mouse"
+    assert stop_call[1][1] == "keyboard"
+    assert stop_call[1][2].__class__ is FakeManager
+    assert stop_call[1][3] == "speech_manager"
+    assert stop_call[1][4] is None
+
+
+def test_run_cleans_up_persistent_listener_monitor_failure(monkeypatch):
+    calls = []
+    failure = RuntimeError("listener monitor boom")
+    args = SimpleNamespace(r=False, s=False, l=True, a=None)
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+        mouse_listener=None,
+        keyboard_listener=None,
+        speaking_process=None,
+        stop_listeners_event=None,
+        wait_listeners_thread=None,
+        last_listener_error=None,
+    )
+    config = {"Actions": {}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return "speech_manager"
+
+        def shutdown(self):
+            calls.append("manager.shutdown")
+
+    def start_failing_monitor(
+        trade, config, gui_state, base_manager, **kwargs
+    ):
+        trade.mouse_listener = "mouse"
+        trade.keyboard_listener = "keyboard"
+        trade.speaking_process = None
+        trade.stop_listeners_event = SimpleNamespace(
+            set=lambda: calls.append("event.set")
+        )
+        trade.wait_listeners_thread = SimpleNamespace(
+            join=lambda timeout=None: calls.append(("thread.join", timeout)),
+            is_alive=lambda: False,
+        )
+        trade.last_listener_error = failure
+        calls.append(("start_listeners", kwargs))
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "customer_margin_ratios",
+        SimpleNamespace(save_customer_margin_ratios=lambda *_args: None),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(start_listeners=start_failing_monitor),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(
+            is_running=lambda process: True,
+            stop_listeners=lambda *args: calls.append(
+                ("stop_listeners", args)
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except errors.ProcessStateError as e:
+        assert str(e) == "Listener monitor failed."
+        assert e.__cause__ is failure
+    else:
+        raise AssertionError("Expected listener monitor failure to raise.")
+
+    assert ("start_listeners", {}) in calls
+    assert "manager.shutdown" in calls
+    assert "event.set" in calls
+    assert (
+        "thread.join",
+        runtime.LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS,
+    ) in calls
     stop_call = next(
         call
         for call in calls

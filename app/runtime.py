@@ -44,6 +44,7 @@ def run(args, trade, config, gui_state):
     if args.l and is_running:
         try:
             listeners.start_listeners(trade, config, gui_state, base_manager)
+            _raise_listener_monitor_error(trade)
         except Exception:
             speech_manager = getattr(trade, "speech_manager", None)
             speaking_process = getattr(trade, "speaking_process", None)
@@ -116,6 +117,7 @@ def _execute_single_action(
                 base_manager,
                 is_persistent=True,
             )
+            _raise_listener_monitor_error(trade)
 
         action_name = args.a[0]
         try:
@@ -172,6 +174,20 @@ def _execute_single_action(
                             f"{LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS} "
                             "seconds."
                         )
+
+
+def _raise_listener_monitor_error(trade):
+    """Raise if the listener monitor already stopped with an error."""
+    wait_thread = getattr(trade, "wait_listeners_thread", None)
+    listener_error = getattr(trade, "last_listener_error", None)
+    if (
+        wait_thread
+        and not wait_thread.is_alive()
+        and listener_error is not None
+    ):
+        raise errors.ProcessStateError(
+            "Listener monitor failed."
+        ) from listener_error
 
 
 def _start_speech_manager(trade):
