@@ -337,6 +337,52 @@ def test_speech_process_start_timeout_terminates_process(monkeypatch):
     ]
 
 
+def test_speech_manager_queues_messages_in_order():
+    speech_synthesis = _load_speech_synthesis_module()
+    speech_manager = speech_synthesis.SpeechManager()
+
+    speech_manager.set_speech_text("first")
+    speech_manager.set_speech_text("second")
+
+    assert speech_manager.get_speech_text() == "first"
+    assert speech_manager.pop_speech_text() == "first"
+    assert speech_manager.get_speech_text() == "second"
+    assert speech_manager.pop_speech_text() == "second"
+    assert speech_manager.get_speech_text() == ""
+
+
+def test_start_speaking_drains_queued_messages_in_order(monkeypatch):
+    speech_synthesis = _load_speech_synthesis_module()
+    speech_manager = speech_synthesis.SpeechManager()
+    spoken = []
+
+    class FakeVoices:
+        Count = 0
+
+    class FakeSpeechEngine:
+        def GetVoices(self):
+            return FakeVoices()
+
+        def Speak(self, text):
+            spoken.append(text)
+            if text == "second":
+                speech_manager.set_can_speak(False)
+
+    speech_manager.set_speech_text("first")
+    speech_manager.set_speech_text("second")
+    monkeypatch.setattr(
+        speech_synthesis.win32com.client,
+        "Dispatch",
+        lambda *_args: FakeSpeechEngine(),
+    )
+    monkeypatch.setattr(speech_synthesis.time, "sleep", lambda _seconds: None)
+
+    speech_synthesis.start_speaking(speech_manager, None, None)
+
+    assert spoken == ["first", "second"]
+    assert speech_manager.get_speech_text() == ""
+
+
 def test_speech_process_stop_timeout_terminates_process():
     speech_synthesis = _load_speech_synthesis_module()
     calls = []
