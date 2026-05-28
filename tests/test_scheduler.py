@@ -7,6 +7,7 @@ import pytest
 
 from app import action_errors, scheduler
 from app.action_errors import ActionLookupError
+from core_utilities import errors
 
 
 def test_start_scheduler_raises_typed_error_for_missing_action(monkeypatch):
@@ -24,11 +25,9 @@ def test_start_scheduler_raises_typed_error_for_missing_action(monkeypatch):
     monkeypatch.setattr(scheduler.time, "time", lambda: 0)
 
     with pytest.raises(ActionLookupError) as e:
-        scheduler.start_scheduler(
+        scheduler.prepare_scheduler(
             trade,
             config,
-            object(),
-            "HYPERSBI2",
             object(),
         )
 
@@ -61,12 +60,10 @@ def test_start_scheduler_registers_future_scheduled_action(monkeypatch):
     monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
     monkeypatch.setattr(scheduler.time, "time", lambda: 0)
 
-    scheduler.start_scheduler(
+    scheduler.prepare_scheduler(
         trade,
         config,
         gui_state,
-        "HYPERSBI2",
-        object(),
     )
 
     assert len(scheduled) == 1
@@ -124,11 +121,9 @@ def test_start_scheduler_uses_configured_timezone_for_trigger(monkeypatch):
     monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
     monkeypatch.setattr(scheduler.time, "time", lambda: current_epoch)
 
-    scheduler.start_scheduler(
+    scheduler.prepare_scheduler(
         trade,
         config,
-        object(),
-        "HYPERSBI2",
         object(),
     )
 
@@ -159,11 +154,9 @@ def test_start_scheduler_locks_blocking_scheduled_action(monkeypatch):
     monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
     monkeypatch.setattr(scheduler.time, "time", lambda: 0)
 
-    scheduler.start_scheduler(
+    scheduler.prepare_scheduler(
         trade,
         config,
-        object(),
-        "HYPERSBI2",
         object(),
     )
 
@@ -205,11 +198,9 @@ def test_start_scheduler_does_not_lock_inline_nested_speech_action(
     monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
     monkeypatch.setattr(scheduler.time, "time", lambda: 0)
 
-    scheduler.start_scheduler(
+    scheduler.prepare_scheduler(
         trade,
         config,
-        object(),
-        "HYPERSBI2",
         object(),
     )
 
@@ -246,11 +237,9 @@ def test_start_scheduler_locks_named_nested_blocking_action(monkeypatch):
     monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
     monkeypatch.setattr(scheduler.time, "time", lambda: 0)
 
-    scheduler.start_scheduler(
+    scheduler.prepare_scheduler(
         trade,
         config,
-        object(),
-        "HYPERSBI2",
         object(),
     )
 
@@ -287,11 +276,9 @@ def test_start_scheduler_does_not_lock_named_nested_speech_action(monkeypatch):
     monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
     monkeypatch.setattr(scheduler.time, "time", lambda: 0)
 
-    scheduler.start_scheduler(
+    scheduler.prepare_scheduler(
         trade,
         config,
-        object(),
-        "HYPERSBI2",
         object(),
     )
 
@@ -317,11 +304,9 @@ def test_start_scheduler_rejects_missing_named_nested_action(monkeypatch):
     monkeypatch.setattr(scheduler.time, "time", lambda: 0)
 
     with pytest.raises(action_errors.ActionExecutionError) as e:
-        scheduler.start_scheduler(
+        scheduler.prepare_scheduler(
             trade,
             config,
-            object(),
-            "HYPERSBI2",
             object(),
         )
 
@@ -349,11 +334,9 @@ def test_start_scheduler_rejects_cyclic_named_nested_action(monkeypatch):
     monkeypatch.setattr(scheduler.time, "time", lambda: 0)
 
     with pytest.raises(action_errors.ActionExecutionError) as e:
-        scheduler.start_scheduler(
+        scheduler.prepare_scheduler(
             trade,
             config,
-            object(),
-            "HYPERSBI2",
             object(),
         )
 
@@ -421,12 +404,24 @@ def test_start_scheduler_continues_after_scheduled_action_failure(monkeypatch):
     )
     monkeypatch.setattr(scheduler.actions, "execute_action", execute_action)
 
-    scheduler.start_scheduler(
+    scheduler_instance, schedules = scheduler.prepare_scheduler(
         trade,
         config,
         object(),
-        "HYPERSBI2",
-        object(),
+    )
+
+    with pytest.raises(errors.ProcessStateError) as e:
+        scheduler.run_prepared_scheduler(
+            trade,
+            config,
+            "HYPERSBI2",
+            object(),
+            scheduler_instance,
+            schedules,
+        )
+
+    assert str(e.value) == (
+        "Scheduler completed with failed scheduled action."
     )
 
     assert calls == [
@@ -510,12 +505,24 @@ def test_start_scheduler_reports_false_scheduled_action(monkeypatch):
     )
     monkeypatch.setattr(scheduler.actions, "execute_action", execute_action)
 
-    scheduler.start_scheduler(
+    scheduler_instance, schedules = scheduler.prepare_scheduler(
         trade,
         config,
         object(),
-        "HYPERSBI2",
-        object(),
+    )
+
+    with pytest.raises(errors.ProcessStateError) as e:
+        scheduler.run_prepared_scheduler(
+            trade,
+            config,
+            "HYPERSBI2",
+            object(),
+            scheduler_instance,
+            schedules,
+        )
+
+    assert str(e.value) == (
+        "Scheduler completed with failed scheduled action."
     )
 
     assert calls == [

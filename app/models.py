@@ -109,6 +109,8 @@ class Trade(initializer.Initializer):
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
         self.last_listener_error = None
+        self.scheduler_thread = None
+        self.scheduler_error = None
 
         self.instruction_items = {
             "all_keys": sorted(actions.ALL_KEYS),

@@ -29,6 +29,15 @@ def run(args, trade, config, gui_state):
         customer_margin_ratios.save_customer_margin_ratios(trade, config)
 
     is_running = process_utilities.is_running(trade.process)
+    prepared_scheduler = None
+    if args.s and is_running:
+        trade.scheduler_error = None
+        prepared_scheduler = scheduler.prepare_scheduler(
+            trade,
+            config,
+            gui_state,
+        )
+
     base_manager = None
     if args.a or ((args.s or args.l) and is_running):
         base_manager = _start_speech_manager(trade)
@@ -76,27 +85,13 @@ def run(args, trade, config, gui_state):
                         )
             raise
     if args.s and is_running:
-
-        def run_scheduler():
-            try:
-                scheduler.start_scheduler(
-                    trade,
-                    config,
-                    gui_state,
-                    trade.process,
-                    base_manager,
-                )
-            except Exception as e:
-                trade.scheduler_error = e
-                if not notifications.set_speech_text(
-                    trade,
-                    RUN_SCHEDULER_ERROR,
-                ):
-                    print(f"Scheduler stopped: {e}")
-
-        threading.Thread(
-            target=run_scheduler,
-        ).start()
+        _run_scheduler(
+            args,
+            trade,
+            config,
+            base_manager,
+            prepared_scheduler,
+        )
 
 
 def _execute_single_action(
@@ -175,6 +170,40 @@ def _execute_single_action(
                             f"{LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS} "
                             "seconds."
                         )
+
+
+def _run_scheduler(args, trade, config, base_manager, prepared_scheduler):
+    """Run prepared schedules inline or in a monitored background thread."""
+    scheduler_instance, schedules = prepared_scheduler
+
+    def run_scheduler():
+        try:
+            scheduler.run_prepared_scheduler(
+                trade,
+                config,
+                trade.process,
+                base_manager,
+                scheduler_instance,
+                schedules,
+            )
+        except Exception as e:
+            if getattr(trade, "scheduler_error", None) is None:
+                trade.scheduler_error = e
+            if not notifications.set_speech_text(
+                trade,
+                RUN_SCHEDULER_ERROR,
+            ):
+                print(f"Scheduler stopped: {e}")
+
+    if args.a or args.l:
+        trade.scheduler_thread = threading.Thread(target=run_scheduler)
+        trade.scheduler_thread.start()
+    else:
+        run_scheduler()
+        if getattr(trade, "scheduler_error", None) is not None:
+            raise errors.ProcessStateError(RUN_SCHEDULER_ERROR) from (
+                trade.scheduler_error
+            )
 
 
 def _start_speech_manager(trade):

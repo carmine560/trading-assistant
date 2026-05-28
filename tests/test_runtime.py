@@ -895,9 +895,8 @@ def test_run_raises_when_transient_listener_wait_thread_hangs(monkeypatch):
     assert "event.set" in calls
 
 
-def test_run_captures_scheduler_thread_failure(monkeypatch):
+def test_run_raises_scheduler_startup_failure_before_thread(monkeypatch):
     calls = []
-    spoken = []
     args = SimpleNamespace(r=False, s=True, l=False, a=None)
     trade = SimpleNamespace(process="HYPERSBI2")
     config = {"Actions": {}}
@@ -913,16 +912,7 @@ def test_run_captures_scheduler_thread_failure(monkeypatch):
 
         def SpeechManager(self):
             calls.append("manager.SpeechManager")
-            return SimpleNamespace(set_speech_text=spoken.append)
-
-    class FakeThread:
-        def __init__(self, *, target):
-            self.target = target
-            calls.append(("thread", target))
-
-        def start(self):
-            calls.append("thread.start")
-            self.target()
+            return SimpleNamespace(set_speech_text=lambda _text: None)
 
     def raise_scheduler_error(*_args):
         raise action_errors.ActionLookupError(
@@ -944,26 +934,166 @@ def test_run_captures_scheduler_thread_failure(monkeypatch):
     monkeypatch.setattr(
         runtime,
         "scheduler",
-        SimpleNamespace(start_scheduler=raise_scheduler_error),
+        SimpleNamespace(
+            prepare_scheduler=raise_scheduler_error,
+            run_prepared_scheduler=lambda *_args: calls.append(
+                "run_prepared_scheduler"
+            ),
+        ),
     )
     monkeypatch.setattr(
         runtime,
         "speech_synthesis",
         SimpleNamespace(SpeechManager=object),
     )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except action_errors.ActionLookupError as e:
+        assert e.action_name == "open"
+    else:
+        raise AssertionError("Expected scheduler startup failure to raise.")
+
+    assert "run_prepared_scheduler" not in calls
+
+
+def test_run_captures_scheduler_thread_failure_with_real_thread(monkeypatch):
+    calls = []
+    spoken = []
+    args = SimpleNamespace(r=False, s=True, l=True, a=None)
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        last_listener_error=None,
+        scheduler_error=None,
+    )
+    config = {"Actions": {}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return SimpleNamespace(set_speech_text=spoken.append)
+
+    failure = RuntimeError("scheduler failed")
+
     monkeypatch.setattr(
         runtime,
-        "threading",
-        SimpleNamespace(Thread=FakeThread),
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(
+            start_listeners=lambda *_args: calls.append("start_listeners")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "raise_listener_monitor_error",
+        lambda *_args: None,
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(is_running=lambda process: True),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "scheduler",
+        SimpleNamespace(
+            prepare_scheduler=lambda *_args: ("scheduler", ["schedule"]),
+            run_prepared_scheduler=(
+                lambda *_args: (_ for _ in ()).throw(failure)
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
     )
     monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
 
     runtime.run(args, trade, config, gui_state)
+    trade.scheduler_thread.join(timeout=1)
 
-    assert isinstance(trade.scheduler_error, action_errors.ActionLookupError)
-    assert trade.scheduler_error.action_name == "open"
+    assert not trade.scheduler_thread.is_alive()
+    assert trade.scheduler_error is failure
     assert spoken == [runtime.RUN_SCHEDULER_ERROR]
-    assert "thread.start" in calls
+
+
+def test_run_raises_for_scheduler_only_execution_failure(monkeypatch):
+    calls = []
+    spoken = []
+    args = SimpleNamespace(r=False, s=True, l=False, a=None)
+    failure = RuntimeError("scheduled action failed")
+    trade = SimpleNamespace(process="HYPERSBI2", scheduler_error=None)
+    config = {"Actions": {}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return SimpleNamespace(set_speech_text=spoken.append)
+
+    def fail_scheduler(*_args):
+        trade.scheduler_error = failure
+        raise errors.ProcessStateError(
+            "Scheduler completed with failed scheduled action."
+        ) from failure
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(is_running=lambda process: True),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "scheduler",
+        SimpleNamespace(
+            prepare_scheduler=lambda *_args: ("scheduler", ["schedule"]),
+            run_prepared_scheduler=fail_scheduler,
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except errors.ProcessStateError as e:
+        assert str(e) == runtime.RUN_SCHEDULER_ERROR
+        assert e.__cause__ is failure
+    else:
+        raise AssertionError("Expected scheduler-only failure to raise.")
+
+    assert spoken == [runtime.RUN_SCHEDULER_ERROR]
 
 
 def test_run_does_not_start_speech_manager_for_scheduler_when_process_stopped(
@@ -1002,7 +1132,10 @@ def test_run_does_not_start_speech_manager_for_scheduler_when_process_stopped(
         runtime,
         "scheduler",
         SimpleNamespace(
-            start_scheduler=lambda *_args: calls.append("start_scheduler")
+            prepare_scheduler=lambda *_args: calls.append("prepare_scheduler"),
+            run_prepared_scheduler=lambda *_args: calls.append(
+                "run_prepared_scheduler"
+            ),
         ),
     )
     monkeypatch.setattr(
@@ -1021,7 +1154,8 @@ def test_run_does_not_start_speech_manager_for_scheduler_when_process_stopped(
     assert "manager.start" not in calls
     assert "manager.SpeechManager" not in calls
     assert "thread.start" not in calls
-    assert "start_scheduler" not in calls
+    assert "prepare_scheduler" not in calls
+    assert "run_prepared_scheduler" not in calls
 
 
 def test_run_cleans_up_partial_persistent_listener_startup(monkeypatch):

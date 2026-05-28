@@ -6,7 +6,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from app import action_errors, actions, listeners, notifications
-from core_utilities import process_utilities
+from core_utilities import errors, process_utilities
 from core_utilities.config_validation import evaluate_value
 from interaction_utilities import speech_synthesis
 
@@ -20,8 +20,29 @@ NON_BLOCKING_SCHEDULE_COMMANDS = {
 SCHEDULED_ACTION_ERROR = "Scheduled action failed."
 
 
-def start_scheduler(trade, config, gui_state, process, base_manager):
-    """Start a scheduler for executing actions at specified times."""
+def prepare_scheduler(trade, config, gui_state):
+    """Create and validate the scheduler before running its wait loop."""
+    scheduler = sched.scheduler(time.time, time.sleep)
+    schedules = _register_scheduled_actions(
+        scheduler,
+        config[trade.schedules_section],
+        config[trade.actions_section],
+        trade,
+        config,
+        gui_state,
+    )
+    return scheduler, schedules
+
+
+def run_prepared_scheduler(
+    trade,
+    config,
+    process,
+    base_manager,
+    scheduler,
+    schedules,
+):
+    """Run an already-registered scheduler until all events are handled."""
     should_stop_speaking_process = False
     if not trade.speaking_process:
         trade.speaking_process = listeners.start_speaking_process(
@@ -30,16 +51,12 @@ def start_scheduler(trade, config, gui_state, process, base_manager):
         should_stop_speaking_process = True
 
     try:
-        scheduler = sched.scheduler(time.time, time.sleep)
-        schedules = _register_scheduled_actions(
-            scheduler,
-            config[trade.schedules_section],
-            config[trade.actions_section],
-            trade,
-            config,
-            gui_state,
-        )
         _run_scheduler_until_empty(scheduler, schedules, process)
+        scheduler_error = getattr(trade, "scheduler_error", None)
+        if scheduler_error is not None:
+            raise errors.ProcessStateError(
+                "Scheduler completed with failed scheduled action."
+            ) from scheduler_error
     finally:
         if should_stop_speaking_process:
             speech_synthesis.stop_speaking_process(
