@@ -27,7 +27,22 @@ def start_listeners(
             f"{trade.process}.input_map must be "
             "a mapping of inputs to actions."
         )
+    supported_input_names = {
+        "left",
+        "middle",
+        "right",
+        "x1",
+        "x2",
+        *(f"f{number}" for number in range(1, 13)),
+    }
     for input_name, action_name in input_map.items():
+        if input_name not in supported_input_names:
+            raise ConfigError(
+                (
+                    f"{trade.process}.input_map[{input_name!r}] is not "
+                    "a supported input."
+                )
+            )
         if not action_name:
             continue
         if not isinstance(action_name, str):

@@ -153,3 +153,104 @@ def test_start_listeners_rejects_undefined_input_map_action(monkeypatch):
         "'show_indicator'."
     )
     assert calls == []
+
+
+@pytest.mark.parametrize("input_name", ["F1", "middl"])
+def test_start_listeners_rejects_unsupported_input_map_key(
+    monkeypatch,
+    input_name,
+):
+    calls = []
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+    )
+    config = {
+        "Actions": {},
+        "HYPERSBI2": {"input_map": repr({input_name: ""})},
+    }
+
+    monkeypatch.setattr(
+        listeners.mouse,
+        "Listener",
+        lambda **_kwargs: calls.append("mouse.Listener"),
+        raising=False,
+    )
+
+    with pytest.raises(ConfigError) as e:
+        listeners.start_listeners(
+            trade,
+            config,
+            SimpleNamespace(),
+            "base_manager",
+        )
+
+    assert str(e.value) == (
+        f"HYPERSBI2.input_map[{input_name!r}] is not a supported input."
+    )
+    assert calls == []
+
+
+def test_start_listeners_preserves_empty_supported_input_map_values(
+    monkeypatch,
+):
+    calls = []
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        on_click=lambda *_args: None,
+        on_press=lambda *_args: None,
+        on_release=lambda *_args: None,
+        speech_manager=SimpleNamespace(),
+        indicator_thread=None,
+        actions_section="Actions",
+    )
+    config = {
+        "Actions": {},
+        "General": {"voice_name": "voice", "speech_rate": "1"},
+        "HYPERSBI2": {"input_map": "{'middle': '', 'f12': ''}"},
+    }
+
+    class FakeListener:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        def start(self):
+            calls.append(("listener.start", self.kwargs))
+
+    class FakeThread:
+        def __init__(self, *, target, args, kwargs):
+            self.target = target
+            self.args = args
+            self.kwargs = kwargs
+
+        def start(self):
+            calls.append("thread.start")
+
+    monkeypatch.setattr(
+        listeners.mouse,
+        "Listener",
+        lambda **kwargs: FakeListener(**kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        listeners.keyboard,
+        "Listener",
+        lambda **kwargs: FakeListener(**kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(listeners.threading, "Thread", FakeThread)
+    monkeypatch.setattr(
+        listeners,
+        "start_speaking_process",
+        lambda *_args: "speaking_process",
+    )
+
+    listeners.start_listeners(
+        trade,
+        config,
+        SimpleNamespace(),
+        "base_manager",
+    )
+
+    assert len([call for call in calls if call[0] == "listener.start"]) == 2
+    assert "thread.start" in calls
