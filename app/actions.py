@@ -581,6 +581,9 @@ def _start_ui_thread(thread, action_path, instruction_index, command):
     thread.start()
     is_started = thread.startup_event.wait(UI_THREAD_STARTUP_TIMEOUT_SECONDS)
     if not is_started:
+        stop_thread = getattr(thread, "stop", None)
+        if stop_thread:
+            stop_thread()
         raise action_errors.ActionExecutionError(
             (
                 "Action path "
@@ -594,6 +597,9 @@ def _start_ui_thread(thread, action_path, instruction_index, command):
             command=command,
         )
     if thread.error:
+        stop_thread = getattr(thread, "stop", None)
+        if stop_thread:
+            stop_thread()
         raise action_errors.ActionExecutionError(
             (
                 "Action path "
@@ -760,13 +766,14 @@ def _handle_window_command(
             trade.indicator_thread.stop()
             trade.indicator_thread = None
         elif trade.widgets_section in config:
-            trade.indicator_thread = ui.IndicatorThread(trade, config)
+            indicator_thread = ui.IndicatorThread(trade, config)
             _start_ui_thread(
-                trade.indicator_thread,
+                indicator_thread,
                 action_path,
                 instruction_index,
                 command,
             )
+            trade.indicator_thread = indicator_thread
         else:
             return False
     elif command == "show_hide_window":

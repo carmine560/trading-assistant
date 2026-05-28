@@ -1544,8 +1544,43 @@ def test_show_hide_indicator_returns_false_without_widgets_section(
     )
 
 
+def test_show_hide_indicator_stores_thread_after_startup(monkeypatch):
+    spoken = []
+    calls = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["HYPERSBI2 Widgets"] = {}
+    _patch_action_modules(monkeypatch)
+
+    startup_event = threading.Event()
+    startup_event.set()
+    indicator_thread = SimpleNamespace(
+        error=None,
+        startup_event=startup_event,
+        start=lambda: calls.append("start"),
+        stop=lambda: calls.append("stop"),
+    )
+    monkeypatch.setattr(
+        actions.ui,
+        "IndicatorThread",
+        lambda *_args: indicator_thread,
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("show_hide_indicator",)],
+    )
+
+    assert trade.indicator_thread is indicator_thread
+    assert calls == ["start"]
+
+
 def test_show_hide_indicator_raises_for_startup_error(monkeypatch):
     spoken = []
+    calls = []
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
@@ -1559,6 +1594,7 @@ def test_show_hide_indicator_raises_for_startup_error(monkeypatch):
         error=startup_error,
         startup_event=startup_event,
         start=lambda: None,
+        stop=lambda: calls.append("stop"),
     )
     monkeypatch.setattr(
         actions.ui,
@@ -1576,11 +1612,13 @@ def test_show_hide_indicator_raises_for_startup_error(monkeypatch):
 
     assert "indicator failed" in str(e.value)
     _assert_action_error(e, ("inline action",), 1, "show_hide_indicator")
-    assert trade.indicator_thread is indicator_thread
+    assert trade.indicator_thread is None
+    assert calls == ["stop"]
 
 
 def test_show_hide_indicator_raises_for_startup_timeout(monkeypatch):
     spoken = []
+    calls = []
     trade = _build_trade(spoken)
     gui_state = _build_gui_state()
     config = _build_config()
@@ -1591,6 +1629,7 @@ def test_show_hide_indicator_raises_for_startup_timeout(monkeypatch):
         error=None,
         startup_event=SimpleNamespace(wait=lambda _timeout: False),
         start=lambda: None,
+        stop=lambda: calls.append("stop"),
     )
     monkeypatch.setattr(
         actions.ui,
@@ -1608,7 +1647,8 @@ def test_show_hide_indicator_raises_for_startup_timeout(monkeypatch):
 
     assert "UI thread did not start" in str(e.value)
     _assert_action_error(e, ("inline action",), 1, "show_hide_indicator")
-    assert trade.indicator_thread is indicator_thread
+    assert trade.indicator_thread is None
+    assert calls == ["stop"]
 
 
 def test_speak_show_text_raises_for_message_startup_error(monkeypatch):
