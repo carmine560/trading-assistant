@@ -384,10 +384,10 @@ python trading_assistant.py -s
 
 ### Encrypt Configuration File
 
-This script stores its configuration in a GnuPG-encrypted file located at
-`%LOCALAPPDATA%\trading-assistant\trading_assistant.ini.gpg`. By default, the
-script uses your default GnuPG key. To use a different key, specify its
-fingerprint in the `General` section of your configuration file.
+`trading_assistant.py` stores its configuration in a GnuPG-encrypted file
+located at `%LOCALAPPDATA%\trading-assistant\trading_assistant.ini.gpg`. By
+default, the script uses your default GnuPG key. To use a different key,
+specify its fingerprint in the `General` section of your configuration file.
 
 ### Complete Action Argument
 
