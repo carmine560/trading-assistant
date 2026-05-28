@@ -5,9 +5,9 @@ import threading
 from pynput import keyboard, mouse
 
 from app import notifications
+from core_utilities import errors, process_utilities
 from core_utilities.config_common import ConfigError
 from core_utilities.config_validation import evaluate_value
-from core_utilities import process_utilities
 from interaction_utilities import speech_synthesis
 
 LISTENER_MONITOR_ERROR = "Listener monitor failed."
@@ -117,6 +117,15 @@ def _wait_listeners(
             notified = False
         if not notified:
             print(f"{LISTENER_MONITOR_ERROR} {e}")
+
+
+def raise_listener_monitor_error(trade):
+    """Raise if the listener monitor stopped with an error."""
+    listener_error = getattr(trade, "last_listener_error", None)
+    if listener_error is not None:
+        raise errors.ProcessStateError(
+            LISTENER_MONITOR_ERROR
+        ) from listener_error
 
 
 def start_speaking_process(trade, config):

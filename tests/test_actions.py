@@ -8,6 +8,7 @@ import pytest
 
 from app import actions
 from app.action_errors import ActionExecutionError, ActionLookupError
+from core_utilities import errors
 
 
 def _build_trade(spoken):
@@ -397,6 +398,36 @@ def test_execute_action_speaks_text_with_direct_imports(monkeypatch):
     )
     assert spoken == ["ready"]
     assert (trade.initialized, gui_state.initialized) == (1, 1)
+
+
+def test_execute_action_raises_for_listener_failure_before_next_instruction(
+    monkeypatch,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    failure = RuntimeError("listener failed")
+
+    def set_speech_text(text):
+        spoken.append(text)
+        trade.last_listener_error = failure
+
+    trade.speech_manager.set_speech_text = set_speech_text
+
+    with pytest.raises(errors.ProcessStateError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("speak_text", "ready"), ("speak_text", "should not run")],
+        )
+
+    assert str(e.value) == "Listener monitor failed."
+    assert e.value.__cause__ is failure
+    assert spoken == ["ready"]
+    assert not trade.action_lock.locked()
 
 
 def test_execute_action_suppresses_concurrent_direct_call(monkeypatch):
@@ -1181,6 +1212,80 @@ def test_wait_for_price_failure_resets_listener_state(monkeypatch):
             [("wait_for_price", "0, 0, 10, 10, 0")],
         )
 
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
+
+
+def test_wait_for_price_raises_for_listener_failure_before_wait(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    failure = RuntimeError("listener failed")
+
+    def set_speech_text(text):
+        spoken.append(text)
+        trade.last_listener_error = failure
+
+    trade.speech_manager.set_speech_text = set_speech_text
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(
+            recognize_text=lambda *_args, **_kwargs: pytest.fail(
+                "recognize_text should not run"
+            )
+        ),
+    )
+
+    with pytest.raises(errors.ProcessStateError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [
+                ("speak_text", "ready"),
+                ("wait_for_price", "0, 0, 10, 10, 0"),
+            ],
+        )
+
+    assert str(e.value) == "Listener monitor failed."
+    assert e.value.__cause__ is failure
+    assert spoken == ["ready"]
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+
+
+def test_wait_for_price_raises_for_listener_failure_during_wait(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    failure = RuntimeError("listener failed")
+
+    def fail_recognize_text(*_args, **kwargs):
+        trade.last_listener_error = failure
+        kwargs["should_continue_reference"]()
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=fail_recognize_text),
+    )
+
+    with pytest.raises(errors.ProcessStateError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("wait_for_price", "0, 0, 10, 10, 0")],
+        )
+
+    assert str(e.value) == "Listener monitor failed."
+    assert e.value.__cause__ is failure
     assert trade.keyboard_listener_state == 0
     assert trade.key_to_check is None
     assert spoken == []

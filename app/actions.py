@@ -16,6 +16,7 @@ from pynput import keyboard
 from app import (
     action_errors,
     customer_margin_ratios,
+    listeners,
     notifications,
     trade_service,
     ui,
@@ -121,6 +122,7 @@ def execute_action(
             gui_state.initialize_attributes()
 
         for instruction_index, instruction in enumerate(action, start=1):
+            listeners.raise_listener_monitor_error(trade)
             command, argument, additional_argument = _unpack_instruction(
                 instruction,
                 action_path,
@@ -720,7 +722,12 @@ def _handle_gui_command(
                 gui_state,
                 os.path.join(trade.resource_directory, argument),
                 *additional_argument,
-                should_continue_reference=lambda: trade.should_continue,
+                should_continue_reference=(
+                    lambda: (
+                        listeners.raise_listener_monitor_error(trade)
+                        or trade.should_continue
+                    )
+                ),
             )
         finally:
             trade.keyboard_listener_state = 0
@@ -836,7 +843,12 @@ def _handle_wait_command(
                 int(config[trade.process]["image_magnification"]),
                 int(config[trade.process]["binarization_threshold"]),
                 config[trade.process].getboolean("is_dark_theme"),
-                should_continue_reference=lambda: trade.should_continue,
+                should_continue_reference=(
+                    lambda: (
+                        listeners.raise_listener_monitor_error(trade)
+                        or trade.should_continue
+                    )
+                ),
                 max_attempts=None,
             )
         finally:
@@ -858,7 +870,12 @@ def _handle_wait_command(
         try:
             gui_interactions.wait_for_window(
                 argument,
-                should_continue_reference=lambda: trade.should_continue,
+                should_continue_reference=(
+                    lambda: (
+                        listeners.raise_listener_monitor_error(trade)
+                        or trade.should_continue
+                    )
+                ),
             )
         finally:
             trade.keyboard_listener_state = 0
@@ -1355,6 +1372,7 @@ def _wait_for_key(
         announced_minutes = {seconds: -1 for seconds in countdown_seconds}
 
         while trade.keyboard_listener_state == 1:
+            listeners.raise_listener_monitor_error(trade)
             if should_count_down:
                 now = pd.Timestamp.now()
                 current_second = now.second
