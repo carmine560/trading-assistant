@@ -5,6 +5,8 @@ import threading
 from pynput import keyboard, mouse
 
 from app import notifications
+from core_utilities.config_common import ConfigError
+from core_utilities.config_validation import evaluate_value
 from core_utilities import process_utilities
 from interaction_utilities import speech_synthesis
 
@@ -19,6 +21,30 @@ def start_listeners(
     is_persistent=False,
 ):
     """Initiate listeners for mouse and keyboard events."""
+    input_map = evaluate_value(config[trade.process]["input_map"])
+    if not isinstance(input_map, dict):
+        raise ConfigError(
+            f"{trade.process}.input_map must be "
+            "a mapping of inputs to actions."
+        )
+    for input_name, action_name in input_map.items():
+        if not action_name:
+            continue
+        if not isinstance(action_name, str):
+            raise ConfigError(
+                (
+                    f"{trade.process}.input_map[{input_name!r}] must be "
+                    "an action name."
+                )
+            )
+        if action_name not in config[trade.actions_section]:
+            raise ConfigError(
+                (
+                    f"{trade.process}.input_map[{input_name!r}] references "
+                    f"undefined action '{action_name}'."
+                )
+            )
+
     trade.mouse_listener = mouse.Listener(
         on_click=lambda x, y, button, pressed: trade.on_click(
             x, y, button, pressed, config, gui_state

@@ -247,8 +247,8 @@ def _configure_hypersbi2(trade, config, file_utilities, data_utilities):
                     break
             if not trade.executable:
                 raise ConfigBuildError(
-                    f"The executable file for {trade.process}"
-                    " does not exist."
+                    f"The executable file for {trade.process} "
+                    "does not exist."
                 )
 
     file_description = file_utilities.get_file_description(trade.executable)

@@ -95,8 +95,8 @@ def get_arguments():
     group.add_argument(
         "-SS",
         action="store_true",
-        help="configure the startup script, create a shortcut to it,"
-        " and exit",
+        help="configure the startup script, create a shortcut to it, "
+        "and exit",
     )
     group.add_argument(
         "-S", action="store_true", help="configure schedules and exit"
@@ -140,8 +140,8 @@ def get_arguments():
     group.add_argument(
         "-D",
         nargs=1,
-        help="delete the startup script or an action,"
-        " delete the shortcut to it, and exit",
+        help="delete the startup script or an action, "
+        "delete the shortcut to it, and exit",
         metavar="SCRIPT_BASE|ACTION",
     )
     group.add_argument(

@@ -2,7 +2,10 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from app import listeners
+from core_utilities.config_common import ConfigError
 from core_utilities import errors
 
 
@@ -18,8 +21,13 @@ def test_start_listeners_records_wait_thread_failure(monkeypatch):
         speech_manager=SimpleNamespace(set_speech_text=spoken.append),
         indicator_thread="indicator",
         last_listener_error=None,
+        actions_section="Actions",
     )
-    config = {"General": {"voice_name": "voice", "speech_rate": "1"}}
+    config = {
+        "Actions": {"show_indicator": [("show_hide_indicator",)]},
+        "General": {"voice_name": "voice", "speech_rate": "1"},
+        "HYPERSBI2": {"input_map": "{'f1': 'show_indicator'}"},
+    }
     gui_state = SimpleNamespace()
 
     class FakeListener:
@@ -80,3 +88,68 @@ def test_start_listeners_records_wait_thread_failure(monkeypatch):
     assert spoken == [listeners.LISTENER_MONITOR_ERROR]
     assert "thread.start" in calls
     assert any(call[0] == "stop_listeners" for call in calls)
+
+
+def test_start_listeners_rejects_non_mapping_input_map(monkeypatch):
+    calls = []
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+    )
+    config = {
+        "Actions": {},
+        "HYPERSBI2": {"input_map": "['f1', 'show_indicator']"},
+    }
+
+    monkeypatch.setattr(
+        listeners.mouse,
+        "Listener",
+        lambda **_kwargs: calls.append("mouse.Listener"),
+        raising=False,
+    )
+
+    with pytest.raises(ConfigError) as e:
+        listeners.start_listeners(
+            trade,
+            config,
+            SimpleNamespace(),
+            "base_manager",
+        )
+
+    assert str(e.value) == (
+        "HYPERSBI2.input_map must be a mapping of inputs to actions."
+    )
+    assert calls == []
+
+
+def test_start_listeners_rejects_undefined_input_map_action(monkeypatch):
+    calls = []
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+    )
+    config = {
+        "Actions": {},
+        "HYPERSBI2": {"input_map": "{'f1': 'show_indicator'}"},
+    }
+
+    monkeypatch.setattr(
+        listeners.mouse,
+        "Listener",
+        lambda **_kwargs: calls.append("mouse.Listener"),
+        raising=False,
+    )
+
+    with pytest.raises(ConfigError) as e:
+        listeners.start_listeners(
+            trade,
+            config,
+            SimpleNamespace(),
+            "base_manager",
+        )
+
+    assert str(e.value) == (
+        "HYPERSBI2.input_map['f1'] references undefined action "
+        "'show_indicator'."
+    )
+    assert calls == []
