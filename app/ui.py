@@ -7,9 +7,11 @@ from tkinter import TclError
 
 from win32api import GetMonitorInfo, MonitorFromPoint
 
+from core_utilities.config_io import write_config
 from core_utilities.errors import WidgetPositionError
 
 RATIO_EPSILON = 1e-4
+UTILIZATION_RATIO_WRITE_DEBOUNCE_MS = 250
 
 
 class IndicatorThread(threading.Thread):
@@ -25,6 +27,7 @@ class IndicatorThread(threading.Thread):
         self.startup_event = threading.Event()
         self.stop_event = threading.Event()
         self._utilization_ratio_string = None
+        self._utilization_ratio_write_after_id = None
 
     def run(self):
         """Run the thread, creating and placing widgets on the screen."""
@@ -238,11 +241,45 @@ class IndicatorThread(threading.Thread):
         try:
             float_value = float(value)
             float_value = max(RATIO_EPSILON, min(1.0, float_value))
-            self._utilization_ratio_string.set(f"{float_value:.2f}")
+            normalized_value = f"{float_value:.2f}"
+            self._utilization_ratio_string.set(normalized_value)
             with self.trade.config_lock:
+                if (
+                    self.config[self.trade.process]["utilization_ratio"]
+                    == normalized_value
+                ):
+                    return
                 self.config[self.trade.process][
                     "utilization_ratio"
-                ] = self._utilization_ratio_string.get()
+                ] = normalized_value
+            # Fall back to an immediate write if the Tk root is not available
+            # yet.
+            if self.root is None:
+                with self.trade.config_lock:
+                    write_config(
+                        self.config,
+                        self.trade.config_path,
+                        is_encrypted=True,
+                    )
+                return
+            # Cancel any pending write so only the latest value is saved.
+            if self._utilization_ratio_write_after_id is not None:
+                self.root.after_cancel(self._utilization_ratio_write_after_id)
+
+            def write_utilization_ratio():
+                self._utilization_ratio_write_after_id = None
+                with self.trade.config_lock:
+                    write_config(
+                        self.config,
+                        self.trade.config_path,
+                        is_encrypted=True,
+                    )
+
+            # Debounce saves so rapid spinbox changes are written once.
+            self._utilization_ratio_write_after_id = self.root.after(
+                UTILIZATION_RATIO_WRITE_DEBOUNCE_MS,
+                write_utilization_ratio,
+            )
         except ValueError:
             pass
 

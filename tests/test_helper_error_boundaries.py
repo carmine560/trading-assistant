@@ -683,7 +683,7 @@ def test_indicator_thread_destroys_root_and_ignores_destroy_error(monkeypatch):
     assert thread.startup_event.is_set()
 
 
-def test_indicator_utilization_change_writes_config_under_lock():
+def test_indicator_utilization_change_writes_config_under_lock(monkeypatch):
     class RecordingLock:
         def __init__(self):
             self.is_held = False
@@ -713,17 +713,57 @@ def test_indicator_utilization_change_writes_config_under_lock():
         def set(self, value):
             self.value = value
 
+    class FakeRoot:
+        def after(self, milliseconds, callback):
+            after_calls.append((milliseconds, callback))
+            return f"after-{len(after_calls)}"
+
+        def after_cancel(self, after_id):
+            canceled_after_ids.append(after_id)
+
     lock = RecordingLock()
-    trade = SimpleNamespace(process="HYPERSBI2", config_lock=lock)
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        config_lock=lock,
+        config_path="config.ini",
+    )
     config = {
         "HYPERSBI2": ConfigSection(lock, {"utilization_ratio": "0.5"}),
     }
+    calls = []
+    after_calls = []
+    canceled_after_ids = []
+
+    def fake_write_config(*args, **kwargs):
+        assert lock.is_held
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(ui, "write_config", fake_write_config)
+
     thread = ui.IndicatorThread(trade, config)
+    thread.root = FakeRoot()
     thread._utilization_ratio_string = StringValue("0.75")
 
     thread._on_utilization_ratio_change()
 
     assert config["HYPERSBI2"]["utilization_ratio"] == "0.75"
+    assert calls == []
+    assert canceled_after_ids == []
+    assert after_calls[0][0] == ui.UTILIZATION_RATIO_WRITE_DEBOUNCE_MS
+
+    thread._utilization_ratio_string = StringValue("0.80")
+    thread._on_utilization_ratio_change()
+
+    assert config["HYPERSBI2"]["utilization_ratio"] == "0.80"
+    assert calls == []
+    assert canceled_after_ids == ["after-1"]
+    assert after_calls[1][0] == ui.UTILIZATION_RATIO_WRITE_DEBOUNCE_MS
+
+    after_calls[1][1]()
+
+    assert calls == [
+        ((config, "config.ini"), {"is_encrypted": True}),
+    ]
 
 
 def test_message_thread_captures_tk_error(monkeypatch):
