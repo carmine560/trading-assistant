@@ -579,7 +579,20 @@ def _format_action_path(action_path):
 def _start_ui_thread(thread, action_path, instruction_index, command):
     """Start a UI thread and raise contextual errors on startup failure."""
     thread.start()
-    thread.startup_event.wait(UI_THREAD_STARTUP_TIMEOUT_SECONDS)
+    is_started = thread.startup_event.wait(UI_THREAD_STARTUP_TIMEOUT_SECONDS)
+    if not is_started:
+        raise action_errors.ActionExecutionError(
+            (
+                "Action path "
+                f"'{_format_action_path(action_path)}' failed at "
+                f"instruction {instruction_index} ({command}): "
+                "UI thread did not start within "
+                f"{UI_THREAD_STARTUP_TIMEOUT_SECONDS} seconds."
+            ),
+            action_path=action_path,
+            instruction_index=instruction_index,
+            command=command,
+        )
     if thread.error:
         raise action_errors.ActionExecutionError(
             (

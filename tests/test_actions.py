@@ -1579,6 +1579,38 @@ def test_show_hide_indicator_raises_for_startup_error(monkeypatch):
     assert trade.indicator_thread is indicator_thread
 
 
+def test_show_hide_indicator_raises_for_startup_timeout(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["HYPERSBI2 Widgets"] = {}
+    _patch_action_modules(monkeypatch)
+
+    indicator_thread = SimpleNamespace(
+        error=None,
+        startup_event=SimpleNamespace(wait=lambda _timeout: False),
+        start=lambda: None,
+    )
+    monkeypatch.setattr(
+        actions.ui,
+        "IndicatorThread",
+        lambda *_args: indicator_thread,
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("show_hide_indicator",)],
+        )
+
+    assert "UI thread did not start" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "show_hide_indicator")
+    assert trade.indicator_thread is indicator_thread
+
+
 def test_speak_show_text_raises_for_message_startup_error(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
