@@ -1059,6 +1059,52 @@ def test_invalid_show_window_count_raises_before_window_call(monkeypatch):
     assert spoken == []
 
 
+@pytest.mark.parametrize(
+    ("command", "instruction"),
+    [
+        ("is_recording", ("is_recording", "Ture", [("speak_text", "bad")])),
+        (
+            "is_trading_day",
+            ("is_trading_day", "Ture", [("speak_text", "bad")]),
+        ),
+    ],
+)
+def test_invalid_boolean_control_flow_argument_raises_before_side_effects(
+    monkeypatch,
+    command,
+    instruction,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "file_utilities",
+        SimpleNamespace(
+            get_latest_file=lambda *_args: pytest.fail(
+                "get_latest_file should not run"
+            ),
+            is_writing=lambda *_args: pytest.fail("is_writing should not run"),
+            write_chapter=lambda *_args, **_kwargs: None,
+        ),
+    )
+    monkeypatch.setattr(
+        actions,
+        "is_trading_day",
+        lambda *_args: pytest.fail("is_trading_day should not run"),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(trade, config, gui_state, [instruction])
+
+    assert "invalid argument: expected true or false" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, command)
+    assert (trade.initialized, gui_state.initialized) == (0, 0)
+    assert spoken == []
+
+
 def test_wait_for_key_count_down_cancellation_speaks_countdown(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)

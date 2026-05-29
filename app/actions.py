@@ -561,6 +561,25 @@ def _normalize_instruction_arguments(
     instruction_index,
 ):
     """Validate and normalize action command arguments before side effects."""
+    if command in ("is_recording", "is_trading_day"):
+        try:
+            argument = argument.lower()
+        except AttributeError:
+            _raise_invalid_argument_error(
+                action_path,
+                instruction_index,
+                command,
+                "expected true or false",
+            )
+        if argument not in ("true", "false"):
+            _raise_invalid_argument_error(
+                action_path,
+                instruction_index,
+                command,
+                "expected true or false",
+            )
+        argument = argument == "true"
+
     normalizer = _ARGUMENT_NORMALIZERS.get(command)
     if normalizer is None:
         return argument, additional_argument
@@ -1269,9 +1288,7 @@ def _handle_control_flow_command(
                 config[trade.process]["screencast_directory"],
                 config[trade.process]["screencast_regex"],
             )
-        ) == bool(
-            argument.lower() == "true"
-        ) and not _recursively_execute_action(
+        ) == argument and not _recursively_execute_action(
             trade,
             config,
             gui_state,
@@ -1285,7 +1302,7 @@ def _handle_control_flow_command(
             pd.Timestamp.now(tz=config["Market Data"]["timezone"]),
             trade.market_holidays,
             config["Market Holidays"]["date_format"],
-        ) == bool(argument.lower() == "true") and not (
+        ) == argument and not (
             _recursively_execute_action(
                 trade,
                 config,
