@@ -16,6 +16,8 @@ from core_utilities.config_validation import (
 )
 from web_utilities import web_utilities
 
+MARKET_HOLIDAYS_CACHE_MAX_AGE_DAYS = 7
+
 
 def save_customer_margin_ratios(trade, config):
     """Save customer margin ratios for a given trade."""
@@ -148,7 +150,14 @@ def _refresh_market_holidays_cache(section, market_holidays, modified_time):
     """Refresh the market-holidays cache when the upstream page is newer."""
     last_modified = _get_market_holidays_last_modified(section["url"])
     if last_modified is None:
-        if modified_time > pd.Timestamp(0, tz="UTC", unit="s"):
+        cache_age = pd.Timestamp.now(tz="UTC") - modified_time
+        # Ensure the file has a real modification time, not the epoch default
+        # used when the file is missing.
+        if modified_time > pd.Timestamp(
+            0, tz="UTC", unit="s"
+        ) and cache_age <= pd.Timedelta(
+            days=MARKET_HOLIDAYS_CACHE_MAX_AGE_DAYS
+        ):
             return
     elif modified_time >= last_modified:
         return

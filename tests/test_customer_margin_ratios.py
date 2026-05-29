@@ -1,5 +1,6 @@
 """Tests for customer margin ratio refresh behavior."""
 
+import os
 import sys
 
 from configparser import ConfigParser
@@ -432,7 +433,7 @@ def test_get_latest_wraps_market_holiday_refresh_get_errors(
     assert "Unable to refresh market holidays" in str(e.value)
 
 
-def test_get_latest_uses_cached_market_holidays_after_head_timeout(
+def test_get_latest_uses_fresh_cached_market_holidays_after_head_timeout(
     monkeypatch, tmp_path
 ):
     config = _build_market_holidays_config()
@@ -466,7 +467,7 @@ def test_get_latest_uses_cached_market_holidays_after_head_timeout(
     )
 
 
-def test_get_latest_uses_cached_market_holidays_without_last_modified(
+def test_get_latest_uses_fresh_cached_market_holidays_without_last_modified(
     monkeypatch, tmp_path
 ):
     config = _build_market_holidays_config()
@@ -493,6 +494,61 @@ def test_get_latest_uses_cached_market_holidays_without_last_modified(
         )
         is False
     )
+
+
+def test_get_latest_refreshes_stale_market_holidays_without_last_modified(
+    monkeypatch, tmp_path
+):
+    config = _build_market_holidays_config()
+    market_holidays = tmp_path / "market_holidays.csv"
+    market_holidays.write_text("2026/01/01\n", encoding="utf-8")
+    stale_timestamp = (
+        pd.Timestamp.now(tz="UTC")
+        - pd.Timedelta(
+            days=customer_margin_ratios.MARKET_HOLIDAYS_CACHE_MAX_AGE_DAYS + 1
+        )
+    ).timestamp()
+    os.utime(market_holidays, (stale_timestamp, stale_timestamp))
+    get_calls = []
+
+    monkeypatch.setattr(
+        customer_margin_ratios.web_utilities,
+        "make_head_request",
+        lambda *_args, **_kwargs: SimpleNamespace(headers={}),
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.requests,
+        "get",
+        lambda *args, **kwargs: get_calls.append((args, kwargs))
+        or SimpleNamespace(
+            content=b"<html></html>",
+            raise_for_status=lambda: None,
+        ),
+    )
+    monkeypatch.setattr(
+        customer_margin_ratios.pd,
+        "read_html",
+        lambda *_args, **_kwargs: [
+            pd.DataFrame(["2026/01/01", "2026/02/11"], columns=["Date"])
+        ],
+    )
+
+    assert (
+        customer_margin_ratios.get_latest(
+            config,
+            str(market_holidays),
+            "00:00:00",
+            "Asia/Tokyo",
+        )
+        is False
+    )
+
+    assert get_calls == [
+        (("https://example.invalid/holidays",), {"timeout": 5})
+    ]
+    assert market_holidays.read_text(encoding="utf-8").replace(
+        "\r\n", "\n"
+    ) == ("2026/01/01\n2026/02/11\n")
 
 
 def test_refresh_market_holidays_wraps_http_status_errors(
