@@ -299,7 +299,7 @@ href="#configure-cash-balance-and-price-limit-regions">Configure Cash Balance
 and Price Limit Regions</a>” section.</td></tr>
 
 <tr><td><code>('get_symbol', 'TITLE_REGEX')</code></td>
-<td>Get the symbol from a window title.</td></tr>
+<td>Get the securities code from a window title.</td></tr>
 
 <tr><td><code>('write_chapter', 'CURRENT_TITLE'[, 'PREVIOUS_TITLE'])</code></td>
 <td>Write a chapter section for FFmpeg metadata. When creating a new metadata
