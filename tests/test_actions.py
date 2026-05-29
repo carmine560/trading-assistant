@@ -1760,6 +1760,65 @@ def test_show_hide_indicator_stores_thread_after_startup(monkeypatch):
     assert calls == ["start"]
 
 
+def test_show_hide_indicator_waits_for_thread_to_stop(monkeypatch):
+    spoken = []
+    calls = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    indicator_thread = SimpleNamespace(
+        stop=lambda: calls.append("stop"),
+        join=lambda timeout=None: calls.append(("join", timeout)),
+        is_alive=lambda: False,
+    )
+    trade.indicator_thread = indicator_thread
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("show_hide_indicator",)],
+    )
+
+    assert calls == [
+        "stop",
+        ("join", actions.UI_THREAD_STOP_TIMEOUT_SECONDS),
+    ]
+    assert trade.indicator_thread is None
+
+
+def test_show_hide_indicator_raises_when_thread_does_not_stop(monkeypatch):
+    spoken = []
+    calls = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    indicator_thread = SimpleNamespace(
+        stop=lambda: calls.append("stop"),
+        join=lambda timeout=None: calls.append(("join", timeout)),
+        is_alive=lambda: True,
+    )
+    trade.indicator_thread = indicator_thread
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("show_hide_indicator",)],
+        )
+
+    assert "UI thread did not stop" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "show_hide_indicator")
+    assert calls == [
+        "stop",
+        ("join", actions.UI_THREAD_STOP_TIMEOUT_SECONDS),
+    ]
+    assert trade.indicator_thread is indicator_thread
+
+
 def test_show_hide_indicator_raises_for_startup_error(monkeypatch):
     spoken = []
     calls = []

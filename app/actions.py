@@ -36,6 +36,7 @@ PRICE_LIMIT_ERROR = "Unable to get price limit."
 PRICE_LIMIT_FALLBACK_WARNING = "Closing prices file invalid."
 SHARE_SIZE_ERROR = "Unable to calculate share size."
 UI_THREAD_STARTUP_TIMEOUT_SECONDS = 1
+UI_THREAD_STOP_TIMEOUT_SECONDS = 1
 
 
 def start_execute_action_thread(trade, config, gui_state, action):
@@ -790,6 +791,20 @@ def _handle_window_command(
     elif command == "show_hide_indicator":
         if trade.indicator_thread:
             trade.indicator_thread.stop()
+            trade.indicator_thread.join(timeout=UI_THREAD_STOP_TIMEOUT_SECONDS)
+            if trade.indicator_thread.is_alive():
+                raise action_errors.ActionExecutionError(
+                    (
+                        "Action path "
+                        f"'{_format_action_path(action_path)}' failed at "
+                        f"instruction {instruction_index} ({command}): "
+                        "UI thread did not stop within "
+                        f"{UI_THREAD_STOP_TIMEOUT_SECONDS} seconds."
+                    ),
+                    action_path=action_path,
+                    instruction_index=instruction_index,
+                    command=command,
+                )
             trade.indicator_thread = None
         elif trade.widgets_section in config:
             indicator_thread = ui.IndicatorThread(trade, config)
