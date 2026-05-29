@@ -143,7 +143,7 @@ command and its arguments. Possible commands include:
 <td>Click at the coordinates <code>X</code> and <code>Y</code>.</td></tr>
 
 <tr><td><code>('click_widget', 'IMAGE_FILE', 'X, Y, WIDTH, HEIGHT')</code></td>
-<td>Wait for and locate the widget image in the region, then click it. The
+<td>Wait until the widget image appears in the region, then click it. The
 <code>IMAGE_FILE</code> must reside in the <code>HYPERSBI2</code> subdirectory
 of the same directory as the configuration file.</td></tr>
 
@@ -205,10 +205,10 @@ close. Pressing the <code>Esc</code> key cancels the current action and
 executes the specified action, if provided.</td></tr>
 
 <tr><td><code>('wait_for_price', 'X, Y, WIDTH, HEIGHT, INDEX'[, ACTION|'ACTION'])</code></td>
-<td>Wait until <code>trading_assistant.py</code> recognizes an integer in the
-region. Pressing the <code>Esc</code> key cancels the current action and
-executes the specified action, if provided. <strong>Note</strong>: Text
-recognition may fail in rare cases.</td></tr>
+<td>Wait until an integer is recognized in the region. Pressing the
+<code>Esc</code> key cancels the current action and executes the specified
+action, if provided. <strong>Note</strong>: Text recognition may fail in rare
+cases.</td></tr>
 
 <tr><td><code>('wait_for_window', 'TITLE_REGEX'[, ACTION|'ACTION'])</code></td>
 <td>Wait for a window. Pressing the <code>Esc</code> key cancels the current
@@ -253,9 +253,9 @@ $$seconds \geq 30$$.</td></tr>
 ranking to a CSV file.</td></tr>
 
 <tr><td><code>('copy_symbols_from_column', 'X, Y, WIDTH, HEIGHT')</code></td>
-<td>Recognize an alphanumeric column in the region, then copy securities codes
-to the clipboard. <strong>Note</strong>: Certain securities codes may fail to
-be recognized.</td></tr>
+<td>Recognize an alphanumeric column in the region, then copy the securities
+codes to the clipboard. <strong>Note</strong>: Certain securities codes may
+fail to be recognized.</td></tr>
 
 </tbody></table>
 
