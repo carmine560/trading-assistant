@@ -598,14 +598,44 @@ def _format_action_path(action_path):
     return " -> ".join(action_path)
 
 
+def _stop_ui_thread_after_startup_failure(
+    thread,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Stop a failed UI thread and raise if it remains alive."""
+    stop_thread = getattr(thread, "stop", None)
+    if stop_thread:
+        stop_thread()
+    thread.join(timeout=UI_THREAD_STOP_TIMEOUT_SECONDS)
+    if thread.is_alive():
+        raise action_errors.ActionExecutionError(
+            (
+                "Action path "
+                f"'{_format_action_path(action_path)}' failed at "
+                f"instruction {instruction_index} ({command}): "
+                "UI thread did not stop within "
+                f"{UI_THREAD_STOP_TIMEOUT_SECONDS} seconds."
+            ),
+            action_path=action_path,
+            instruction_index=instruction_index,
+            command=command,
+        )
+
+
 def _start_ui_thread(thread, action_path, instruction_index, command):
     """Start a UI thread and raise contextual errors on startup failure."""
     thread.start()
     is_started = thread.startup_event.wait(UI_THREAD_STARTUP_TIMEOUT_SECONDS)
+    # The thread did not signal startup within the timeout.
     if not is_started:
-        stop_thread = getattr(thread, "stop", None)
-        if stop_thread:
-            stop_thread()
+        _stop_ui_thread_after_startup_failure(
+            thread,
+            action_path,
+            instruction_index,
+            command,
+        )
         raise action_errors.ActionExecutionError(
             (
                 "Action path "
@@ -618,10 +648,14 @@ def _start_ui_thread(thread, action_path, instruction_index, command):
             instruction_index=instruction_index,
             command=command,
         )
+    # The thread signaled startup but then reported an error.
     if thread.error:
-        stop_thread = getattr(thread, "stop", None)
-        if stop_thread:
-            stop_thread()
+        _stop_ui_thread_after_startup_failure(
+            thread,
+            action_path,
+            instruction_index,
+            command,
+        )
         raise action_errors.ActionExecutionError(
             (
                 "Action path "
