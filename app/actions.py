@@ -726,10 +726,19 @@ def _execute_instruction(
     if handler in (
         _handle_share_size_command,
         _handle_risk_guard_command,
-        _handle_trade_accounting_command,
         _handle_trade_input_command,
     ):
         return handler(trade, config, command, argument, additional_argument)
+    if handler is _handle_trade_accounting_command:
+        return handler(
+            trade,
+            config,
+            command,
+            argument,
+            additional_argument,
+            action_path,
+            instruction_index,
+        )
     if handler is _handle_control_flow_command:
         return handler(
             trade,
@@ -1225,8 +1234,29 @@ def _handle_trade_accounting_command(
     command,
     argument,
     additional_argument,
+    action_path,
+    instruction_index,
 ):
     """Handle trade count and chapter accounting commands."""
+    latest_video = file_utilities.get_latest_file(
+        config[trade.process]["screencast_directory"],
+        config[trade.process]["screencast_regex"],
+    )
+    # Check latest_video before these commands; the repeated is_writing() check
+    # is cheap enough here.
+    if not latest_video or not file_utilities.is_writing(latest_video):
+        raise action_errors.ActionExecutionError(
+            (
+                "Action path "
+                f"'{_format_action_path(action_path)}' failed at "
+                f"instruction {instruction_index} ({command}): "
+                "No active recording was found for chapter metadata."
+            ),
+            action_path=action_path,
+            instruction_index=instruction_index,
+            command=command,
+        )
+
     if command == "count_trades":
         with trade.config_lock:
             current_number_of_trades = (
@@ -1240,10 +1270,7 @@ def _handle_trade_accounting_command(
             )
             write_config(config, trade.config_path, is_encrypted=True)
         file_utilities.write_chapter(
-            file_utilities.get_latest_file(
-                config[trade.process]["screencast_directory"],
-                config[trade.process]["screencast_regex"],
-            ),
+            latest_video,
             (
                 f"Trade {current_number_of_trades}"
                 f"{f' for {trade.symbol}' if trade.symbol else ''}"
@@ -1254,10 +1281,7 @@ def _handle_trade_accounting_command(
         )
     elif command == "write_chapter":
         file_utilities.write_chapter(
-            file_utilities.get_latest_file(
-                config[trade.process]["screencast_directory"],
-                config[trade.process]["screencast_regex"],
-            ),
+            latest_video,
             argument,
             previous_title=additional_argument,
         )

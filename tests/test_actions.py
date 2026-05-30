@@ -105,7 +105,7 @@ def _patch_action_modules(monkeypatch):
         "file_utilities",
         SimpleNamespace(
             get_latest_file=lambda *_args: "video.mp4",
-            is_writing=lambda *_args: False,
+            is_writing=lambda *_args: True,
             write_chapter=lambda *_args, **_kwargs: None,
         ),
     )
@@ -1661,6 +1661,68 @@ def test_count_trades_writes_config_under_lock(monkeypatch):
         [("count_trades", "1.0")],
     )
     assert writes == ["1"]
+
+
+def test_write_chapter_raises_when_no_recording_file_matches(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "file_utilities",
+        SimpleNamespace(
+            get_latest_file=lambda *_args: False,
+            is_writing=lambda *_args: pytest.fail("is_writing should not run"),
+            write_chapter=lambda *_args, **_kwargs: pytest.fail(
+                "write_chapter should not run"
+            ),
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("write_chapter", "Opening")],
+        )
+
+    assert "No active recording" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "write_chapter")
+    assert spoken == []
+
+
+def test_write_chapter_raises_when_latest_recording_is_stale(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "file_utilities",
+        SimpleNamespace(
+            get_latest_file=lambda *_args: "video.mp4",
+            is_writing=lambda video: video == "other.mp4",
+            write_chapter=lambda *_args, **_kwargs: pytest.fail(
+                "write_chapter should not run"
+            ),
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("write_chapter", "Opening")],
+        )
+
+    assert "No active recording" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "write_chapter")
+    assert spoken == []
 
 
 def test_maximum_daily_number_of_trades_speaks_error_and_stops(monkeypatch):
