@@ -44,13 +44,13 @@ def run_prepared_scheduler(
 ):
     """Run an already-registered scheduler until all events are handled."""
     should_stop_speaking_process = False
-    if not trade.speaking_process:
-        trade.speaking_process = listeners.start_speaking_process(
-            trade, config
-        )
-        should_stop_speaking_process = True
-
     try:
+        if not trade.speaking_process:
+            trade.speaking_process = listeners.start_speaking_process(
+                trade, config
+            )
+            should_stop_speaking_process = True
+
         _run_scheduler_until_empty(scheduler, schedules, process)
         scheduler_error = getattr(trade, "scheduler_error", None)
         if scheduler_error is not None:
@@ -62,6 +62,8 @@ def run_prepared_scheduler(
             speech_synthesis.stop_speaking_process(
                 base_manager, trade.speech_manager, trade.speaking_process
             )
+        elif base_manager and not trade.speaking_process:
+            base_manager.shutdown()
 
 
 def _register_scheduled_actions(

@@ -447,6 +447,41 @@ def test_start_scheduler_continues_after_scheduled_action_failure(monkeypatch):
     assert spoken == [scheduler.SCHEDULED_ACTION_ERROR]
 
 
+def test_start_scheduler_shuts_down_manager_after_speech_startup_failure(
+    monkeypatch,
+):
+    calls = []
+    failure = errors.ProcessStateError("speech startup failed")
+    trade = SimpleNamespace(
+        speaking_process=None,
+        speech_manager="speech_manager",
+    )
+    scheduler_instance = SimpleNamespace(queue=[])
+    base_manager = SimpleNamespace(shutdown=lambda: calls.append("shutdown"))
+
+    def fail_start_speaking_process(*_args):
+        raise failure
+
+    monkeypatch.setattr(
+        scheduler.listeners,
+        "start_speaking_process",
+        fail_start_speaking_process,
+    )
+
+    with pytest.raises(errors.ProcessStateError) as e:
+        scheduler.run_prepared_scheduler(
+            trade,
+            {},
+            "HYPERSBI2",
+            base_manager,
+            scheduler_instance,
+            [],
+        )
+
+    assert e.value is failure
+    assert calls == ["shutdown"]
+
+
 def test_start_scheduler_reports_false_scheduled_action(monkeypatch):
     calls = []
     spoken = []
