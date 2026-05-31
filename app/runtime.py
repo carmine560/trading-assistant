@@ -58,6 +58,21 @@ def run(args, trade, config, gui_state):
         try:
             listeners.start_listeners(trade, config, gui_state, base_manager)
             raise_listener_monitor_error(trade)
+            if args.s:
+                _run_scheduler(
+                    args,
+                    trade,
+                    config,
+                    base_manager,
+                    prepared_scheduler,
+                )
+                scheduler_thread = getattr(trade, "scheduler_thread", None)
+                if scheduler_thread:
+                    scheduler_thread.join()
+                    if getattr(trade, "scheduler_error", None) is not None:
+                        raise errors.ProcessStateError(
+                            RUN_SCHEDULER_ERROR
+                        ) from trade.scheduler_error
         except Exception:
             speech_manager = getattr(trade, "speech_manager", None)
             speaking_process = getattr(trade, "speaking_process", None)
@@ -87,7 +102,7 @@ def run(args, trade, config, gui_state):
                             "seconds."
                         )
             raise
-    if args.s and is_running:
+    if args.s and is_running and not args.l:
         _run_scheduler(
             args,
             trade,

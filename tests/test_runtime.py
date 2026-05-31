@@ -958,7 +958,9 @@ def test_run_raises_scheduler_startup_failure_before_thread(monkeypatch):
     assert "run_prepared_scheduler" not in calls
 
 
-def test_run_captures_scheduler_thread_failure_with_real_thread(monkeypatch):
+def test_run_raises_and_stops_listeners_for_scheduler_thread_failure(
+    monkeypatch,
+):
     calls = []
     spoken = []
     args = SimpleNamespace(r=False, s=True, l=True, a=None)
@@ -966,6 +968,16 @@ def test_run_captures_scheduler_thread_failure_with_real_thread(monkeypatch):
         process="HYPERSBI2",
         last_listener_error=None,
         scheduler_error=None,
+        mouse_listener="mouse",
+        keyboard_listener="keyboard",
+        speaking_process="speaker",
+        stop_listeners_event=SimpleNamespace(
+            set=lambda: calls.append("event.set")
+        ),
+        wait_listeners_thread=SimpleNamespace(
+            join=lambda timeout=None: calls.append(("thread.join", timeout)),
+            is_alive=lambda: False,
+        ),
     )
     config = {"Actions": {}}
     gui_state = object()
@@ -1005,7 +1017,12 @@ def test_run_captures_scheduler_thread_failure_with_real_thread(monkeypatch):
     monkeypatch.setattr(
         runtime,
         "process_utilities",
-        SimpleNamespace(is_running=lambda process: True),
+        SimpleNamespace(
+            is_running=lambda process: True,
+            stop_listeners=lambda *args: calls.append(
+                ("stop_listeners", args)
+            ),
+        ),
     )
     monkeypatch.setattr(
         runtime,
@@ -1024,12 +1041,26 @@ def test_run_captures_scheduler_thread_failure_with_real_thread(monkeypatch):
     )
     monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
 
-    runtime.run(args, trade, config, gui_state)
-    trade.scheduler_thread.join(timeout=1)
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except errors.ProcessStateError as e:
+        assert str(e) == runtime.RUN_SCHEDULER_ERROR
+        assert e.__cause__ is failure
+    else:
+        raise AssertionError("Expected scheduler thread failure to raise.")
 
     assert not trade.scheduler_thread.is_alive()
     assert trade.scheduler_error is failure
     assert spoken == [runtime.RUN_SCHEDULER_ERROR]
+    assert any(
+        isinstance(call, tuple) and call[0] == "stop_listeners"
+        for call in calls
+    )
+    assert "event.set" in calls
+    assert (
+        "thread.join",
+        runtime.LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS,
+    ) in calls
 
 
 def test_run_raises_for_scheduler_only_execution_failure(monkeypatch):
