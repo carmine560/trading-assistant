@@ -1238,25 +1238,6 @@ def _handle_trade_accounting_command(
     instruction_index,
 ):
     """Handle trade count and chapter accounting commands."""
-    latest_video = file_utilities.get_latest_file(
-        config[trade.process]["screencast_directory"],
-        config[trade.process]["screencast_regex"],
-    )
-    # Check latest_video before these commands; the repeated is_writing() check
-    # is cheap enough here.
-    if not latest_video or not file_utilities.is_writing(latest_video):
-        raise action_errors.ActionExecutionError(
-            (
-                "Action path "
-                f"'{_format_action_path(action_path)}' failed at "
-                f"instruction {instruction_index} ({command}): "
-                "No active recording was found for chapter metadata."
-            ),
-            action_path=action_path,
-            instruction_index=instruction_index,
-            command=command,
-        )
-
     if command == "count_trades":
         with trade.config_lock:
             current_number_of_trades = (
@@ -1269,16 +1250,57 @@ def _handle_trade_accounting_command(
                 current_number_of_trades
             )
             write_config(config, trade.config_path, is_encrypted=True)
-        file_utilities.write_chapter(
-            latest_video,
+
+    latest_video = file_utilities.get_latest_file(
+        config[trade.process]["screencast_directory"],
+        config[trade.process]["screencast_regex"],
+    )
+    # Check latest_video before these commands; the repeated is_writing() check
+    # is cheap enough here.
+    is_recording = latest_video and file_utilities.is_writing(latest_video)
+    if not is_recording:
+        error = action_errors.ActionExecutionError(
             (
-                f"Trade {current_number_of_trades}"
-                f"{f' for {trade.symbol}' if trade.symbol else ''}"
-                f" at {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                "Action path "
+                f"'{_format_action_path(action_path)}' failed at "
+                f"instruction {instruction_index} ({command}): "
+                "No active recording was found for chapter metadata."
             ),
-            previous_title="Pre-trading",
-            offset=argument,
+            action_path=action_path,
+            instruction_index=instruction_index,
+            command=command,
         )
+        if command == "count_trades":
+            trade.last_action_warning = error
+            return True
+        raise error
+
+    if command == "count_trades":
+        try:
+            file_utilities.write_chapter(
+                latest_video,
+                (
+                    f"Trade {current_number_of_trades}"
+                    f"{f' for {trade.symbol}' if trade.symbol else ''}"
+                    f" at {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                ),
+                previous_title="Pre-trading",
+                offset=argument,
+            )
+        except Exception as e:
+            warning = action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index} ({command}): "
+                    f"Unable to write chapter metadata: {e}"
+                ),
+                action_path=action_path,
+                instruction_index=instruction_index,
+                command=command,
+            )
+            warning.__cause__ = e
+            trade.last_action_warning = warning
     elif command == "write_chapter":
         file_utilities.write_chapter(
             latest_video,

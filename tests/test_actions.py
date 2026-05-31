@@ -1663,6 +1663,88 @@ def test_count_trades_writes_config_under_lock(monkeypatch):
     assert writes == ["1"]
 
 
+def test_count_trades_persists_when_no_recording_file_matches(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    writes = []
+    monkeypatch.setattr(
+        actions,
+        "write_config",
+        lambda *_args, **_kwargs: writes.append(
+            config["Variables"]["current_number_of_trades"]
+        ),
+    )
+    monkeypatch.setattr(
+        actions,
+        "file_utilities",
+        SimpleNamespace(
+            get_latest_file=lambda *_args: False,
+            is_writing=lambda *_args: pytest.fail("is_writing should not run"),
+            write_chapter=lambda *_args, **_kwargs: pytest.fail(
+                "write_chapter should not run"
+            ),
+        ),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("count_trades", "1.0")],
+    )
+
+    assert config["Variables"]["current_number_of_trades"] == "1"
+    assert writes == ["1"]
+    assert isinstance(trade.last_action_warning, ActionExecutionError)
+    assert "No active recording" in str(trade.last_action_warning)
+    assert spoken == []
+
+
+def test_count_trades_persists_when_chapter_write_fails(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    writes = []
+    failure = OSError("metadata file locked")
+    monkeypatch.setattr(
+        actions,
+        "write_config",
+        lambda *_args, **_kwargs: writes.append(
+            config["Variables"]["current_number_of_trades"]
+        ),
+    )
+    monkeypatch.setattr(
+        actions,
+        "file_utilities",
+        SimpleNamespace(
+            get_latest_file=lambda *_args: "video.mp4",
+            is_writing=lambda video: video == "video.mp4",
+            write_chapter=lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                failure
+            ),
+        ),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("count_trades", "1.0")],
+    )
+
+    assert config["Variables"]["current_number_of_trades"] == "1"
+    assert writes == ["1"]
+    assert isinstance(trade.last_action_warning, ActionExecutionError)
+    assert "Unable to write chapter metadata" in str(trade.last_action_warning)
+    assert trade.last_action_warning.__cause__ is failure
+    assert spoken == []
+
+
 def test_write_chapter_raises_when_no_recording_file_matches(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
