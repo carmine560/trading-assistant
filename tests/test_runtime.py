@@ -1096,7 +1096,7 @@ def test_run_raises_for_scheduler_only_execution_failure(monkeypatch):
     assert spoken == [runtime.RUN_SCHEDULER_ERROR]
 
 
-def test_run_does_not_start_speech_manager_for_scheduler_when_process_stopped(
+def test_run_raises_for_scheduler_when_process_stopped(
     monkeypatch,
 ):
     calls = []
@@ -1149,11 +1149,66 @@ def test_run_does_not_start_speech_manager_for_scheduler_when_process_stopped(
     )
     monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
 
-    runtime.run(args, trade, config, gui_state)
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except errors.ProcessStateError as e:
+        assert str(e) == "HYPERSBI2 is not running."
+    else:
+        raise AssertionError("Expected stopped process to raise.")
 
     assert "manager.start" not in calls
     assert "manager.SpeechManager" not in calls
     assert "thread.start" not in calls
+    assert "prepare_scheduler" not in calls
+    assert "run_prepared_scheduler" not in calls
+
+
+def test_run_raises_for_scheduler_and_listeners_when_process_stopped(
+    monkeypatch,
+):
+    calls = []
+    args = SimpleNamespace(r=False, s=True, l=True, a=None)
+    trade = SimpleNamespace(process="HYPERSBI2")
+    config = {}
+    gui_state = object()
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(
+            start_listeners=lambda *_args: calls.append("start_listeners")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(is_running=lambda process: False),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "scheduler",
+        SimpleNamespace(
+            prepare_scheduler=lambda *_args: calls.append("prepare_scheduler"),
+            run_prepared_scheduler=lambda *_args: calls.append(
+                "run_prepared_scheduler"
+            ),
+        ),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except errors.ProcessStateError as e:
+        assert str(e) == "HYPERSBI2 is not running."
+    else:
+        raise AssertionError("Expected stopped process to raise.")
+
+    assert "start_listeners" not in calls
     assert "prepare_scheduler" not in calls
     assert "run_prepared_scheduler" not in calls
 
@@ -1362,7 +1417,7 @@ def test_run_cleans_up_persistent_listener_monitor_failure(monkeypatch):
     assert stop_call[1][4] is None
 
 
-def test_run_does_not_start_speech_manager_for_listeners_when_process_stopped(
+def test_run_raises_for_listeners_when_process_stopped(
     monkeypatch,
 ):
     calls = []
@@ -1403,7 +1458,12 @@ def test_run_does_not_start_speech_manager_for_listeners_when_process_stopped(
     )
     monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
 
-    runtime.run(args, trade, config, gui_state)
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except errors.ProcessStateError as e:
+        assert str(e) == "HYPERSBI2 is not running."
+    else:
+        raise AssertionError("Expected stopped process to raise.")
 
     assert "manager.start" not in calls
     assert "manager.SpeechManager" not in calls

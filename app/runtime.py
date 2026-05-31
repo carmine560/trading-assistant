@@ -29,6 +29,9 @@ def run(args, trade, config, gui_state):
         customer_margin_ratios.save_customer_margin_ratios(trade, config)
 
     is_running = process_utilities.is_running(trade.process)
+    if (args.s or args.l) and not is_running:
+        raise errors.ProcessStateError(f"{trade.process} is not running.")
+
     prepared_scheduler = None
     if args.s and is_running:
         trade.scheduler_error = None
