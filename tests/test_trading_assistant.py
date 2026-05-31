@@ -364,15 +364,15 @@ def test_get_price_limit_rejects_short_rankings_row_by_default(
 
     with pytest.raises(ValueError, match=actions.PRICE_LIMIT_ERROR):
         actions.get_price_limit(sample_trade, sample_config)
-    assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
-    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
+    assert spoken == [actions.PRICE_LIMIT_MARKET_DATA_FILE_ERROR]
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
     assert f"Unable to read market data file {path}" in str(
-        sample_trade.last_action_warning
+        sample_trade.last_action_error
     )
-    assert "row 1 has 1 columns" in str(sample_trade.last_action_warning)
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_error)
 
 
-def test_get_price_limit_falls_back_to_ocr_for_non_numeric_rankings_price(
+def test_get_price_limit_rejects_non_numeric_rankings_price_when_ocr_enabled(
     monkeypatch, sample_trade, sample_config, tmp_path
 ):
     spoken = []
@@ -389,17 +389,18 @@ def test_get_price_limit_falls_back_to_ocr_for_non_numeric_rankings_price(
     monkeypatch.setattr(
         actions.text_recognition,
         "recognize_text",
-        lambda *_args, **_kwargs: 4321,
+        lambda *_args, **_kwargs: pytest.fail("OCR should not run"),
     )
 
-    assert actions.get_price_limit(sample_trade, sample_config) == 4321
-    assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
-    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
+    with pytest.raises(ValueError, match=actions.PRICE_LIMIT_ERROR):
+        actions.get_price_limit(sample_trade, sample_config)
+    assert spoken == [actions.PRICE_LIMIT_MARKET_DATA_FILE_ERROR]
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
     assert f"Unable to read market data file {path}" in str(
-        sample_trade.last_action_warning
+        sample_trade.last_action_error
     )
     assert "row 1 has invalid closing price 'bad'" in str(
-        sample_trade.last_action_warning
+        sample_trade.last_action_error
     )
 
 
@@ -602,16 +603,16 @@ def test_calculate_share_size_rejects_invalid_rankings_file_by_default(
     assert actions.calculate_share_size(
         sample_trade, sample_config, "long"
     ) == (False, actions.PRICE_LIMIT_ERROR)
-    assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
-    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
+    assert spoken == [actions.PRICE_LIMIT_MARKET_DATA_FILE_ERROR]
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
     assert f"Unable to read market data file {path}" in str(
-        sample_trade.last_action_warning
+        sample_trade.last_action_error
     )
-    assert "row 1 has 1 columns" in str(sample_trade.last_action_warning)
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_error)
     assert sample_trade.share_size == 0
 
 
-def test_calculate_share_size_uses_ocr_for_invalid_rankings_file_when_enabled(
+def test_calculate_share_size_rejects_invalid_rankings_file_when_ocr_enabled(
     monkeypatch,
     sample_trade,
     sample_config,
@@ -635,19 +636,19 @@ def test_calculate_share_size_uses_ocr_for_invalid_rankings_file_when_enabled(
     monkeypatch.setattr(
         actions.text_recognition,
         "recognize_text",
-        lambda *_args, **_kwargs: 1130,
+        lambda *_args, **_kwargs: pytest.fail("OCR should not run"),
     )
 
     assert actions.calculate_share_size(
         sample_trade, sample_config, "long"
-    ) == (True, None)
-    assert spoken == [actions.PRICE_LIMIT_FALLBACK_WARNING]
-    assert isinstance(sample_trade.last_action_warning, errors.MarketDataError)
+    ) == (False, actions.PRICE_LIMIT_ERROR)
+    assert spoken == [actions.PRICE_LIMIT_MARKET_DATA_FILE_ERROR]
+    assert isinstance(sample_trade.last_action_error, errors.MarketDataError)
     assert f"Unable to read market data file {path}" in str(
-        sample_trade.last_action_warning
+        sample_trade.last_action_error
     )
-    assert "row 1 has 1 columns" in str(sample_trade.last_action_warning)
-    assert sample_trade.share_size == 200
+    assert "row 1 has 1 columns" in str(sample_trade.last_action_error)
+    assert sample_trade.share_size == 0
 
 
 def test_calculate_share_size_handles_price_limit_ocr_failure(

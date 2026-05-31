@@ -33,7 +33,7 @@ CUSTOMER_MARGIN_RATIOS_FILE_ERROR = (
 CUSTOMER_MARGIN_RATIOS_FRESHNESS_CACHE_SECONDS = 30 * 60
 MARKET_DATA_FILE_ERROR = "Unable to read market data file"
 PRICE_LIMIT_ERROR = "Unable to get price limit."
-PRICE_LIMIT_FALLBACK_WARNING = "Closing prices file invalid."
+PRICE_LIMIT_MARKET_DATA_FILE_ERROR = "Closing prices file invalid."
 SHARE_SIZE_ERROR = "Unable to calculate share size."
 UI_THREAD_STARTUP_TIMEOUT_SECONDS = 1
 UI_THREAD_STOP_TIMEOUT_SECONDS = 1
@@ -1645,13 +1645,14 @@ def get_price_limit(trade, config):
                 config,
             )
         except errors.MarketDataError as e:
-            # Market data is corrupted; notify the user before continuing to
-            # either fail closed or use the explicit OCR fallback.
-            trade.last_action_warning = e
+            # Corrupted market data means the structured source is known bad.
+            # Fail closed instead of falling through to less reliable OCR.
+            trade.last_action_error = e
             notifications.set_speech_text(
                 trade,
-                PRICE_LIMIT_FALLBACK_WARNING,
+                PRICE_LIMIT_MARKET_DATA_FILE_ERROR,
             )
+            raise ValueError(PRICE_LIMIT_ERROR) from e
         except OSError as e:
             # Market data may simply be unavailable, so record diagnostics
             # without speaking on every order.
