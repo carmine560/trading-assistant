@@ -482,6 +482,111 @@ def test_start_scheduler_shuts_down_manager_after_speech_startup_failure(
     assert calls == ["shutdown"]
 
 
+def test_start_scheduler_skips_later_blocking_actions_after_failure(
+    monkeypatch,
+):
+    calls = []
+    canceled = []
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+        speech_manager=SimpleNamespace(set_speech_text=lambda _text: None),
+    )
+    first_action = [("click", "1,2")]
+    speech_action = [("speak_text", "ready")]
+    third_action = [("click", "3,4")]
+    config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
+        "Schedules": {
+            "first": "('09:00:00', 'first_action')",
+            "second": "('09:00:01', 'speech_action')",
+            "third": "('09:00:02', 'third_action')",
+        },
+        "Actions": {
+            "first_action": first_action,
+            "speech_action": speech_action,
+            "third_action": third_action,
+        },
+    }
+
+    class FakeScheduler:
+        def __init__(self, _timefunc, _delayfunc):
+            self.queue = []
+
+        def enterabs(self, trigger, priority, action, argument, kwargs):
+            event = SimpleNamespace(
+                time=trigger,
+                priority=priority,
+                action=action,
+                argument=argument,
+                kwargs=kwargs,
+            )
+            self.queue.append(event)
+            return event
+
+        def cancel(self, schedule):
+            canceled.append(schedule.argument[3])
+            self.queue.remove(schedule)
+
+        def run(self, _blocking):
+            event = self.queue.pop(0)
+            event.action(*event.argument, **event.kwargs)
+
+    def execute_action(*args, **kwargs):
+        calls.append((args[3], kwargs))
+        return args[3] != first_action
+
+    monkeypatch.setattr(scheduler.sched, "scheduler", FakeScheduler)
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+    monkeypatch.setattr(scheduler.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(
+        scheduler.process_utilities,
+        "is_running",
+        lambda _process: True,
+    )
+    monkeypatch.setattr(scheduler.actions, "execute_action", execute_action)
+
+    scheduler_instance, schedules = scheduler.prepare_scheduler(
+        trade,
+        config,
+        object(),
+    )
+
+    with pytest.raises(errors.ProcessStateError) as e:
+        scheduler.run_prepared_scheduler(
+            trade,
+            config,
+            "HYPERSBI2",
+            object(),
+            scheduler_instance,
+            schedules,
+        )
+
+    assert str(e.value) == (
+        "Scheduler completed with failed scheduled action."
+    )
+    assert calls == [
+        (
+            first_action,
+            {
+                "action_path": ("first_action",),
+                "is_top_level_action": True,
+                "should_initialize": True,
+            },
+        ),
+        (
+            speech_action,
+            {
+                "action_path": ("speech_action",),
+                "is_top_level_action": False,
+                "should_initialize": False,
+            },
+        ),
+    ]
+    assert canceled == ["third_action"]
+
+
 def test_start_scheduler_reports_false_scheduled_action(monkeypatch):
     calls = []
     spoken = []

@@ -44,6 +44,7 @@ def run_prepared_scheduler(
 ):
     """Run an already-registered scheduler until all events are handled."""
     should_stop_speaking_process = False
+    trade.scheduler_blocking_action_failed = False
     try:
         if not trade.speaking_process:
             trade.speaking_process = listeners.start_speaking_process(
@@ -51,13 +52,14 @@ def run_prepared_scheduler(
             )
             should_stop_speaking_process = True
 
-        _run_scheduler_until_empty(scheduler, schedules, process)
+        _run_scheduler_until_empty(trade, process, scheduler, schedules)
         scheduler_error = getattr(trade, "scheduler_error", None)
         if scheduler_error is not None:
             raise errors.ProcessStateError(
                 "Scheduler completed with failed scheduled action."
             ) from scheduler_error
     finally:
+        trade.scheduler_blocking_action_failed = False
         if should_stop_speaking_process:
             speech_synthesis.stop_speaking_process(
                 base_manager, trade.speech_manager, trade.speaking_process
@@ -120,11 +122,25 @@ def _register_scheduled_actions(
     return schedules
 
 
-def _run_scheduler_until_empty(scheduler, schedules, process):
+def _run_scheduler_until_empty(trade, process, scheduler, schedules):
     """Run pending scheduled events while the target process is alive."""
     while scheduler.queue:
         if process_utilities.is_running(process):
             scheduler.run(False)
+            if getattr(trade, "scheduler_blocking_action_failed", False):
+                for schedule in schedules:
+                    if schedule in scheduler.queue:
+                        (
+                            _trade,
+                            _config,
+                            _gui_state,
+                            _action_name,
+                            _scheduled_action,
+                            is_blocking_schedule_action,
+                        ) = schedule.argument
+                        if is_blocking_schedule_action:
+                            scheduler.cancel(schedule)
+                trade.scheduler_blocking_action_failed = False
             time.sleep(
                 max(0.0, min(scheduler.queue[0].time - time.time(), 1.0))
                 if scheduler.queue
@@ -164,7 +180,9 @@ def _run_scheduled_action(
                 trade.last_action_error = error
             raise error from previous_error
     except Exception as e:
-        trade.scheduler_error = e
+        if getattr(trade, "scheduler_error", None) is None:
+            trade.scheduler_error = e
+        trade.scheduler_blocking_action_failed = is_blocking_schedule_action
         notifications.set_speech_text(trade, SCHEDULED_ACTION_ERROR)
 
 
