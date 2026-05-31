@@ -4,6 +4,7 @@ import csv
 import math
 import os
 import re
+from functools import partial
 import threading
 import time
 
@@ -726,9 +727,18 @@ def _execute_instruction(
     if handler in (
         _handle_share_size_command,
         _handle_risk_guard_command,
-        _handle_trade_input_command,
     ):
         return handler(trade, config, command, argument, additional_argument)
+    if handler is _handle_trade_input_command:
+        return handler(
+            trade,
+            config,
+            command,
+            argument,
+            additional_argument,
+            action_path,
+            instruction_index,
+        )
     if handler is _handle_trade_accounting_command:
         return handler(
             trade,
@@ -1281,8 +1291,8 @@ def _handle_trade_accounting_command(
                 latest_video,
                 (
                     f"Trade {current_number_of_trades}"
-                    f"{f' for {trade.symbol}' if trade.symbol else ''}"
-                    f" at {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    f"{f' for {trade.symbol}' if trade.symbol else ''} "
+                    f"at {time.strftime('%Y-%m-%d %H:%M:%S')}"
                 ),
                 previous_title="Pre-trading",
                 offset=argument,
@@ -1317,6 +1327,8 @@ def _handle_trade_input_command(
     command,
     argument,
     additional_argument,
+    action_path,
+    instruction_index,
 ):
     """Handle trade input and output commands."""
     if command == "get_cash_balance":
@@ -1335,7 +1347,56 @@ def _handle_trade_input_command(
         )
         trade.has_cash_balance = True
     elif command == "get_symbol":
-        gui_interactions.enumerate_windows(trade.get_symbol, argument)
+        symbol_matches = []
+        try:
+            # Bind the match list into the callback so enumerate_windows can
+            # collect all matches without changing its interface.
+            gui_interactions.enumerate_windows(
+                partial(
+                    trade.get_symbol,
+                    symbol_matches=symbol_matches,
+                ),
+                argument,
+            )
+        except IndexError as e:
+            raise action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index} ({command}): "
+                    "title regex matched but did not provide a symbol "
+                    "capture group."
+                ),
+                action_path=action_path,
+                instruction_index=instruction_index,
+                command=command,
+            ) from e
+        if not symbol_matches:
+            raise action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index} ({command}): "
+                    "no matching window was found."
+                ),
+                action_path=action_path,
+                instruction_index=instruction_index,
+                command=command,
+            )
+        if len(symbol_matches) > 1:
+            raise action_errors.ActionExecutionError(
+                (
+                    "Action path "
+                    f"'{_format_action_path(action_path)}' failed at "
+                    f"instruction {instruction_index} ({command}): "
+                    "expected one matching window, "
+                    f"found {len(symbol_matches)}."
+                ),
+                action_path=action_path,
+                instruction_index=instruction_index,
+                command=command,
+            )
+        trade.symbol = symbol_matches[0]
     elif command == "write_share_size":
         pyautogui.write(str(trade.share_size))
 

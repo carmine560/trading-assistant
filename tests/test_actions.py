@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from app import actions
+from app import actions, models
 from app.action_errors import ActionExecutionError, ActionLookupError
 from core_utilities import errors
 
@@ -1490,6 +1490,156 @@ def test_copy_symbols_from_column_preserves_clipboard_on_ocr_error(
             [("copy_symbols_from_column", "0, 0, 10, 10")],
         )
     assert calls == []
+
+
+def test_get_symbol_extracts_single_matching_window(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    trade.symbol = ""
+    trade.get_symbol = models.Trade.get_symbol.__get__(trade, type(trade))
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        models.win32gui,
+        "GetWindowText",
+        lambda hwnd: hwnd,
+        raising=False,
+    )
+
+    def enumerate_windows(callback, extra):
+        assert callback("Summary (1234)", extra)
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(enumerate_windows=enumerate_windows),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("get_symbol", r"Summary \((\d{4})\)")],
+    )
+
+    assert trade.symbol == "1234"
+    assert spoken == []
+
+
+def test_get_symbol_raises_when_no_window_matches(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    trade.symbol = ""
+    trade.get_symbol = models.Trade.get_symbol.__get__(trade, type(trade))
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        models.win32gui,
+        "GetWindowText",
+        lambda hwnd: hwnd,
+        raising=False,
+    )
+
+    def enumerate_windows(callback, extra):
+        assert callback("Settings", extra)
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(enumerate_windows=enumerate_windows),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("get_symbol", r"Summary \((\d{4})\)")],
+        )
+
+    assert "no matching window" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "get_symbol")
+    assert trade.symbol == ""
+    assert spoken == []
+
+
+def test_get_symbol_raises_when_multiple_windows_match(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    trade.symbol = ""
+    trade.get_symbol = models.Trade.get_symbol.__get__(trade, type(trade))
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        models.win32gui,
+        "GetWindowText",
+        lambda hwnd: hwnd,
+        raising=False,
+    )
+
+    def enumerate_windows(callback, extra):
+        assert callback("Summary (1234)", extra)
+        assert callback("Summary (5678)", extra)
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(enumerate_windows=enumerate_windows),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("get_symbol", r"Summary \((\d{4})\)")],
+        )
+
+    assert "expected one matching window, found 2" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "get_symbol")
+    assert trade.symbol == ""
+    assert spoken == []
+
+
+def test_get_symbol_raises_when_match_lacks_capture_group(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    trade.symbol = ""
+    trade.get_symbol = models.Trade.get_symbol.__get__(trade, type(trade))
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        models.win32gui,
+        "GetWindowText",
+        lambda hwnd: hwnd,
+        raising=False,
+    )
+
+    def enumerate_windows(callback, extra):
+        callback("Summary", extra)
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(enumerate_windows=enumerate_windows),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("get_symbol", "Summary")],
+        )
+
+    assert "did not provide a symbol capture group" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "get_symbol")
+    assert trade.symbol == ""
+    assert spoken == []
 
 
 def test_archive_market_data_failure_speaks_error_and_stops(monkeypatch):

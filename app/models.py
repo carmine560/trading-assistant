@@ -172,11 +172,15 @@ class Trade(initializer.Initializer):
         self.has_cash_balance = False
         self.share_size = 0
 
-    def get_symbol(self, hwnd, title_regex):
+    def get_symbol(self, hwnd, title_regex, symbol_matches=None):
         """Get the symbol from a window title matching a regular expression."""
         matched = re.fullmatch(title_regex, win32gui.GetWindowText(hwnd))
         if matched:
-            self.symbol = matched.group(1)
+            symbol = matched.group(1)
+            if symbol_matches is not None:
+                symbol_matches.append(symbol)
+                return True
+            self.symbol = symbol
             return False
         return True
 
