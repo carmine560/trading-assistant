@@ -387,6 +387,23 @@ def _parse_integer_tuple(
     return parsed
 
 
+def _validate_region_dimensions(
+    parsed,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Validate X, Y, WIDTH, HEIGHT-style region dimensions."""
+    if parsed[2] <= 0 or parsed[3] <= 0:
+        _raise_invalid_argument_error(
+            action_path,
+            instruction_index,
+            command,
+            "expected positive width and height",
+        )
+    return parsed
+
+
 def _normalize_point_argument(
     argument,
     additional_argument,
@@ -413,9 +430,14 @@ def _normalize_click_widget_argument(
     command,
 ):
     """Normalize the click_widget image name and region arguments."""
-    additional_argument = _parse_integer_tuple(
-        additional_argument,
-        4,
+    additional_argument = _validate_region_dimensions(
+        _parse_integer_tuple(
+            additional_argument,
+            4,
+            action_path,
+            instruction_index,
+            command,
+        ),
         action_path,
         instruction_index,
         command,
@@ -431,9 +453,15 @@ def _normalize_ocr_region_argument(
     command,
 ):
     """Normalize one X, Y, WIDTH, HEIGHT, INDEX OCR region argument."""
-    argument = _parse_integer_tuple(
-        argument,
-        5,
+    # Allow a negative index for Python-style indexing.
+    argument = _validate_region_dimensions(
+        _parse_integer_tuple(
+            argument,
+            5,
+            action_path,
+            instruction_index,
+            command,
+        ),
         action_path,
         instruction_index,
         command,
@@ -449,9 +477,14 @@ def _normalize_ocr_column_argument(
     command,
 ):
     """Normalize one X, Y, WIDTH, HEIGHT OCR column argument."""
-    argument = _parse_integer_tuple(
-        argument,
-        4,
+    argument = _validate_region_dimensions(
+        _parse_integer_tuple(
+            argument,
+            4,
+            action_path,
+            instruction_index,
+            command,
+        ),
         action_path,
         instruction_index,
         command,
@@ -1332,14 +1365,21 @@ def _handle_trade_input_command(
 ):
     """Handle trade input and output commands."""
     if command == "get_cash_balance":
+        cash_balance_region = _validate_region_dimensions(
+            _parse_integer_tuple(
+                config[trade.geometries_section]["cash_balance_region"],
+                5,
+                action_path,
+                instruction_index,
+                command,
+            ),
+            action_path,
+            instruction_index,
+            command,
+        )
         trade.cash_balance = int(
             text_recognition.recognize_text(
-                *map(
-                    int,
-                    config[trade.geometries_section][
-                        "cash_balance_region"
-                    ].split(","),
-                ),
+                *cash_balance_region,
                 int(config[trade.process]["image_magnification"]),
                 int(config[trade.process]["binarization_threshold"]),
                 config[trade.process].getboolean("is_dark_theme"),

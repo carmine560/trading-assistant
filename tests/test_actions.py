@@ -983,6 +983,47 @@ def test_invalid_widget_region_raises_before_click_widget(monkeypatch):
 
 
 @pytest.mark.parametrize(
+    "region",
+    [
+        "0, 0, 0, 10",
+        "0, 0, 10, 0",
+        "0, 0, -1, 10",
+        "0, 0, 10, -1",
+    ],
+)
+def test_unsafe_widget_region_raises_before_click_widget(monkeypatch, region):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    monkeypatch.setattr(
+        actions,
+        "gui_interactions",
+        SimpleNamespace(
+            click_widget=lambda *_args, **_kwargs: pytest.fail(
+                "click_widget should not run"
+            )
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("click_widget", "button.png", region)],
+        )
+
+    assert "expected positive width and height" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "click_widget")
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
+
+
+@pytest.mark.parametrize(
     ("command", "instruction"),
     [
         ("wait_for_price", ("wait_for_price", "0, 0, bad, 10, 0")),
@@ -1020,6 +1061,86 @@ def test_invalid_ocr_region_raises_before_recognition(
     _assert_action_error(e, ("inline action",), 1, command)
     assert trade.keyboard_listener_state == 0
     assert trade.key_to_check is None
+    assert spoken == []
+
+
+@pytest.mark.parametrize(
+    ("command", "instruction"),
+    [
+        ("wait_for_price", ("wait_for_price", "0, 0, 0, 10, -1")),
+        ("wait_for_price", ("wait_for_price", "0, 0, 10, -1, -1")),
+        (
+            "copy_symbols_from_column",
+            ("copy_symbols_from_column", "0, 0, 0, 10"),
+        ),
+        (
+            "copy_symbols_from_column",
+            ("copy_symbols_from_column", "0, 0, 10, -1"),
+        ),
+    ],
+)
+def test_unsafe_ocr_region_raises_before_recognition(
+    monkeypatch,
+    command,
+    instruction,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(
+            recognize_text=lambda *_args, **_kwargs: pytest.fail(
+                "recognize_text should not run"
+            )
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(trade, config, gui_state, [instruction])
+
+    assert "expected positive width and height" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, command)
+    assert trade.keyboard_listener_state == 0
+    assert trade.key_to_check is None
+    assert spoken == []
+
+
+def test_get_cash_balance_rejects_unsafe_region_before_recognition(
+    monkeypatch,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["HYPERSBI2 Geometries"]["cash_balance_region"] = "0, 0, 0, 10, -1"
+    _patch_action_modules(monkeypatch)
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(
+            recognize_text=lambda *_args, **_kwargs: pytest.fail(
+                "recognize_text should not run"
+            )
+        ),
+    )
+
+    with pytest.raises(ActionExecutionError) as e:
+        actions.execute_action(
+            trade,
+            config,
+            gui_state,
+            [("get_cash_balance",)],
+        )
+
+    assert "expected positive width and height" in str(e.value)
+    _assert_action_error(e, ("inline action",), 1, "get_cash_balance")
+    assert not trade.has_cash_balance
     assert spoken == []
 
 
@@ -1196,6 +1317,35 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
         ],
     )
     assert spoken == ["cleanup", "Canceled."]
+
+
+def test_wait_for_price_accepts_negative_one_ocr_index(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    calls = []
+
+    def fake_recognize_text(*args, **kwargs):
+        calls.append((args, kwargs))
+        return 100
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=fake_recognize_text),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("wait_for_price", "0, 0, 10, 10, -1")],
+    )
+
+    assert calls[0][0][:5] == (0, 0, 10, 10, -1)
+    assert spoken == []
 
 
 def test_wait_for_price_cancellation_raises_for_cleanup_failure(monkeypatch):
