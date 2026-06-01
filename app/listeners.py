@@ -11,6 +11,7 @@ from core_utilities.config_validation import evaluate_value
 from interaction_utilities import speech_synthesis
 
 LISTENER_MONITOR_ERROR = "Listener monitor failed."
+LISTENER_STOP_REASON_PROCESS_EXITED = "process_exited"
 
 
 def start_listeners(
@@ -61,6 +62,7 @@ def start_listeners(
             )
 
     try:
+        trade.listener_stop_reason = None
         trade.mouse_listener = mouse.Listener(
             on_click=lambda x, y, button, pressed: trade.on_click(
                 x, y, button, pressed, config, gui_state
@@ -147,6 +149,13 @@ def _wait_listeners(
             speaking_process,
             indicator_thread=indicator_thread,
             is_persistent=is_persistent,
+            on_process_exit=(
+                lambda: setattr(
+                    trade,
+                    "listener_stop_reason",
+                    LISTENER_STOP_REASON_PROCESS_EXITED,
+                )
+            ),
         )
     except Exception as e:
         trade.last_listener_error = e

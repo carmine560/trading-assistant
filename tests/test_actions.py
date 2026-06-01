@@ -1319,6 +1319,45 @@ def test_wait_for_price_cancellation_runs_cleanup_action(monkeypatch):
     assert spoken == ["cleanup", "Canceled."]
 
 
+def test_wait_for_price_process_exit_skips_cleanup_and_followup(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+
+    def fake_recognize_text(*_args, **kwargs):
+        should_continue_reference = kwargs["should_continue_reference"]
+        assert kwargs["max_attempts"] is None
+        trade.listener_stop_reason = (
+            actions.listeners.LISTENER_STOP_REASON_PROCESS_EXITED
+        )
+        assert not should_continue_reference()
+        return None
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=fake_recognize_text),
+    )
+
+    assert not actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [
+            (
+                "wait_for_price",
+                "0, 0, 10, 10, 0",
+                [("speak_text", "cleanup")],
+            ),
+            ("speak_text", "followup"),
+        ],
+    )
+    assert not trade.last_action_canceled
+    assert spoken == []
+
+
 def test_wait_for_price_accepts_negative_one_ocr_index(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)

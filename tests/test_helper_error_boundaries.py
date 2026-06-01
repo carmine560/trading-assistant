@@ -543,6 +543,47 @@ def test_wait_listeners_stops_resources_after_process_probe_failure(
     ]
 
 
+def test_wait_listeners_notifies_before_stopping_after_process_exit(
+    monkeypatch,
+):
+    calls = []
+
+    monkeypatch.setattr(
+        process_utilities, "is_running", lambda _process: False
+    )
+    monkeypatch.setattr(
+        process_utilities,
+        "stop_listeners",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    process_utilities.wait_listeners(
+        SimpleNamespace(is_set=lambda: False),
+        "HYPERSBI2",
+        "mouse",
+        "keyboard",
+        "base_manager",
+        "speech_manager",
+        "speaking_process",
+        indicator_thread="indicator",
+        on_process_exit=lambda: calls.append("process_exit"),
+    )
+
+    assert calls == [
+        "process_exit",
+        (
+            (
+                "mouse",
+                "keyboard",
+                "base_manager",
+                "speech_manager",
+                "speaking_process",
+            ),
+            {"indicator_thread": "indicator"},
+        ),
+    ]
+
+
 def test_stop_listeners_timeout_terminates_speech_process():
     calls = []
     mouse_listener = SimpleNamespace(stop=lambda: calls.append("mouse.stop"))

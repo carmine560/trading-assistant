@@ -109,6 +109,7 @@ class Trade(initializer.Initializer):
         self.stop_listeners_event = None
         self.wait_listeners_thread = None
         self.last_listener_error = None
+        self.listener_stop_reason = None
         self.scheduler_thread = None
         self.scheduler_error = None
 

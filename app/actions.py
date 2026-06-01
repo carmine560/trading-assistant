@@ -966,7 +966,11 @@ def _handle_wait_command(
                 should_continue_reference=(
                     lambda: (
                         listeners.raise_listener_monitor_error(trade)
-                        or trade.should_continue
+                        or (
+                            trade.should_continue
+                            and getattr(trade, "listener_stop_reason", None)
+                            != listeners.LISTENER_STOP_REASON_PROCESS_EXITED
+                        )
                     )
                 ),
                 max_attempts=None,
@@ -974,6 +978,11 @@ def _handle_wait_command(
         finally:
             trade.keyboard_listener_state = 0
             trade.key_to_check = None
+        if (
+            getattr(trade, "listener_stop_reason", None)
+            == listeners.LISTENER_STOP_REASON_PROCESS_EXITED
+        ):
+            return False
         if not trade.should_continue and _handle_cancellation_exit(
             trade,
             config,
@@ -993,13 +1002,22 @@ def _handle_wait_command(
                 should_continue_reference=(
                     lambda: (
                         listeners.raise_listener_monitor_error(trade)
-                        or trade.should_continue
+                        or (
+                            trade.should_continue
+                            and getattr(trade, "listener_stop_reason", None)
+                            != listeners.LISTENER_STOP_REASON_PROCESS_EXITED
+                        )
                     )
                 ),
             )
         finally:
             trade.keyboard_listener_state = 0
             trade.key_to_check = None
+        if (
+            getattr(trade, "listener_stop_reason", None)
+            == listeners.LISTENER_STOP_REASON_PROCESS_EXITED
+        ):
+            return False
         if not trade.should_continue and _handle_cancellation_exit(
             trade,
             config,
@@ -1616,6 +1634,11 @@ def _wait_for_key(
 
         while trade.keyboard_listener_state == 1:
             listeners.raise_listener_monitor_error(trade)
+            if (
+                getattr(trade, "listener_stop_reason", None)
+                == listeners.LISTENER_STOP_REASON_PROCESS_EXITED
+            ):
+                return False
             if should_count_down:
                 now = pd.Timestamp.now()
                 current_second = now.second
