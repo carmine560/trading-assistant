@@ -233,6 +233,144 @@ def test_run_raises_typed_error_for_missing_single_action(monkeypatch):
     ) in calls
 
 
+def test_run_cleans_up_manager_when_missing_action_precedes_listeners(
+    monkeypatch,
+):
+    calls = []
+    args = SimpleNamespace(r=False, s=False, l=True, a=["missing"])
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+        speaking_process=None,
+    )
+    config = {"Actions": {}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return "speech_manager"
+
+        def shutdown(self):
+            calls.append("manager.shutdown")
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(
+            start_listeners=lambda *_args: calls.append("start_listeners")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(is_running=lambda process: True),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except action_errors.ActionLookupError as e:
+        assert str(e) == "Action 'missing' is not defined."
+        assert e.action_name == "missing"
+    else:
+        raise AssertionError("Expected missing action to raise typed error.")
+
+    assert trade.speech_manager == "speech_manager"
+    assert "manager.shutdown" in calls
+    assert "start_listeners" not in calls
+
+
+def test_run_cleans_up_manager_when_failed_action_precedes_listeners(
+    monkeypatch,
+):
+    calls = []
+    args = SimpleNamespace(r=False, s=False, l=True, a=["open"])
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        actions_section="Actions",
+        speaking_process=None,
+        last_action_error=None,
+    )
+    config = {"Actions": {"open": [("speak_text", "ready")]}}
+    gui_state = object()
+
+    class FakeManager:
+        @classmethod
+        def register(cls, name, speech_cls):
+            calls.append(("register", name, speech_cls))
+
+        def start(self):
+            calls.append("manager.start")
+
+        def SpeechManager(self):
+            calls.append("manager.SpeechManager")
+            return "speech_manager"
+
+        def shutdown(self):
+            calls.append("manager.shutdown")
+
+    monkeypatch.setattr(
+        runtime,
+        "atexit",
+        SimpleNamespace(register=lambda *args: calls.append("atexit")),
+    )
+    monkeypatch.setattr(runtime, "BaseManager", FakeManager)
+    monkeypatch.setattr(
+        runtime,
+        "actions",
+        SimpleNamespace(execute_action=lambda *_args, **_kwargs: False),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "listeners",
+        SimpleNamespace(
+            start_listeners=lambda *_args: calls.append("start_listeners")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "process_utilities",
+        SimpleNamespace(is_running=lambda process: True),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "speech_synthesis",
+        SimpleNamespace(SpeechManager=object),
+    )
+    monkeypatch.setattr(runtime, "write_config", lambda *args, **kwargs: None)
+
+    try:
+        runtime.run(args, trade, config, gui_state)
+    except action_errors.ActionFailureError as e:
+        assert str(e) == "Action 'open' failed."
+        assert e.action_name == "open"
+        assert trade.last_action_error is e
+    else:
+        raise AssertionError("Expected failed action to raise.")
+
+    assert "manager.shutdown" in calls
+    assert "start_listeners" not in calls
+
+
 def test_run_does_not_raise_when_single_action_is_canceled(monkeypatch):
     calls = []
     args = SimpleNamespace(r=False, s=False, l=False, a=["open"])

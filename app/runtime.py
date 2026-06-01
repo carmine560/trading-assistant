@@ -46,7 +46,7 @@ def run(args, trade, config, gui_state):
         base_manager = _start_speech_manager(trade)
 
     if args.a:
-        _execute_single_action(
+        _cleanup_base_manager_on_single_action_failure(
             args,
             trade,
             config,
@@ -55,53 +55,14 @@ def run(args, trade, config, gui_state):
             is_running,
         )
     if args.l and is_running:
-        try:
-            listeners.start_listeners(trade, config, gui_state, base_manager)
-            raise_listener_monitor_error(trade)
-            if args.s:
-                _run_scheduler(
-                    args,
-                    trade,
-                    config,
-                    base_manager,
-                    prepared_scheduler,
-                )
-                scheduler_thread = getattr(trade, "scheduler_thread", None)
-                if scheduler_thread:
-                    scheduler_thread.join()
-                    if getattr(trade, "scheduler_error", None) is not None:
-                        raise errors.ProcessStateError(
-                            RUN_SCHEDULER_ERROR
-                        ) from trade.scheduler_error
-        except Exception:
-            speech_manager = getattr(trade, "speech_manager", None)
-            speaking_process = getattr(trade, "speaking_process", None)
-            stop_event = getattr(trade, "stop_listeners_event", None)
-            wait_thread = getattr(trade, "wait_listeners_thread", None)
-            try:
-                process_utilities.stop_listeners(
-                    getattr(trade, "mouse_listener", None),
-                    getattr(trade, "keyboard_listener", None),
-                    base_manager,
-                    speech_manager,
-                    speaking_process,
-                )
-            finally:
-                if base_manager and speech_manager and not speaking_process:
-                    base_manager.shutdown()
-                if stop_event:
-                    stop_event.set()
-                if wait_thread:
-                    wait_thread.join(
-                        timeout=LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS
-                    )
-                    if wait_thread.is_alive():
-                        raise errors.ProcessStateError(
-                            "Listener wait thread did not stop within "
-                            f"{LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS} "
-                            "seconds."
-                        )
-            raise
+        _run_listener_mode(
+            args,
+            trade,
+            config,
+            gui_state,
+            base_manager,
+            prepared_scheduler,
+        )
     if args.s and is_running and not args.l:
         _run_scheduler(
             args,
@@ -161,33 +122,94 @@ def _execute_single_action(
             raise error from previous_error
     finally:
         if should_start_transient_listeners:
+            _stop_listeners(trade, base_manager)
+
+
+def _cleanup_base_manager_on_single_action_failure(
+    args,
+    trade,
+    config,
+    gui_state,
+    base_manager,
+    is_running,
+):
+    """Clean up the base manager when a pre-listener action fails."""
+    try:
+        _execute_single_action(
+            args,
+            trade,
+            config,
+            gui_state,
+            base_manager,
+            is_running,
+        )
+    except Exception:
+        if args.l and is_running:
             speech_manager = getattr(trade, "speech_manager", None)
             speaking_process = getattr(trade, "speaking_process", None)
-            stop_event = getattr(trade, "stop_listeners_event", None)
-            wait_thread = getattr(trade, "wait_listeners_thread", None)
-            try:
-                process_utilities.stop_listeners(
-                    getattr(trade, "mouse_listener", None),
-                    getattr(trade, "keyboard_listener", None),
-                    base_manager,
-                    speech_manager,
-                    speaking_process,
+            if base_manager and speech_manager and not speaking_process:
+                base_manager.shutdown()
+        raise
+
+
+def _run_listener_mode(
+    args,
+    trade,
+    config,
+    gui_state,
+    base_manager,
+    prepared_scheduler,
+):
+    """Start persistent listeners and run the scheduler when requested."""
+    try:
+        listeners.start_listeners(trade, config, gui_state, base_manager)
+        raise_listener_monitor_error(trade)
+        if args.s:
+            _run_scheduler(
+                args,
+                trade,
+                config,
+                base_manager,
+                prepared_scheduler,
+            )
+            scheduler_thread = getattr(trade, "scheduler_thread", None)
+            if scheduler_thread:
+                scheduler_thread.join()
+                if getattr(trade, "scheduler_error", None) is not None:
+                    raise errors.ProcessStateError(
+                        RUN_SCHEDULER_ERROR
+                    ) from trade.scheduler_error
+    except Exception:
+        _stop_listeners(trade, base_manager)
+        raise
+
+
+def _stop_listeners(trade, base_manager):
+    """Stop listener services and wait for the monitor thread to exit."""
+    speech_manager = getattr(trade, "speech_manager", None)
+    speaking_process = getattr(trade, "speaking_process", None)
+    stop_event = getattr(trade, "stop_listeners_event", None)
+    wait_thread = getattr(trade, "wait_listeners_thread", None)
+    try:
+        process_utilities.stop_listeners(
+            getattr(trade, "mouse_listener", None),
+            getattr(trade, "keyboard_listener", None),
+            base_manager,
+            speech_manager,
+            speaking_process,
+        )
+    finally:
+        if base_manager and speech_manager and not speaking_process:
+            base_manager.shutdown()
+        if stop_event:
+            stop_event.set()
+        if wait_thread:
+            wait_thread.join(timeout=LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS)
+            if wait_thread.is_alive():
+                raise errors.ProcessStateError(
+                    "Listener wait thread did not stop within "
+                    f"{LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS} seconds."
                 )
-            finally:
-                if base_manager and speech_manager and not speaking_process:
-                    base_manager.shutdown()
-                if stop_event:
-                    stop_event.set()
-                if wait_thread:
-                    wait_thread.join(
-                        timeout=LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS
-                    )
-                    if wait_thread.is_alive():
-                        raise errors.ProcessStateError(
-                            "Listener wait thread did not stop within "
-                            f"{LISTENER_WAIT_THREAD_JOIN_TIMEOUT_SECONDS} "
-                            "seconds."
-                        )
 
 
 def _run_scheduler(args, trade, config, base_manager, prepared_scheduler):
