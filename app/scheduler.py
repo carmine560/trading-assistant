@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from app import action_errors, actions, listeners, notifications
 from core_utilities import errors, process_utilities
+from core_utilities.config_common import ConfigError
 from core_utilities.config_validation import evaluate_value
 from interaction_utilities import speech_synthesis
 
@@ -81,8 +82,24 @@ def _register_scheduled_actions(
     timezone = ZoneInfo(config["Market Data"]["timezone"])
     now = datetime.now(timezone)
     for option in section:
-        trigger, action = evaluate_value(section[option])
-        trigger_time = datetime.strptime(trigger, "%H:%M:%S").time()
+        schedule_value = evaluate_value(section[option])
+        if (
+            not isinstance(schedule_value, tuple)
+            or len(schedule_value) != 2
+            or not all(isinstance(item, str) for item in schedule_value)
+        ):
+            raise ConfigError(
+                f"Schedule '{option}' must be a "
+                "('HH:MM:SS', 'action_name') tuple."
+            )
+        trigger, action = schedule_value
+        try:
+            trigger_time = datetime.strptime(trigger, "%H:%M:%S").time()
+        except ValueError as e:
+            raise ConfigError(
+                f"Schedule '{option}' has invalid trigger time {trigger!r}; "
+                "expected HH:MM:SS."
+            ) from e
         trigger = datetime.combine(
             now.date(),
             trigger_time,

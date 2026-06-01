@@ -8,6 +8,7 @@ import pytest
 from app import action_errors, scheduler
 from app.action_errors import ActionLookupError
 from core_utilities import errors
+from core_utilities.config_common import ConfigError
 
 
 def test_start_scheduler_raises_typed_error_for_missing_action(monkeypatch):
@@ -33,6 +34,48 @@ def test_start_scheduler_raises_typed_error_for_missing_action(monkeypatch):
 
     assert str(e.value) == "Action 'missing' is not defined."
     assert e.value.action_name == "missing"
+
+
+@pytest.mark.parametrize(
+    ("schedule_value", "expected_message"),
+    (
+        ("not a tuple", "Schedule 'morning' must be a"),
+        ("('09:00:00',)", "Schedule 'morning' must be a"),
+        ("('09:00:00', 'open', 'extra')", "Schedule 'morning' must be a"),
+        ("(90000, 'open')", "Schedule 'morning' must be a"),
+        ("('09:00:00', 123)", "Schedule 'morning' must be a"),
+        (
+            "('25:00:00', 'open')",
+            "Schedule 'morning' has invalid trigger time '25:00:00'",
+        ),
+    ),
+)
+def test_start_scheduler_rejects_malformed_schedule_entries(
+    monkeypatch,
+    schedule_value,
+    expected_message,
+):
+    trade = SimpleNamespace(
+        schedules_section="Schedules",
+        actions_section="Actions",
+        speaking_process="speaker",
+    )
+    config = {
+        "Market Data": {"timezone": "Asia/Tokyo"},
+        "Schedules": {"morning": schedule_value},
+        "Actions": {"open": [("speak_text", "ready")]},
+    }
+
+    monkeypatch.setattr(scheduler.time, "time", lambda: 0)
+
+    with pytest.raises(ConfigError) as e:
+        scheduler.prepare_scheduler(
+            trade,
+            config,
+            object(),
+        )
+
+    assert expected_message in str(e.value)
 
 
 def test_start_scheduler_registers_future_scheduled_action(monkeypatch):
