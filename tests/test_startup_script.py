@@ -2,7 +2,10 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from app import startup_script
+from core_utilities import config_io
 
 
 def test_create_startup_script_quotes_paths_and_option_arguments(tmp_path):
@@ -110,3 +113,50 @@ def test_create_startup_script_uses_python_when_venv_is_missing(tmp_path):
     assert ". " not in text
     assert "deactivate" not in text
     assert "    & 'python.exe' `\n" in text
+
+
+def test_create_startup_script_preserves_existing_file_on_replace_failure(
+    monkeypatch,
+    tmp_path,
+):
+    script_path = "C:/Projects/trading-assistant/trading_assistant.py"
+    startup_script_path = tmp_path / "assistant.ps1"
+    startup_script_path.write_text("previous script\n", encoding="utf-8")
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        startup_script_section="HYPERSBI2 Startup Script",
+        startup_script=str(startup_script_path),
+    )
+    config = {
+        "HYPERSBI2": {
+            "executable": "C:/Program Files/SBI/HYPERSBI2/HYPERSBI2.exe",
+        },
+        "HYPERSBI2 Startup Script": {
+            "pre_start_options": "",
+            "post_start_options": "-rl",
+            "running_options": "-l",
+        },
+    }
+    file_utilities = SimpleNamespace(
+        select_venv=lambda *_args, **_kwargs: (None, None)
+    )
+    original_replace = config_io.os.replace
+
+    def fail_replace(source, target):
+        if target == str(startup_script_path):
+            raise OSError("replace failed")
+        original_replace(source, target)
+
+    monkeypatch.setattr(config_io.os, "replace", fail_replace)
+
+    with pytest.raises(OSError, match="replace failed"):
+        startup_script.create_startup_script(
+            trade,
+            config,
+            script_path,
+            file_utilities,
+        )
+
+    assert (
+        startup_script_path.read_text(encoding="utf-8") == "previous script\n"
+    )

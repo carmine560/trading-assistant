@@ -3,6 +3,8 @@
 import os
 import shlex
 
+from core_utilities.config_io import write_file_atomically
+
 
 def create_startup_script(trade, config, script_path, file_utilities):
     """Create a startup script for a trade."""
@@ -102,5 +104,8 @@ def create_startup_script(trade, config, script_path, file_utilities):
     if activate_path:
         lines.append("deactivate\n")
 
-    with open(trade.startup_script, "w", encoding="utf-8") as f:
-        f.writelines(lines)
+    write_file_atomically(
+        trade.startup_script,
+        "w",
+        lambda f: f.writelines(lines),
+    )
