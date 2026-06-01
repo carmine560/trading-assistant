@@ -60,41 +60,67 @@ def start_listeners(
                 )
             )
 
-    trade.mouse_listener = mouse.Listener(
-        on_click=lambda x, y, button, pressed: trade.on_click(
-            x, y, button, pressed, config, gui_state
+    try:
+        trade.mouse_listener = mouse.Listener(
+            on_click=lambda x, y, button, pressed: trade.on_click(
+                x, y, button, pressed, config, gui_state
+            )
         )
-    )
-    trade.mouse_listener.start()
+        trade.mouse_listener.start()
 
-    trade.keyboard_listener = keyboard.Listener(
-        on_press=lambda key: trade.on_press(key, config, gui_state),
-        on_release=lambda key: trade.on_release(key, gui_state),
-    )
-    trade.keyboard_listener.start()
+        trade.keyboard_listener = keyboard.Listener(
+            on_press=lambda key: trade.on_press(key, config, gui_state),
+            on_release=lambda key: trade.on_release(key, gui_state),
+        )
+        trade.keyboard_listener.start()
 
-    trade.speaking_process = start_speaking_process(trade, config)
+        trade.speaking_process = start_speaking_process(trade, config)
 
-    trade.stop_listeners_event = threading.Event()
-    trade.last_listener_error = None
-    trade.wait_listeners_thread = threading.Thread(
-        target=_wait_listeners,
-        args=(
-            trade,
-            trade.stop_listeners_event,
-            trade.process,
-            trade.mouse_listener,
-            trade.keyboard_listener,
-            base_manager,
-            trade.speech_manager,
-            trade.speaking_process,
-        ),
-        kwargs={
-            "indicator_thread": trade.indicator_thread,
-            "is_persistent": is_persistent,
-        },
-    )
-    trade.wait_listeners_thread.start()
+        trade.stop_listeners_event = threading.Event()
+        trade.last_listener_error = None
+        trade.wait_listeners_thread = threading.Thread(
+            target=_wait_listeners,
+            args=(
+                trade,
+                trade.stop_listeners_event,
+                trade.process,
+                trade.mouse_listener,
+                trade.keyboard_listener,
+                base_manager,
+                trade.speech_manager,
+                trade.speaking_process,
+            ),
+            kwargs={
+                "indicator_thread": trade.indicator_thread,
+                "is_persistent": is_persistent,
+            },
+        )
+        trade.wait_listeners_thread.start()
+    except Exception as startup_error:
+        stop_listeners_event = getattr(trade, "stop_listeners_event", None)
+        if stop_listeners_event:
+            stop_listeners_event.set()
+        speaking_process = getattr(trade, "speaking_process", None)
+        try:
+            process_utilities.stop_listeners(
+                getattr(trade, "mouse_listener", None),
+                getattr(trade, "keyboard_listener", None),
+                base_manager,
+                getattr(trade, "speech_manager", None),
+                speaking_process,
+                indicator_thread=getattr(trade, "indicator_thread", None),
+            )
+        except Exception as cleanup_error:
+            raise startup_error from cleanup_error
+        finally:
+            trade.mouse_listener = None
+            trade.keyboard_listener = None
+            trade.speaking_process = None
+            if speaking_process:
+                trade.speech_manager = None
+            trade.stop_listeners_event = None
+            trade.wait_listeners_thread = None
+        raise
 
 
 def _wait_listeners(

@@ -90,6 +90,129 @@ def test_start_listeners_records_wait_thread_failure(monkeypatch):
     assert any(call[0] == "stop_listeners" for call in calls)
 
 
+@pytest.mark.parametrize(
+    "failure_stage",
+    [
+        "keyboard_start",
+        "speech_start",
+        "thread_init",
+        "thread_start",
+    ],
+)
+def test_start_listeners_cleans_up_partial_startup_failure(
+    monkeypatch,
+    failure_stage,
+):
+    calls = []
+    failure = RuntimeError(f"{failure_stage} failed")
+    speech_manager = SimpleNamespace()
+    trade = SimpleNamespace(
+        process="HYPERSBI2",
+        on_click=lambda *_args: None,
+        on_press=lambda *_args: None,
+        on_release=lambda *_args: None,
+        speech_manager=speech_manager,
+        indicator_thread="indicator",
+        last_listener_error="previous",
+        actions_section="Actions",
+        mouse_listener=None,
+        keyboard_listener=None,
+        speaking_process=None,
+        stop_listeners_event=None,
+        wait_listeners_thread=None,
+    )
+    config = {
+        "Actions": {"show_indicator": [("show_hide_indicator",)]},
+        "General": {"voice_name": "voice", "speech_rate": "1"},
+        "HYPERSBI2": {"input_map": "{'f1': 'show_indicator'}"},
+    }
+
+    class FakeListener:
+        def __init__(self, name, **kwargs):
+            self.name = name
+            self.kwargs = kwargs
+
+        def start(self):
+            calls.append((self.name, "start"))
+            if failure_stage == f"{self.name}_start":
+                raise failure
+
+    class FakeThread:
+        def __init__(self, *, target, args, kwargs):
+            if failure_stage == "thread_init":
+                raise failure
+            self.target = target
+            self.args = args
+            self.kwargs = kwargs
+
+        def start(self):
+            calls.append("thread.start")
+            if failure_stage == "thread_start":
+                raise failure
+
+    monkeypatch.setattr(
+        listeners.mouse,
+        "Listener",
+        lambda **kwargs: FakeListener("mouse", **kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        listeners.keyboard,
+        "Listener",
+        lambda **kwargs: FakeListener("keyboard", **kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(listeners.threading, "Thread", FakeThread)
+
+    def fake_start_speaking_process(*_args):
+        if failure_stage == "speech_start":
+            raise failure
+        return "speaking_process"
+
+    def fake_stop_listeners(*args, **kwargs):
+        calls.append(("stop_listeners", args, kwargs))
+
+    monkeypatch.setattr(
+        listeners,
+        "start_speaking_process",
+        fake_start_speaking_process,
+    )
+    monkeypatch.setattr(
+        listeners.process_utilities,
+        "stop_listeners",
+        fake_stop_listeners,
+    )
+
+    with pytest.raises(RuntimeError) as e:
+        listeners.start_listeners(
+            trade,
+            config,
+            SimpleNamespace(),
+            "base_manager",
+        )
+
+    assert e.value is failure
+    stop_call = [call for call in calls if call[0] == "stop_listeners"][0]
+    assert stop_call[1][0].name == "mouse"
+    if failure_stage == "keyboard_start":
+        assert stop_call[1][1].name == "keyboard"
+        assert stop_call[1][4] is None
+    elif failure_stage == "speech_start":
+        assert stop_call[1][1].name == "keyboard"
+        assert stop_call[1][4] is None
+    else:
+        assert stop_call[1][1].name == "keyboard"
+        assert stop_call[1][4] == "speaking_process"
+    assert stop_call[1][2] == "base_manager"
+    assert stop_call[1][3] is speech_manager
+    assert stop_call[2] == {"indicator_thread": "indicator"}
+    assert trade.mouse_listener is None
+    assert trade.keyboard_listener is None
+    assert trade.speaking_process is None
+    assert trade.stop_listeners_event is None
+    assert trade.wait_listeners_thread is None
+
+
 def test_start_listeners_rejects_non_mapping_input_map(monkeypatch):
     calls = []
     trade = SimpleNamespace(
