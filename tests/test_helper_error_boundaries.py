@@ -440,6 +440,63 @@ def test_is_running_wraps_process_status_probe_failure(monkeypatch):
     )
 
 
+@pytest.mark.parametrize(
+    ("tasklist_output", "expected"),
+    [
+        (
+            (
+                "Image Name                     PID Session Name        "
+                "Session#    Mem Usage\n"
+                "========================= ======== ================ "
+                "========== ============\n"
+                "HYPERSBI2.exe                 1234 Console          "
+                "1     10,000 K\n"
+            ),
+            True,
+        ),
+        (
+            "INFO: No tasks are running which match the specified criteria.\n",
+            False,
+        ),
+        (
+            (
+                "Image Name                     PID Session Name        "
+                "Session#    Mem Usage\n"
+                "========================= ======== ================ "
+                "========== ============\n"
+                "HYPERSBI2Aexe                1234 Console          "
+                "1     10,000 K\n"
+            ),
+            False,
+        ),
+    ],
+)
+def test_is_running_matches_exact_image_name(
+    monkeypatch,
+    tasklist_output,
+    expected,
+):
+    calls = []
+
+    def check_output(command, **kwargs):
+        calls.append((command, kwargs))
+        return tasklist_output
+
+    monkeypatch.setattr(
+        process_utilities.subprocess,
+        "check_output",
+        check_output,
+    )
+
+    assert process_utilities.is_running("HYPERSBI2") is expected
+    assert calls == [
+        (
+            ["tasklist", "/fi", "imagename eq HYPERSBI2.exe"],
+            {"text": True, "errors": "replace"},
+        )
+    ]
+
+
 def test_wait_listeners_stops_resources_after_process_probe_failure(
     monkeypatch,
 ):
