@@ -1,6 +1,9 @@
 """Tests for file utility exception-boundary helpers."""
 
+import io
 import subprocess
+import tarfile
+from types import SimpleNamespace
 
 import pytest
 
@@ -14,6 +17,36 @@ class _IterableFiles(list):
     @property
     def values(self):
         return list(self)
+
+
+def _encrypted_tar_bytes(members):
+    tar_stream = io.BytesIO()
+    with tarfile.open(fileobj=tar_stream, mode="w:xz") as tar:
+        for member in members:
+            tar.addfile(*member)
+    return tar_stream.getvalue()
+
+
+def _directory_member(name):
+    member = tarfile.TarInfo(name)
+    member.type = tarfile.DIRTYPE
+    return member, None
+
+
+def _file_member(name, data):
+    encoded_data = data.encode()
+    member = tarfile.TarInfo(name)
+    member.size = len(encoded_data)
+    return member, io.BytesIO(encoded_data)
+
+
+def _mock_decrypted_archive(monkeypatch, archive_bytes):
+    class FakeGpg:
+        def decrypt_file(self, _file):
+            return SimpleNamespace(ok=True, data=archive_bytes)
+
+    monkeypatch.setattr(file_utilities, "GNUPG_IMPORT_ERROR", None)
+    monkeypatch.setattr(file_utilities.gnupg, "GPG", lambda: FakeGpg())
 
 
 def test_archive_encrypt_directory_raises_when_gpg_is_unavailable(monkeypatch):
@@ -36,6 +69,115 @@ def test_decrypt_extract_file_raises_when_gpg_is_unavailable(monkeypatch):
 
     with pytest.raises(UtilityOperationError, match="gnupg"):
         file_utilities.decrypt_extract_file("archive.gpg", "output")
+
+
+def test_decrypt_extract_file_restores_archive_root(monkeypatch, tmp_path):
+    archive = tmp_path / "archive.gpg"
+    archive.write_bytes(b"encrypted")
+    output = tmp_path / "output"
+    output.mkdir()
+    _mock_decrypted_archive(
+        monkeypatch,
+        _encrypted_tar_bytes(
+            [
+                _directory_member("snapshot"),
+                _file_member("snapshot/config.ini", "restored=true\n"),
+            ]
+        ),
+    )
+
+    file_utilities.decrypt_extract_file(str(archive), str(output))
+
+    assert (output / "snapshot" / "config.ini").read_text(
+        encoding="utf-8"
+    ) == "restored=true\n"
+    assert not (output / "snapshot.tmp").exists()
+    assert not (output / "snapshot.bak").exists()
+
+
+def test_decrypt_extract_file_rejects_path_traversal(monkeypatch, tmp_path):
+    archive = tmp_path / "archive.gpg"
+    archive.write_bytes(b"encrypted")
+    output = tmp_path / "output"
+    output.mkdir()
+    _mock_decrypted_archive(
+        monkeypatch,
+        _encrypted_tar_bytes([_file_member("../outside.txt", "unsafe\n")]),
+    )
+
+    with pytest.raises(ValueError, match="Unsafe archive member"):
+        file_utilities.decrypt_extract_file(str(archive), str(output))
+
+    assert not (tmp_path / "outside.txt").exists()
+    assert not list(output.iterdir())
+
+
+def test_decrypt_extract_file_rejects_non_file_directory_member(
+    monkeypatch,
+    tmp_path,
+):
+    archive = tmp_path / "archive.gpg"
+    archive.write_bytes(b"encrypted")
+    output = tmp_path / "output"
+    output.mkdir()
+    link_member = tarfile.TarInfo("snapshot/link")
+    link_member.type = tarfile.SYMTYPE
+    link_member.linkname = "config.ini"
+    _mock_decrypted_archive(
+        monkeypatch,
+        _encrypted_tar_bytes(
+            [
+                _directory_member("snapshot"),
+                (link_member, None),
+            ]
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Unsafe archive member"):
+        file_utilities.decrypt_extract_file(str(archive), str(output))
+
+    assert not list(output.iterdir())
+
+
+def test_decrypt_extract_file_restores_existing_root_after_swap_failure(
+    monkeypatch,
+    tmp_path,
+):
+    archive = tmp_path / "archive.gpg"
+    archive.write_bytes(b"encrypted")
+    output = tmp_path / "output"
+    output.mkdir()
+    existing_root = output / "snapshot"
+    existing_root.mkdir()
+    (existing_root / "config.ini").write_text(
+        "existing=true\n", encoding="utf-8"
+    )
+    _mock_decrypted_archive(
+        monkeypatch,
+        _encrypted_tar_bytes(
+            [
+                _directory_member("snapshot"),
+                _file_member("snapshot/config.ini", "restored=true\n"),
+            ]
+        ),
+    )
+    real_rename = file_utilities.os.rename
+
+    def fail_restore_rename(source, destination):
+        if str(source).replace("\\", "/").endswith("snapshot.tmp/snapshot"):
+            raise OSError("swap failed")
+        real_rename(source, destination)
+
+    monkeypatch.setattr(file_utilities.os, "rename", fail_restore_rename)
+
+    with pytest.raises(OSError, match="swap failed"):
+        file_utilities.decrypt_extract_file(str(archive), str(output))
+
+    assert (existing_root / "config.ini").read_text(
+        encoding="utf-8"
+    ) == "existing=true\n"
+    assert not (output / "snapshot.tmp").exists()
+    assert not (output / "snapshot.bak").exists()
 
 
 def test_move_to_trash_raises_typed_error_for_subprocess_failure(monkeypatch):
