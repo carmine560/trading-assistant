@@ -251,6 +251,147 @@ def test_speech_process_start_timeout_terminates_process(monkeypatch):
     ]
 
 
+def test_speech_process_start_raises_child_startup_failure(monkeypatch):
+    speech_synthesis = _load_speech_synthesis_module()
+
+    class FakeReceiver:
+        def __init__(self):
+            self.closed = False
+
+        def poll(self):
+            return True
+
+        def recv(self):
+            return "RuntimeError: voice setup failed"
+
+        def close(self):
+            self.closed = True
+
+    class FakeSender:
+        def close(self):
+            pass
+
+    class FakeProcess:
+        instance = None
+
+        def __init__(self, *_args, **_kwargs):
+            self.calls = []
+            self.exitcode = None
+            FakeProcess.instance = self
+
+        def start(self):
+            self.calls.append("start")
+
+        def join(self, timeout=None):
+            self.calls.append(("join", timeout))
+
+    speech_manager = SimpleNamespace(is_ready=lambda: False)
+    receiver = FakeReceiver()
+    monkeypatch.setattr(
+        speech_synthesis, "Pipe", lambda duplex: (receiver, FakeSender())
+    )
+    monkeypatch.setattr(speech_synthesis, "Process", FakeProcess)
+
+    with pytest.raises(ProcessStateError) as e:
+        speech_synthesis.start_speaking_process(speech_manager)
+
+    assert "Speech process failed to start" in str(e.value)
+    assert "voice setup failed" in str(e.value)
+    assert FakeProcess.instance.calls == [
+        "start",
+        ("join", speech_synthesis.TERMINATE_TIMEOUT_SECONDS),
+    ]
+    assert receiver.closed
+
+
+def test_speech_process_start_returns_ready_process(monkeypatch):
+    speech_synthesis = _load_speech_synthesis_module()
+
+    class FakeReceiver:
+        def __init__(self):
+            self.closed = False
+
+        def poll(self):
+            return False
+
+        def close(self):
+            self.closed = True
+
+    class FakeSender:
+        def close(self):
+            pass
+
+    class FakeProcess:
+        def __init__(self, *_args, **_kwargs):
+            self.calls = []
+            self.exitcode = None
+
+        def start(self):
+            self.calls.append("start")
+
+    speech_manager = SimpleNamespace(is_ready=lambda: True)
+    receiver = FakeReceiver()
+    monkeypatch.setattr(
+        speech_synthesis, "Pipe", lambda duplex: (receiver, FakeSender())
+    )
+    monkeypatch.setattr(speech_synthesis, "Process", FakeProcess)
+
+    speaking_process = speech_synthesis.start_speaking_process(speech_manager)
+
+    assert speaking_process.calls == ["start"]
+    assert receiver.closed
+
+
+def test_speech_process_start_raises_for_exit_before_ready(monkeypatch):
+    speech_synthesis = _load_speech_synthesis_module()
+
+    class FakeReceiver:
+        def __init__(self):
+            self.closed = False
+
+        def poll(self):
+            return False
+
+        def close(self):
+            self.closed = True
+
+    class FakeSender:
+        def close(self):
+            pass
+
+    class FakeProcess:
+        instance = None
+
+        def __init__(self, *_args, **_kwargs):
+            self.calls = []
+            self.exitcode = 1
+            FakeProcess.instance = self
+
+        def start(self):
+            self.calls.append("start")
+
+        def join(self, timeout=None):
+            self.calls.append(("join", timeout))
+
+    speech_manager = SimpleNamespace(is_ready=lambda: False)
+    receiver = FakeReceiver()
+    monkeypatch.setattr(
+        speech_synthesis, "Pipe", lambda duplex: (receiver, FakeSender())
+    )
+    monkeypatch.setattr(speech_synthesis, "Process", FakeProcess)
+
+    with pytest.raises(ProcessStateError) as e:
+        speech_synthesis.start_speaking_process(speech_manager)
+
+    assert "exited before becoming ready" in str(e.value)
+    assert "exit code 1" in str(e.value)
+    assert FakeProcess.instance.calls == [
+        "start",
+        ("join", speech_synthesis.TERMINATE_TIMEOUT_SECONDS),
+    ]
+    assert receiver.closed
+
+
 def test_speech_manager_queues_messages_in_order():
     speech_synthesis = _load_speech_synthesis_module()
     speech_manager = speech_synthesis.SpeechManager()
