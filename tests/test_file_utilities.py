@@ -3,7 +3,6 @@
 import io
 import subprocess
 import tarfile
-from types import SimpleNamespace
 
 import pytest
 
@@ -41,34 +40,139 @@ def _file_member(name, data):
 
 
 def _mock_decrypted_archive(monkeypatch, archive_bytes):
-    class FakeGpg:
-        def decrypt_file(self, _file):
-            return SimpleNamespace(ok=True, data=archive_bytes)
+    def fake_run(args, **kwargs):
+        return subprocess.CompletedProcess(
+            args,
+            0,
+            stdout=archive_bytes,
+            stderr=b"",
+        )
 
-    monkeypatch.setattr(file_utilities, "GNUPG_IMPORT_ERROR", None)
-    monkeypatch.setattr(file_utilities.gnupg, "GPG", lambda: FakeGpg())
+    monkeypatch.setattr(file_utilities.subprocess, "run", fake_run)
 
 
-def test_archive_encrypt_directory_raises_when_gpg_is_unavailable(monkeypatch):
-    monkeypatch.setattr(
-        file_utilities,
-        "GNUPG_IMPORT_ERROR",
-        ModuleNotFoundError("No module named 'gnupg'"),
-    )
+def test_archive_encrypt_directory_raises_when_gpg_is_unavailable(
+    monkeypatch, tmp_path
+):
+    source = tmp_path / "source"
+    source.mkdir()
+    output = tmp_path / "output"
+    output.mkdir()
 
-    with pytest.raises(UtilityOperationError, match="gnupg"):
-        file_utilities.archive_encrypt_directory("source", "output")
+    def fake_run(*_args, **_kwargs):
+        raise FileNotFoundError("gpg")
+
+    monkeypatch.setattr(file_utilities.subprocess, "run", fake_run)
+
+    with pytest.raises(UtilityOperationError, match="Unable to run gpg"):
+        file_utilities.archive_encrypt_directory(str(source), str(output))
 
 
 def test_decrypt_extract_file_raises_when_gpg_is_unavailable(monkeypatch):
-    monkeypatch.setattr(
-        file_utilities,
-        "GNUPG_IMPORT_ERROR",
-        ModuleNotFoundError("No module named 'gnupg'"),
+    def fake_run(*_args, **_kwargs):
+        raise FileNotFoundError("gpg")
+
+    monkeypatch.setattr(file_utilities.subprocess, "run", fake_run)
+
+    with pytest.raises(UtilityOperationError, match="Unable to run gpg"):
+        file_utilities.decrypt_extract_file("archive.gpg", "output")
+
+
+def test_archive_encrypt_directory_uses_default_recipient_self(
+    monkeypatch, tmp_path
+):
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "config.ini").write_text("password=secret\n", encoding="utf-8")
+    output = tmp_path / "output"
+    output.mkdir()
+    calls = []
+
+    def fake_run(args, **kwargs):
+        calls.append((args, kwargs))
+        output_path = args[args.index("--output") + 1]
+        with open(output_path, "wb") as f:
+            f.write(b"encrypted archive")
+        return subprocess.CompletedProcess(args, 0, stdout=b"", stderr=b"")
+
+    monkeypatch.setattr(file_utilities.subprocess, "run", fake_run)
+
+    file_utilities.archive_encrypt_directory(str(source), str(output))
+
+    assert calls[0][0] == [
+        "gpg",
+        "--batch",
+        "--yes",
+        "--encrypt",
+        "--output",
+        str(output / "source.tar.xz.gpg"),
+        "--default-recipient-self",
+    ]
+    assert calls[0][1]["stdout"] is subprocess.PIPE
+    assert calls[0][1]["stderr"] is subprocess.PIPE
+    assert calls[0][1]["check"] is False
+    assert b"password=secret" not in calls[0][1]["input"]
+    assert (output / "source.tar.xz.gpg").read_bytes() == b"encrypted archive"
+
+
+def test_archive_encrypt_directory_uses_explicit_recipient(
+    monkeypatch, tmp_path
+):
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "config.ini").write_text("password=secret\n", encoding="utf-8")
+    output = tmp_path / "output"
+    output.mkdir()
+    calls = []
+
+    def fake_run(args, **kwargs):
+        calls.append((args, kwargs))
+        output_path = args[args.index("--output") + 1]
+        with open(output_path, "wb") as f:
+            f.write(b"encrypted archive")
+        return subprocess.CompletedProcess(args, 0, stdout=b"", stderr=b"")
+
+    monkeypatch.setattr(file_utilities.subprocess, "run", fake_run)
+
+    file_utilities.archive_encrypt_directory(
+        str(source), str(output), fingerprint="ABCD1234"
     )
 
-    with pytest.raises(UtilityOperationError, match="gnupg"):
-        file_utilities.decrypt_extract_file("archive.gpg", "output")
+    assert calls[0][0] == [
+        "gpg",
+        "--batch",
+        "--yes",
+        "--encrypt",
+        "--output",
+        str(output / "source.tar.xz.gpg"),
+        "--recipient",
+        "ABCD1234",
+    ]
+    assert b"password=secret" not in calls[0][1]["input"]
+    assert (output / "source.tar.xz.gpg").read_bytes() == b"encrypted archive"
+
+
+def test_archive_encrypt_directory_reports_gpg_failure(monkeypatch, tmp_path):
+    source = tmp_path / "source"
+    source.mkdir()
+    output = tmp_path / "output"
+    output.mkdir()
+
+    def fake_run(args, **kwargs):
+        return subprocess.CompletedProcess(
+            args,
+            2,
+            stdout=b"",
+            stderr=b"gpg: encryption failed\n",
+        )
+
+    monkeypatch.setattr(file_utilities.subprocess, "run", fake_run)
+
+    with pytest.raises(UtilityOperationError) as e:
+        file_utilities.archive_encrypt_directory(str(source), str(output))
+
+    assert str(e.value) == "GPG encryption failed: gpg: encryption failed"
+    assert not (output / "source.tar.xz.gpg").exists()
 
 
 def test_decrypt_extract_file_restores_archive_root(monkeypatch, tmp_path):

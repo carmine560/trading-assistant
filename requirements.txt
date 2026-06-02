@@ -6,6 +6,5 @@ pyarrow
 pyautogui
 pynput
 pytesseract
-python-gnupg
 pywin32
 requests
