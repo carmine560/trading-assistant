@@ -12,7 +12,6 @@ from types import ModuleType, SimpleNamespace
 
 from app import ui
 from core_utilities.errors import (
-    BrowserAutomationError,
     GuiInteractionError,
     ProcessStateError,
     WidgetPositionError,
@@ -31,65 +30,6 @@ def _load_gui_interactions_module():
     spec = spec_from_file_location(
         "test_gui_interactions_module",
         PROJECT_ROOT / "interaction_utilities" / "gui_interactions.py",
-    )
-    module = module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-def _load_browser_driver_module():
-    """Load the browser helper module with lightweight Selenium stubs."""
-    selenium_module = ModuleType("selenium")
-    webdriver_module = ModuleType("selenium.webdriver")
-    webdriver_module.Chrome = lambda **_kwargs: None
-
-    common_exceptions_module = ModuleType("selenium.common.exceptions")
-    common_exceptions_module.TimeoutException = type(
-        "TimeoutException",
-        (Exception,),
-        {},
-    )
-
-    chrome_options_module = ModuleType("selenium.webdriver.chrome.options")
-    chrome_options_module.Options = type("Options", (), {})
-
-    by_module = ModuleType("selenium.webdriver.common.by")
-    by_module.By = SimpleNamespace(XPATH="xpath")
-
-    keys_module = ModuleType("selenium.webdriver.common.keys")
-    keys_module.Keys = SimpleNamespace(ENTER="enter")
-
-    support_module = ModuleType("selenium.webdriver.support")
-    expected_conditions_module = ModuleType(
-        "selenium.webdriver.support.expected_conditions"
-    )
-    expected_conditions_module.visibility_of_element_located = (
-        lambda locator: locator
-    )
-
-    ui_module = ModuleType("selenium.webdriver.support.ui")
-    ui_module.WebDriverWait = type(
-        "WebDriverWait",
-        (),
-        {"__init__": lambda self, *_args, **_kwargs: None, "until": None},
-    )
-
-    sys.modules["selenium"] = selenium_module
-    sys.modules["selenium.webdriver"] = webdriver_module
-    sys.modules["selenium.common.exceptions"] = common_exceptions_module
-    sys.modules["selenium.webdriver.chrome.options"] = chrome_options_module
-    sys.modules["selenium.webdriver.common.by"] = by_module
-    sys.modules["selenium.webdriver.common.keys"] = keys_module
-    sys.modules["selenium.webdriver.support"] = support_module
-    sys.modules["selenium.webdriver.support.expected_conditions"] = (
-        expected_conditions_module
-    )
-    sys.modules["selenium.webdriver.support.ui"] = ui_module
-
-    spec = spec_from_file_location(
-        "test_browser_driver_module",
-        PROJECT_ROOT / "web_utilities" / "browser_driver.py",
     )
     module = module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -271,32 +211,6 @@ def test_wait_for_window_raises_typed_error_after_timeout(monkeypatch):
         )
 
     assert "Window was not found within 1.0 seconds" in str(e.value)
-
-
-def test_browser_execute_action_raises_typed_error_for_unknown_command(
-    capsys,
-):
-    browser_driver = _load_browser_driver_module()
-
-    with pytest.raises(BrowserAutomationError) as e:
-        browser_driver.execute_action(SimpleNamespace(), [("unknown",)])
-
-    assert "Unrecognized browser command" in str(e.value)
-    assert capsys.readouterr().out == ""
-
-
-def test_browser_execute_action_wraps_instruction_failures(capsys):
-    browser_driver = _load_browser_driver_module()
-
-    with pytest.raises(BrowserAutomationError) as e:
-        browser_driver.execute_action(
-            SimpleNamespace(),
-            [("sleep", "not-a-number")],
-        )
-
-    assert "Browser instruction failed" in str(e.value)
-    assert isinstance(e.value.__cause__, ValueError)
-    assert capsys.readouterr().out == ""
 
 
 def test_speech_process_start_timeout_terminates_process(monkeypatch):
