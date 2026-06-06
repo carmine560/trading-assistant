@@ -158,6 +158,7 @@ def test_write_encrypted_config_uses_default_recipient_self(
                 "stdout": subprocess.PIPE,
                 "stderr": subprocess.PIPE,
                 "check": False,
+                "timeout": config_io.GPG_TIMEOUT_SECONDS,
             },
         )
     ]
@@ -205,6 +206,7 @@ def test_write_encrypted_config_uses_explicit_recipient(
                 "stdout": subprocess.PIPE,
                 "stderr": subprocess.PIPE,
                 "check": False,
+                "timeout": config_io.GPG_TIMEOUT_SECONDS,
             },
         )
     ]
@@ -288,6 +290,7 @@ def test_read_encrypted_config_uses_gpg_decrypt(monkeypatch, tmp_path):
                 "stdout": subprocess.PIPE,
                 "stderr": subprocess.PIPE,
                 "check": False,
+                "timeout": config_io.GPG_TIMEOUT_SECONDS,
             },
         )
     ]
@@ -314,8 +317,7 @@ def test_read_encrypted_config_reports_gpg_failure(monkeypatch, tmp_path):
         config_io.read_config(config, str(config_path), is_encrypted=True)
 
     assert (
-        str(e.value)
-        == "GPG decryption failed while reading config: "
+        str(e.value) == "GPG decryption failed while reading config: "
         "gpg: decryption failed"
     )
 
