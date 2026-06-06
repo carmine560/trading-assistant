@@ -62,7 +62,7 @@ python -m pip install -r requirements.txt -c constraints.txt
 
 ``` powershell
 python -m pip install -r requirements-dev.txt -c constraints.txt
-pytest
+python -m pytest -q
 ```
 
 ## Usage

@@ -13,4 +13,4 @@ jobs:
         with:
           python-version: "3.x"
       - run: python -m pip install -r requirements-dev.txt -c constraints.txt
-      - run: pytest
+      - run: python -m pytest -q
