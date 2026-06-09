@@ -3,7 +3,7 @@
 import configparser
 import os
 import re
-from datetime import date, datetime
+from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 
 from core_utilities.config_io import read_config
@@ -190,14 +190,9 @@ def configure(
     if can_override:
         read_config_fn(config, trade.config_path, is_encrypted=True)
 
-    current_date = datetime.now(
-        ZoneInfo(config["Market Data"]["timezone"])
-    ).date()
-    if (
-        date.fromisoformat(config[trade.variables_section]["current_date"])
-        != current_date
-    ):
-        config[trade.variables_section]["current_date"] = str(current_date)
+    now = datetime.now(ZoneInfo(config["Market Data"]["timezone"]))
+    config[trade.variables_section]["current_date"] = now.date().isoformat()
+    if now.time() >= time.fromisoformat(config["Market Data"]["closing_time"]):
         config[trade.variables_section]["initial_cash_balance"] = "0"
         config[trade.variables_section]["current_number_of_trades"] = "0"
 

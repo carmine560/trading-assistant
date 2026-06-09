@@ -49,15 +49,17 @@ def test_delete_option_raises_for_missing_option(tmp_path):
         delete_option(config, "General", "missing", str(config_path))
 
 
-def test_configure_resets_daily_state_using_market_timezone(monkeypatch):
+def test_configure_resets_daily_state_after_closing_time_using_market_timezone(
+    monkeypatch,
+):
     class FrozenDateTime:
         @classmethod
         def now(cls, tz=None):
             frozen_utc = datetime(
                 2026,
                 1,
-                1,
-                15,
+                2,
+                6,
                 30,
                 tzinfo=timezone.utc,
             )
