@@ -3,7 +3,7 @@
 import os
 import shlex
 
-from core_utilities.config_io import write_file_atomically
+from core_utilities.file_utilities import write_file_atomically
 
 
 def create_startup_script(trade, config, script_path, file_utilities):

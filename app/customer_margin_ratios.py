@@ -9,11 +9,11 @@ import pandas as pd
 import requests
 
 from core_utilities import errors
-from core_utilities.config_io import write_file_atomically
 from core_utilities.config_validation import (
     ensure_section_exists,
     evaluate_value,
 )
+from core_utilities.file_utilities import write_file_atomically
 from web_utilities import web_utilities
 
 MARKET_HOLIDAYS_CACHE_MAX_AGE_DAYS = 7
