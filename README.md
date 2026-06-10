@@ -26,10 +26,11 @@ Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
 
   * [`lxml`](https://lxml.de/index.html),
     [`pandas`](https://pandas.pydata.org/),
-    [`pyarrow`](https://arrow.apache.org/), and
     [`requests`](https://requests.readthedocs.io/en/latest/) to save the
     customer margin ratios and the previous market data from websites
   * [`pywin32`](https://github.com/mhammond/pywin32) to access Windows APIs
+  * [`Pillow`](https://python-pillow.github.io/) to capture and preprocess
+    screenshots for text recognition
   * [`pytesseract`](https://github.com/madmaze/pytesseract) to invoke
     [Tesseract](https://github.com/tesseract-ocr/tesseract) to recognize prices
     and securities codes in Hyper SBI 2

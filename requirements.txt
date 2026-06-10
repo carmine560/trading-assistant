@@ -1,8 +1,8 @@
 lxml
 pandas
+Pillow
 prompt_toolkit
 psutil
-pyarrow
 pyautogui
 pynput
 pytesseract
