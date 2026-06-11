@@ -29,12 +29,12 @@ Windows](https://www.python.org/downloads/windows/) with Hyper SBI 2 on Windows
   * [Tesseract](https://github.com/tesseract-ocr/tesseract) and
     [`pytesseract`](https://github.com/madmaze/pytesseract) to recognize prices
     and securities codes in Hyper SBI 2
-  * [`lxml`](https://lxml.de/index.html),
-    [`pandas`](https://pandas.pydata.org/), and
-    [`requests`](https://requests.readthedocs.io/en/latest/) to save the
-    customer margin ratios and the previous market data from websites
-  * [`pillow`](https://python-pillow.github.io/) to capture and preprocess
-    screenshots for text recognition
+  * [`lxml`](https://github.com/lxml/lxml),
+    [`pandas`](https://github.com/pandas-dev/pandas), and
+    [`requests`](https://github.com/psf/requests) to save the customer margin
+    ratios and the previous market data from websites
+  * [`pillow`](https://github.com/python-pillow/Pillow) to capture and
+    preprocess screenshots for text recognition
   * [`prompt_toolkit`](https://github.com/prompt-toolkit/python-prompt-toolkit)
     to complete possible values or a previous value in configuring
   * [`psutil`](https://github.com/giampaolo/psutil) to calculate CPU
