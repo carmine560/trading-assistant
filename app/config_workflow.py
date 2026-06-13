@@ -291,25 +291,23 @@ def _create_action_shortcut(
         os.path.dirname(script_path), activate="Activate.ps1"
     )
     if powershell:
-        command_parts = []
         if activate_path:
-            quoted_activate_path = "'" + activate_path.replace("'", "''") + "'"
-            command_parts.append(". " + quoted_activate_path)
+            interpreter = os.path.join(
+                os.path.dirname(activate_path), interpreter
+            )
         quoted_interpreter = (
             "'" + (interpreter or "python.exe").replace("'", "''") + "'"
         )
         quoted_script_path = "'" + script_path.replace("'", "''") + "'"
         quoted_action_name = "'" + action_name.replace("'", "''") + "'"
-        command_parts.append(
+        command = (
             f"& {quoted_interpreter} {quoted_script_path} "
             f"'-a' {quoted_action_name}"
         )
         target_path = powershell
         # Build a Windows command line so PowerShell receives the full -Command
         # string intact.
-        arguments = subprocess.list2cmdline(
-            ["-Command", "; ".join(command_parts)]
-        )
+        arguments = subprocess.list2cmdline(["-Command", command])
     else:
         target_path = "py.exe"
         arguments = subprocess.list2cmdline([script_path, "-a", action_name])

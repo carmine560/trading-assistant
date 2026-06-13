@@ -123,8 +123,8 @@ python trading_assistant.py -PL
 
 Create or modify an action for processing by `trading_assistant.py`.
 
-> **Note**: This option adds virtual environment activation to the target of a
-> shortcut to the action if the `.venv\Scripts\Activate.ps1` script exists.
+> **Note**: This option uses the virtual environment's Python interpreter in
+> the shortcut target if the `.venv\Scripts\Activate.ps1` script exists.
 
 ``` powershell
 python trading_assistant.py -A ACTION

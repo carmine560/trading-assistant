@@ -107,8 +107,7 @@ def test_create_action_shortcut_quotes_powershell_command_arguments():
     )
 
     expected_command = (
-        ". 'C:/Users/Test User/Trading''s Bot/.venv/Scripts/Activate.ps1'; "
-        "& 'python.exe' "
+        "& 'C:/Users/Test User/Trading''s Bot/.venv/Scripts\\python.exe' "
         "'C:/Users/Test User/Trading''s Bot/trading_assistant.py' "
         "'-a' 'Bob''s Action'"
     )
