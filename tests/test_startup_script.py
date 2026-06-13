@@ -43,7 +43,6 @@ def test_create_startup_script_quotes_paths_and_option_arguments(tmp_path):
     )
 
     assert startup_script_path.read_text(encoding="utf-8") == (
-        ". 'C:/Users/Test User/Trading''s Bot/.venv/Scripts/Activate.ps1'\n"
         "if (Get-Process 'HYPER''SBI2' -ErrorAction SilentlyContinue) {\n"
         "    Stop-Process -Name 'HYPER''SBI2' "
         "-Force -ErrorAction Stop\n"
@@ -59,24 +58,23 @@ def test_create_startup_script_quotes_paths_and_option_arguments(tmp_path):
         "    Start-Process `\n"
         "      -FilePath 'HYPER''SBI2.exe' `\n"
         "      -WorkingDirectory 'C:/Program Files/SBI''Sec/HYPER SBI2'\n"
-        "    & 'python.exe' `\n"
+        "    & 'C:/Users/Test User/Trading''s Bot/.venv/Scripts\\python.exe' `\n"
         "      'C:/Users/Test User/Trading''s Bot/trading_assistant.py' `\n"
         "      '-lsa' `\n"
         "      'login action'\n"
         "}\n"
         "else {\n"
-        "    & 'python.exe' `\n"
+        "    & 'C:/Users/Test User/Trading''s Bot/.venv/Scripts\\python.exe' `\n"
         "      'C:/Users/Test User/Trading''s Bot/trading_assistant.py' `\n"
         "      '-r'\n"
         "    Start-Process `\n"
         "      -FilePath 'HYPER''SBI2.exe' `\n"
         "      -WorkingDirectory 'C:/Program Files/SBI''Sec/HYPER SBI2'\n"
-        "    & 'python.exe' `\n"
+        "    & 'C:/Users/Test User/Trading''s Bot/.venv/Scripts\\python.exe' `\n"
         "      'C:/Users/Test User/Trading''s Bot/trading_assistant.py' `\n"
         "      '-a' `\n"
         "      'Bob''s Action'\n"
         "}\n"
-        "deactivate\n"
     )
 
 

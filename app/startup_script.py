@@ -39,7 +39,9 @@ def create_startup_script(trade, config, script_path, file_utilities):
     activate_path, interpreter = file_utilities.select_venv(
         os.path.dirname(script_path), activate="Activate.ps1"
     )
-    if not interpreter:
+    if activate_path:
+        interpreter = os.path.join(os.path.dirname(activate_path), interpreter)
+    else:
         interpreter = "python.exe"
 
     executable = config[trade.process]["executable"]
@@ -61,14 +63,10 @@ def create_startup_script(trade, config, script_path, file_utilities):
         "running_options"
     ].split(",")
 
-    lines = []
-    if activate_path:
-        lines.append(". '" + activate_path.replace("'", "''") + "'\n")
-
-    lines.append(
+    lines = [
         f"if (Get-Process '{process_name}' "
         "-ErrorAction SilentlyContinue) {\n"
-    )
+    ]
     lines.append(
         f"    Stop-Process -Name '{process_name}' "
         "-Force -ErrorAction Stop\n"
@@ -101,8 +99,6 @@ def create_startup_script(trade, config, script_path, file_utilities):
         generate_script_lines(interpreter, script_path, post_start_options)
     )
     lines.append("}\n")
-    if activate_path:
-        lines.append("deactivate\n")
 
     write_file_atomically(
         trade.startup_script,
