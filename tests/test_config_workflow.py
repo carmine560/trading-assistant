@@ -4,6 +4,8 @@ from configparser import ConfigParser
 import subprocess
 from types import SimpleNamespace
 
+import pytest
+
 from app import config_workflow
 
 
@@ -70,6 +72,63 @@ def test_configure_exit_uses_trade_geometry_section_for_presets(monkeypatch):
         "${MYPROC Geometries:main}",
         "${MYPROC Geometries:offset}",
     ]
+
+
+@pytest.mark.parametrize("result", ["", "quit"])
+def test_configure_exit_does_not_change_action_shortcut_when_edit_is_abandoned(
+    monkeypatch, result
+):
+    config = ConfigParser()
+    config["MYPROC"] = {"title": "My Process"}
+    config["MYPROC Geometries"] = {}
+    config["MYPROC Actions"] = {"open_order": "[('click',)]"}
+    shortcut_calls = []
+
+    monkeypatch.setattr(
+        config_workflow, "modify_option", lambda *_args, **_kwargs: result
+    )
+    monkeypatch.setattr(
+        config_workflow,
+        "_create_action_shortcut",
+        lambda *_args, **_kwargs: shortcut_calls.append("create"),
+    )
+    monkeypatch.setattr(
+        config_workflow.file_utilities,
+        "delete_shortcut",
+        lambda *_args, **_kwargs: shortcut_calls.append("delete"),
+    )
+
+    args = SimpleNamespace(
+        S=False,
+        L=False,
+        CB=False,
+        U=False,
+        PL=False,
+        DLL=False,
+        MDN=False,
+        SS=False,
+        A=("open_order",),
+        D=False,
+        C=False,
+    )
+    trade = SimpleNamespace(
+        geometries_section="MYPROC Geometries",
+        actions_section="MYPROC Actions",
+        config_path="config.ini",
+        process="MYPROC",
+        resource_directory=".",
+        instruction_items={},
+    )
+
+    assert config_workflow.configure_exit(
+        args,
+        trade,
+        lambda *_args, **_kwargs: config,
+        lambda *_args, **_kwargs: None,
+        "script.py",
+        0.01,
+    )
+    assert shortcut_calls == []
 
 
 def test_create_action_shortcut_quotes_powershell_command_arguments():

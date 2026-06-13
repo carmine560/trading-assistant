@@ -116,7 +116,7 @@ def configure_exit(
             f"${{{trade.geometries_section}:{option}}}"
             for option in sorted(items)
         ]
-        if modify_option(
+        result = modify_option(
             config,
             trade.actions_section,
             args.A[0],
@@ -133,7 +133,9 @@ def configure_exit(
             },
             items=trade.instruction_items,
             is_encrypted=True,
-        ):
+        )
+        # Update the shortcut only when the action was modified.
+        if result is True:
             _create_action_shortcut(
                 trade,
                 config,
@@ -141,7 +143,8 @@ def configure_exit(
                 file_utilities,
                 script_path,
             )
-        else:
+        # Delete the shortcut only when the action was deleted.
+        elif result is False:
             file_utilities.delete_shortcut(
                 args.A[0],
                 program_group_base=config[trade.process]["title"],
