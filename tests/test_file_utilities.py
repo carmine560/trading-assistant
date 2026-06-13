@@ -176,12 +176,85 @@ def test_create_bash_launcher_raises_when_venv_is_unavailable(tmp_path):
     assert str(tmp_path) in str(e.value)
 
 
+def test_create_bash_launcher_executes_venv_interpreter(monkeypatch, tmp_path):
+    home = tmp_path / "home"
+    downloads = home / "Downloads"
+    downloads.mkdir(parents=True)
+    project_path = r"C:\Users\carmine\Projects\trading-assistant"
+    script_path = rf"{project_path}\script.py"
+    activate_path = rf"{project_path}\.venv\Scripts\activate"
+    converted_paths = {
+        rf"{project_path}\.venv\Scripts\python.exe": (
+            "/mnt/c/Users/carmine/Projects/trading-assistant"
+            "/.venv/Scripts/python.exe"
+        ),
+    }
+
+    monkeypatch.setattr(file_utilities.sys, "platform", "win32")
+    monkeypatch.setattr(file_utilities.os.path, "expanduser", lambda _p: home)
+    monkeypatch.setattr(
+        file_utilities,
+        "select_venv",
+        lambda _project_path: (activate_path, "python.exe"),
+    )
+    monkeypatch.setattr(
+        file_utilities,
+        "windows_to_wsl_path",
+        lambda path: converted_paths[path],
+    )
+    monkeypatch.setattr(file_utilities, "can_overwrite", lambda _path: True)
+
+    file_utilities.create_bash_launcher(script_path)
+
+    assert (downloads / "script.sh").read_text(encoding="utf-8") == (
+        "#!/bin/bash\n"
+        "\n"
+        "set -e\n"
+        "\n"
+        "exec \\\n"
+        "    /mnt/c/Users/carmine/Projects/trading-assistant/"
+        ".venv/Scripts/python.exe \\\n"
+        f"    '{script_path}' \\\n"
+        '    "$@"\n'
+    )
+
+
 def test_create_powershell_launcher_raises_when_venv_is_unavailable(tmp_path):
     with pytest.raises(UtilityOperationError) as e:
         file_utilities.create_powershell_launcher(str(tmp_path / "script.py"))
 
     assert "Unable to create PowerShell launcher" in str(e.value)
     assert str(tmp_path) in str(e.value)
+
+
+def test_create_powershell_launcher_executes_venv_interpreter(
+    monkeypatch, tmp_path
+):
+    home = tmp_path / "home"
+    downloads = home / "Downloads"
+    downloads.mkdir(parents=True)
+    project_path = r"C:\Users\carmine\Projects\trading-assistant"
+    script_path = rf"{project_path}\script.py"
+    activate_path = rf"{project_path}\.venv\Scripts\Activate.ps1"
+
+    monkeypatch.setattr(file_utilities.os.path, "expanduser", lambda _p: home)
+    monkeypatch.setattr(
+        file_utilities,
+        "select_venv",
+        lambda _project_path, activate: (activate_path, "python.exe"),
+    )
+    monkeypatch.setattr(file_utilities, "can_overwrite", lambda _path: True)
+
+    file_utilities.create_powershell_launcher(script_path)
+
+    assert (downloads / "script.ps1").read_text(encoding="utf-8") == (
+        '$ErrorActionPreference = "Stop"\n'
+        "\n"
+        f'& "{project_path}\\.venv\\Scripts\\python.exe" `\n'
+        f'  "{script_path}" @args\n'
+        "\n"
+        "exit $LASTEXITCODE\n"
+    )
 
 
 def test_write_chapter_ignores_invalid_offset_without_printing(
