@@ -90,9 +90,8 @@ def test_create_action_shortcut_quotes_powershell_command_arguments():
         select_executable=lambda _executables: (
             "C:/Program Files/PowerShell/7/pwsh.exe"
         ),
-        select_venv=lambda *_args, **_kwargs: (
-            "C:/Users/Test User/Trading's Bot/.venv/Scripts/Activate.ps1",
-            "python.exe",
+        select_venv_interpreter=lambda _directory: (
+            "C:/Users/Test User/Trading's Bot/.venv/Scripts\\python.exe"
         ),
         create_icon=lambda *_args, **_kwargs: "C:/icons/Bob's Action.ico",
         create_shortcut=create_shortcut,

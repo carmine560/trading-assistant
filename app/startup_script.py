@@ -36,12 +36,10 @@ def create_startup_script(trade, config, script_path, file_utilities):
             lines.append(line)
         return lines
 
-    activate_path, interpreter = file_utilities.select_venv(
-        os.path.dirname(script_path), activate="Activate.ps1"
+    interpreter = file_utilities.select_venv_interpreter(
+        os.path.dirname(script_path)
     )
-    if activate_path:
-        interpreter = os.path.join(os.path.dirname(activate_path), interpreter)
-    else:
+    if not interpreter:
         interpreter = "python.exe"
 
     executable = config[trade.process]["executable"]

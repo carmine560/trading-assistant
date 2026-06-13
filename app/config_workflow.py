@@ -287,14 +287,10 @@ def _create_action_shortcut(
     powershell = file_utilities.select_executable(
         ["pwsh.exe", "powershell.exe"]
     )
-    activate_path, interpreter = file_utilities.select_venv(
-        os.path.dirname(script_path), activate="Activate.ps1"
+    interpreter = file_utilities.select_venv_interpreter(
+        os.path.dirname(script_path)
     )
     if powershell:
-        if activate_path:
-            interpreter = os.path.join(
-                os.path.dirname(activate_path), interpreter
-            )
         quoted_interpreter = (
             "'" + (interpreter or "python.exe").replace("'", "''") + "'"
         )

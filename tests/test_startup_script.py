@@ -29,9 +29,8 @@ def test_create_startup_script_quotes_paths_and_option_arguments(tmp_path):
         },
     }
     file_utilities = SimpleNamespace(
-        select_venv=lambda *_args, **_kwargs: (
-            "C:/Users/Test User/Trading's Bot/.venv/Scripts/Activate.ps1",
-            "python.exe",
+        select_venv_interpreter=lambda _directory: (
+            "C:/Users/Test User/Trading's Bot/.venv/Scripts\\python.exe"
         )
     )
 
@@ -97,7 +96,7 @@ def test_create_startup_script_uses_python_when_venv_is_missing(tmp_path):
         },
     }
     file_utilities = SimpleNamespace(
-        select_venv=lambda *_args, **_kwargs: (None, None)
+        select_venv_interpreter=lambda _directory: None
     )
 
     startup_script.create_startup_script(
@@ -136,7 +135,7 @@ def test_create_startup_script_preserves_existing_file_on_replace_failure(
         },
     }
     file_utilities = SimpleNamespace(
-        select_venv=lambda *_args, **_kwargs: (None, None)
+        select_venv_interpreter=lambda _directory: None
     )
     original_replace = config_io.os.replace
 

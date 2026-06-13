@@ -80,8 +80,8 @@ script, which can process the above options and start Hyper SBI 2. This script
 forcibly stops and restarts Hyper SBI 2 if it is already running, discarding
 unsaved state.
 
-> **Note**: This option uses the virtual environment's Python interpreter in
-> the startup script if the `.venv\Scripts\Activate.ps1` script exists.
+> **Note**: This option uses the virtual environment’s Python interpreter in
+> the startup script if `.venv\Scripts\python.exe` exists.
 
 ```powershell
 python trading_assistant.py -SS
@@ -123,8 +123,8 @@ python trading_assistant.py -PL
 
 Create or modify an action for processing by `trading_assistant.py`.
 
-> **Note**: This option uses the virtual environment's Python interpreter in
-> the shortcut target if the `.venv\Scripts\Activate.ps1` script exists.
+> **Note**: This option uses the virtual environment’s Python interpreter in
+> the shortcut target if `.venv\Scripts\python.exe` exists.
 
 ``` powershell
 python trading_assistant.py -A ACTION

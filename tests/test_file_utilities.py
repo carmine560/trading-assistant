@@ -176,15 +176,23 @@ def test_create_bash_launcher_raises_when_venv_is_unavailable(tmp_path):
     assert str(tmp_path) in str(e.value)
 
 
+def test_select_venv_interpreter_returns_first_existing_interpreter(tmp_path):
+    interpreter = tmp_path / ".venv" / "Scripts" / "python.exe"
+    interpreter.parent.mkdir(parents=True)
+    interpreter.touch()
+
+    assert file_utilities.select_venv_interpreter(tmp_path) == str(interpreter)
+
+
 def test_create_bash_launcher_executes_venv_interpreter(monkeypatch, tmp_path):
     home = tmp_path / "home"
     downloads = home / "Downloads"
     downloads.mkdir(parents=True)
     project_path = r"C:\Users\carmine\Projects\trading-assistant"
     script_path = rf"{project_path}\script.py"
-    activate_path = rf"{project_path}\.venv\Scripts\activate"
+    interpreter_path = rf"{project_path}\.venv\Scripts\python.exe"
     converted_paths = {
-        rf"{project_path}\.venv\Scripts\python.exe": (
+        interpreter_path: (
             "/mnt/c/Users/carmine/Projects/trading-assistant"
             "/.venv/Scripts/python.exe"
         ),
@@ -194,8 +202,8 @@ def test_create_bash_launcher_executes_venv_interpreter(monkeypatch, tmp_path):
     monkeypatch.setattr(file_utilities.os.path, "expanduser", lambda _p: home)
     monkeypatch.setattr(
         file_utilities,
-        "select_venv",
-        lambda _project_path: (activate_path, "python.exe"),
+        "select_venv_interpreter",
+        lambda _project_path: interpreter_path,
     )
     monkeypatch.setattr(
         file_utilities,
@@ -235,13 +243,13 @@ def test_create_powershell_launcher_executes_venv_interpreter(
     downloads.mkdir(parents=True)
     project_path = r"C:\Users\carmine\Projects\trading-assistant"
     script_path = rf"{project_path}\script.py"
-    activate_path = rf"{project_path}\.venv\Scripts\Activate.ps1"
+    interpreter_path = rf"{project_path}\.venv\Scripts\python.exe"
 
     monkeypatch.setattr(file_utilities.os.path, "expanduser", lambda _p: home)
     monkeypatch.setattr(
         file_utilities,
-        "select_venv",
-        lambda _project_path, activate: (activate_path, "python.exe"),
+        "select_venv_interpreter",
+        lambda _project_path: interpreter_path,
     )
     monkeypatch.setattr(file_utilities, "can_overwrite", lambda _path: True)
 
