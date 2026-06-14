@@ -1,7 +1,9 @@
 """Tests for file utility exception-boundary helpers."""
 
+import argparse
 import os
 import subprocess
+from types import SimpleNamespace
 
 import pytest
 
@@ -170,7 +172,9 @@ def test_windows_to_wsl_path_raises_on_conversion_failure(monkeypatch):
 
 def test_create_bash_launcher_raises_when_venv_is_unavailable(tmp_path):
     with pytest.raises(UtilityOperationError) as e:
-        file_utilities.create_bash_launcher(str(tmp_path / "script.py"))
+        file_utilities.create_bash_launcher(
+            str(tmp_path / "script.py"), tmp_path
+        )
 
     assert "Unable to create Bash launcher" in str(e.value)
     assert str(tmp_path) in str(e.value)
@@ -184,10 +188,66 @@ def test_select_venv_interpreter_returns_first_existing_interpreter(tmp_path):
     assert file_utilities.select_venv_interpreter(tmp_path) == str(interpreter)
 
 
+def test_add_launcher_options_accepts_optional_output_directory(monkeypatch):
+    monkeypatch.setattr(file_utilities.sys, "platform", "win32")
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    file_utilities.add_launcher_options(group)
+
+    assert parser.parse_args(["-BS"]).BS == "."
+    assert parser.parse_args(["-BS", "launchers"]).BS == "launchers"
+    assert parser.parse_args(["-PS"]).PS == "."
+    assert parser.parse_args(["-PS", "launchers"]).PS == "launchers"
+
+
+@pytest.mark.parametrize(
+    ("args", "launcher_name", "output_directory"),
+    [
+        (
+            SimpleNamespace(BS="bash-launchers", PS=None),
+            "bash",
+            "bash-launchers",
+        ),
+        (
+            SimpleNamespace(BS=None, PS="powershell-launchers"),
+            "powershell",
+            "powershell-launchers",
+        ),
+    ],
+)
+def test_create_launchers_exit_passes_output_directory(
+    monkeypatch, args, launcher_name, output_directory
+):
+    calls = []
+    monkeypatch.setattr(file_utilities.sys, "platform", "win32")
+    monkeypatch.setattr(
+        file_utilities,
+        "create_bash_launcher",
+        lambda script_path, output_directory: calls.append(
+            ("bash", script_path, output_directory)
+        ),
+    )
+    monkeypatch.setattr(
+        file_utilities,
+        "create_powershell_launcher",
+        lambda script_path, output_directory: calls.append(
+            ("powershell", script_path, output_directory)
+        ),
+    )
+
+    assert file_utilities.create_launchers_exit(args, "script.py")
+    assert calls == [
+        (
+            launcher_name,
+            "script.py",
+            output_directory,
+        )
+    ]
+
+
 def test_create_bash_launcher_executes_venv_interpreter(monkeypatch, tmp_path):
-    home = tmp_path / "home"
-    downloads = home / "Downloads"
-    downloads.mkdir(parents=True)
+    output_directory = tmp_path / "launchers"
+    output_directory.mkdir()
     project_path = r"C:\Users\carmine\Projects\trading-assistant"
     script_path = rf"{project_path}\script.py"
     interpreter_path = rf"{project_path}\.venv\Scripts\python.exe"
@@ -199,7 +259,6 @@ def test_create_bash_launcher_executes_venv_interpreter(monkeypatch, tmp_path):
     }
 
     monkeypatch.setattr(file_utilities.sys, "platform", "win32")
-    monkeypatch.setattr(file_utilities.os.path, "expanduser", lambda _p: home)
     monkeypatch.setattr(
         file_utilities,
         "select_venv_interpreter",
@@ -212,9 +271,9 @@ def test_create_bash_launcher_executes_venv_interpreter(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(file_utilities, "can_overwrite", lambda _path: True)
 
-    file_utilities.create_bash_launcher(script_path)
+    file_utilities.create_bash_launcher(script_path, output_directory)
 
-    assert (downloads / "script.sh").read_text(encoding="utf-8") == (
+    assert (output_directory / "script.sh").read_text(encoding="utf-8") == (
         "#!/bin/bash\n"
         "\n"
         "set -e\n"
@@ -229,7 +288,9 @@ def test_create_bash_launcher_executes_venv_interpreter(monkeypatch, tmp_path):
 
 def test_create_powershell_launcher_raises_when_venv_is_unavailable(tmp_path):
     with pytest.raises(UtilityOperationError) as e:
-        file_utilities.create_powershell_launcher(str(tmp_path / "script.py"))
+        file_utilities.create_powershell_launcher(
+            str(tmp_path / "script.py"), tmp_path
+        )
 
     assert "Unable to create PowerShell launcher" in str(e.value)
     assert str(tmp_path) in str(e.value)
@@ -238,14 +299,12 @@ def test_create_powershell_launcher_raises_when_venv_is_unavailable(tmp_path):
 def test_create_powershell_launcher_executes_venv_interpreter(
     monkeypatch, tmp_path
 ):
-    home = tmp_path / "home"
-    downloads = home / "Downloads"
-    downloads.mkdir(parents=True)
+    output_directory = tmp_path / "launchers"
+    output_directory.mkdir()
     project_path = r"C:\Users\carmine\Projects\trading-assistant"
     script_path = rf"{project_path}\script.py"
     interpreter_path = rf"{project_path}\.venv\Scripts\python.exe"
 
-    monkeypatch.setattr(file_utilities.os.path, "expanduser", lambda _p: home)
     monkeypatch.setattr(
         file_utilities,
         "select_venv_interpreter",
@@ -253,9 +312,9 @@ def test_create_powershell_launcher_executes_venv_interpreter(
     )
     monkeypatch.setattr(file_utilities, "can_overwrite", lambda _path: True)
 
-    file_utilities.create_powershell_launcher(script_path)
+    file_utilities.create_powershell_launcher(script_path, output_directory)
 
-    assert (downloads / "script.ps1").read_text(encoding="utf-8") == (
+    assert (output_directory / "script.ps1").read_text(encoding="utf-8") == (
         '$ErrorActionPreference = "Stop"\n'
         "\n"
         f'& "{project_path}\\.venv\\Scripts\\python.exe" `\n'
