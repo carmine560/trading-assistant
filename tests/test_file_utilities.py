@@ -11,6 +11,33 @@ from core_utilities import file_utilities
 from core_utilities.errors import UtilityOperationError
 
 
+def test_get_writing_file_returns_latest_active_match(monkeypatch, tmp_path):
+    older = tmp_path / "Hypersbi2" / "recording.mp4"
+    newer = tmp_path / "Desktop" / "recording.mp4"
+    stale = tmp_path / "Desktop" / "stale.mp4"
+    older.parent.mkdir()
+    newer.parent.mkdir()
+    older.touch()
+    newer.touch()
+    stale.touch()
+    modification_times = {str(older): 1, str(newer): 2, str(stale): 3}
+
+    monkeypatch.setattr(
+        file_utilities,
+        "is_writing",
+        lambda path: path != str(stale),
+    )
+    monkeypatch.setattr(
+        file_utilities.os.path,
+        "getmtime",
+        lambda path: modification_times[path],
+    )
+
+    assert file_utilities.get_writing_file(
+        str(tmp_path), r".+/.*\.mp4"
+    ) == str(newer)
+
+
 def test_write_file_atomically_fsyncs_file_before_replace(
     monkeypatch, tmp_path
 ):

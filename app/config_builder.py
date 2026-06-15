@@ -329,12 +329,13 @@ def _configure_hypersbi2(trade, config, file_utilities, data_utilities):
         "binarization_threshold": "128",
         "is_dark_theme": "True",
         "is_price_limit_ocr_fallback_enabled": "False",
-        "screencast_directory": os.path.join(
-            os.path.expanduser("~"), "Videos", trade.process.title()
+        "screencast_root_directory": os.path.join(
+            os.path.expanduser("~"), "Videos"
         ),
         "screencast_regex": (
-            trade.process.title()
-            + r" \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d+\.mp4"
+            rf"(?:{trade.process.title()}/{trade.process.title()}"
+            "|Desktop/Desktop)"
+            r" \d{4}\.\d{2}\.\d{2} - \d{2}\.\d{2}\.\d{2}\.\d+\.mp4"
         ),
         "market_data_name_regex": (
             r"^ランキング_"

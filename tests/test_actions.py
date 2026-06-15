@@ -66,7 +66,7 @@ def _build_config():
         "utilization_ratio": "0.5",
         "daily_loss_limit_ratio": "-0.01",
         "maximum_daily_number_of_trades": "5",
-        "screencast_directory": "videos",
+        "screencast_root_directory": "videos",
         "screencast_regex": r"video\.mp4",
     }
     config["HYPERSBI2 Geometries"] = {"cash_balance_region": "0, 0, 10, 10, 0"}
@@ -104,7 +104,7 @@ def _patch_action_modules(monkeypatch):
         actions,
         "file_utilities",
         SimpleNamespace(
-            get_latest_file=lambda *_args: "video.mp4",
+            get_writing_file=lambda *_args: "video.mp4",
             is_writing=lambda *_args: True,
             write_chapter=lambda *_args, **_kwargs: None,
         ),
@@ -1204,8 +1204,8 @@ def test_invalid_boolean_control_flow_argument_raises_before_side_effects(
         actions,
         "file_utilities",
         SimpleNamespace(
-            get_latest_file=lambda *_args: pytest.fail(
-                "get_latest_file should not run"
+            get_writing_file=lambda *_args: pytest.fail(
+                "get_writing_file should not run"
             ),
             is_writing=lambda *_args: pytest.fail("is_writing should not run"),
             write_chapter=lambda *_args, **_kwargs: None,
@@ -1224,6 +1224,32 @@ def test_invalid_boolean_control_flow_argument_raises_before_side_effects(
     _assert_action_error(e, ("inline action",), 1, command)
     assert (trade.initialized, gui_state.initialized) == (0, 0)
     assert spoken == []
+
+
+def test_is_recording_checks_root_directory_and_regex(monkeypatch):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    calls = []
+    monkeypatch.setattr(
+        actions,
+        "file_utilities",
+        SimpleNamespace(
+            get_writing_file=lambda *args: calls.append(args) or "video.mp4",
+        ),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("is_recording", "True", [("speak_text", "Recording.")])],
+    )
+
+    assert calls == [("videos", r"video\.mp4")]
+    assert spoken == ["Recording."]
 
 
 def test_wait_for_key_count_down_cancellation_speaks_countdown(monkeypatch):
@@ -2020,8 +2046,7 @@ def test_count_trades_persists_when_no_recording_file_matches(monkeypatch):
         actions,
         "file_utilities",
         SimpleNamespace(
-            get_latest_file=lambda *_args: False,
-            is_writing=lambda *_args: pytest.fail("is_writing should not run"),
+            get_writing_file=lambda *_args: False,
             write_chapter=lambda *_args, **_kwargs: pytest.fail(
                 "write_chapter should not run"
             ),
@@ -2061,8 +2086,7 @@ def test_count_trades_persists_when_chapter_write_fails(monkeypatch):
         actions,
         "file_utilities",
         SimpleNamespace(
-            get_latest_file=lambda *_args: "video.mp4",
-            is_writing=lambda video: video == "video.mp4",
+            get_writing_file=lambda *_args: "video.mp4",
             write_chapter=lambda *_args, **_kwargs: (_ for _ in ()).throw(
                 failure
             ),
@@ -2094,8 +2118,7 @@ def test_write_chapter_raises_when_no_recording_file_matches(monkeypatch):
         actions,
         "file_utilities",
         SimpleNamespace(
-            get_latest_file=lambda *_args: False,
-            is_writing=lambda *_args: pytest.fail("is_writing should not run"),
+            get_writing_file=lambda *_args: False,
             write_chapter=lambda *_args, **_kwargs: pytest.fail(
                 "write_chapter should not run"
             ),
@@ -2125,8 +2148,7 @@ def test_write_chapter_raises_when_latest_recording_is_stale(monkeypatch):
         actions,
         "file_utilities",
         SimpleNamespace(
-            get_latest_file=lambda *_args: "video.mp4",
-            is_writing=lambda video: video == "other.mp4",
+            get_writing_file=lambda *_args: False,
             write_chapter=lambda *_args, **_kwargs: pytest.fail(
                 "write_chapter should not run"
             ),

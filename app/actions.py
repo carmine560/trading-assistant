@@ -1312,14 +1312,11 @@ def _handle_trade_accounting_command(
             )
             write_config(config, trade.config_path, is_encrypted=True)
 
-    latest_video = file_utilities.get_latest_file(
-        config[trade.process]["screencast_directory"],
+    latest_video = file_utilities.get_writing_file(
+        config[trade.process]["screencast_root_directory"],
         config[trade.process]["screencast_regex"],
     )
-    # Check latest_video before these commands; the repeated is_writing() check
-    # is cheap enough here.
-    is_recording = latest_video and file_utilities.is_writing(latest_video)
-    if not is_recording:
+    if not latest_video:
         error = action_errors.ActionExecutionError(
             (
                 "Action path "
@@ -1497,9 +1494,9 @@ def _handle_control_flow_command(
         ):
             return False
     elif command == "is_recording":
-        if file_utilities.is_writing(
-            file_utilities.get_latest_file(
-                config[trade.process]["screencast_directory"],
+        if bool(
+            file_utilities.get_writing_file(
+                config[trade.process]["screencast_root_directory"],
                 config[trade.process]["screencast_regex"],
             )
         ) == argument and not _recursively_execute_action(
