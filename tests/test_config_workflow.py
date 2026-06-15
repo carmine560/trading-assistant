@@ -131,7 +131,7 @@ def test_configure_exit_does_not_change_action_shortcut_when_edit_is_abandoned(
     assert shortcut_calls == []
 
 
-def test_create_action_shortcut_quotes_powershell_command_arguments():
+def test_create_action_shortcut_uses_venv_interpreter():
     captured = {}
     script_path = "C:/Users/Test User/Trading's Bot/trading_assistant.py"
     action_name = "Bob's Action"
@@ -146,9 +146,6 @@ def test_create_action_shortcut_quotes_powershell_command_arguments():
         captured["kwargs"] = kwargs
 
     file_utilities = SimpleNamespace(
-        select_executable=lambda _executables: (
-            "C:/Program Files/PowerShell/7/pwsh.exe"
-        ),
         select_venv_interpreter=lambda _directory: (
             "C:/Users/Test User/Trading's Bot/.venv/Scripts\\python.exe"
         ),
@@ -164,15 +161,10 @@ def test_create_action_shortcut_quotes_powershell_command_arguments():
         script_path,
     )
 
-    expected_command = (
-        "& 'C:/Users/Test User/Trading''s Bot/.venv/Scripts\\python.exe' "
-        "'C:/Users/Test User/Trading''s Bot/trading_assistant.py' "
-        "'-a' 'Bob''s Action'"
-    )
     assert captured["args"] == (
         action_name,
-        "C:/Program Files/PowerShell/7/pwsh.exe",
-        subprocess.list2cmdline(["-Command", expected_command]),
+        "C:/Users/Test User/Trading's Bot/.venv/Scripts\\python.exe",
+        subprocess.list2cmdline([script_path, "-a", action_name]),
     )
     assert captured["kwargs"] == {
         "program_group_base": "Hyper SBI 2 Assistant",

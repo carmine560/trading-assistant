@@ -287,29 +287,11 @@ def _create_action_shortcut(
     script_path,
 ):
     """Create or update the shortcut for a configured action."""
-    powershell = file_utilities.select_executable(
-        ["pwsh.exe", "powershell.exe"]
-    )
     interpreter = file_utilities.select_venv_interpreter(
         os.path.dirname(script_path)
     )
-    if powershell:
-        quoted_interpreter = (
-            "'" + (interpreter or "python.exe").replace("'", "''") + "'"
-        )
-        quoted_script_path = "'" + script_path.replace("'", "''") + "'"
-        quoted_action_name = "'" + action_name.replace("'", "''") + "'"
-        command = (
-            f"& {quoted_interpreter} {quoted_script_path} "
-            f"'-a' {quoted_action_name}"
-        )
-        target_path = powershell
-        # Build a Windows command line so PowerShell receives the full -Command
-        # string intact.
-        arguments = subprocess.list2cmdline(["-Command", command])
-    else:
-        target_path = "py.exe"
-        arguments = subprocess.list2cmdline([script_path, "-a", action_name])
+    target_path = interpreter or "py.exe"
+    arguments = subprocess.list2cmdline([script_path, "-a", action_name])
     # To pin the shortcut to the Taskbar, specify an executable file as the
     # target_path argument.
     file_utilities.create_shortcut(
