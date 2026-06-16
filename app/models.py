@@ -79,6 +79,9 @@ class Trade(initializer.Initializer):
         self.customer_margin_ratios = os.path.join(
             self.resource_directory, "customer_margin_ratios.csv"
         )
+        self.short_executions = os.path.join(
+            self.resource_directory, "short_executions.csv"
+        )
 
         self.window_titles_section = f"{self.process} Window Titles"
         self.widgets_section = f"{self.process} Widgets"

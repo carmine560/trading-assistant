@@ -36,6 +36,7 @@ MARKET_DATA_FILE_ERROR = "Unable to read market data file"
 PRICE_LIMIT_ERROR = "Unable to get price limit."
 PRICE_LIMIT_MARKET_DATA_FILE_ERROR = "Closing prices file invalid."
 SHARE_SIZE_ERROR = "Unable to calculate share size."
+SHORT_EXECUTIONS_HEADER = ("date", "session", "symbol", "share_size")
 UI_THREAD_STARTUP_TIMEOUT_SECONDS = 1
 UI_THREAD_STOP_TIMEOUT_SECONDS = 1
 
@@ -982,6 +983,7 @@ def _handle_wait_command(
             getattr(trade, "listener_stop_reason", None)
             == listeners.LISTENER_STOP_REASON_PROCESS_EXITED
         ):
+            _clear_pending_short_order(trade)
             return False
         if not trade.should_continue and _handle_cancellation_exit(
             trade,
@@ -991,7 +993,10 @@ def _handle_wait_command(
             action_path,
             instruction_index,
         ):
+            _clear_pending_short_order(trade)
             return False
+        _record_pending_short_execution(trade, config)
+        _clear_pending_short_order(trade)
     elif command == "wait_for_window":
         trade.keyboard_listener_state = 1
         trade.key_to_check = None
@@ -1891,8 +1896,110 @@ def _find_price_in_csv(path, symbol, symbol_column, price_column):
     return 0.0
 
 
+def _get_current_market_session(config):
+    """Return today's date and the current market session name."""
+    try:
+        section = config["Market Data"]
+        now = pd.Timestamp.now(tz=section["timezone"])
+        current_time = now.strftime("%H:%M:%S")
+        if (
+            section["opening_time"]
+            <= current_time
+            < section["midday_break_time"]
+        ):
+            return now.date().isoformat(), "morning_session"
+        if section["reopening_time"] <= current_time < section["closing_time"]:
+            return now.date().isoformat(), "afternoon_session"
+    except KeyError:
+        pass
+    return None, None
+
+
+def _get_remaining_short_share_size_limit(trade, config):
+    """Return the remaining short share limit for the current session."""
+    date_string, session = _get_current_market_session(config)
+    path = getattr(trade, "short_executions", None)
+    if not date_string or not session or not path:
+        return trade_service.SHORT_SHARE_SIZE_LIMIT
+
+    executed_share_size = _sum_short_executions(
+        path,
+        date_string,
+        session,
+        trade.symbol,
+    )
+    return max(
+        trade_service.SHORT_SHARE_SIZE_LIMIT - executed_share_size,
+        0,
+    )
+
+
+def _sum_short_executions(path, date_string, session, symbol):
+    """Return matching short executions from the CSV ledger."""
+    if not os.path.isfile(path):
+        return 0
+
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames != list(SHORT_EXECUTIONS_HEADER):
+            raise ValueError("Short executions file invalid.")
+
+        total_share_size = 0
+        for row_number, row in enumerate(reader, start=2):
+            if (
+                row["date"] == date_string
+                and row["session"] == session
+                and row["symbol"] == symbol
+            ):
+                try:
+                    total_share_size += int(row["share_size"])
+                except ValueError as e:
+                    raise ValueError(
+                        "Short executions file invalid: row "
+                        f"{row_number} has invalid share size "
+                        f"{row['share_size']!r}."
+                    ) from e
+        return total_share_size
+
+
+def _record_pending_short_execution(trade, config):
+    """Persist the pending short order when wait_for_price confirms a fill."""
+    pending_short_order = getattr(trade, "pending_short_order", None)
+    if not pending_short_order:
+        return
+
+    path = getattr(trade, "short_executions", None)
+    date_string, session = _get_current_market_session(config)
+    if not path or not date_string or not session:
+        return
+
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    needs_header = not os.path.isfile(path) or os.path.getsize(path) == 0
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=SHORT_EXECUTIONS_HEADER)
+        if needs_header:
+            writer.writeheader()
+        writer.writerow(
+            {
+                "date": date_string,
+                "session": session,
+                "symbol": pending_short_order["symbol"],
+                "share_size": pending_short_order["share_size"],
+            }
+        )
+
+
+def _clear_pending_short_order(trade):
+    """Clear the pending short order, if the trade object tracks one."""
+    if hasattr(trade, "pending_short_order"):
+        trade.pending_short_order = None
+
+
 def calculate_share_size(trade, config, position):
     """Determine the share size for a given trade."""
+    _clear_pending_short_order(trade)
     if trade.symbol and trade.cash_balance:
         section = config[trade.customer_margin_ratios_section]
         freshness_error = _get_customer_margin_ratios_freshness_error(
@@ -1914,14 +2021,21 @@ def calculate_share_size(trade, config, position):
             return margin_ratio_error
 
         try:
-            share_size = trade_service.calculate_share_size_from_inputs(
-                cash_balance=trade.cash_balance,
-                utilization_ratio=float(
+            share_size_inputs = {
+                "cash_balance": trade.cash_balance,
+                "utilization_ratio": float(
                     config[trade.process]["utilization_ratio"]
                 ),
-                customer_margin_ratio=customer_margin_ratio,
-                price_limit=get_price_limit(trade, config),
-                position=position,
+                "customer_margin_ratio": customer_margin_ratio,
+                "price_limit": get_price_limit(trade, config),
+                "position": position,
+            }
+            if position == "short":
+                share_size_inputs["short_share_size_limit"] = (
+                    _get_remaining_short_share_size_limit(trade, config)
+                )
+            share_size = trade_service.calculate_share_size_from_inputs(
+                **share_size_inputs
             )
         except errors.TextRecognitionError as e:
             trade.last_action_error = e
@@ -1935,6 +2049,11 @@ def calculate_share_size(trade, config, position):
             return (False, "Insufficient cash balance.")
 
         trade.share_size = share_size
+        if position == "short":
+            trade.pending_short_order = {
+                "symbol": trade.symbol,
+                "share_size": share_size,
+            }
         return (True, None)
 
     return (False, "Symbol or cash balance not provided.")

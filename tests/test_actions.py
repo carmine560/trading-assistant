@@ -1413,6 +1413,56 @@ def test_wait_for_price_accepts_negative_one_ocr_index(monkeypatch):
     assert spoken == []
 
 
+def test_wait_for_price_records_pending_short_execution(monkeypatch, tmp_path):
+    spoken = []
+    trade = _build_trade(spoken)
+    trade.pending_short_order = {
+        "symbol": "7013",
+        "share_size": 100,
+    }
+    trade.short_executions = str(tmp_path / "short_executions.csv")
+    gui_state = _build_gui_state()
+    config = _build_config()
+    config["Market Data"]["opening_time"] = "09:00:00"
+    config["Market Data"]["midday_break_time"] = "11:30:00"
+    config["Market Data"]["reopening_time"] = "12:30:00"
+    config["Market Data"]["closing_time"] = "15:30:00"
+    _patch_action_modules(monkeypatch)
+    monkeypatch.setattr(
+        actions,
+        "pd",
+        SimpleNamespace(
+            Timestamp=SimpleNamespace(
+                now=lambda **_kwargs: SimpleNamespace(
+                    date=lambda: SimpleNamespace(
+                        isoformat=lambda: "2026-06-16"
+                    ),
+                    strftime=lambda _fmt: "09:18:10",
+                )
+            )
+        ),
+    )
+
+    monkeypatch.setattr(
+        actions,
+        "text_recognition",
+        SimpleNamespace(recognize_text=lambda *_args, **_kwargs: 2819),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("wait_for_price", "0, 0, 10, 10, -1")],
+    )
+
+    assert (tmp_path / "short_executions.csv").read_text(encoding="utf-8") == (
+        "date,session,symbol,share_size\n"
+        "2026-06-16,morning_session,7013,100\n"
+    )
+    assert trade.pending_short_order is None
+
+
 def test_wait_for_price_cancellation_raises_for_cleanup_failure(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)

@@ -733,6 +733,44 @@ def test_calculate_share_size_caps_short_positions_at_fifty_units(
     assert sample_trade.share_size == 5000
 
 
+def test_calculate_share_size_uses_remaining_short_session_limit(
+    monkeypatch, sample_trade, sample_config, tmp_path
+):
+    sample_trade.cash_balance = 10_000_000
+    sample_trade.short_executions = str(tmp_path / "short_executions.csv")
+    Path(sample_trade.customer_margin_ratios).write_text(
+        "1234,0.5\n", encoding="utf-8"
+    )
+    Path(sample_trade.short_executions).write_text(
+        "\n".join(
+            (
+                "date,session,symbol,share_size",
+                "2026-05-22,morning_session,1234,4000",
+                "2026-05-22,afternoon_session,1234,1000",
+                "2026-05-22,morning_session,9876,1000",
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_rankings_price(monkeypatch, sample_config, tmp_path)
+    monkeypatch.setattr(
+        actions.pd.Timestamp,
+        "now",
+        lambda **_kwargs: actions.pd.Timestamp("2026-05-22 09:30:00"),
+    )
+    sample_config["Market Data"]["opening_time"] = "09:00:00"
+    sample_config["Market Data"]["midday_break_time"] = "11:30:00"
+    sample_config["Market Data"]["reopening_time"] = "12:30:00"
+
+    success, message = actions.calculate_share_size(
+        sample_trade, sample_config, "short"
+    )
+
+    assert (success, message) == (True, None)
+    assert sample_trade.share_size == 1000
+
+
 def test_calculate_share_size_requires_symbol_and_cash_balance(
     sample_trade, sample_config
 ):

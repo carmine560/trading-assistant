@@ -35,6 +35,34 @@ def test_calculate_share_size_from_inputs_caps_short_positions():
     )
 
 
+def test_calculate_share_size_from_inputs_uses_remaining_short_limit():
+    assert (
+        trade_service.calculate_share_size_from_inputs(
+            cash_balance=10_000_000,
+            utilization_ratio=0.5,
+            customer_margin_ratio=0.5,
+            price_limit=1130,
+            position="short",
+            short_share_size_limit=2000,
+        )
+        == 2000
+    )
+
+
+def test_calculate_share_size_from_inputs_allows_zero_short_limit():
+    assert (
+        trade_service.calculate_share_size_from_inputs(
+            cash_balance=10_000_000,
+            utilization_ratio=0.5,
+            customer_margin_ratio=0.5,
+            price_limit=1130,
+            position="short",
+            short_share_size_limit=0,
+        )
+        == 0
+    )
+
+
 def test_calculate_share_size_from_inputs_keeps_exact_trading_unit():
     assert (
         trade_service.calculate_share_size_from_inputs(
@@ -102,3 +130,17 @@ def test_calculate_share_size_from_inputs_rejects_invalid_position():
         )
 
     assert str(e.value) == "Position must be 'long' or 'short'."
+
+
+def test_calculate_share_size_from_inputs_rejects_negative_short_limit():
+    with pytest.raises(ValueError) as e:
+        trade_service.calculate_share_size_from_inputs(
+            cash_balance=300_000,
+            utilization_ratio=0.5,
+            customer_margin_ratio=0.5,
+            price_limit=1130,
+            position="short",
+            short_share_size_limit=-100,
+        )
+
+    assert str(e.value) == "Short share size limit must not be negative."

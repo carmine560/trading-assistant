@@ -54,6 +54,7 @@ def calculate_share_size_from_inputs(
     customer_margin_ratio,
     price_limit,
     position,
+    short_share_size_limit=SHORT_SHARE_SIZE_LIMIT,
 ):
     """Return the share size using only already-resolved numeric inputs."""
     if cash_balance <= 0:
@@ -66,6 +67,8 @@ def calculate_share_size_from_inputs(
         raise ValueError("Price limit must be positive.")
     if position not in {"long", "short"}:
         raise ValueError("Position must be 'long' or 'short'.")
+    if short_share_size_limit < 0:
+        raise ValueError("Short share size limit must not be negative.")
 
     share_size = (
         int(
@@ -77,6 +80,6 @@ def calculate_share_size_from_inputs(
         )
         * TRADING_UNIT
     )
-    if position == "short" and share_size > SHORT_SHARE_SIZE_LIMIT:
-        return SHORT_SHARE_SIZE_LIMIT
+    if position == "short" and share_size > short_share_size_limit:
+        return short_share_size_limit
     return share_size
