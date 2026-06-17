@@ -74,7 +74,7 @@ If you use the `calculate_share_size` command in the “[Create or Modify
 Action](#create-or-modify-action)” section, save the customer margin ratios
 from the [*Stocks Subject to Margin
 Regulations*](https://search.sbisec.co.jp/v2/popwin/attention/stock/margin_M29.html)
-page using the `-r` option beforehand. The following option creates the
+using the `-r` option beforehand. The following option creates the
 `%LOCALAPPDATA%\trading-assistant\HYPERSBI2\hypersbi2_assistant.ps1` startup
 script, which can process the above options and start Hyper SBI 2. This script
 forcibly stops and restarts Hyper SBI 2 if it is already running, discarding
