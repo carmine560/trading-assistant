@@ -323,9 +323,10 @@ value indicates unlimited trades.</td></tr>
 
 <td>Count the number of trades for the day. Additionally, write a chapter
 section for <a href="https://ffmpeg.org/ffmpeg-formats.html#Metadata-1">FFmpeg
-metadata</a> when Nvidia ShadowPlay records a screencast. The `CHAPTER_OFFSET`
-parameter specifies the offset in seconds for the chapter’s start time. You
-must call this command after the execution of an order.</td></tr>
+metadata</a> when Nvidia ShadowPlay records a screencast. The
+<code>CHAPTER_OFFSET</code> parameter specifies the offset in seconds for the
+chapter’s start time. You must call this command after the execution of an
+order.</td></tr>
 
 <tr><td><code>('get_cash_balance',)</code></td>
 
