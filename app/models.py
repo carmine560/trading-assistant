@@ -131,7 +131,8 @@ class Trade(initializer.Initializer):
             },
             "additional_value_keys": {"click_widget", "speak_config"},
             "optional_additional_value_keys": {"write_chapter"},
-            "positioning_keys": {"click", "drag_to", "move_to", "right_click"},
+            "positioning_keys": {"drag_to", "move_to"},
+            "optional_positioning_keys": {"click", "right_click"},
             "preset_geometries": None,
             "nested_keys": {"execute_action"},
             "optional_additional_nested_keys": {

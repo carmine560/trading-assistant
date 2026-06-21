@@ -423,6 +423,25 @@ def _normalize_point_argument(
     return argument, additional_argument
 
 
+def _normalize_optional_point_argument(
+    argument,
+    additional_argument,
+    action_path,
+    instruction_index,
+    command,
+):
+    """Normalize an optional X, Y command argument."""
+    if argument is None:
+        return argument, additional_argument
+    return _normalize_point_argument(
+        argument,
+        additional_argument,
+        action_path,
+        instruction_index,
+        command,
+    )
+
+
 def _normalize_click_widget_argument(
     argument,
     additional_argument,
@@ -817,9 +836,11 @@ def _handle_gui_command(
     if command == "back_to":
         pyautogui.moveTo(gui_state.previous_position)
     elif command == "click":
-        (pyautogui.rightClick if gui_state.swapped else pyautogui.click)(
-            *argument
-        )
+        click = pyautogui.rightClick if gui_state.swapped else pyautogui.click
+        if argument is None:
+            click()
+        else:
+            click(*argument)
     elif command == "click_widget":
         trade.keyboard_listener_state = 1
         trade.key_to_check = None
@@ -851,10 +872,11 @@ def _handle_gui_command(
     elif command == "press_key":
         pyautogui.press(argument[0], presses=argument[1])
     elif command == "right_click":
-        pyautogui.click(
-            *argument,
-            button="left" if gui_state.swapped else "right",
-        )
+        button = "left" if gui_state.swapped else "right"
+        if argument is None:
+            pyautogui.click(button=button)
+        else:
+            pyautogui.click(*argument, button=button)
     elif command == "write_string":
         pyautogui.write(argument)
 
@@ -1759,13 +1781,13 @@ _COMMAND_DISPATCH = {
     "execute_action": _handle_execution_command,
 }
 _ARGUMENT_NORMALIZERS = {
-    "click": _normalize_point_argument,
+    "click": _normalize_optional_point_argument,
     "click_widget": _normalize_click_widget_argument,
     "copy_symbols_from_column": _normalize_ocr_column_argument,
     "drag_to": _normalize_point_argument,
     "move_to": _normalize_point_argument,
     "press_key": _normalize_press_key_argument,
-    "right_click": _normalize_point_argument,
+    "right_click": _normalize_optional_point_argument,
     "show_window": _normalize_show_window_argument,
     "sleep": _normalize_float_argument,
     "speak_cpu_utilization": _normalize_float_argument,

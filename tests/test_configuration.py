@@ -7,11 +7,14 @@ from types import SimpleNamespace
 import pytest
 
 from app import config_builder
+from core_utilities import config_prompt
 from core_utilities.config_common import ConfigError
 from core_utilities.config_prompt import (
+    configure_position,
     delete_option,
     modify_option,
     modify_section,
+    modify_tuple_list,
 )
 from core_utilities.config_validation import list_section
 
@@ -47,6 +50,53 @@ def test_delete_option_raises_for_missing_option(tmp_path):
 
     with pytest.raises(ConfigError, match="does not exist"):
         delete_option(config, "General", "missing", str(config_path))
+
+
+@pytest.mark.parametrize("command", ["click", "right_click"])
+def test_modify_tuple_list_accepts_click_without_coordinates(
+    monkeypatch,
+    command,
+):
+    answers = iter(["insert", "quit"])
+    values = iter([command, ""])
+
+    monkeypatch.setattr(config_prompt, "GUI_IMPORT_ERROR", None)
+    monkeypatch.setattr(
+        config_prompt,
+        "tidy_answer",
+        lambda *_args, **_kwargs: next(answers),
+    )
+    monkeypatch.setattr(
+        config_prompt,
+        "prompt_for_input",
+        lambda *_args, **_kwargs: next(values),
+    )
+
+    tuple_list = modify_tuple_list(
+        [],
+        prompts={},
+        items={
+            "all_keys": ["click", "right_click"],
+            "optional_positioning_keys": {"click", "right_click"},
+        },
+    )
+
+    assert tuple_list == [(command,)]
+
+
+def test_configure_position_still_requires_coordinates_by_default(
+    monkeypatch,
+):
+    values = iter(["", "10, 20"])
+
+    monkeypatch.setattr(config_prompt, "GUI_IMPORT_ERROR", None)
+    monkeypatch.setattr(
+        config_prompt,
+        "prompt_for_input",
+        lambda *_args, **_kwargs: next(values),
+    )
+
+    assert configure_position() == "10, 20"
 
 
 def test_configure_resets_daily_state_after_closing_time_using_market_timezone(

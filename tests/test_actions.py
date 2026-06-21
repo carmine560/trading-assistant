@@ -950,6 +950,92 @@ def test_invalid_gui_arguments_raise_before_side_effects(
     assert spoken == []
 
 
+@pytest.mark.parametrize(
+    ("swapped", "expected_call"),
+    [
+        (False, "click"),
+        (True, "rightClick"),
+    ],
+)
+def test_click_without_coordinates_clicks_current_position(
+    monkeypatch,
+    swapped,
+    expected_call,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    gui_state.swapped = swapped
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    calls = []
+
+    monkeypatch.setattr(
+        actions,
+        "pyautogui",
+        SimpleNamespace(
+            click=lambda *args, **kwargs: calls.append(
+                ("click", args, kwargs)
+            ),
+            rightClick=lambda *args, **kwargs: calls.append(
+                ("rightClick", args, kwargs)
+            ),
+        ),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("click",)],
+    )
+
+    assert calls == [(expected_call, (), {})]
+    assert spoken == []
+
+
+@pytest.mark.parametrize(
+    ("swapped", "expected_button"),
+    [
+        (False, "right"),
+        (True, "left"),
+    ],
+)
+def test_right_click_without_coordinates_clicks_current_position(
+    monkeypatch,
+    swapped,
+    expected_button,
+):
+    spoken = []
+    trade = _build_trade(spoken)
+    gui_state = _build_gui_state()
+    gui_state.swapped = swapped
+    config = _build_config()
+    _patch_action_modules(monkeypatch)
+    calls = []
+
+    def click(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(
+        actions,
+        "pyautogui",
+        SimpleNamespace(
+            click=click,
+        ),
+    )
+
+    assert actions.execute_action(
+        trade,
+        config,
+        gui_state,
+        [("right_click",)],
+    )
+
+    assert calls == [((), {"button": expected_button})]
+    assert spoken == []
+
+
 def test_invalid_widget_region_raises_before_click_widget(monkeypatch):
     spoken = []
     trade = _build_trade(spoken)
