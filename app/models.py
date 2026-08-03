@@ -66,10 +66,6 @@ class Trade(initializer.Initializer):
         self.market_holidays = os.path.join(
             self.market_directory, "market_holidays.csv"
         )
-        self.closing_prices = os.path.join(
-            self.market_directory, "closing_prices_"
-        )
-
         self.geometries_section = f"{self.process} Geometries"
         self.schedules_section = f"{self.process} Schedules"
 

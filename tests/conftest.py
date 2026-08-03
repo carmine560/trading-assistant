@@ -103,7 +103,6 @@ def sample_trade(tmp_path):
         customer_margin_ratios_section="SBI Customer Margin Ratios",
         customer_margin_ratios=str(tmp_path / "customer_margin_ratios.csv"),
         market_holidays=str(market_holidays),
-        closing_prices=str(tmp_path / "closing_prices_"),
         last_action_warning=None,
     )
 
