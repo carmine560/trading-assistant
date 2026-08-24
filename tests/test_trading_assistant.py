@@ -238,6 +238,28 @@ def test_get_price_limit_uses_rankings_price(
     assert actions.get_price_limit(sample_trade, sample_config) == 1130.0
 
 
+def test_get_price_limit_uses_weekend_rankings_price_before_open(
+    monkeypatch, sample_trade, sample_config, tmp_path
+):
+    monkeypatch.setattr(
+        actions.pd.Timestamp,
+        "now",
+        lambda **_kwargs: actions.pd.Timestamp("2026-08-24 08:00:00"),
+    )
+    (tmp_path / "ランキング_ティック回数20260823.csv").write_text(
+        'a,b,c,d,e,f,1234,h,i,"980"\n', encoding="utf-8"
+    )
+    sample_config["Market Data"]["market_data_directory"] = str(tmp_path)
+    sample_config["HYPERSBI2"]["is_price_limit_ocr_fallback_enabled"] = "true"
+    monkeypatch.setattr(
+        actions.text_recognition,
+        "recognize_text",
+        lambda *_args, **_kwargs: pytest.fail("OCR should not run"),
+    )
+
+    assert actions.get_price_limit(sample_trade, sample_config) == 1130.0
+
+
 def test_get_price_limit_falls_back_to_recognized_value_when_enabled(
     monkeypatch, sample_trade, sample_config
 ):
