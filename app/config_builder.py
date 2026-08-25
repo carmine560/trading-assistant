@@ -85,9 +85,19 @@ def configure(
                 ],
             )
         ],
-        "create_opening_chapter": [("write_chapter", "Opening", "Pre-market")],
-        "create_midday_break_chapter": [("write_chapter", "Midday Break")],
-        "create_reopening_chapter": [("write_chapter", "Reopening")],
+        "create_opening_chapter": [
+            (
+                "is_recording",
+                "True",
+                [("write_chapter", "Opening", "Pre-market")],
+            )
+        ],
+        "create_midday_break_chapter": [
+            ("is_recording", "True", [("write_chapter", "Midday Break")])
+        ],
+        "create_reopening_chapter": [
+            ("is_recording", "True", [("write_chapter", "Reopening")])
+        ],
         "stop_manual_recording": [
             ("is_recording", "True", [("press_hotkeys", "alt, f9")])
         ],
