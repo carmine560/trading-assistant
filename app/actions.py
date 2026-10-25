@@ -1091,6 +1091,7 @@ def _handle_speak_command(
         minutes_since = int((now - target_time) // 60)
         if int(now % 60) >= 30:
             minutes_since += 1
+        minutes_since %= 60
         if minutes_since == 1:
             trade.speech_manager.set_speech_text("1 minute.")
         else:

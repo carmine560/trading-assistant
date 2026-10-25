@@ -251,8 +251,8 @@ action and executes the specified action, if provided.</td></tr>
 
 <tr><td><code>('speak_minutes_since_hour',[ '%H:%M:%S'])</code></td>
 
-<td>Speak minutes since the current hour, or since the time. Round up when
-$$seconds \geq 30$$.</td></tr>
+<td>Speak minutes since the current hour, or since the time, modulo 60. Round
+up when $$seconds \geq 30$$.</td></tr>
 
 <tr><td><code>('speak_seconds_since_time', '%H:%M:%S')</code></td>
 
