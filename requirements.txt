@@ -1,6 +1,6 @@
 lxml
 pandas
-pillow
+pillow>=13.0.0
 prompt_toolkit
 psutil
 pyautogui
